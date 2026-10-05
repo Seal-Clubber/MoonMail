@@ -1,0 +1,76 @@
+{
+  "component": {
+    "body": {
+      "state": [
+        16,
+        {
+          "gift": {
+            "@cbor": "tag",
+            "tag": 128,
+            "value": {
+              "@cbor": "bytes",
+              "hex": "abe91817e833992ad4a07bda6380442d55bf4dd8055e88f9e1120b5edc935ac4"
+            }
+          }
+        },
+        {},
+        {
+          "@cbor": "bytes",
+          "hex": "728abb9248ab1946f45b1d896d08a6ea982897f0f6718b5c1a0f13a3a351d94a"
+        }
+      ]
+    },
+    "header": {
+      "access_rules": {
+        "default": "AllowAll",
+        "method_access": {}
+      },
+      "entity_id": "44",
+      "owner_rule": "None",
+      "template_address": "7c30b557f5609df131f4d5d59c3d87935cb9eaf1f97221c7e99ab8a2128284e3"
+    }
+  },
+  "envelopeTemplate": "728abb9248ab1946f45b1d896d08a6ea982897f0f6718b5c1a0f13a3a351d94a",
+  "envelopes": {
+    "component_abe91817e833992ad4a07bda6380442d55bf4dd8055e88f9e1120b5edc935ac4": {
+      "body": {
+        "state": [
+          16,
+          "gift",
+          0,
+          "{\"subject\":\"hello\",\"body\":\"world\"}",
+          1000000,
+          1000000,
+          false,
+          null,
+          "",
+          "",
+          {
+            "@cbor": "bytes",
+            "hex": "c2a0394cab5ff3b6b51335386d8fb473cf03db714258bc17a10165783b3cf46c"
+          },
+          "test",
+          {
+            "@cbor": "tag",
+            "tag": 132,
+            "value": {
+              "@cbor": "bytes",
+              "hex": "abe6c0022242552fa126e14c57fced77d9686863995beabb61aa963e8d00bb60"
+            }
+          }
+        ]
+      },
+      "header": {
+        "access_rules": {
+          "default": "AllowAll",
+          "method_access": {}
+        },
+        "entity_id": "ab",
+        "owner_rule": "None",
+        "template_address": "728abb9248ab1946f45b1d896d08a6ea982897f0f6718b5c1a0f13a3a351d94a"
+      }
+    }
+  },
+  "registry": "component_4476c887f36e79bdd5140be796e01f04992c4bcceed1a5531d33bdb246d4886e",
+  "template": "7c30b557f5609df131f4d5d59c3d87935cb9eaf1f97221c7e99ab8a2128284e3"
+}

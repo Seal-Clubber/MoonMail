@@ -1,0 +1,35 @@
+name: Verify GhostDrop
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: {version: '11.19.0'}
+      - uses: actions/setup-node@v4
+        with: {node-version: '24', cache: pnpm}
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:browser
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with: {toolchain: '1.97.1', targets: wasm32-unknown-unknown}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            contracts/ghostdrop -> target
+            contracts/envelope -> target
+            contracts/engine-tests -> target
+      - run: cargo test --manifest-path contracts/ghostdrop/Cargo.toml --locked
+      - run: cargo test --manifest-path contracts/envelope/Cargo.toml --locked
+      - run: cargo build --manifest-path contracts/envelope/Cargo.toml --target wasm32-unknown-unknown --release --locked
+      - run: cargo build --manifest-path contracts/ghostdrop/Cargo.toml --target wasm32-unknown-unknown --release --locked
+      - run: cargo test --manifest-path contracts/engine-tests/Cargo.toml --locked

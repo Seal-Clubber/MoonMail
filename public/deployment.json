@@ -1,0 +1,4 @@
+{
+  "network": 16, "registry": "", "template": "", "envelopeTemplate": "", "indexerUrl": "", "resource": "",
+  "evidence": {"engineClaims":false,"guestPayout":false,"daemonScopes":false,"httpsWallet":false,"mailboxRecovery":false}
+}
