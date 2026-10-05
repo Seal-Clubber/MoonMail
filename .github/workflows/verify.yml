@@ -8,9 +8,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
-        with: {version: '11.19.0'}
+        with: { version: "11.19.0" }
       - uses: actions/setup-node@v4
-        with: {node-version: '24', cache: pnpm}
+        with: { node-version: "24", cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - run: pnpm build
@@ -20,8 +20,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: "11.19.0" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "24", cache: pnpm }
+      - run: pnpm install --frozen-lockfile
       - uses: dtolnay/rust-toolchain@master
-        with: {toolchain: '1.97.1', targets: wasm32-unknown-unknown}
+        with: { toolchain: "1.97.1", targets: wasm32-unknown-unknown }
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
@@ -32,4 +37,4 @@ jobs:
       - run: cargo test --manifest-path contracts/envelope/Cargo.toml --locked
       - run: cargo build --manifest-path contracts/envelope/Cargo.toml --target wasm32-unknown-unknown --release --locked
       - run: cargo build --manifest-path contracts/ghostdrop/Cargo.toml --target wasm32-unknown-unknown --release --locked
-      - run: cargo test --manifest-path contracts/engine-tests/Cargo.toml --locked
+      - run: cargo test --manifest-path contracts/engine-tests/Cargo.toml --locked -- --include-ignored

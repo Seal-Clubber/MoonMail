@@ -1,113 +1,372 @@
-import { IndexerProvider } from '@tari-project/ootle-indexer';
-import { Network } from '@tari-project/ootle';
-import { resolveTransaction, signTransaction, sealTransaction, classifyOutcome, getVaultIdsForAccount } from '@tari-project/ootle';
-import { EphemeralKeySigner, SecretKeyWallet } from '@tari-project/ootle-secret-key-wallet';
-import { parseOotleAddress } from '@tari-project/ootle-wasm';
-import type { Deployment, Envelope, Postbox } from './types';
-import type { WalletSession, WalletAccount } from './wallet';
-import { writesReady, endpoint } from './config';
-import { hex } from './crypto';
-import { claimTransaction, publishTransaction } from './transactions';
-import { beginSubmission, completeSubmission, hasUnresolved } from './pending';
+import { IndexerProvider } from "@tari-project/ootle-indexer";
+import { Network } from "@tari-project/ootle";
+import {
+  resolveTransaction,
+  signTransaction,
+  sealTransaction,
+  classifyOutcome,
+  getVaultIdsForAccount,
+} from "@tari-project/ootle";
+import {
+  EphemeralKeySigner,
+  SecretKeyWallet,
+} from "@tari-project/ootle-secret-key-wallet";
+import { parseOotleAddress } from "@tari-project/ootle-wasm";
+import type { Deployment, Envelope, Postbox } from "./types";
+import type { WalletSession, WalletAccount } from "./wallet";
+import { writesReady, endpoint } from "./config";
+import { hex } from "./crypto";
+import { claimTransaction, publishTransaction } from "./transactions";
+import { beginSubmission, completeSubmission, hasUnresolved } from "./pending";
 // Strict codec for positional minicbor component state, not an invented RPC.
-function arr(v: unknown): unknown[] {if(!Array.isArray(v)) throw new Error('Unsupported component state encoding');return v;}
-function map(v: unknown): [string,unknown][] {
-  if(v&&typeof v==='object'&&!Array.isArray(v)) {
-    const o=v as Record<string,unknown>;
-    if(o['@cbor']==='map') return arr(o.entries).map(e=>{const a=arr(e);return [String(a[0]),a[1]];});
+function arr(v: unknown): unknown[] {
+  if (!Array.isArray(v))
+    throw new Error("Unsupported component state encoding");
+  return v;
+}
+function map(v: unknown): [string, unknown][] {
+  if (v && typeof v === "object" && !Array.isArray(v)) {
+    const o = v as Record<string, unknown>;
+    if (o["@cbor"] === "map")
+      return arr(o.entries).map((e) => {
+        const a = arr(e);
+        return [String(a[0]), a[1]];
+      });
     return Object.entries(o);
-  } throw new Error('Unsupported registry map');
+  }
+  throw new Error("Unsupported registry map");
 }
-function text(v:unknown):string {if(typeof v!=='string')throw new Error('Invalid text in state');return v;}
-function bytes(v:unknown):string {
-  if(typeof v==='string')return v;
-  if(Array.isArray(v))return hex(Uint8Array.from(v as number[]));
-  if(v&&typeof v==='object'&&'hex' in v)return text(v.hex);
-  throw new Error('Invalid public key');
+function text(v: unknown): string {
+  if (typeof v !== "string") throw new Error("Invalid text in state");
+  return v;
 }
-function amount(v:unknown):string {if(typeof v==='number'&&Number.isSafeInteger(v)&&v>=0)return String(v);if(typeof v==='string'&&/^\d+$/.test(v))return v;if(v&&typeof v==='object'&&'value' in v)return amount(v.value);throw new Error('Unrepresentable amount');}
-export function taggedAddress(v:unknown,prefix:string):string {
-  if(typeof v==='string'&&new RegExp(`^${prefix}_[a-f0-9]{64}$`).test(v))return v;
-  if(v&&typeof v==='object'&&'value' in v)return `${prefix}_${bytes(v.value)}`;
-  if(prefix==='template')return `template_${bytes(v)}`;
-  throw new Error('Invalid address encoding');
+function bytes(v: unknown): string {
+  if (typeof v === "string") return v;
+  if (Array.isArray(v)) return hex(Uint8Array.from(v as number[]));
+  if (v && typeof v === "object" && "hex" in v) return text(v.hex);
+  throw new Error("Invalid public key");
 }
-export function decodeEnvelope(state:unknown,d:Deployment,id:string,component:string):Envelope {
-  const raw=arr(state);if(raw[0]!==d.network)throw new Error('Envelope network mismatch');const e=raw.slice(1);
-  if(text(e[0])!==id||![0,1,2].includes(Number(e[1])))throw new Error('Envelope identity mismatch');
-  const mode=(['public','link','postbox'] as const)[Number(e[1])];const payload=JSON.parse(text(e[2]));
-  if(typeof e[5]!=='boolean')throw new Error('Invalid claimed state');
-  if(mode==='link'&&payload.claimPublicKey!==bytes(e[6]))throw new Error('Stored claim authority mismatch');
-  if(mode==='public'&&(typeof payload.subject!=='string'||typeof payload.body!=='string'))throw new Error('Invalid public letter');
-  return {component,id,mode,context:{network:d.network,registry:d.registry,template:d.template},payload,gift:amount(e[3]),reserve:amount(e[4]),claimed:e[5],recipientPostbox:text(e[7]),replyPostbox:text(e[8]),sender:bytes(e[9]),campaign:text(e[10])};
+function amount(v: unknown): string {
+  if (typeof v === "number" && Number.isSafeInteger(v) && v >= 0)
+    return String(v);
+  if (typeof v === "string" && /^\d+$/.test(v)) return v;
+  if (v && typeof v === "object" && "value" in v) return amount(v.value);
+  throw new Error("Unrepresentable amount");
+}
+export function taggedAddress(v: unknown, prefix: string): string {
+  if (typeof v === "string" && new RegExp(`^${prefix}_[a-f0-9]{64}$`).test(v))
+    return v;
+  if (v && typeof v === "object" && "value" in v)
+    return `${prefix}_${bytes(v.value)}`;
+  if (prefix === "template") return `template_${bytes(v)}`;
+  throw new Error("Invalid address encoding");
+}
+export function decodeEnvelope(
+  state: unknown,
+  d: Deployment,
+  id: string,
+  component: string,
+): Envelope {
+  const raw = arr(state);
+  if (raw[0] !== d.network) throw new Error("Envelope network mismatch");
+  const e = raw.slice(1);
+  if (text(e[0]) !== id || ![0, 1, 2].includes(Number(e[1])))
+    throw new Error("Envelope identity mismatch");
+  const mode = (["public", "link", "postbox"] as const)[Number(e[1])];
+  const payload = JSON.parse(text(e[2]));
+  if (typeof e[5] !== "boolean") throw new Error("Invalid claimed state");
+  if (mode === "link" && payload.claimPublicKey !== bytes(e[6]))
+    throw new Error("Stored claim authority mismatch");
+  if (
+    mode === "public" &&
+    (typeof payload.subject !== "string" || typeof payload.body !== "string")
+  )
+    throw new Error("Invalid public letter");
+  return {
+    component,
+    id,
+    mode,
+    context: { network: d.network, registry: d.registry, template: d.template },
+    payload,
+    gift: amount(e[3]),
+    reserve: amount(e[4]),
+    claimed: e[5],
+    recipientPostbox: text(e[7]),
+    replyPostbox: text(e[8]),
+    sender: bytes(e[9]),
+    campaign: text(e[10]),
+  };
 }
 export function decodeOffice(state: unknown, d: Deployment) {
-  const a=arr(state);if(a[0]!==d.network)throw new Error('Registry network mismatch');
-  if(taggedAddress(a[3],'template').replace('template_','')!==d.envelopeTemplate)throw new Error('Wrong envelope template');
-  const letterRefs=map(a[1]).map(([id,value])=>({id,component:taggedAddress(value,'component')}));
-  const postboxes:Postbox[]=map(a[2]).map(([id,value])=>{const p=arr(value);if(text(p[0])!==id)throw new Error('Postbox identity mismatch');return {id,nickname:text(p[1]),controller:bytes(p[2]),encryptionKey:text(p[3]),discoverable:p[4]===true};});
-  return {letterRefs,postboxes};
+  const a = arr(state);
+  if (a[0] !== d.network) throw new Error("Registry network mismatch");
+  if (
+    taggedAddress(a[3], "template").replace("template_", "") !==
+    d.envelopeTemplate
+  )
+    throw new Error("Wrong envelope template");
+  const letterRefs = map(a[1]).map(([id, value]) => ({
+    id,
+    component: taggedAddress(value, "component"),
+  }));
+  const postboxes: Postbox[] = map(a[2]).map(([id, value]) => {
+    const p = arr(value);
+    if (text(p[0]) !== id) throw new Error("Postbox identity mismatch");
+    return {
+      id,
+      nickname: text(p[1]),
+      controller: bytes(p[2]),
+      encryptionKey: text(p[3]),
+      discoverable: p[4] === true,
+    };
+  });
+  return { letterRefs, postboxes };
 }
 export class PostOfficeClient {
-  private constructor(readonly deployment:Deployment,readonly provider:IndexerProvider){}
-  static async connect(d:Deployment) {if(!d.registry||!d.template)throw new Error('No deployed post office configured');return new PostOfficeClient(d,await IndexerProvider.connect({url:endpoint(d.indexerUrl,d.network===16),network:d.network as Network}));}
-  async read(after='',limit=100) {
-    if(limit<1||limit>100)throw new Error('Page size 1..100');
-    const r=await this.provider.getSubstate(this.deployment.registry); const v=r.substate as unknown as {Component?:{header:{template_address:string;owner_rule:unknown};body:{state:unknown}}};
-    if(!v.Component || v.Component.header.template_address.replace(/^template_/,'')!==this.deployment.template || v.Component.header.owner_rule!=='None')throw new Error('Untrusted registry template or owner rule');
-    const office=decodeOffice(v.Component.body.state,this.deployment);
-    const refs=office.letterRefs.sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0).filter(r=>r.id>after).slice(0,limit),letters:Envelope[]=[];
-    for(let i=0;i<refs.length;i+=8)letters.push(...await Promise.all(refs.slice(i,i+8).map(ref=>this.readLetter(ref.id,ref.component))));
-    return {letters,postboxes:office.postboxes,total:office.letterRefs.length,nextCursor:refs.length===limit?refs.at(-1)!.id:''};
+  private constructor(
+    readonly deployment: Deployment,
+    readonly provider: IndexerProvider,
+  ) {}
+  static async connect(d: Deployment) {
+    if (!d.registry || !d.template)
+      throw new Error("No deployed post office configured");
+    return new PostOfficeClient(
+      d,
+      await IndexerProvider.connect({
+        url: endpoint(d.indexerUrl, d.network === 16),
+        network: d.network as Network,
+      }),
+    );
   }
-  async readLetter(id:string,component?:string):Promise<Envelope> {
-    if(!component){const r=await this.provider.getSubstate(this.deployment.registry);const c=(r.substate as unknown as {Component:{body:{state:unknown}}}).Component;component=decodeOffice(c.body.state,this.deployment).letterRefs.find(r=>r.id===id)?.component;if(!component)throw new Error('Unknown envelope');}
-    const r=await this.provider.getSubstate(component);const c=(r.substate as unknown as {Component?:{header:{template_address:string;owner_rule:unknown};body:{state:unknown}}}).Component;
-    if(!c||c.header.template_address.replace(/^template_/,'')!==this.deployment.envelopeTemplate||c.header.owner_rule!=='None')throw new Error('Untrusted envelope template or owner rule');
-    return decodeEnvelope(c.body.state,this.deployment,id,component);
+  async read(after = "", limit = 100) {
+    if (limit < 1 || limit > 100) throw new Error("Page size 1..100");
+    const r = await this.provider.getSubstate(this.deployment.registry);
+    const v = r.substate as unknown as {
+      Component?: {
+        header: { template_address: string; owner_rule: unknown };
+        body: { state: unknown };
+      };
+    };
+    if (
+      !v.Component ||
+      v.Component.header.template_address.replace(/^template_/, "") !==
+        this.deployment.template ||
+      v.Component.header.owner_rule !== "None"
+    )
+      throw new Error("Untrusted registry template or owner rule");
+    const office = decodeOffice(v.Component.body.state, this.deployment);
+    const refs = office.letterRefs
+        .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+        .filter((r) => r.id > after)
+        .slice(0, limit),
+      letters: Envelope[] = [];
+    for (let i = 0; i < refs.length; i += 8)
+      letters.push(
+        ...(await Promise.all(
+          refs
+            .slice(i, i + 8)
+            .map((ref) => this.readLetter(ref.id, ref.component)),
+        )),
+      );
+    return {
+      letters,
+      postboxes: office.postboxes,
+      total: office.letterRefs.length,
+      nextCursor: refs.length === limit ? refs.at(-1)!.id : "",
+    };
   }
-  async validateDestination(address:string,component:string) {
-    const parsed=parseOotleAddress(address);
+  async readLetter(id: string, component?: string): Promise<Envelope> {
+    if (!component) {
+      const r = await this.provider.getSubstate(this.deployment.registry);
+      const c = (
+        r.substate as unknown as { Component: { body: { state: unknown } } }
+      ).Component;
+      component = decodeOffice(c.body.state, this.deployment).letterRefs.find(
+        (r) => r.id === id,
+      )?.component;
+      if (!component) throw new Error("Unknown envelope");
+    }
+    const r = await this.provider.getSubstate(component);
+    const c = (
+      r.substate as unknown as {
+        Component?: {
+          header: { template_address: string; owner_rule: unknown };
+          body: { state: unknown };
+        };
+      }
+    ).Component;
+    if (
+      !c ||
+      c.header.template_address.replace(/^template_/, "") !==
+        this.deployment.envelopeTemplate ||
+      c.header.owner_rule !== "None"
+    )
+      throw new Error("Untrusted envelope template or owner rule");
+    return decodeEnvelope(c.body.state, this.deployment, id, component);
+  }
+  async validateDestination(address: string, component: string) {
+    const parsed = parseOotleAddress(address);
     try {
-      if(parsed.network!==this.deployment.network || parsed.memo?.length)throw new Error('Wrong network or unsupported memo address');
-      if(!/^component_[a-f0-9]{64}$/.test(component))throw new Error('Enter the receiving account component as well as its Ootle address');
-      const r=await this.provider.getSubstate(component);const v=r.substate as unknown as {Component?:{header:{owner_rule:{ByPublicKey?:unknown};template_address:string}}};
-      if(!v.Component || bytes(v.Component.header.owner_rule.ByPublicKey)!==hex(parsed.owner_key))throw new Error('Receiving address does not control this account');
+      if (parsed.network !== this.deployment.network || parsed.memo?.length)
+        throw new Error("Wrong network or unsupported memo address");
+      if (!/^component_[a-f0-9]{64}$/.test(component))
+        throw new Error(
+          "Enter the receiving account component as well as its Ootle address",
+        );
+      const r = await this.provider.getSubstate(component);
+      const v = r.substate as unknown as {
+        Component?: {
+          header: {
+            owner_rule: { ByPublicKey?: unknown };
+            template_address: string;
+          };
+        };
+      };
+      if (
+        !v.Component ||
+        bytes(v.Component.header.owner_rule.ByPublicKey) !==
+          hex(parsed.owner_key)
+      )
+        throw new Error("Receiving address does not control this account");
       // Built-in Account identity is additionally checked by the template, before fee payment.
       return component;
-    }finally{parsed.free();}
+    } finally {
+      parsed.free();
+    }
   }
-  async publish(wallet:WalletSession,account:WalletAccount,envelope:Envelope,fee:string,storage:Storage) {
-    if(!writesReady(this.deployment,envelope.mode))throw new Error('Production sending awaits deployment evidence');
-    if(hasUnresolved(storage,this.deployment.network,this.deployment.registry,envelope.id))throw new Error('Reconcile the existing submission first');
-    const tx=publishTransaction(this.deployment,envelope,account.account.component_address,fee,await this.provider.getCurrentEpoch());
-    if(!account.account.owner_key_id)throw new Error('Account has no signing key');
-    const request={transaction:{V1:tx},seal_signer:account.account.owner_key_id,other_signers:[],signatures:[],detect_inputs:true,detect_inputs_use_unversioned:true,lock_ids:[]};
-    const dry=await wallet.submitDryRun(request);
-    if(BigInt(dry.required_fees)>BigInt(fee))throw new Error('Creation fee cap is too low');
-    if(!('Accept' in dry.result.finalize.result))throw new Error('Publication dry run rejected; no transaction was submitted');
-    const attempt=beginSubmission(storage,{network:this.deployment.network,registry:this.deployment.registry,operation:'publish',envelopeId:envelope.id});
-    const r=await wallet.submit(request);completeSubmission(storage,attempt,r.transaction_id);return r.transaction_id;
+  async publish(
+    wallet: WalletSession,
+    account: WalletAccount,
+    envelope: Envelope,
+    fee: string,
+    storage: Storage,
+  ) {
+    if (!writesReady(this.deployment, envelope.mode))
+      throw new Error("Production sending awaits deployment evidence");
+    if (
+      hasUnresolved(
+        storage,
+        this.deployment.network,
+        this.deployment.registry,
+        envelope.id,
+      )
+    )
+      throw new Error("Reconcile the existing submission first");
+    const tx = publishTransaction(
+      this.deployment,
+      envelope,
+      account.account.component_address,
+      fee,
+      await this.provider.getCurrentEpoch(),
+    );
+    if (!account.account.owner_key_id)
+      throw new Error("Account has no signing key");
+    const request = {
+      transaction: { V1: tx },
+      seal_signer: account.account.owner_key_id,
+      // The seal alone is not an authorization signature. Sign as the account too.
+      other_signers: [account.account.owner_key_id],
+      signatures: [],
+      detect_inputs: true,
+      detect_inputs_use_unversioned: true,
+      lock_ids: [],
+    };
+    const dry = await wallet.submitDryRun(request);
+    if (BigInt(dry.required_fees) > BigInt(fee))
+      throw new Error("Creation fee cap is too low");
+    if (!("Accept" in dry.result.finalize.result))
+      throw new Error(
+        "Publication dry run rejected; no transaction was submitted",
+      );
+    const attempt = beginSubmission(storage, {
+      network: this.deployment.network,
+      registry: this.deployment.registry,
+      operation: "publish",
+      envelopeId: envelope.id,
+    });
+    const r = await wallet.submit(request);
+    completeSubmission(storage, attempt, r.transaction_id);
+    return r.transaction_id;
   }
-  async claim(envelope:Envelope,address:string,component:string,claimSecret:Uint8Array|undefined,storage:Storage) {
-    if(!writesReady(this.deployment,envelope.mode))throw new Error('Guest claiming awaits engine and wallet-delivery evidence');
-    if(envelope.mode==='postbox')throw new Error('Addressed claims require the controlling daemon, which remains unverified');
-    if(envelope.claimed||BigInt(envelope.gift)===0n)throw new Error('Gift is unavailable');
-    if(envelope.mode==='link'&&!claimSecret)throw new Error('Private link required');
-    if(hasUnresolved(storage,this.deployment.network,this.deployment.registry,envelope.id))throw new Error('Reconcile the existing submission first');
-    const destination=await this.validateDestination(address,component);
-    if(!envelope.component)throw new Error('Envelope component missing');
-    const latest=await this.readLetter(envelope.id,envelope.component);if(latest.claimed)throw new Error('Gift already collected');
-    const rawTx=claimTransaction(this.deployment,envelope.component,destination,await this.provider.getCurrentEpoch());
-    const vaults=[...await getVaultIdsForAccount(this.provider,envelope.component),...await getVaultIdsForAccount(this.provider,destination)];
-    const ids=[envelope.component,destination,this.deployment.resource,...vaults];
-    rawTx.inputs=Array.from(new Set(ids)).map(substate_id=>({substate_id,version:null,is_write:substate_id!==this.deployment.resource}));
-    const tx=await resolveTransaction(this.provider,rawTx);
-    const signer=claimSecret?SecretKeyWallet.fromSecretKey(claimSecret,this.deployment.network as Network):EphemeralKeySigner.generate(this.deployment.network as Network);
-    const signed=await signTransaction([signer],tx);
-    const attempt=beginSubmission(storage,{network:this.deployment.network,registry:this.deployment.registry,operation:'claim',envelopeId:envelope.id});
-    const r=await this.provider.submitTransaction(sealTransaction(signed));
-    completeSubmission(storage,attempt,r.transaction_id);return r.transaction_id;
+  async claim(
+    envelope: Envelope,
+    address: string,
+    component: string,
+    claimSecret: Uint8Array | undefined,
+    storage: Storage,
+  ) {
+    if (
+      envelope.context.network !== this.deployment.network ||
+      envelope.context.registry !== this.deployment.registry ||
+      envelope.context.template !== this.deployment.template
+    )
+      throw new Error("Envelope belongs to another deployment");
+    if (!writesReady(this.deployment, envelope.mode))
+      throw new Error(
+        "Guest claiming awaits engine and wallet-delivery evidence",
+      );
+    if (envelope.mode === "postbox")
+      throw new Error(
+        "Addressed claims require the controlling daemon, which remains unverified",
+      );
+    if (envelope.claimed || BigInt(envelope.gift) === 0n)
+      throw new Error("Gift is unavailable");
+    if (envelope.mode === "link" && !claimSecret)
+      throw new Error("Private link required");
+    if (
+      hasUnresolved(
+        storage,
+        this.deployment.network,
+        this.deployment.registry,
+        envelope.id,
+      )
+    )
+      throw new Error("Reconcile the existing submission first");
+    const destination = await this.validateDestination(address, component);
+    if (!envelope.component) throw new Error("Envelope component missing");
+    const latest = await this.readLetter(envelope.id, envelope.component);
+    if (latest.claimed) throw new Error("Gift already collected");
+    const rawTx = claimTransaction(
+      this.deployment,
+      envelope.component,
+      destination,
+      await this.provider.getCurrentEpoch(),
+    );
+    const vaults = [
+      ...(await getVaultIdsForAccount(this.provider, envelope.component)),
+      ...(await getVaultIdsForAccount(this.provider, destination)),
+    ];
+    const ids = [
+      envelope.component,
+      destination,
+      this.deployment.resource,
+      ...vaults,
+    ];
+    rawTx.inputs = Array.from(new Set(ids)).map((substate_id) => ({
+      substate_id,
+      version: null,
+      is_write: substate_id !== this.deployment.resource,
+    }));
+    const tx = await resolveTransaction(this.provider, rawTx);
+    const signer = claimSecret
+      ? SecretKeyWallet.fromSecretKey(
+          claimSecret,
+          this.deployment.network as Network,
+        )
+      : EphemeralKeySigner.generate(this.deployment.network as Network);
+    const signed = await signTransaction([signer], tx);
+    const attempt = beginSubmission(storage, {
+      network: this.deployment.network,
+      registry: this.deployment.registry,
+      operation: "claim",
+      envelopeId: envelope.id,
+    });
+    const r = await this.provider.submitTransaction(sealTransaction(signed));
+    completeSubmission(storage, attempt, r.transaction_id);
+    return r.transaction_id;
   }
-  async reconcile(id:string) {const r=await this.provider.getTransactionResult(id);return classifyOutcome(r.result);}
+  async reconcile(id: string) {
+    const r = await this.provider.getTransactionResult(id);
+    return classifyOutcome(r.result);
+  }
 }

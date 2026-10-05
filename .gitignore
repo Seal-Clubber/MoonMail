@@ -11,6 +11,7 @@ test-results/
 .keeper-state.json.tmp
 keeper.config.json
 *.local.json
+*.local.json.tmp
 artifacts/screenshots/
 
 HANDOFF.md

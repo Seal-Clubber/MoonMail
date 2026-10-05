@@ -9,14 +9,14 @@
             "tag": 128,
             "value": {
               "@cbor": "bytes",
-              "hex": "abe91817e833992ad4a07bda6380442d55bf4dd8055e88f9e1120b5edc935ac4"
+              "hex": "f3eb48321641179933d3fd0ed9e5abbe3fc05a593f0412cc2302757ea520ec3e"
             }
           }
         },
         {},
         {
           "@cbor": "bytes",
-          "hex": "728abb9248ab1946f45b1d896d08a6ea982897f0f6718b5c1a0f13a3a351d94a"
+          "hex": "474bc619af89032df79eb391779dd706d637e4d28c7f3c5bfa964fd9254e4eb9"
         }
       ]
     },
@@ -25,14 +25,14 @@
         "default": "AllowAll",
         "method_access": {}
       },
-      "entity_id": "44",
+      "entity_id": "5b",
       "owner_rule": "None",
-      "template_address": "7c30b557f5609df131f4d5d59c3d87935cb9eaf1f97221c7e99ab8a2128284e3"
+      "template_address": "5823ce0deb2d5b30d9c2136bb88b5ac47b9cb74f6aa1628374595b70b2215416"
     }
   },
-  "envelopeTemplate": "728abb9248ab1946f45b1d896d08a6ea982897f0f6718b5c1a0f13a3a351d94a",
+  "envelopeTemplate": "474bc619af89032df79eb391779dd706d637e4d28c7f3c5bfa964fd9254e4eb9",
   "envelopes": {
-    "component_abe91817e833992ad4a07bda6380442d55bf4dd8055e88f9e1120b5edc935ac4": {
+    "component_f3eb48321641179933d3fd0ed9e5abbe3fc05a593f0412cc2302757ea520ec3e": {
       "body": {
         "state": [
           16,
@@ -55,7 +55,7 @@
             "tag": 132,
             "value": {
               "@cbor": "bytes",
-              "hex": "abe6c0022242552fa126e14c57fced77d9686863995beabb61aa963e8d00bb60"
+              "hex": "f34925ca0a125141cabcfe8bb39925953124579409cfce77db8dedd84d2e1d70"
             }
           }
         ]
@@ -65,12 +65,12 @@
           "default": "AllowAll",
           "method_access": {}
         },
-        "entity_id": "ab",
+        "entity_id": "f3",
         "owner_rule": "None",
-        "template_address": "728abb9248ab1946f45b1d896d08a6ea982897f0f6718b5c1a0f13a3a351d94a"
+        "template_address": "474bc619af89032df79eb391779dd706d637e4d28c7f3c5bfa964fd9254e4eb9"
       }
     }
   },
-  "registry": "component_4476c887f36e79bdd5140be796e01f04992c4bcceed1a5531d33bdb246d4886e",
-  "template": "7c30b557f5609df131f4d5d59c3d87935cb9eaf1f97221c7e99ab8a2128284e3"
+  "registry": "component_5bfdddb5fe3a991f4502492ac469f0b872a225e458f9c018bc1fe87b0174126a",
+  "template": "5823ce0deb2d5b30d9c2136bb88b5ac47b9cb74f6aa1628374595b70b2215416"
 }

@@ -1,8 +1,8 @@
 {
-  "network":16,
-  "daemonUrl":"http://localhost:5100/json_rpc",
-  "feeAccount":"",
-  "maxFee":"1000000",
-  "officeTemplate":"",
-  "envelopeTemplate":""
+  "network": 16,
+  "daemonUrl": "http://localhost:5100/json_rpc",
+  "feeAccount": "",
+  "maxFee": "1000000",
+  "officeTemplate": "",
+  "envelopeTemplate": ""
 }
