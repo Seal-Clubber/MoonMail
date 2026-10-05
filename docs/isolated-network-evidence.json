@@ -1,0 +1,31 @@
+{
+  "scope": "Ephemeral isolated localnet; not a public deployment",
+  "network": 16,
+  "ootleRelease": "0.43.0",
+  "registry": "component_3e4e4ce75d93dbbcaff41f63ba5fb6042d9ba54b25ff03a25e9052c7f5ee8497",
+  "officeTemplate": "d789defb23cff9efde8958e80e85aa9e32c265b5452faf90d4e9f1f96e44d236",
+  "envelopeTemplate": "fccb3c18fc3273d8477611a9d6e1bef238f0e45664f18f3bf0814b8fefa6e860",
+  "giftMicroTari": "2000000",
+  "reserveMicroTari": "1000000",
+  "recipientSpendMicroTari": "100000",
+  "results": [
+    {
+      "mode": "public",
+      "envelopeId": "isolated-public-1791243697202",
+      "publish": "b6bdf99ce8d462f7a78f38c74dc76334da6b697e71fe0cbe7d21375861f56fb5",
+      "claim": "a8034d68c685fe7180ff3a659c3767fea1ebc13f2f0ff98c405816eaee9507af",
+      "recipientSpend": "bcce29c764f0ffcdd4fa65541e3200e4a5cc56b47b45ddd210af332e64f5f4a5",
+      "destination": "component_d87b2da37cd65d7365e317a346c9c552afed96523ce161cc8311b400c90d949f",
+      "daemonGiftDelta": "2000000"
+    },
+    {
+      "mode": "link",
+      "envelopeId": "isolated-link-1791243700682",
+      "publish": "619e1e0f74cdfd547d1fdb5d2ebbd809800c31aea1dce0cb8d6a4418fe5238cb",
+      "claim": "160337804055a43207cfd5543e5e8037f9c1d0b2bb7fda743a2d9b63fc826e98",
+      "recipientSpend": "1c0221fd2ffbf853c896a91b17a3b9ec33b8d41f3d8d0a004aab4a410493686e",
+      "destination": "component_d87b2da37cd65d7365e317a346c9c552afed96523ce161cc8311b400c90d949f",
+      "daemonGiftDelta": "2000000"
+    }
+  ]
+}

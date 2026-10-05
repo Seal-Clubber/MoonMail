@@ -5,10 +5,11 @@ import {
   TransactionBuilder,
   Network,
   intLiteral,
-  templateAddressLiteral,
+  bytesLiteral,
 } from "@tari-project/ootle";
 import { endpoint } from "../src/core/config";
 import { money } from "../src/core/transactions";
+import { unhex } from "../src/core/crypto";
 const args = process.argv.slice(2),
   submit = args.includes("--submit"),
   dry = args.includes("--dry-run"),
@@ -144,9 +145,17 @@ try {
       config.currentEpoch + 10,
     )
       .feeTransactionPayFromComponent(config.feeAccount, money(config.maxFee))
+      .withInputs(
+        [config.officeTemplate, config.envelopeTemplate].map((id) => ({
+          substate_id: `template_${id}`,
+          version: null,
+          is_write: false,
+        })),
+      )
       .callFunction(
         { templateAddress: config.officeTemplate, functionName: "new" },
-        [intLiteral(16n), templateAddressLiteral(config.envelopeTemplate)],
+        // Rust TemplateAddress is a raw 32-byte hash; the SDK address literal is tagged.
+        [intLiteral(16n), bytesLiteral(unhex(config.envelopeTemplate))],
       )
       .buildUnsignedTransaction();
     const request = {
@@ -163,7 +172,15 @@ try {
       !("Accept" in simulation.result.finalize.result) ||
       BigInt(simulation.required_fees) > money(config.maxFee)
     )
-      throw new Error("Registry dry run rejected or exceeds fee cap");
+      throw new Error(
+        `Registry dry run rejected or exceeds fee cap: ${JSON.stringify({
+          outcome:
+            "AcceptFeeRejectRest" in simulation.result.finalize.result
+              ? simulation.result.finalize.result.AcceptFeeRejectRest[1]
+              : simulation.result.finalize.result,
+          requiredFees: simulation.required_fees,
+        })}`,
+      );
     await act(
       "registry",
       JSON.stringify([

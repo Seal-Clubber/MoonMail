@@ -1,6 +1,6 @@
 # Deployment
 
-No hosted site or chain deployment has been published. These are reproducible preparation steps; public-network spending, git push and Pages publication require separate authorization.
+Templates and registry were verified on isolated localnet. No hosted site or public-chain deployment has been published. Public-network spending, git push and Pages publication require separate authorization.
 
 ## Isolated local chain
 
@@ -27,7 +27,7 @@ pnpm deploy:local -- deployment-plan.local.json --create-registry --dry-run
 pnpm deploy:local -- deployment-plan.local.json --create-registry --submit
 ```
 
-5. Reconcile the created registry component and check owner rule `None`, both template identities and test network. The tool preserves public uncertain attempts in ignored `.deployment-state.local.json`; an existing attempt blocks repeated submission. Inspect its transaction/account history before changing a journal entry. A timeout does not prove rejection. The tool does not claim to have exercised these live daemon operations during this session.
+5. Reconcile the created registry component and check owner rule `None`, both template identities and test network. The tool preserves public uncertain attempts in ignored `.deployment-state.local.json`; an existing attempt blocks repeated submission. Inspect history before changing a journal entry. A timeout does not prove rejection. Publication and registry creation were successfully exercised on isolated localnet; see the evidence document.
 6. Fill `public/deployment.json` with network, registry, registry template, envelope template, actual indexer endpoint and native test TARI resource. No seeds, API credentials, capabilities or donor configuration belong in this file.
 
 ## Required evidence before enabling spending
@@ -36,7 +36,7 @@ Keep all flags false until the corresponding **deployment-specific** evidence is
 
 The browser directly uses `authenticateWithApiKey`. Current source checks `transactions:create` for arbitrary transaction submission and `templates:create` for template publication. `accounts:read`, `transactions:read` and wallet-info access should be tested with the exact daemon version. An unscoped spending permission is broad spending authority; do not describe it as account-limited. The older [API-key guide](https://ootle.tari.com/guides/agent-api-keys/) uses legacy permission names; use current daemon source and runtime tests. No Admin credential is requested by GhostDrop. API-key minting/revocation remains the wallet owner's interactive task.
 
-The isolated 0.43.0 release probe verified `accounts:read` listing, write denial, rejection of expired/revoked keys, `transactions:create` submission authorization and the actual WalletSession connection/disconnect/token-replacement path. Its indexer was unreachable loopback, so no real network submission or payout was produced. Dry runs can sign with read permission; distinguish them from committing spending. Test another account and deployment-specific funding before enabling writes.
+The isolated 0.43.0 probe verified scope enforcement, expiry/revocation and WalletSession connection/disconnect/token replacement. Real localnet publication and public/link claims committed; a separate recipient daemon discovered and spent both payouts. Dry runs can sign with read permission. Repeat against the intended hosted deployment before enabling writes.
 
 Default daemon OPTIONS responses to the **planned** Pages Origin returned HTTP 200 but no `Access-Control-Allow-Origin` or allowed-header fields. A successful OPTIONS status alone is insufficient. Current daemon source exposes either disabled CORS or permissive development CORS, not a reviewed origin allowlist. Production Pages connectivity therefore remains blocked pending a supported, tested daemon origin policy. A minimal user-controlled daemon change should allow only the chosen HTTPS origin, POST/OPTIONS and Authorization/Content-Type, retaining API-key enforcement. This is a deployment requirement, not a completed extension. Do not enable broad development CORS as the production fix. From the actual Pages origin also test credentials mode, HTTPS-to-loopback transport and browser local-network permissions separately. Do not add a central wallet proxy or disable browser security.
 

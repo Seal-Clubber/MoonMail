@@ -340,12 +340,15 @@ export class PostOfficeClient {
       envelope.component,
       destination,
       this.deployment.resource,
+      `template_${this.deployment.envelopeTemplate}`,
       ...vaults,
     ];
     rawTx.inputs = Array.from(new Set(ids)).map((substate_id) => ({
       substate_id,
       version: null,
-      is_write: substate_id !== this.deployment.resource,
+      is_write:
+        substate_id !== this.deployment.resource &&
+        !substate_id.startsWith("template_"),
     }));
     const tx = await resolveTransaction(this.provider, rawTx);
     const signer = claimSecret

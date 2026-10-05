@@ -2,7 +2,7 @@
 
 Static React/TypeScript + Rust Ootle templates. Full letters/ciphertext and gift rules live on Ootle; no GhostDrop backend. Public visitors and private-link holders use a prepaid claim path without connecting a wallet. Sending uses the official local wallet daemon API-key client.
 
-**Development status:** engine-tested public/link gifts and local encryption, static browser interface, wallet/indexer adapters and deployment tooling. No live network deployment is configured. Production spending is disabled pending daemon, recipient-delivery and HTTPS-origin evidence. Wallet-addressed encryption/recovery is explicitly incomplete. See [evidence](docs/EVIDENCE.md).
+**Development status:** public/link gifts and recipient discovery/spending verified on isolated Ootle localnet; static browser interface, wallet/indexer adapters and deployment tooling. No public deployment is configured. Production spending is disabled pending deployment-specific HTTPS-origin verification. Wallet-addressed encryption/recovery is explicitly incomplete. See [evidence](docs/EVIDENCE.md).
 
 ## Run
 
