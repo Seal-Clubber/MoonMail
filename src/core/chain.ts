@@ -23,7 +23,13 @@ import {
   postboxTransaction,
 } from "./transactions";
 import { mailboxKey } from "./mailbox";
-import { beginSubmission, completeSubmission, hasUnresolved } from "./pending";
+import {
+  beginSubmission,
+  completeSubmission,
+  hasUnresolved,
+  readPending,
+  capsuleIdentity,
+} from "./pending";
 // Strict codec for positional minicbor component state, not an invented RPC.
 function arr(v: unknown): unknown[] {
   if (!Array.isArray(v))
@@ -469,6 +475,47 @@ export class PostOfficeClient {
       throw new Error("Postbox writes await deployment and recovery evidence");
     if (box.controller !== account.account.owner_public_key)
       throw new Error("Choose the controlling account");
+    if (operation !== "edit") {
+      const descriptor = mailboxKey(box.encryptionKey);
+      if (descriptor.recovery !== "native-memo-1")
+        throw new Error(
+          "New postbox keys require standard-wallet recovery memos",
+        );
+      const context = {
+        network: this.deployment.network,
+        registry: this.deployment.registry,
+        template: this.deployment.template,
+        postbox: box.id,
+        controller: box.controller,
+        keyVersion: descriptor.keyVersion,
+      };
+      const identity = capsuleIdentity(context);
+      if (hasUnresolved(storage, context.network, context.registry, identity))
+        throw new Error(
+          "Confirm the recovery transaction before publishing the postbox key",
+        );
+      const confirmed = readPending(storage).some(
+        (p) =>
+          p.operation === "capsule" &&
+          p.state === "confirmed" &&
+          p.network === context.network &&
+          p.registry === context.registry &&
+          p.envelopeId === identity &&
+          p.capsule?.account === account.account.component_address &&
+          p.capsule.context.template === context.template &&
+          p.capsule.context.controller === context.controller &&
+          p.capsule.descriptor.publicKey === descriptor.publicKey,
+      );
+      if (!confirmed)
+        throw new Error(
+          "Resume a confirmed recovery setup before publishing this key",
+        );
+      // Re-read the actual native output; a local journal alone is not key-recovery proof.
+      const secret = await wallet
+        .nativeMailbox()
+        .recover(account.account.component_address, context, descriptor);
+      secret.fill(0);
+    }
     const tx = postboxTransaction(
       this.deployment,
       account.account.component_address,

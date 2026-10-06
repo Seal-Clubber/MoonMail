@@ -1,10 +1,35 @@
+import type { MailboxContext, MailboxKey } from "./types";
+import { mailboxAAD, mailboxKey } from "./mailbox";
+export interface CapsuleRecord {
+  account: string;
+  context: MailboxContext;
+  descriptor: MailboxKey;
+}
 export interface Pending {
   id: string;
   network: number;
   registry: string;
-  operation: "publish" | "claim" | "postbox";
+  operation: "publish" | "claim" | "postbox" | "capsule";
   envelopeId: string;
   state: "submitted" | "confirmed" | "rejected" | "unknown";
+  capsule?: CapsuleRecord;
+}
+export function capsuleIdentity(context: MailboxContext) {
+  return `capsule:${context.postbox}:${context.keyVersion}`;
+}
+function validCapsule(p: Pending) {
+  if (p.operation !== "capsule") return p.capsule === undefined;
+  const c = p.capsule;
+  if (!c || !/^component_[a-f0-9]{64}$/.test(c.account)) return false;
+  mailboxAAD(c.context, "key-capsule", "00".repeat(32), "00".repeat(32));
+  const descriptor = mailboxKey(c.descriptor);
+  return (
+    descriptor.recovery === "native-memo-1" &&
+    descriptor.keyVersion === c.context.keyVersion &&
+    c.context.network === p.network &&
+    c.context.registry === p.registry &&
+    p.envelopeId === capsuleIdentity(c.context)
+  );
 }
 const key = "ghostdrop:pending:v1";
 function strictPending(storage: Pick<Storage, "getItem">): Pending[] {
@@ -19,7 +44,8 @@ function strictPending(storage: Pick<Storage, "getItem">): Pending[] {
           typeof p.envelopeId !== "string" ||
           typeof p.registry !== "string" ||
           !Number.isInteger(p.network) ||
-          !["publish", "claim", "postbox"].includes(p.operation) ||
+          !["publish", "claim", "postbox", "capsule"].includes(p.operation) ||
+          !validCapsule(p) ||
           !["submitted", "confirmed", "rejected", "unknown"].includes(p.state),
       )
     )

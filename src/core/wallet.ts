@@ -7,6 +7,7 @@ import type {
   MailboxPayload,
 } from "./types";
 import { mailboxKey } from "./mailbox";
+import { NativeMailboxAdapter } from "./native-mailbox";
 export type WalletAccount = Awaited<
   ReturnType<WalletDaemonClient["accountsList"]>
 >["accounts"][number];
@@ -91,6 +92,8 @@ export class WalletSession {
     envelopeId: string,
     payload: MailboxPayload,
   ): Promise<Letter> {
+    if (payload.recovery === "native-memo-1")
+      return this.nativeMailbox().open(account, context, envelopeId, payload);
     const letter = await this.postboxCall<Letter>("decrypt", {
       account,
       context,
@@ -100,6 +103,9 @@ export class WalletSession {
     if (typeof letter.subject !== "string" || typeof letter.body !== "string")
       throw new Error("Invalid wallet letter response");
     return letter;
+  }
+  nativeMailbox() {
+    return new NativeMailboxAdapter(this.client, this.accounts, this.network);
   }
   submitDryRun(
     request: Parameters<WalletDaemonClient["submitTransactionDryRun"]>[0],

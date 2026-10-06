@@ -775,9 +775,10 @@ export function App() {
             )}
             {mode === "postbox" && (
               <p className="info">
-                Addressed mail requires a registered postbox and the local
-                GhostDrop wallet extension. Its controlling wallet opens the
-                letter and authorizes gift collection.
+                Addressed mail requires a registered postbox and its controlling
+                Ootle wallet. New postboxes recover keys from the standard
+                wallet's encrypted memos. Hosted wallet connection is still
+                unverified, so this mode remains disabled.
               </p>
             )}
             <form
@@ -1217,9 +1218,12 @@ export function App() {
                       void task(async () => {
                         if (!chain) return;
                         if (p.id.startsWith("attempt:")) {
-                          if (p.operation === "postbox") {
+                          if (
+                            p.operation === "postbox" ||
+                            p.operation === "capsule"
+                          ) {
                             setStatus(
-                              "This postbox submission has no transaction ID. Inspect the controlling wallet's transaction history before resolving it; matching postbox state alone cannot prove which edit committed. Retrying remains blocked.",
+                              "This wallet submission has no transaction ID. Inspect the controlling wallet's transaction history before resolving it; matching postbox state alone cannot identify the submitted transaction. Retrying remains blocked.",
                             );
                             return;
                           }
@@ -1331,19 +1335,20 @@ export function App() {
               spending key can authorize transactions without a popup.
             </p>
             <details>
-              <summary>What is the local wallet extension?</summary>
+              <summary>Does this require an extra wallet program?</summary>
               <p className="fine-print">
-                An experimental patch to the Ootle wallet daemon you run on your
-                computer. It derives public postbox encryption keys and decrypts
-                addressed mail inside the wallet. Your seed and secret postbox
-                keys stay there. It must be built and installed separately.
+                GhostDrop is being built for the standard Ootle wallet daemon.
+                New postboxes use its encrypted payment memos to recover their
+                mail keys. Your financial seed and private view key stay in the
+                wallet. No separate GhostDrop bridge is part of this route.
               </p>
               <p className="fine-print">
                 Public mail and private-link mail open without a wallet. Sending
                 requires a wallet to sign and pay fees. Wallet-controlled
-                postboxes require the extension and account-scoped postbox
-                permissions. The patch also provides an explicit website-origin
-                allowlist for browser access to your local daemon.
+                postboxes also need permission to read that account's decrypted
+                payment memos. The hosted site still needs a supported secure
+                connection to the standard daemon; that connection is not yet
+                verified, so sending and postbox writes remain disabled.
               </p>
             </details>
             <form

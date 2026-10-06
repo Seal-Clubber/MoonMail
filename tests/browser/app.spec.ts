@@ -118,7 +118,7 @@ test("subpath deep link removes capability before network requests and copy mate
   await page.reload();
   await expect(page.getByRole("alert")).toContainText("complete private link");
 });
-test("addressed mail explains its wallet extension and requires a deployment", async ({
+test("addressed mail explains the standard wallet and remains gated", async ({
   page,
 }) => {
   await page.goto("./#/compose");
@@ -127,6 +127,9 @@ test("addressed mail explains its wallet extension and requires a deployment", a
     page.getByText("Addressed mail requires a registered postbox", {
       exact: false,
     }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Hosted wallet connection is still", { exact: false }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Review letter" }),

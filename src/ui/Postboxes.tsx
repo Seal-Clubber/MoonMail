@@ -4,6 +4,7 @@ import type { WalletSession } from "../core/wallet";
 import type { PostOfficeClient } from "../core/chain";
 import { mailboxKey } from "../core/mailbox";
 import { writesReady } from "../core/config";
+import { readPending, savePending, type Pending } from "../core/pending";
 
 export function Postboxes({
   wallet,
@@ -39,7 +40,11 @@ export function Postboxes({
     [nickname, setNickname] = useState(""),
     [discoverable, setDiscoverable] = useState(true),
     [fee, setFee] = useState("100000"),
-    [editing, setEditing] = useState(false);
+    [recoveryFee, setRecoveryFee] = useState("1000000"),
+    [editing, setEditing] = useState(false),
+    [draftId, setDraftId] = useState<string>(() => crypto.randomUUID()),
+    [rotating, setRotating] = useState(false),
+    [prepared, setPrepared] = useState<Pending>();
   const owned = boxes.filter((p) =>
     wallet?.accounts.some((a) => a.account.owner_public_key === p.controller),
   );
@@ -54,33 +59,119 @@ export function Postboxes({
   );
   const enabled =
     !!wallet && !!chain && writesReady(deployment, "postbox") && !busy;
+  const recoverySetups = readPending(localStorage).filter((p) => {
+    const c = p.capsule;
+    if (
+      p.operation !== "capsule" ||
+      !c ||
+      p.network !== deployment.network ||
+      p.registry !== deployment.registry ||
+      c.context.template !== deployment.template ||
+      !wallet?.accounts.some(
+        (a) =>
+          a.account.component_address === c.account &&
+          a.account.owner_public_key === c.context.controller,
+      )
+    )
+      return false;
+    const published = owned.find((b) => b.id === c.context.postbox);
+    return (
+      !published ||
+      mailboxKey(published.encryptionKey).keyVersion < c.context.keyVersion
+    );
+  });
   function choose(id: string) {
     setSelected(id);
     const p = owned.find((p) => p.id === id);
     setNickname(p?.nickname || "");
     setDiscoverable(p?.discoverable ?? true);
     setEditing(false);
+    setRotating(false);
+    setPrepared(undefined);
+    setDraftId(crypto.randomUUID());
+  }
+  function resume(p: Pending) {
+    const c = p.capsule!;
+    const existing = owned.find((b) => b.id === c.context.postbox);
+    choose(existing?.id || "");
+    setController(
+      wallet!.accounts.findIndex(
+        (a) => a.account.component_address === c.account,
+      ),
+    );
+    setDraftId(c.context.postbox);
+    setRotating(!!existing);
+    setPrepared(p);
+    setEditing(true);
+  }
+  async function confirmRecovery() {
+    if (!chain || !prepared || prepared.id.startsWith("attempt:"))
+      throw new Error(
+        "Inspect wallet history to resolve this recovery attempt; do not resubmit",
+      );
+    const result = await chain.reconcile(prepared.id);
+    const state =
+      !result || result.outcome === "FeeIntentCommit"
+        ? "unknown"
+        : result.outcome === "Commit"
+          ? "confirmed"
+          : "rejected";
+    const next: Pending = { ...prepared, state };
+    savePending(localStorage, next);
+    setPrepared(next);
+    onStatus(
+      `Recovery transaction: ${state}. Publication requires a confirmed, readable memo.`,
+    );
   }
   async function save(operation: "create" | "edit" | "rotate") {
     if (!wallet || !chain || !account)
       throw new Error("Connect the controlling wallet");
-    const id = box?.id || crypto.randomUUID();
+    const id = box?.id || draftId;
     let encryptionKey = box?.encryptionKey || "";
     if (operation !== "edit") {
       const keyVersion =
         operation === "rotate" ? mailboxKey(encryptionKey).keyVersion + 1 : 1;
-      const key = await wallet.postboxPublicKey(
-        account.account.component_address,
-        {
-          network: deployment.network,
-          registry: deployment.registry,
-          template: deployment.template,
-          postbox: id,
-          controller: account.account.owner_public_key,
-          keyVersion,
-        },
-      );
-      encryptionKey = JSON.stringify(key);
+      const context = {
+        network: deployment.network,
+        registry: deployment.registry,
+        template: deployment.template,
+        postbox: id,
+        controller: account.account.owner_public_key,
+        keyVersion,
+      };
+      if (!prepared) {
+        const result = await wallet
+          .nativeMailbox()
+          .store(
+            account.account.component_address,
+            context,
+            recoveryFee,
+            localStorage,
+          );
+        setPrepared(
+          readPending(localStorage).find((p) => p.id === result.transactionId),
+        );
+        onStatus(
+          `Recovery memo submitted ${result.transactionId}. Confirm it before publishing the key.`,
+        );
+        return;
+      }
+      const c = prepared.capsule;
+      if (
+        prepared.state !== "confirmed" ||
+        !c ||
+        c.account !== account.account.component_address ||
+        c.context.postbox !== id ||
+        c.context.keyVersion !== keyVersion ||
+        c.context.controller !== context.controller ||
+        c.context.network !== context.network ||
+        c.context.registry !== context.registry ||
+        c.context.template !== context.template
+      )
+        throw new Error(
+          "Confirm and resume the recovery setup for this postbox and account",
+        );
+      encryptionKey = JSON.stringify(c.descriptor);
     }
     const tx = await chain.savePostbox(
       wallet,
@@ -100,6 +191,8 @@ export function Postboxes({
       `Postbox ${operation} submitted ${tx}. Reconcile it in Network & verification, then refresh the inbox.`,
     );
     setEditing(false);
+    setPrepared(undefined);
+    setRotating(false);
   }
   return (
     <section className="page-panel">
@@ -151,11 +244,28 @@ export function Postboxes({
               </button>
             )}
           </div>
+          {recoverySetups.length > 0 && (
+            <div>
+              <h2>Resume recovery setup</h2>
+              <p className="fine-print">
+                These records contain public setup details only. Keep uncertain
+                attempts until wallet history is reconciled.
+              </p>
+              {recoverySetups.map((p) => (
+                <button key={p.id} disabled={busy} onClick={() => resume(p)}>
+                  {p.capsule!.context.postbox} · key{" "}
+                  {p.capsule!.context.keyVersion} · {p.state}
+                </button>
+              ))}
+            </div>
+          )}
           {editing && (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                void task(() => save(box ? "edit" : "create"));
+                void task(() =>
+                  save(rotating ? "rotate" : box ? "edit" : "create"),
+                );
               }}
             >
               {!box && (
@@ -163,7 +273,7 @@ export function Postboxes({
                   Controlling account
                   <select
                     value={controller}
-                    disabled={busy}
+                    disabled={busy || !!prepared}
                     onChange={(e) => setController(Number(e.target.value))}
                   >
                     {wallet.accounts.map((a, i) => (
@@ -184,6 +294,42 @@ export function Postboxes({
                   required
                 />
               </label>
+              {(!box || rotating) && (
+                <>
+                  <label>
+                    Recovery transaction-fee cap · µTARI
+                    <input
+                      value={recoveryFee}
+                      disabled={busy || !!prepared}
+                      inputMode="numeric"
+                      onChange={(e) => setRecoveryFee(e.target.value)}
+                    />
+                  </label>
+                  <p className="fine-print">
+                    Setup first stores an encrypted memo in your standard wallet
+                    and permanently locks 1 µTARI. Your account pays up to this
+                    fee cap, then a separate publication fee below. Review both
+                    transactions separately. Never clear an uncertain setup to
+                    retry.
+                  </p>
+                  {prepared && (
+                    <p className="info">
+                      Recovery setup {prepared.state} · key{" "}
+                      {prepared.capsule?.context.keyVersion}
+                      <code>{prepared.id}</code>
+                      <button
+                        type="button"
+                        disabled={
+                          busy || !chain || prepared.id.startsWith("attempt:")
+                        }
+                        onClick={() => void task(confirmRecovery)}
+                      >
+                        Check recovery transaction
+                      </button>
+                    </p>
+                  )}
+                </>
+              )}
               <label className="checkbox">
                 <input
                   type="checkbox"
@@ -206,14 +352,28 @@ export function Postboxes({
                 Your controlling account pays this fee. Review the nickname,
                 listing choice and cap before submitting.
               </p>
-              <button className="primary" disabled={!enabled}>
-                {box ? "Save postbox changes" : "Create postbox"}
+              <button
+                className="primary"
+                disabled={
+                  !enabled || (!!prepared && prepared.state !== "confirmed")
+                }
+              >
+                {box && !rotating
+                  ? "Save postbox changes"
+                  : !prepared
+                    ? "Store recovery memo"
+                    : rotating
+                      ? "Publish rotated key"
+                      : "Publish postbox"}
               </button>
-              {box && (
+              {box && !rotating && (
                 <button
                   type="button"
                   disabled={!enabled}
-                  onClick={() => void task(() => save("rotate"))}
+                  onClick={() => {
+                    setPrepared(undefined);
+                    setRotating(true);
+                  }}
                 >
                   Rotate encryption key
                 </button>
@@ -230,7 +390,9 @@ export function Postboxes({
               </p>
               <p className="fine-print">
                 Rotation affects new mail. Historical key versions remain
-                recoverable from the same wallet seed. Rotation changes only the
+                recoverable through their original recovery route. New keys use
+                encrypted standard-wallet memos; older extension keys still
+                require their original adapter. Rotation changes only the
                 encryption key; save nickname and listing changes separately.
               </p>
             </article>
@@ -267,8 +429,9 @@ export function Postboxes({
       {!writesReady(deployment, "postbox") && (
         <p className="info">
           Postbox writes await verified deployment, wallet transport and key
-          recovery. Opening existing mail requires the local GhostDrop wallet
-          extension and account-scoped decrypt permission.
+          recovery. New postboxes use the standard wallet's encrypted payment
+          memos, with account-scoped memo-read permission. The hosted connection
+          is still unverified; no extra GhostDrop bridge is part of this route.
         </p>
       )}
     </section>

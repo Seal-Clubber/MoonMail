@@ -25,6 +25,7 @@ export interface MailboxKey {
   version: "gd-postbox-1";
   keyVersion: number;
   publicKey: string;
+  recovery?: "native-memo-1";
 }
 export interface MailboxPayload {
   version: "gd-postbox-1";
@@ -33,6 +34,7 @@ export interface MailboxPayload {
   ephemeralPublicKey: string;
   iv: string;
   ciphertext: string;
+  recovery?: "native-memo-1";
 }
 export interface Envelope {
   component?: string;

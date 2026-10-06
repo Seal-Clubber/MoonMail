@@ -40,7 +40,8 @@ export function mailboxKey(value: string | unknown): MailboxKey {
     key.keyVersion < 1 ||
     key.keyVersion > 1_000_000 ||
     !/^[a-f0-9]{64}$/.test(key.publicKey) ||
-    /^0+$/.test(key.publicKey)
+    /^0+$/.test(key.publicKey) ||
+    (key.recovery !== undefined && key.recovery !== "native-memo-1")
   ) {
     throw new Error("Unsupported postbox encryption key");
   }
@@ -48,6 +49,7 @@ export function mailboxKey(value: string | unknown): MailboxKey {
     version: "gd-postbox-1",
     keyVersion: key.keyVersion,
     publicKey: key.publicKey,
+    ...(key.recovery ? { recovery: key.recovery } : {}),
   };
 }
 export function mailboxAAD(
@@ -134,6 +136,7 @@ export async function sealMailbox(
       ephemeralPublicKey,
       iv: base64url(iv),
       ciphertext: base64url(new Uint8Array(ciphertext)),
+      ...(key.recovery ? { recovery: key.recovery } : {}),
     };
     assertEnvelopeSize(payload);
     return payload;
