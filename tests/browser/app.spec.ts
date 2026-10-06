@@ -1,4 +1,12 @@
 import { test, expect } from "@playwright/test";
+import { emptyDeployment } from "../../src/core/config";
+
+test.beforeEach(async ({ page }) => {
+  await page.route("**/deployment.json", (route) =>
+    route.fulfill({ json: emptyDeployment }),
+  );
+});
+
 test("honest guest hall and reduced-motion visual preview", async ({
   page,
 }) => {

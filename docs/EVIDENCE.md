@@ -2,10 +2,18 @@
 
 Evidence applies to the stated build and isolated network. GitHub Pages HTTPS hosting is verified separately from wallet connectivity and public-chain deployment.
 
+## Real Esmeralda deployment
+
+On 2026-10-06, the saved L1 burn was claimed on Ootle and its funds were revealed in the same disposable account for deployment fees. Both templates, the ownerless registry and three text-only public letters were accepted on network 38. The application's `PostOfficeClient` then read their complete subjects/bodies from the official public indexer and checked the published template identities and owner rules. Confirmed identities, accepted transaction IDs, actual paid fees, artifact hashes and public letter contents are recorded in [esmeralda-deployment-evidence.json](esmeralda-deployment-evidence.json). Funding receipts are in [esmeralda-funding-evidence.json](esmeralda-funding-evidence.json).
+
+The default configuration now points to this deployment. It advertises no funded gifts and leaves all spending evidence flags false. This verifies public chain storage and reading, not real-testnet guest payouts or authenticated hosted-wallet connectivity. Normal browser regressions use an explicit empty-deployment fixture so public chain availability and new letters cannot change their expected preview behavior; live public-reading checks are recorded separately.
+
+Desktop and mobile browsers read all three real letters with matching complete contents, no wallet connection and no page errors. The Network page shows the confirmed registry. A separate probe from the actual Pages HTTPS origin passes the same checks while overriding only its deployment configuration. No RPC responses were mocked or wallet credentials sent. The hosted site's default configuration remains unchanged until this checkpoint is pushed and deployed.
+
 | Requirement               | Verified                                                                                                                            | Remaining                                                     |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
 | Pages architecture        | Live enforced-HTTPS Pages site; all 10 hosted Chromium checks passed for assets, WASM, hash links, refresh and mobile               | Updated builds repeat hosted checks                           |
-| Ootle storage/rules       | Engine and isolated consensus tests; complete letters/ciphertext in separate ownerless envelopes                                    | Intended public deployment                                    |
+| Ootle storage/rules       | Engine and isolated consensus tests; real Esmeralda templates/registry and complete public letters in ownerless envelopes           | Public-chain private/gift verification                        |
 | Link encryption           | HKDF/AES-GCM and official Tari keys; context/tamper tests; actual stored ciphertext decrypted/claimed                               | Independent cryptographic review                              |
 | Public/link guest payouts | Actual indexer submission; separate recipient daemon discovers exact gift and spends it                                             | Intended hosted deployment                                    |
 | Fees/authority            | Engine checks wrong keys, replay, one payout, destination/network, inadequate fees and fee/main checkpoints                         | Distributed races and production fee calibration              |
@@ -20,7 +28,7 @@ Evidence applies to the stated build and isolated network. GitHub Pages HTTPS ho
 
 GitHub Verify run [37390878555](https://github.com/Seal-Clubber/GhostDrop/actions/runs/37390878555) and Pages run [37391283346](https://github.com/Seal-Clubber/GhostDrop/actions/runs/37391283346) succeeded for `72b853c7dc583c438c9bd917271aa674697c96ea`. The repository's GitHub API confirms Pages uses workflow deployment and enforces HTTPS. Test the existing hosted build with `GHOSTDROP_TEST_BASE_URL=https://seal-clubber.github.io/GhostDrop/ pnpm test:browser` (use the appropriate environment-variable syntax for your shell).
 
-- `pnpm test`: **18 passed**.
+- `pnpm test`: **22 passed**, including native-memo capsule recovery and tamper/context checks.
 - `pnpm build`: strict TypeScript/static Vite build passed, including `GHOSTDROP_BASE=/GhostDrop/`.
 - `pnpm test:browser`: **10 passed**, desktop 1440×1100/mobile 390×844. Scene screenshots visually inspected.
 - Six native Envelope validation cases passed; both release WASM artifacts built.
@@ -49,7 +57,7 @@ Live probes fixed account authorization in `other_signers` separately from seali
 - Dry-run signing can pass with read scope; do not call this a no-signing permission.
 - Stock-daemon preflight lacks CORS allow-origin/header fields. The pinned extension passes actual Pages-origin credential-free `wallet.get_info` transport with a normal Chromium Local Network Access permission grant (HTTP 200, network 16, daemon 0.43.0). Authenticated account access remains unverified; no API key was sent. Security settings were not disabled.
 
-Public configuration prefills Esmeralda network 38, its official HTTPS indexer and native test TARI resource. Registry/template identities remain unset and all spending evidence flags stay false. Local tests do not override production UI gates. Capabilities, test private keys, databases and session research stay outside the repo. Keeper execution is limited to the bounded disposable-donor continuation described below; no ongoing worker remains.
+Public configuration prefills Esmeralda network 38, its official HTTPS indexer, native test TARI resource and the confirmed registry/template identities recorded above. All spending evidence flags stay false. Local tests do not override production UI gates. Capabilities, test private keys, databases and session research stay outside the repo. Keeper execution is limited to the bounded disposable-donor continuation described below; no ongoing worker remains.
 
 ## Wallet extension and addressed-chain continuation
 
@@ -61,7 +69,7 @@ Sixteen actual daemon RPC checks pass for JS/WebCrypto + official WASM encryptio
 
 Thirteen isolated-chain checks pass: multiple IDs/duplicate nicknames, controller edits, stored addressed ciphertext decryption, frozen authority, wrong controller rejection, rotation preserving ID/controller, historical decryption from a second client, exact 2,000,000 microTARI payout, duplicate rejection, recipient spending, and fresh public/link guest payouts. See [public identities and committed transaction IDs](postbox-network-evidence.json). These fresh identities supersede the older ephemeral deployment for continuation tests; they are not public configuration.
 
-Six browser integration checks pass on desktop/mobile against real wallet/indexer RPC. Only deployment.json is a local test fixture: stored historical mail decrypts, desktop postbox creation commits and reconciles, and disconnect clears sessions. No RPC is mocked. Public contract identities remain unset and spending flags stay false.
+Six browser integration checks pass on desktop/mobile against real wallet/indexer RPC. Only deployment.json is a local test fixture: stored historical mail decrypts, desktop postbox creation commits and reconciles, and disconnect clears sessions. No RPC is mocked. These isolated-chain checks leave public spending flags false; the later public contract deployment is recorded above.
 
 Four further browser checks pass through actual local UI sending and guest receiving: public and link letters publish/confirm, an independent browser reads/decrypts them without a wallet connection, and each prepaid claim confirms. This run uses the supported reduced-motion mode and actual hall pagination.
 

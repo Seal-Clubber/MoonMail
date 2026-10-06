@@ -1,0 +1,150 @@
+{
+  "network": 38,
+  "indexerUrl": "https://ootle-indexer-a.tari.com/",
+  "registry": "component_2afdeb8728a3ffbf04da19218964243c63cd63e9d77ca5b7877e4dd29873b4b7",
+  "postOfficeTemplate": "91d80c4d98d9b53cf3327952980a4b797d2896701fbe11c2f1d951c2cf922d62",
+  "envelopeTemplate": "51d3ff2985c2fea21b9517606beaeee2fb5f823b0bbd89478727a75ca7484f49",
+  "templateArtifactSha256": {
+    "Envelope": "f0f20e3c855597da17ba505842ee72cfe4392a755834f68b5f757866b504494c",
+    "PostOffice": "0c2b0821900fc391785a798391ad451703693b406de741316cdd20c48cac243c"
+  },
+  "fundingClaim": {
+    "id": "3cc7d318751d64ab881c5e25bf75a30647c91b2ae7b20202a9ab0431836e80f5",
+    "accepted": true
+  },
+  "transactions": {
+    "reveal": {
+      "id": "b1435eb65ae20c52a794155a3aa8d8d69dde1d13963f20466311570958d460de",
+      "accepted": true,
+      "paidFeeMicroTari": "100000"
+    },
+    "Envelope": {
+      "id": "15342f6bd016410de2586c79de7b54b0635585741cfc183de20ff905b69fe279",
+      "accepted": true,
+      "paidFeeMicroTari": "1211730"
+    },
+    "PostOffice": {
+      "id": "1ddd159c42ce6595080739411ce26a8226842960604874fd14eb89498f39979b",
+      "accepted": true,
+      "paidFeeMicroTari": "959077"
+    },
+    "registry": {
+      "id": "0dddc101de327e78c4054366ee91a59c3b033d07bd2752b63a12a31754287e8a",
+      "accepted": true,
+      "paidFeeMicroTari": "1750"
+    },
+    "esmeralda-welcome-20261006": {
+      "id": "e55549dc684da0b91e72628ede55cb6f2fca3a03169430d8fd25eee3c9d6a121",
+      "accepted": true,
+      "paidFeeMicroTari": "3822"
+    },
+    "esmeralda-storage-20261006": {
+      "id": "6b8ae5881da56d95cad47542734c914b730cd0dbe719daad41700ff582c5bbee",
+      "accepted": true,
+      "paidFeeMicroTari": "3980"
+    },
+    "esmeralda-wallet-20261006": {
+      "id": "408cb282ba689aa81772782673bd2f67c11381e86dca351b0fc760d118dc7a6c",
+      "accepted": true,
+      "paidFeeMicroTari": "4367"
+    }
+  },
+  "registryOwnerRule": "None",
+  "fullPublicLettersReadFromRealIndexer": true,
+  "letters": [
+    {
+      "id": "esmeralda-storage-20261006",
+      "component": "component_01e002ff7a974de727e825a7139ff958148ecea0f0af4b7bd910d7993ea4b5d9",
+      "mode": "public",
+      "subject": "Mail that lives on the ledger",
+      "body": "GhostDrop stores the complete letter in an Ootle envelope component, and this post office keeps its address. The website is a static GitHub Pages application.",
+      "gift": "0",
+      "reserve": "0"
+    },
+    {
+      "id": "esmeralda-wallet-20261006",
+      "component": "component_86603a2728e3b4b1ac4a94a1a1187cabe0d1b7485cdc3804845a9180d75fa25a",
+      "mode": "public",
+      "subject": "About wallet-controlled postboxes",
+      "body": "Public letters are readable by anyone. Private-link letters open with their secret link. A standard-wallet encrypted memo can recover a postbox key, as proven on an isolated chain. The current website postbox adapter still uses the experimental wallet extension while standard-wallet browser connection is being completed. These demonstration letters contain no gift.",
+      "gift": "0",
+      "reserve": "0"
+    },
+    {
+      "id": "esmeralda-welcome-20261006",
+      "component": "component_dee54f5f3ba9572f918d5166f3d5c244b990ff81dcfcc6b0b503b05cf1f6eda9",
+      "mode": "public",
+      "subject": "A ghost has arrived on Esmeralda",
+      "body": "Welcome to GhostDrop. This letter is stored on the real Ootle Esmeralda testnet. Reading it requires no wallet.",
+      "gift": "0",
+      "reserve": "0"
+    }
+  ],
+  "deploymentGiftProof": false,
+  "hostedAuthenticatedWalletProof": false,
+  "hostedDefaultConfigUpdated": false,
+  "localBrowserPublicRead": {
+    "confirmed": true,
+    "hostedConfigInterceptedForReadOnlyProbe": false,
+    "checks": [
+      {
+        "viewport": "desktop",
+        "subjectsAndBodiesMatch": true,
+        "readThreeRealChainLetters": true,
+        "previewNotAdvertised": true,
+        "noGiftClaimAdvertised": true,
+        "noWalletCredential": true,
+        "noPageErrors": true
+      },
+      {
+        "viewport": "desktop",
+        "confirmedRegistryPrefilled": true
+      },
+      {
+        "viewport": "mobile",
+        "subjectsAndBodiesMatch": true,
+        "readThreeRealChainLetters": true,
+        "previewNotAdvertised": true,
+        "noGiftClaimAdvertised": true,
+        "noWalletCredential": true,
+        "noPageErrors": true
+      },
+      {
+        "viewport": "mobile",
+        "confirmedRegistryPrefilled": true
+      }
+    ]
+  },
+  "hostedOriginPublicReadProbe": {
+    "confirmed": true,
+    "hostedConfigInterceptedForReadOnlyProbe": true,
+    "checks": [
+      {
+        "viewport": "desktop",
+        "subjectsAndBodiesMatch": true,
+        "readThreeRealChainLetters": true,
+        "previewNotAdvertised": true,
+        "noGiftClaimAdvertised": true,
+        "noWalletCredential": true,
+        "noPageErrors": true
+      },
+      {
+        "viewport": "desktop",
+        "confirmedRegistryPrefilled": true
+      },
+      {
+        "viewport": "mobile",
+        "subjectsAndBodiesMatch": true,
+        "readThreeRealChainLetters": true,
+        "previewNotAdvertised": true,
+        "noGiftClaimAdvertised": true,
+        "noWalletCredential": true,
+        "noPageErrors": true
+      },
+      {
+        "viewport": "mobile",
+        "confirmedRegistryPrefilled": true
+      }
+    ]
+  }
+}

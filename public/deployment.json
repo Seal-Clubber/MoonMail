@@ -1,8 +1,8 @@
 {
   "network": 38,
-  "registry": "",
-  "template": "",
-  "envelopeTemplate": "",
+  "registry": "component_2afdeb8728a3ffbf04da19218964243c63cd63e9d77ca5b7877e4dd29873b4b7",
+  "template": "91d80c4d98d9b53cf3327952980a4b797d2896701fbe11c2f1d951c2cf922d62",
+  "envelopeTemplate": "51d3ff2985c2fea21b9517606beaeee2fb5f823b0bbd89478727a75ca7484f49",
   "indexerUrl": "https://ootle-indexer-a.tari.com/",
   "resource": "resource_0101010101010101010101010101010101010101010101010101010101010101",
   "evidence": {

@@ -1,6 +1,6 @@
 # Deployment
 
-Templates and registry were verified on isolated localnet. The static interface is live on GitHub Pages with HTTPS enforced. An authorized Esmeralda deployment is prepared, but its empty faucet prevents funding the fresh deployment wallet. No public GhostDrop templates or registry have been published. See [the testnet deployment status](ESMERALDA.md).
+Templates and registry are deployed on real Esmeralda, with three public demonstration letters verified through the application's reader. Their confirmed identities are in `public/deployment.json`; all spending evidence flags remain false. The static interface is live on GitHub Pages with HTTPS enforced; the new configuration reaches that site after the reviewed `main` checkpoint is pushed. See [the testnet deployment status](ESMERALDA.md).
 
 ## Public network presets
 
@@ -8,7 +8,7 @@ The website defaults to Esmeralda (network byte 38), `https://ootle-indexer-a.ta
 
 Open `#/network` directly. **Check indexer connection** checks the selected network, service health and resource with credential-free GET requests; it sends no transaction and enables no evidence flag. Localnet prefills the official SDK's `http://localhost:12500/`; Igor requires an operator-provided endpoint. Switching networks clears GhostDrop contract identities, evidence and wallet credentials. Custom compatible HTTPS indexers remain editable.
 
-Only public infrastructure is prefilled. A public indexer does not deploy GhostDrop's registry or templates. The local evidence addresses are from a separate chain and must never be inserted into the public preset. Keep those identities unset and write flags false until an authorized public deployment is confirmed.
+The default configuration includes confirmed Esmeralda registry/template identities from the authorized public deployment. Localnet evidence addresses belong to a separate chain and must never be inserted into the public preset. Contract publication alone does not verify gifts, wallet scope enforcement, recovery or hosted wallet transport; keep the corresponding write flags false until each deployment-specific check passes.
 
 ## Isolated local chain
 
@@ -40,7 +40,7 @@ pnpm deploy:local -- deployment-plan.local.json --create-registry --submit
 
 ## Required evidence before enabling spending
 
-Keep all flags false until the corresponding **deployment-specific** evidence is recorded. Engine tests alone do not prove network, transport, indexer state/input resolution or wallet delivery. Set `engineClaims` only for the identical deployed template artifacts after contract/SDK bridge verification; `guestPayout` after independent recipient discovery and spend; `daemonScopes` after actual API-key scope/expiry tests; `httpsWallet` after testing the actual hosted HTTPS origin. `mailboxRecovery` additionally requires a wallet extension, historical keys, token replacement and recovery in a second client. Addressed actions also have explicit code guards, so toggling its flag alone does not enable a nonexistent encryption implementation.
+Keep all flags false until the corresponding **deployment-specific** evidence is recorded. Engine tests alone do not prove network, transport, indexer state/input resolution or wallet delivery. Set `engineClaims` only for the identical deployed template artifacts after contract/SDK bridge verification; `guestPayout` after independent recipient discovery and spend; `daemonScopes` after actual API-key scope/expiry tests; `httpsWallet` after testing authenticated wallet access from the actual hosted HTTPS origin. `mailboxRecovery` additionally requires the selected adapter's historical keys, token replacement and recovery in a second client. The current adapter uses the wallet extension; the standard-wallet native-memo recovery route is proven on an isolated chain but not yet integrated. Addressed actions also have explicit code guards, so toggling its flag alone does not enable a nonexistent encryption implementation.
 
 The browser directly uses `authenticateWithApiKey`. Current source checks `transactions:create` for arbitrary transaction submission and `templates:create` for template publication. `accounts:read`, `transactions:read` and wallet-info access should be tested with the exact daemon version. An unscoped spending permission is broad spending authority; do not describe it as account-limited. The older [API-key guide](https://ootle.tari.com/guides/agent-api-keys/) uses legacy permission names; use current daemon source and runtime tests. No Admin credential is requested by GhostDrop. API-key minting/revocation remains the wallet owner's interactive task.
 

@@ -20,7 +20,11 @@
   "minedInL1Epoch": 11910,
   "ootleDaemonParsedProof": true,
   "minimumL2ClaimEpoch": 11911,
-  "lastObservedL2Epoch": 11909,
-  "l2ClaimConfirmed": false,
-  "publicTemplatesPublished": false
+  "lastObservedL2Epoch": 11926,
+  "l2ClaimConfirmed": true,
+  "publicTemplatesPublished": true,
+  "l2ClaimTransactionId": "3cc7d318751d64ab881c5e25bf75a30647c91b2ae7b20202a9ab0431836e80f5",
+  "claimedAmountAfterFeeMicroTari": 29986762,
+  "revealedFundingTransactionId": "b1435eb65ae20c52a794155a3aa8d8d69dde1d13963f20466311570958d460de",
+  "revealedDeploymentAmountMicroTari": 29000000
 }
