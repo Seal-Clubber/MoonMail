@@ -2,6 +2,24 @@
 
 Experimental patch for official Ootle wallet daemon **v0.43.0**, source commit `392d805579db35fcc8e8bc1aba84adc1fffe0c22`. It adds GhostDrop postbox encryption and an opt-in exact-origin policy. It runs on the wallet owner's machine. GhostDrop still needs no application backend.
 
+## What “Local wallet extension” means
+
+This directory contains source changes to the Ootle **wallet daemon**, the local program that holds wallet keys and signs transactions. Build and run the patched daemon separately using the instructions below. It is not installed by visiting GhostDrop, and it is not a Chrome/Firefox extension. The static website connects directly to that daemon's loopback JSON-RPC interface using a temporary API key issued in the local wallet UI.
+
+The patch adds two operations: derive a postbox's public encryption key, and decrypt a stored addressed letter inside the wallet. Derivation binds the wallet seed to the network, GhostDrop registry/template, postbox, controller and key version. The website receives only the public key or decrypted subject/body; the seed and secret postbox key stay in the daemon. Keeping the wallet's recovery seed allows older key versions to be derived again; a full restored-daemon recovery run is still unverified.
+
+| Action                                  | Wallet connection                             | Postbox encryption extension                    |
+| --------------------------------------- | --------------------------------------------- | ----------------------------------------------- |
+| Read public mail                        | No                                            | No                                              |
+| Open private-link mail                  | No; the secret link decrypts it locally       | No                                              |
+| Receive a public/private-link gift      | Optional; a valid receiving account is needed | No postbox operations                           |
+| Send mail or fund a gift                | Yes, for signing and paying fees              | Only postbox-specific key operations require it |
+| Create/open a wallet-controlled postbox | Yes, using the controlling wallet             | Yes                                             |
+
+The patch also enables an explicit website-origin allowlist for browser access to the local wallet. Hosted sending still needs compatible browser-to-wallet transport even when postbox encryption is unused. A spending API key grants the daemon's existing broad transaction authority; postbox key/decrypt permissions are separately scoped to a controlling account. Disconnecting clears GhostDrop's in-memory key, while revoking the key in the wallet UI invalidates it at the daemon.
+
+This is an experimental GhostDrop integration, not an independently audited or standard Ootle wallet feature. No existing wallet installation or personal seed is changed automatically.
+
 **Verified locally:** six native tests, 16 live RPC checks, owner WebAuthn registration/scoped key issuance/revocation, and complete isolated-chain addressed publication/decryption/claim/spending pass. Desktop/mobile browsers decrypt real stored mail, and the desktop interface creates/reconciles a real postbox. A fresh pinned checkout exactly reproduces all 14 patched files. Authenticated Pages-to-loopback transport remains unverified. See [evidence](../docs/EVIDENCE.md); default deployment gates remain closed.
 
 ## Build in isolation

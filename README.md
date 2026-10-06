@@ -2,7 +2,7 @@
 
 Static React/TypeScript + Rust Ootle templates. Full letters/ciphertext and gift rules live on Ootle; no GhostDrop backend. Public visitors and private-link holders use a prepaid claim path without connecting a wallet. Sending uses the official local wallet daemon API-key client.
 
-**Development status:** all three mail modes work on an isolated Ootle localnet, including addressed encryption, rotation, historical decryption and recipient discovery/spending. Postboxes require the [local wallet extension](wallet-extension/README.md). No public chain deployment is configured; spending stays disabled until deployment-specific evidence is complete. Authenticated GitHub Pages-to-wallet transport still needs verification. See [evidence](docs/EVIDENCE.md).
+**Development status:** all three mail modes work on an isolated Ootle localnet, including addressed encryption, rotation, historical decryption and recipient discovery/spending. Postboxes require the [local wallet extension](wallet-extension/README.md#what-local-wallet-extension-means). The [Esmeralda deployment](docs/ESMERALDA.md) is prepared but blocked by an empty testnet faucet; no public GhostDrop registry or templates are configured. Spending stays disabled until deployment-specific evidence is complete. Authenticated GitHub Pages-to-wallet transport still needs verification. See [evidence](docs/EVIDENCE.md).
 
 The HTTPS static interface is live at [GhostDrop on GitHub Pages](https://seal-clubber.github.io/GhostDrop/). All 10 browser checks passed against the hosted site. This verifies hosting and browser crypto; the public configuration still advertises no funded gifts.
 
@@ -40,6 +40,7 @@ The final command requires Node and installed JS dependencies on the same host. 
 ## Deploy and demonstrate
 
 - [Deployment and GitHub Pages HTTPS](docs/DEPLOYMENT.md)
+- [Esmeralda deployment and funding status](docs/ESMERALDA.md)
 - [Architecture, cryptography and trust boundaries](docs/ARCHITECTURE.md)
 - [Feature-to-evidence checklist](docs/EVIDENCE.md)
 - [Demo walkthrough](docs/DEMO.md)

@@ -1286,6 +1286,22 @@ export function App() {
               Use a scoped, short-lived API key created in your wallet daemon. A
               spending key can authorize transactions without a popup.
             </p>
+            <details>
+              <summary>What is the local wallet extension?</summary>
+              <p className="fine-print">
+                An experimental patch to the Ootle wallet daemon you run on your
+                computer. It derives public postbox encryption keys and decrypts
+                addressed mail inside the wallet. Your seed and secret postbox
+                keys stay there. It must be built and installed separately.
+              </p>
+              <p className="fine-print">
+                Public mail and private-link mail open without a wallet. Sending
+                requires a wallet to sign and pay fees. Wallet-controlled
+                postboxes require the extension and account-scoped postbox
+                permissions. The patch also provides an explicit website-origin
+                allowlist for browser access to your local daemon.
+              </p>
+            </details>
             <form
               onSubmit={(e) => {
                 e.preventDefault();

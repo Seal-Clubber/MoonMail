@@ -1,6 +1,6 @@
 # Deployment
 
-Templates and registry were verified on isolated localnet. The static interface is live on GitHub Pages with HTTPS enforced. No public-chain deployment is configured. Public-network spending requires explicit authorization.
+Templates and registry were verified on isolated localnet. The static interface is live on GitHub Pages with HTTPS enforced. An authorized Esmeralda deployment is prepared, but its empty faucet prevents funding the fresh deployment wallet. No public GhostDrop templates or registry have been published. See [the testnet deployment status](ESMERALDA.md).
 
 ## Public network presets
 
