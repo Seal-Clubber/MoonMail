@@ -95,6 +95,10 @@ At 2026-10-06T17:20:15Z, a fresh process using the independently restored unmodi
 
 The local build passes 38 client tests, strict TypeScript/Vite build and 14 desktop/mobile browser regressions. The normal Windows browser runner hung during web-server teardown after all cases passed; a second run against that same task-owned static server, using the external no-server config, completed with exit 0 and **14 passed**. After the identity-checked static server was stopped, the normal runner also exited 0 with **14 passed**. All task-owned test services stopped and their chain state was preserved in a new external snapshot. The output scan checked 85 source/build files against ten known private capability/passkey values and found no matches or tracked development files. This source change has not been pushed or verified on Pages. Hosted sending/postboxes stay disabled: `daemonScopes`, `httpsWallet` and `mailboxRecovery` remain false.
 
+## Esmeralda v0.45.0 compatibility check
+
+The configured public indexer advertises0.45.0 and reported epoch11930, beyond the announced11925 V1 activation. The unchanged client reads all three full public notes and the original ownerless registry. Both existing-account and fresh-account public claim simulations returned Accept at execution epoch11929, requiring2,559/3,360microTARI within the100,000reserve. No actual claim or funding occurred; the gift remained unclaimed. Simulation deliberately bypasses signature checks and consensus, so it does not substitute for a payout/spend proof. [The compatibility evidence](esmeralda-v045-evidence.json) records exact requests' public IDs, observations, unchanged repository pins and remaining engine/proof/hosted-wallet checks.
+
 ## Primary sources
 
 - [Official engine/templates](https://github.com/tari-project/tari-ootle), inspected `44d96cd6a5f22a0f4d104feb21a92f9440267274`.

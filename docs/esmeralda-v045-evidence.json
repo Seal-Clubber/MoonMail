@@ -1,0 +1,116 @@
+{
+  "publicRead": {
+    "observedAt": "2026-10-06T17:39:52.019Z",
+    "indexerUrl": "https://ootle-indexer-a.tari.com/",
+    "network": 38,
+    "observedEpoch": 11930,
+    "announcedV1ActivationEpoch": 11925,
+    "epochAtOrAfterAnnouncedActivation": true,
+    "reportedProtocolVersionVerified": false,
+    "readerVersion": "ootle-indexer 0.7.0",
+    "registry": "component_2afdeb8728a3ffbf04da19218964243c63cd63e9d77ca5b7877e4dd29873b4b7",
+    "registryIdentityAndOwnerlessVerified": true,
+    "completeOriginalPublicNotesReadable": true,
+    "originalNoteCount": 3,
+    "registryEntryCount": 16,
+    "broadcastsPerformed": 0,
+    "notes": [
+      {
+        "id": "esmeralda-storage-20261006",
+        "component": "component_01e002ff7a974de727e825a7139ff958148ecea0f0af4b7bd910d7993ea4b5d9"
+      },
+      {
+        "id": "esmeralda-wallet-20261006",
+        "component": "component_86603a2728e3b4b1ac4a94a1a1187cabe0d1b7485cdc3804845a9180d75fa25a"
+      },
+      {
+        "id": "esmeralda-welcome-20261006",
+        "component": "component_dee54f5f3ba9572f918d5166f3d5c244b990ff81dcfcc6b0b503b05cf1f6eda9"
+      }
+    ],
+    "caveat": "Epoch observation alone does not verify protocol or validator version. Existing unverified wallet/recovery gates remain false."
+  },
+  "currentPins": {
+    "templateLibrary": "0.33.0",
+    "engineTypes": "0.43.0",
+    "wasm": "0.43.0",
+    "engineTestTooling": "0.43.0",
+    "typescriptOotle": "0.7.0"
+  },
+  "contractsUseNftDataUpdates": false,
+  "cryptographicIndexerProofVerificationImplemented": false,
+  "validatorOrWalletUpgraded": false,
+  "caveats": [
+    "Simulation skips signature validation and consensus.",
+    "Indexer advertised version is not verification of every validator version.",
+    "Release evidence does not establish authenticated Pages-to-standard-wallet transport.",
+    "Existing local engine tests remain pinned to 0.43.0."
+  ],
+  "sourceReleasePins": {
+    "templateLibrary": "0.34.0",
+    "engineTypes": "0.45.0",
+    "engineTestTooling": "0.45.0"
+  },
+  "indexerAdvertisedInfo": {
+    "version": "0.45.0",
+    "network": "esmeralda",
+    "network_byte": 38,
+    "sidechain_id": null,
+    "current_epoch": 11930,
+    "transaction_retention_epochs": 50,
+    "transaction_receipt_retention_epochs": null,
+    "event_retention_epochs": null,
+    "index_gossiped_transactions": true,
+    "verify_substate_proofs": true,
+    "substate_cache_max_serve_lag_secs": 300,
+    "indexes_all_events": true
+  },
+  "noNewFundingOrClaims": true,
+  "repositoryDependencyPinsChanged": false,
+  "claimSimulations": {
+    "observedAt": "2026-10-06T17:43:56.66Z",
+    "network": 38,
+    "indexerUrl": "https://ootle-indexer-a.tari.com/",
+    "indexerVersion": "0.45.0",
+    "observedEpoch": 11930,
+    "announcedActivationEpoch": 11925,
+    "giftId": "esmeralda-demo-public-2-20261006",
+    "envelope": "component_03f9834b315813a0a682ddd8f2e05c8b70f816cc987c3d96ab5deeb4211dba06",
+    "originalGiftStillUnclaimed": true,
+    "templatesUnchanged": true,
+    "clientPinsUnchanged": true,
+    "broadcastsPerformed": 0,
+    "note": "Dry run omits signature validation and does not establish post-upgrade consensus payout or recipient spend.",
+    "results": [
+      {
+        "mode": "public-existing-account",
+        "simulationTransactionId": "8e1e93690222b4eee929b82f5447f532a7af96c568e2641a49cb830b450835c0",
+        "executionOutcome": "Accept",
+        "executeEpoch": 11929,
+        "requiredFeesMicroTari": "2559",
+        "reserveMicroTari": "100000",
+        "withinReserve": true,
+        "noBroadcast": true,
+        "consensusOrSignatureValidationProven": false
+      },
+      {
+        "mode": "public-new-account",
+        "simulationTransactionId": "7fd4b6d20c30904830d9cbc85f9eaae402264c9339bf9de397db772eb9895cc6",
+        "executionOutcome": "Accept",
+        "executeEpoch": 11929,
+        "requiredFeesMicroTari": "3360",
+        "reserveMicroTari": "100000",
+        "withinReserve": true,
+        "noBroadcast": true,
+        "consensusOrSignatureValidationProven": false
+      }
+    ]
+  },
+  "officialReleases": {
+    "v045": "https://github.com/tari-project/tari-ootle/releases/tag/v0.45.0",
+    "v044": "https://github.com/tari-project/tari-ootle/releases/tag/v0.44.0",
+    "v045SourceCommit": "9c626062673760530ffb075b6b006a67becebe5a"
+  },
+  "httpsWalletConnectionVerified": false,
+  "contractsUseLiquidityPoolTokens": false
+}
