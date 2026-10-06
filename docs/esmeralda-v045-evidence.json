@@ -44,7 +44,7 @@
     "Simulation skips signature validation and consensus.",
     "Indexer advertised version is not verification of every validator version.",
     "Release evidence does not establish authenticated Pages-to-standard-wallet transport.",
-    "Existing local engine tests remain pinned to 0.43.0."
+    "Repository CI remains pinned to 0.43.0; the separate compatibility harness passed on 0.45.0."
   ],
   "sourceReleasePins": {
     "templateLibrary": "0.34.0",
@@ -112,5 +112,45 @@
     "v045SourceCommit": "9c626062673760530ffb075b6b006a67becebe5a"
   },
   "httpsWalletConnectionVerified": false,
-  "contractsUseLiquidityPoolTokens": false
+  "contractsUseLiquidityPoolTokens": false,
+  "isolatedEngineCompatibility": {
+    "observedAt": "2026-10-06T17:54:24Z",
+    "sourceCheckpoint": "5d582a3",
+    "engine": "0.45.0",
+    "engineTestTooling": "0.45.0",
+    "hostDecodeTemplateLibrary": "0.34.0",
+    "executedTemplateLibrary": "0.33.0",
+    "executedOriginalDeployedArtifacts": true,
+    "artifactSha256": {
+      "Envelope": "f0f20e3c855597da17ba505842ee72cfe4392a755834f68b5f757866b504494c",
+      "PostOffice": "0c2b0821900fc391785a798391ad451703693b406de741316cdd20c48cac243c"
+    },
+    "resolvedCargoLockSha256": "dd783131fea1ffa4db49d8424f54a298f794e3c28862cabf27f351eae7e5f2ff",
+    "typescriptOotle": "0.7.0",
+    "javascriptWasm": "0.43.0",
+    "testsPassed": 13,
+    "testsFailed": 0,
+    "testsIgnored": 0,
+    "exitCode": 0,
+    "totalSeconds": 125.8,
+    "testSeconds": 18.06,
+    "checks": [
+      "public_guest_delivers_once",
+      "two_racing_holders_can_pay_only_one_destination",
+      "later_letters_cannot_change_existing_gift_state_or_reserve",
+      "insufficient_fee_checkpoint_rolls_back_the_deposit_and_claim",
+      "private_link_authority_freezes_at_funding_and_wrong_signers_cannot_drain_fees",
+      "export_real_engine_state_for_browser_codec_tests",
+      "failed_main_intent_preserves_payout_and_consumes_claim_once",
+      "postbox_ids_survive_rename_and_controller_rejects_other_wallet",
+      "incorrect_network_and_non_account_destination_leave_gift_intact",
+      "javascript_guest_creates_an_unfunded_account_in_the_claim_checkpoint",
+      "javascript_signed_link_claim_executes_and_tampering_fails",
+      "javascript_guest_creation_rolls_back_for_bad_authority_and_insufficient_fees",
+      "javascript_encrypted_publication_decryption_claim_and_recipient_spend"
+    ],
+    "publicTransactionsBroadcast": 0,
+    "deploymentOrRepositoryPinsChanged": false,
+    "caveat": "An isolated engine harness, not public consensus or authenticated browser-to-wallet transport. Host-only template types use 0.34.0 for decoding; runtime execution loads the SHA256-verified original deployed 0.33.0 WASM. The first run generated a separate Cargo.lock; repository CI and locks remain unchanged."
+  }
 }
