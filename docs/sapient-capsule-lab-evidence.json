@@ -1,0 +1,74 @@
+{
+  "checkedAt": "2026-10-06T21:44:59.089Z",
+  "wallet": "official Sapient 0.6.6 store package",
+  "application": "actual published Pages build",
+  "engine": "0.45.0",
+  "publicTransactions": 0,
+  "extraVisitorPrograms": 0,
+  "financialSeedEnteredIntoGhostDrop": false,
+  "seedOrRecoveredApplicationKeyLoggedOrSaved": false,
+  "encryptedFixtureOnly": true,
+  "independentBrowserProfiles": true,
+  "walletSubstateReadsUseEngineFixture": true,
+  "publicDeployment": false,
+  "checks": [
+    {
+      "wallet": "original",
+      "cacheInitiallyEmpty": true,
+      "privateOutputsDeniedBeforeViewGrant": true,
+      "recoveredPermanentEngineCapsule": true,
+      "applicationPublicKeyMatches": true,
+      "memoAvailableThroughScopedWalletView": true,
+      "wrongKeyVersionRejected": true,
+      "addressedLetterDecrypted": true
+    },
+    {
+      "wallet": "independent restoration",
+      "cacheInitiallyEmpty": true,
+      "privateOutputsDeniedBeforeViewGrant": true,
+      "recoveredPermanentEngineCapsule": true,
+      "applicationPublicKeyMatches": true,
+      "memoAvailableThroughScopedWalletView": true,
+      "wrongKeyVersionRejected": true,
+      "addressedLetterDecrypted": true
+    },
+    {
+      "wallet": "foreign",
+      "capsuleRecoveryDenied": true
+    }
+  ],
+  "limits": [
+    "Finance-free lab proof: custom capsule substates came from a real local engine and were substituted only for their resource/UTXO reads. This is not testnet consensus or production recovery evidence.",
+    "Wallet view approval exposes private output summaries for the account, not only a GhostDrop-specific resource.",
+    "Original token carriers and historical descriptors remain unchanged; production mailbox gate remains false."
+  ],
+  "engineChecks": {
+    "standaloneLockedDependencies": true,
+    "testsPassed": 1,
+    "unsafeStoreCasesRejected": 6,
+    "nativeSpendPathsRejected": 2,
+    "carrierRetainedAfterRejection": true
+  },
+  "artifact": {
+    "name": "RecoveryCapsules",
+    "library": "tari_template_lib 0.34.0",
+    "sha256": "aaec4da4284607e392212a0f30d32c0361225abe5cdcea506a819d4fb2a7f06e",
+    "bytes": 348488,
+    "publicTemplateAddress": null
+  },
+  "production": {
+    "mailboxRecovery": false,
+    "adapterIntegrated": false,
+    "historicalDescriptorsUnchanged": true,
+    "existingEnvelopeTemplateUnchanged": true,
+    "prepaidSapientAddressedClaimSupported": false
+  },
+  "compatibility": {
+    "walletVersion": "0.6.6",
+    "walletSource": "7ad3c4f117a76c64d472fd371b7d75bbe297abec",
+    "walletSdk": "@chironbuilder/ootle-sdk 0.1.20",
+    "fixtureSdk": "@tari-project/ootle 0.7.0",
+    "fixtureWasm": "0.43.0",
+    "engine": "0.45.0"
+  }
+}
