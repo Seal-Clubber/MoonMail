@@ -24,7 +24,11 @@ The journal contains public IDs, not seeds, private links, plaintext or encrypti
 
 Client tests additionally cover wrong network/account, fee rejection, lost creation/submit responses, reconnect, session invalidation and preventing gift-paid claims from being replaced with wallet-paid operations. Desktop/mobile regressions exercise the updated dialog and unchanged guest routes.
 
-`sapientWallet` remains false in public configuration until a funded public/private-link publication, fee behavior and chain confirmation pass through the intended website/wallet flow. Legacy `daemonScopes` and `httpsWallet` flags do not authorize Sapient. Existing chain and guest evidence stays enabled. No contract redeployment is required for this adapter.
+The subsequent [funded Esmeralda proof](sapient-esmeralda-evidence.json) received exactly 1 test TARI from one existing public gift into a fresh Sapient account without wallet connection, then published one text-only public letter through the stock wallet popup. The complete chain letter and persisted request's submitted status were verified after reopening the wallet. The successful receipt charged 5,092 µTARI; an earlier fee-committed/main-rejected input-discovery attempt charged 1,091 µTARI. Three other attempts aborted without fees. Aggregate wallet spend was 6,183 µTARI, below the 100,000 µTARI per-attempt cap and the one-gift total budget. No new faucet funding or replenishment occurred.
+
+The final source declares registry, account, native resource and funding vault inputs upfront. A real Sapient dry run of this change accepted in one dry-run POST at 5,016 µTARI, followed by wallet rejection; a submission guard and unchanged balance verified zero additional public transactions. This improvement was not followed by another funded publication. Other wallet input/version retries remain possible.
+
+`sapientWallet` is now true in the reviewed public configuration, enabling the Sapient sender route. Legacy `daemonScopes` and `httpsWallet` flags do not authorize Sapient. Existing chain and guest evidence stays enabled. No contract redeployment is required. These checks used the actual Pages HTTPS origin with local app/config overrides, not yet the published changed build. Only a text-only public publication was broadcast through Sapient; private-link encryption/gift rules retain their separate prior evidence, while Sapient private-link and gifted publications were not separately broadcast in this bounded proof.
 
 ## Postbox recovery remains incomplete
 

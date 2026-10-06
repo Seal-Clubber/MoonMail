@@ -10,7 +10,7 @@
     "guestPayout": true,
     "daemonScopes": false,
     "httpsWallet": false,
-    "sapientWallet": false,
+    "sapientWallet": true,
     "mailboxRecovery": false,
     "guestAccountCreation": true
   }

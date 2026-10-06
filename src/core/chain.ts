@@ -294,6 +294,29 @@ export class PostOfficeClient {
           account.account.component_address
       )
         throw new Error("Choose the connected Sapient funding account");
+      // Sapient may broadcast again while discovering missing inputs. Declare the
+      // known component/resource/vault dependencies before its first simulation.
+      const fundingInputs = [
+        this.deployment.registry,
+        account.account.component_address,
+        this.deployment.resource,
+        ...(await getVaultIdsForAccount(
+          this.provider,
+          account.account.component_address,
+        )),
+      ].map((substate_id) => ({
+        substate_id,
+        version: null,
+        is_write: substate_id !== this.deployment.resource,
+      }));
+      tx.inputs = Array.from(
+        new Map(
+          [...tx.inputs, ...fundingInputs].map((input) => [
+            input.substate_id,
+            input,
+          ]),
+        ).values(),
+      );
       return wallet.submitOperation(tx, fee, storage, {
         network: this.deployment.network,
         registry: this.deployment.registry,

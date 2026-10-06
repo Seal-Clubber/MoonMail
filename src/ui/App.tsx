@@ -964,6 +964,13 @@ export function App() {
                   }}
                 />
               </label>
+              {wallet?.kind === "sapient" && (
+                <p className="fine-print">
+                  This cap applies to each transaction. Sapient may retry input
+                  or version failures; more than one attempt can pay fees. An
+                  uncertain operation stays pending until you reconcile it.
+                </p>
+              )}
               <div className="actions">
                 <button
                   type="submit"

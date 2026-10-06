@@ -1,0 +1,141 @@
+{
+  "checkedAt": "2026-10-06T21:08:54.914Z",
+  "network": 38,
+  "registry": "component_2afdeb8728a3ffbf04da19218964243c63cd63e9d77ca5b7877e4dd29873b4b7",
+  "wallet": "Sapient",
+  "walletSourceVersion": "0.6.6",
+  "walletSourceCommit": "7ad3c4f117a76c64d472fd371b7d75bbe297abec",
+  "unmodifiedWalletBuild": true,
+  "disposableSelfCustodyWallet": true,
+  "origin": "https://seal-clubber.github.io",
+  "localStaticAssetsOverride": true,
+  "configurationOnlyTestGate": true,
+  "rpcMocks": false,
+  "financialSeedsEnteredIntoGhostDrop": false,
+  "extraDaemonOrBridge": false,
+  "fundedProofBaseCommit": "874d187",
+  "receiving": {
+    "connectedWalletRequired": false,
+    "preexistingAccountRequired": false,
+    "creationPaidFromGiftReserve": true,
+    "gift": {
+      "id": "esmeralda-demo-public-2-20261006",
+      "component": "component_03f9834b315813a0a682ddd8f2e05c8b70f816cc987c3d96ab5deeb4211dba06",
+      "value": "1000000",
+      "reserve": "100000"
+    },
+    "transactionId": "612262ea7b8de6f9fd3085bd35afb4446fda90384bc873d8ba21760b1f6e5ebb",
+    "account": "component_494b4557ef192eae8990cc0afee0fc8c2306a746e7f491170c630b6bdc8bc541",
+    "initialBalance": "0",
+    "balanceAfterClaim": "1000000",
+    "receiptFee": 3360
+  },
+  "publication": {
+    "transactionId": "d70c740e7212422c058840296c2f0807e65d116d3020641f6bbbfe3a1a614b29",
+    "envelopeId": "d552bac6-e4f1-4bca-9bd9-fe8b524f59a3",
+    "component": "component_eadd0ffed123bfb1ad5fe784b192bc47f649302abcfc724ca11db8a6cdc5f07f",
+    "mode": "public",
+    "gift": "0",
+    "reserve": "0",
+    "payload": {
+      "subject": "A letter sent with Sapient",
+      "body": "GhostDrop connected directly to the Sapient wallet. This text-only testnet letter was approved in its wallet popup. No extra bridge or daemon was used."
+    },
+    "feeCapPerTransaction": "100000",
+    "successfulReceiptFee": 5092,
+    "aggregateWalletSpend": "6183",
+    "balanceAfter": "993817",
+    "completeChainReadback": true,
+    "stockWalletApproval": true,
+    "savedRequestStatusAfterReopening": "submitted"
+  },
+  "walletInternalAttempts": [
+    {
+      "id": "d70c740e7212422c058840296c2f0807e65d116d3020641f6bbbfe3a1a614b29",
+      "decision": "Commit",
+      "fee": 5092,
+      "mainRejectedAfterFee": false
+    },
+    {
+      "id": "ea06a7147452528827223ecc4eb13fb190ed2e58a7819141f993e81708cd2ed5",
+      "decision": {
+        "Abort": "OneOrMoreInputsNotFound"
+      },
+      "fee": 0,
+      "mainRejectedAfterFee": false
+    },
+    {
+      "id": "a6124935f7a60e9d8004fd18355686d85738c0da6cbc089f91bad11097a50070",
+      "decision": "Commit",
+      "fee": 1091,
+      "mainRejectedAfterFee": true
+    },
+    {
+      "id": "e5a015c2d8a1b823116822e068953aa34e5811ec0164c5bcf6a3a060348cdbe4",
+      "decision": {
+        "Abort": "OneOrMoreInputsNotFound"
+      },
+      "fee": 0,
+      "mainRejectedAfterFee": false
+    },
+    {
+      "id": "5948603f609bccbafeee394738343fc74d004ca53a101df04e3e5baf6094f034",
+      "decision": {
+        "Abort": "OneOrMoreInputsNotFound"
+      },
+      "fee": 0,
+      "mainRejectedAfterFee": false
+    }
+  ],
+  "finalInputFixPreflight": {
+    "accepted": true,
+    "requiredFee": 5016,
+    "dryRunPosts": 1,
+    "publicTransactionPosts": 0,
+    "balanceUnchanged": true,
+    "approvalRejected": true,
+    "submissionGuard": true,
+    "declaredInputs": [
+      "template_91d80c4d98d9b53cf3327952980a4b797d2896701fbe11c2f1d951c2cf922d62",
+      "template_51d3ff2985c2fea21b9517606beaeee2fb5f823b0bbd89478727a75ca7484f49",
+      "component_2afdeb8728a3ffbf04da19218964243c63cd63e9d77ca5b7877e4dd29873b4b7",
+      "component_494b4557ef192eae8990cc0afee0fc8c2306a746e7f491170c630b6bdc8bc541",
+      "resource_0101010101010101010101010101010101010101010101010101010101010101",
+      "vault_496c4b7edec94287d3241cb8470526bd78d4d36d22190771833aa9d68ceea023"
+    ]
+  },
+  "limitations": [
+    "Actual Pages HTTPS origin with reviewed local static assets; new source not yet verified published.",
+    "One text-only public letter was funded. Sapient private-link publication and gifted publication were not separately broadcast. Their existing contract/crypto evidence remains separate.",
+    "Known input declaration fix passed a real dry run and rejected approval; it was not followed by another paid publication.",
+    "Stock wallet can retry other version/input failures; fee cap is per transaction, not aggregate.",
+    "Sapient postbox recovery and addressed claims remain disabled.",
+    "One existing demo gift was consumed; no replenishment was authorized."
+  ],
+  "finalPublicReader": {
+    "checkedAt": "2026-10-06T21:07:37.339Z",
+    "localBuild": true,
+    "defaultDeployment": true,
+    "publicRpcUnmodified": true,
+    "walletConnected": false,
+    "transactionsBroadcast": 0,
+    "publicFundedGiftsRemaining": 4,
+    "checks": [
+      {
+        "viewport": "desktop",
+        "completeChainLetter": true,
+        "newWalletDialog": true,
+        "noPageErrors": true,
+        "noHorizontalOverflow": true
+      },
+      {
+        "viewport": "mobile",
+        "completeChainLetter": true,
+        "newWalletDialog": true,
+        "noPageErrors": true,
+        "noHorizontalOverflow": true
+      }
+    ]
+  },
+  "originDisconnectedAfterProof": true
+}

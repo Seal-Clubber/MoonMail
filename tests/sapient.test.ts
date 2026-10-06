@@ -6,6 +6,7 @@ import {
 import { SapientSession, type SapientProvider } from "../src/core/sapient";
 import { emptyDeployment, writesReady } from "../src/core/config";
 import { publishTransaction } from "../src/core/transactions";
+import { PostOfficeClient } from "../src/core/chain";
 import { readPending } from "../src/core/pending";
 function fixture() {
   const owner = generateKeypair(),
@@ -127,6 +128,7 @@ function fixture() {
     storage,
     d,
     tx,
+    envelope,
     context,
     id,
     setNetwork: (v: string) => {
@@ -345,4 +347,60 @@ test("a persisted request cannot turn a prepaid guest claim into a wallet-paid s
       ([a]) => a.method === "tari_submitTransactionRequest",
     ),
   ).toHaveLength(1);
+});
+
+test("Sapient publication declares the registry and funding dependencies before wallet simulation", async () => {
+  const f = fixture(),
+    wallet = await SapientSession.connect(38, f.provider);
+  const vault = "e".repeat(64);
+  const chain = {
+    deployment: f.d,
+    provider: {
+      getCurrentEpoch: async () => 123,
+      getSubstate: async () => ({
+        substate: {
+          Component: {
+            body: {
+              state: [
+                {
+                  "@cbor": "tag",
+                  tag: 132,
+                  value: { "@cbor": "bytes", hex: vault },
+                },
+              ],
+            },
+          },
+        },
+      }),
+    },
+  } as unknown as PostOfficeClient;
+  await PostOfficeClient.prototype.publish.call(
+    chain,
+    wallet,
+    wallet.accounts[0],
+    f.envelope,
+    "100",
+    f.storage,
+  );
+  const dry = f.request.mock.calls.find(
+    ([a]) => a.method === "tari_signAndSubmitTransaction",
+  )![0].params as { inputs: { substate_id: string; is_write: boolean }[] };
+  expect(dry.inputs).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({ substate_id: f.d.registry, is_write: true }),
+      expect.objectContaining({
+        substate_id: wallet.accounts[0].account.component_address,
+        is_write: true,
+      }),
+      expect.objectContaining({ substate_id: f.d.resource, is_write: false }),
+      expect.objectContaining({
+        substate_id: `vault_${vault}`,
+        is_write: true,
+      }),
+      expect.objectContaining({
+        substate_id: `template_${f.d.envelopeTemplate}`,
+        is_write: false,
+      }),
+    ]),
+  );
 });
