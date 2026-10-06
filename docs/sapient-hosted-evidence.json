@@ -131,9 +131,9 @@
     "The prior funded publication used the byte-matching unmodified source build. No new gifted/private-link publication or postbox recovery proof."
   ],
   "publishedReaderUpdate": {
-    "checkedAt": "2026-10-06T22:14:27.373Z",
+    "checkedAt": "2026-10-06T22:44:13.295Z",
     "base": "https://seal-clubber.github.io/GhostDrop/",
-    "frontendCommit": "0bbb708386f815e445c5573d5aa2a33299e074ef",
+    "frontendCommit": "25d358f8809d04284d297368c2e00a5f9db754b9",
     "publishedBuild": true,
     "assetOrConfigOverrides": false,
     "publicRpcUnmodified": true,
@@ -156,5 +156,34 @@
         "noHorizontalOverflow": true
       }
     ]
-  }
+  },
+  "earlierPublishedReaders": [
+    {
+      "checkedAt": "2026-10-06T22:14:27.373Z",
+      "base": "https://seal-clubber.github.io/GhostDrop/",
+      "frontendCommit": "0bbb708386f815e445c5573d5aa2a33299e074ef",
+      "publishedBuild": true,
+      "assetOrConfigOverrides": false,
+      "publicRpcUnmodified": true,
+      "walletConnected": false,
+      "transactionsBroadcast": 0,
+      "publicFundedGiftsRemaining": 4,
+      "checks": [
+        {
+          "viewport": "desktop",
+          "completeChainLetter": true,
+          "newWalletDialog": true,
+          "noPageErrors": true,
+          "noHorizontalOverflow": true
+        },
+        {
+          "viewport": "mobile",
+          "completeChainLetter": true,
+          "newWalletDialog": true,
+          "noPageErrors": true,
+          "noHorizontalOverflow": true
+        }
+      ]
+    }
+  ]
 }

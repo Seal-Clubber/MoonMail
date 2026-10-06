@@ -1,8 +1,8 @@
 {
   "base": "https://seal-clubber.github.io/GhostDrop/",
-  "checkedAt": "2026-10-06T22:17:43.889Z",
-  "frontendCommit": "0bbb708386f815e445c5573d5aa2a33299e074ef",
-  "remoteMainCommit": "0bbb708386f815e445c5573d5aa2a33299e074ef",
+  "checkedAt": "2026-10-06T22:43:35.587Z",
+  "frontendCommit": "25d358f8809d04284d297368c2e00a5f9db754b9",
+  "remoteMainCommit": "25d358f8809d04284d297368c2e00a5f9db754b9",
   "pages": {
     "httpsEnforced": true,
     "buildType": "workflow",
@@ -11,23 +11,23 @@
   "workflowRuns": [
     {
       "name": "Publish reviewed GhostDrop to GitHub Pages",
-      "headSha": "0bbb708386f815e445c5573d5aa2a33299e074ef",
+      "headSha": "25d358f8809d04284d297368c2e00a5f9db754b9",
       "status": "completed",
       "conclusion": "success",
-      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37538549413"
+      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37541376715"
     },
     {
       "name": "Verify GhostDrop",
-      "headSha": "0bbb708386f815e445c5573d5aa2a33299e074ef",
+      "headSha": "25d358f8809d04284d297368c2e00a5f9db754b9",
       "status": "completed",
       "conclusion": "success",
-      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37538550039"
+      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37541376678"
     }
   ],
   "assets": [
     {
       "path": "index.html",
-      "sha256": "97cdb74487cd67f7551a65767ac140133ba3c84762caa038f2420c891a9c35ee",
+      "sha256": "68c080e0fc5ccad3933488785552667bd67f13337ea853d0947516ee4ac52c46",
       "bytes": 689,
       "matchesReviewedBuild": true
     },
@@ -44,21 +44,21 @@
       "matchesReviewedBuild": true
     },
     {
-      "path": "assets/index-itVoP-z-.js",
-      "sha256": "761a7ca969a572e254c394b6ed668a076155023266f5b73903b6503d8dfb1769",
-      "bytes": 296020,
+      "path": "assets/index-oG4l0BI7.js",
+      "sha256": "db7a63d9fd2d03005a8b2d2f3ab870d3b654fdcee1ff81fffc9bfdb0dd377fc5",
+      "bytes": 310327,
       "matchesReviewedBuild": true
     },
     {
-      "path": "assets/ootle_wasm-BfiRg-2B.js",
-      "sha256": "05d75e599e926d72fe30c361dcf1202efa38f4acd307385d7bbd01a37c20bc7e",
+      "path": "assets/ootle_wasm-CLPAruJ_.js",
+      "sha256": "e490145dfae574781fe74c176955b03a51d16d8170cbcc7d7a021414595baa56",
       "bytes": 209,
       "matchesReviewedBuild": true
     },
     {
-      "path": "assets/ootle_wasm-BYB-6FlJ.js",
-      "sha256": "4deb0cea9ef5aeb02143e5eb6d671fafdbb9d754f4c7d625f8d73f1be2da415f",
-      "bytes": 18913,
+      "path": "assets/ootle_wasm-DixGV7PA.js",
+      "sha256": "e0dfe02134916f3202e8e84cc8b522bcbeb210fcffb31c900325288d27335810",
+      "bytes": 21319,
       "matchesReviewedBuild": true
     },
     {
@@ -69,5 +69,13 @@
     }
   ],
   "publishedAssetsMatchReviewedBuild": true,
-  "githubRunMetadataVerified": true
+  "githubRunMetadataVerified": true,
+  "hostedBrowserRegressions": {
+    "passed": 16,
+    "failed": 0,
+    "actualHostedAssets": true,
+    "walletAndLedgerFixtures": true,
+    "publicTransactions": 0,
+    "checkedAt": "2026-10-06T22:44:00Z"
+  }
 }
