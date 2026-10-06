@@ -5,7 +5,13 @@ import type {
   MailboxKey,
   MailboxPayload,
 } from "./types";
-import { assertEnvelopeSize, base64url, hex, unhex } from "./crypto";
+import {
+  assertEnvelopeSize,
+  base64url,
+  fromBase64url,
+  hex,
+  unhex,
+} from "./crypto";
 const encode = (v: unknown) => new TextEncoder().encode(JSON.stringify(v));
 const buffer = (v: Uint8Array) => new Uint8Array(v).buffer;
 export function envelopeMailboxContext(envelope: Envelope): MailboxContext {
@@ -135,5 +141,77 @@ export async function sealMailbox(
     secret?.fill(0);
     shared?.fill(0);
     pair.free();
+  }
+}
+
+export async function openMailbox(
+  payload: MailboxPayload,
+  context: MailboxContext,
+  id: string,
+  mailboxSecret: Uint8Array,
+): Promise<Letter> {
+  const { publicKeyFromSecretKey, encryptedDataDhKdfAead } =
+    await import("@tari-project/ootle-wasm");
+  if (
+    payload.version !== "gd-postbox-1" ||
+    payload.keyVersion !== context.keyVersion ||
+    mailboxSecret.length !== 32 ||
+    hex(publicKeyFromSecretKey(mailboxSecret)) !== payload.recipientKey
+  )
+    throw new Error("Mailbox key or version mismatch");
+  const iv = fromBase64url(payload.iv);
+  if (iv.length !== 12) throw new Error("Invalid mailbox nonce");
+  const shared = encryptedDataDhKdfAead(
+    mailboxSecret,
+    unhex(payload.ephemeralPublicKey),
+  );
+  try {
+    const aad = mailboxAAD(
+      context,
+      id,
+      payload.recipientKey,
+      payload.ephemeralPublicKey,
+    );
+    const material = await crypto.subtle.importKey(
+      "raw",
+      buffer(shared),
+      "HKDF",
+      false,
+      ["deriveKey"],
+    );
+    const aes = await crypto.subtle.deriveKey(
+      {
+        name: "HKDF",
+        hash: "SHA-256",
+        salt: buffer(encode(["GhostDrop", "gd-postbox-1", "salt"])),
+        info: buffer(aad),
+      },
+      material,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["decrypt"],
+    );
+    const plain = new Uint8Array(
+      await crypto.subtle.decrypt(
+        { name: "AES-GCM", iv: buffer(iv), additionalData: buffer(aad) },
+        aes,
+        buffer(fromBase64url(payload.ciphertext)),
+      ),
+    );
+    try {
+      const letter: unknown = JSON.parse(new TextDecoder().decode(plain));
+      if (
+        !letter ||
+        typeof letter !== "object" ||
+        typeof (letter as Letter).subject !== "string" ||
+        typeof (letter as Letter).body !== "string"
+      )
+        throw new Error("Invalid mailbox letter");
+      return letter as Letter;
+    } finally {
+      plain.fill(0);
+    }
+  } finally {
+    shared.fill(0);
   }
 }

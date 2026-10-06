@@ -8,6 +8,8 @@ The HTTPS static interface is live at [GhostDrop on GitHub Pages](https://seal-c
 
 Network settings default to the official Esmeralda HTTPS indexer and native test TARI resource. Open `#/network` and use **Check indexer connection** to read public network/health/resource information without a wallet. Registry and template identities must come from a real GhostDrop deployment; they remain unset until then.
 
+A [standard-wallet postbox recovery route](docs/STANDARD-WALLET-POSTBOXES.md) now passes an isolated-chain proof using encrypted native memos and an independently seed-restored, unmodified wallet. It preserves wallet recovery without the custom patch. Migration of the website adapter and hosted standard-wallet connection remain pending.
+
 ## Run
 
 Node 24.19+ and pnpm 11.19.0:

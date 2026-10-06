@@ -2,6 +2,8 @@
 
 Experimental patch for official Ootle wallet daemon **v0.43.0**, source commit `392d805579db35fcc8e8bc1aba84adc1fffe0c22`. It adds GhostDrop postbox encryption and an opt-in exact-origin policy. It runs on the wallet owner's machine. GhostDrop still needs no application backend.
 
+An [alternative using standard-wallet encrypted memos](../docs/STANDARD-WALLET-POSTBOXES.md) now has an isolated-chain recovery proof, including a fresh seed-restored stock wallet. It can remove the custom patch requirement after the website adapter and hosted connection are migrated and verified. Existing patched-wallet postboxes remain supported by the current implementation.
+
 ## What “Local wallet extension” means
 
 This directory contains source changes to the Ootle **wallet daemon**, the local program that holds wallet keys and signs transactions. Build and run the patched daemon separately using the instructions below. It is not installed by visiting GhostDrop, and it is not a Chrome/Firefox extension. The static website connects directly to that daemon's loopback JSON-RPC interface using a temporary API key issued in the local wallet UI.
