@@ -1,0 +1,25 @@
+{
+  "checkedAt": "2026-10-06T22:48:52.6204987Z",
+  "engine": "0.45.0",
+  "templateLib": "0.34.0",
+  "sdk": "0.1.20",
+  "wasm": "stock SDK vendor 0.42.0",
+  "testPassed": 1,
+  "testSeconds": 19.49,
+  "positiveCases": 1,
+  "negativeCases": 8,
+  "syntheticKeyAndAddress": true,
+  "walletProviderInvoked": false,
+  "publicTransactions": 0,
+  "claimContractImplemented": false,
+  "sourceHashes": {
+    "template/src/lib.rs": "ddaa367af53ae30fc78f503d6339f4d6b5cff9d7a014adbb7063835be7a4d694",
+    "harness/src/lib.rs": "85e04891c19287ba7083a7192c4d3b5034a121659ab82a46f62f40455e274b90",
+    "generate.mjs": "aebff6eb46b511e7874306eaa90fb008ca3bf3767bba8f10ce5ee52f62e044b3"
+  },
+  "limitations": [
+    "Stateless signature primitive only; trusted controller selection is not implemented",
+    "Synthetic address string; no canonical wallet-address parsing or account binding proof",
+    "No stock-wallet approval, replay flag, payout, reserve cap, expiry or fee checkpoint tested"
+  ]
+}
