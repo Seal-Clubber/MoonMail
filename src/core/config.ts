@@ -9,6 +9,7 @@ export const emptyDeployment: Deployment = {
   evidence: {
     engineClaims: false,
     guestPayout: false,
+    guestAccountCreation: false,
     daemonScopes: false,
     httpsWallet: false,
     mailboxRecovery: false,
@@ -26,8 +27,11 @@ function deploymentReady(d: Deployment) {
     d.evidence.guestPayout === true
   );
 }
-export function claimsReady(d: Deployment) {
-  return deploymentReady(d);
+export function claimsReady(d: Deployment, createAccount = false) {
+  return (
+    deploymentReady(d) &&
+    (!createAccount || d.evidence.guestAccountCreation === true)
+  );
 }
 export function writesReady(
   d: Deployment,

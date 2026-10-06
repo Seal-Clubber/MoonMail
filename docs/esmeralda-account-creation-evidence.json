@@ -1,0 +1,83 @@
+{
+  "network": 38,
+  "registry": "component_2afdeb8728a3ffbf04da19218964243c63cd63e9d77ca5b7877e4dd29873b4b7",
+  "indexerUrl": "https://ootle-indexer-a.tari.com/",
+  "recipientDaemonUnmodified": true,
+  "recipientWalletConnectionRequired": false,
+  "recipientFundingRequired": false,
+  "recipientAccountExistsBeforeClaim": false,
+  "senderCreatesRecipientAccount": false,
+  "creationAndClaimInOneFeeCheckpoint": true,
+  "creationCostPaidFromGiftReserve": true,
+  "sourceEngineTestsPassed": 13,
+  "wrongAuthorityAndInsufficientFeesRollbackCreation": true,
+  "configurationOnlyFixture": true,
+  "rpcMocks": false,
+  "requiresFreshAddress": true,
+  "cases": [
+    {
+      "mode": "public",
+      "id": "esmeralda-cold-gift-public-20261006",
+      "envelope": "component_7daeda02a3f13893c1c1f6e044daec8cf5431dcc8c25f0d1cbbf774a55d9d6fe",
+      "receiver": {
+        "component": "component_3465c312f59ca4ca6c203e31a93fee550a366b050fc23b5b45e4d45fc9540b86",
+        "address": "otl_esm_1hf8mmt338p2hrrxlutv0az6d5qxhc8fldqw4rnp53herqj592y0jvmsc93rlwkpltt008rfxzyqxtfewk6jmugfr5ttz6a302rjcqzckjf9hc",
+        "publicKey": "ba4fbdae313855718cdfe2d8fe8b4da00d7c1d3f681d51cc348df2304a85511f",
+        "initiallyUnfunded": true,
+        "accountAbsentBeforeClaim": true
+      },
+      "publication": "79d24fe924ff9a830a989b459027e70f0affb464e128d88669e1d5a5c02c7f8c",
+      "claim": "289af44ba4adc5f464fe52fc0435c4bb1d541d6514437f5f7b05df3443b9981c",
+      "recipientSpend": "48877d1f0f343ef419add5779568b46a0c958cdfc55e3a8ea0f4c2a7eac738af",
+      "giftMicroTari": "2000000",
+      "reserveMicroTari": "100000",
+      "exactGiftDiscovered": true,
+      "recipientSpendConfirmed": true,
+      "browser": {
+        "viewport": "desktop",
+        "plaintextMatched": true,
+        "claimConfirmed": true,
+        "noWalletConnection": true,
+        "noWalletCredentials": true,
+        "capabilityAbsentFromHttpRequests": true,
+        "noPageErrors": true,
+        "senderTransportGatesFalse": true,
+        "journalRestoredFromRecordedTransaction": false,
+        "newAccountOptionUsed": true,
+        "componentNotEntered": true
+      }
+    },
+    {
+      "mode": "link",
+      "id": "esmeralda-cold-gift-link-20261006",
+      "envelope": "component_890396a6fa5aa7e0ed0182786fd3853330edc500615e91ef5cd155172b14383d",
+      "receiver": {
+        "component": "component_159cf780b44ed10ddbba661a838e1289d51084ab8c423712318cb61ed1d19978",
+        "address": "otl_esm_1ke2jrl64zezpvsccd4fjcj9p4fcfeh4dz42cvv3lkgcrn98ytdw09fvw9hrpln08nssfue4x49zqc2gz4lca28wc559a6e6ll93hqecdzurqq",
+        "publicKey": "b65521ff5516441643186d532c48a1aa709cdead155586323fb2303994e45b5c",
+        "initiallyUnfunded": true,
+        "accountAbsentBeforeClaim": true
+      },
+      "publication": "3c7dd82b41eb110398894da864b5f856536aacb4afd00f2cbb4b0a81fcf0b332",
+      "claim": "8543745b954cca210343611fdf703a5184c11778ec151f797a7345643e6afae8",
+      "recipientSpend": "277502062fab66c4fc8e18296f78c555e38d3b71db4fab237c691193fecb7c6f",
+      "giftMicroTari": "2000000",
+      "reserveMicroTari": "100000",
+      "exactGiftDiscovered": true,
+      "recipientSpendConfirmed": true,
+      "browser": {
+        "viewport": "mobile",
+        "plaintextMatched": true,
+        "claimConfirmed": true,
+        "noWalletConnection": true,
+        "noWalletCredentials": true,
+        "capabilityAbsentFromHttpRequests": true,
+        "noPageErrors": true,
+        "senderTransportGatesFalse": true,
+        "journalRestoredFromRecordedTransaction": false,
+        "newAccountOptionUsed": true,
+        "componentNotEntered": true
+      }
+    }
+  ]
+}

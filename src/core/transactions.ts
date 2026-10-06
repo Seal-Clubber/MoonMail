@@ -149,3 +149,23 @@ export function claimTransaction(
     })
     .buildUnsignedTransaction();
 }
+export function claimToNewAccountTransaction(
+  d: Deployment,
+  component: string,
+  ownerPublicKey: string,
+  epoch: number,
+) {
+  if (!/^[a-f0-9]{64}$/.test(ownerPublicKey))
+    throw new Error("Invalid receiving account public key");
+  return TransactionBuilder.new(d.network as Network, epoch + 10)
+    .withFeeInstructionsBuilder((builder) =>
+      builder
+        .createAccount(ownerPublicKey)
+        .saveVar("receiving_account")
+        .callMethod(
+          { componentAddress: component, methodName: "claim_and_pay_fee" },
+          [{ Workspace: "receiving_account" }, intLiteral(BigInt(d.network))],
+        ),
+    )
+    .buildUnsignedTransaction();
+}

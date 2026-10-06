@@ -64,6 +64,7 @@ export interface Deployment extends Context {
   evidence: {
     engineClaims: boolean;
     guestPayout: boolean;
+    guestAccountCreation?: boolean;
     daemonScopes: boolean;
     httpsWallet: boolean;
     mailboxRecovery: boolean;

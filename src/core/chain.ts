@@ -18,6 +18,7 @@ import { claimsReady, writesReady, endpoint } from "./config";
 import { hex } from "./crypto";
 import {
   claimTransaction,
+  claimToNewAccountTransaction,
   publishTransaction,
   postboxTransaction,
 } from "./transactions";
@@ -314,6 +315,7 @@ export class PostOfficeClient {
     component: string,
     claimSecret: Uint8Array | undefined,
     storage: Storage,
+    createAccount = false,
   ) {
     if (
       envelope.context.network !== this.deployment.network ||
@@ -321,7 +323,7 @@ export class PostOfficeClient {
       envelope.context.template !== this.deployment.template
     )
       throw new Error("Envelope belongs to another deployment");
-    if (!claimsReady(this.deployment))
+    if (!claimsReady(this.deployment, createAccount))
       throw new Error("Guest claiming awaits engine and delivery evidence");
     if (envelope.mode === "postbox")
       throw new Error(
@@ -340,23 +342,46 @@ export class PostOfficeClient {
       )
     )
       throw new Error("Reconcile the existing submission first");
-    const destination = await this.validateDestination(address, component);
+    let ownerPublicKey = "";
+    const destination = createAccount
+      ? ""
+      : await this.validateDestination(address, component);
+    if (createAccount) {
+      const parsed = parseOotleAddress(address);
+      try {
+        if (parsed.network !== this.deployment.network || parsed.memo?.length)
+          throw new Error("Wrong network or unsupported memo address");
+        ownerPublicKey = hex(parsed.owner_key);
+      } finally {
+        parsed.free();
+      }
+    }
     if (!envelope.component) throw new Error("Envelope component missing");
     const latest = await this.readLetter(envelope.id, envelope.component);
     if (latest.claimed) throw new Error("Gift already collected");
-    const rawTx = claimTransaction(
-      this.deployment,
-      envelope.component,
-      destination,
-      await this.provider.getCurrentEpoch(),
-    );
+    const epoch = await this.provider.getCurrentEpoch();
+    const rawTx = createAccount
+      ? claimToNewAccountTransaction(
+          this.deployment,
+          envelope.component,
+          ownerPublicKey,
+          epoch,
+        )
+      : claimTransaction(
+          this.deployment,
+          envelope.component,
+          destination,
+          epoch,
+        );
     const vaults = [
       ...(await getVaultIdsForAccount(this.provider, envelope.component)),
-      ...(await getVaultIdsForAccount(this.provider, destination)),
+      ...(createAccount
+        ? []
+        : await getVaultIdsForAccount(this.provider, destination)),
     ];
     const ids = [
       envelope.component,
-      destination,
+      ...(createAccount ? [] : [destination]),
       this.deployment.resource,
       `template_${this.deployment.envelopeTemplate}`,
       ...vaults,

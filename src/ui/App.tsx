@@ -111,6 +111,7 @@ export function App() {
     [privateLink, setPrivateLink] = useState("");
   const [address, setAddress] = useState(""),
     [destination, setDestination] = useState(""),
+    [createAccount, setCreateAccount] = useState(false),
     [destMode, setDestMode] = useState("manual"),
     [route, setRoute] = useState<LinkRoute>();
   const secret = useRef<Uint8Array | undefined>(undefined),
@@ -325,6 +326,7 @@ export function App() {
     setGhost(false);
     setPrivateLink("");
     setRoute(undefined);
+    setCreateAccount(false);
   }
   async function refresh() {
     if (!d.registry || !d.indexerUrl) return;
@@ -403,6 +405,7 @@ export function App() {
     setPrivateLink("");
     setRoute(undefined);
     setPrepared(undefined);
+    setCreateAccount(false);
     setStatus(
       "Disconnected. Revoke the API key in your daemon if you want to remove its authority.",
     );
@@ -599,6 +602,7 @@ export function App() {
                       className={`envelope-card envelope-${i % 3} ${e.mode === "link" ? "sealed" : ""}`}
                       key={e.id}
                       onClick={() => {
+                        setCreateAccount(false);
                         setActive(e);
                         setPlain(
                           e.mode === "public"
@@ -1479,6 +1483,7 @@ export function App() {
                         aria-pressed={destMode === "wallet"}
                         onClick={() => {
                           setDestMode("wallet");
+                          setCreateAccount(false);
                           if (current) {
                             setAddress(current.address);
                             setDestination(current.account.component_address);
@@ -1516,19 +1521,35 @@ export function App() {
                             onChange={(e) => setAddress(e.target.value)}
                           />
                         </label>
-                        <label>
-                          Existing built-in account component
-                          <input
-                            value={destination}
-                            onChange={(e) => setDestination(e.target.value)}
-                          />
-                        </label>
+                        {active.mode !== "postbox" && (
+                          <label className="check">
+                            <input
+                              type="checkbox"
+                              checked={createAccount}
+                              disabled={busy || !claimsReady(d, true)}
+                              onChange={(e) => {
+                                setCreateAccount(e.target.checked);
+                                setDestination("");
+                              }}
+                            />
+                            Create a new receiving account
+                          </label>
+                        )}
+                        {!createAccount && (
+                          <label>
+                            Existing built-in account component
+                            <input
+                              value={destination}
+                              onChange={(e) => setDestination(e.target.value)}
+                            />
+                          </label>
+                        )}
                       </>
                     )}
                     <p className="fine-print">
-                      Guests may use an existing compatible account without
-                      connecting its wallet. L1 XTM addresses, raw keys and
-                      arbitrary components are unsupported.
+                      {createAccount
+                        ? "Use an Ootle address whose built-in account does not exist yet. The gift reserve pays account creation and collection fees; your receiving keys stay in your wallet."
+                        : "Guests may use an existing compatible account without connecting its wallet. L1 XTM addresses, raw keys and arbitrary components are unsupported."}
                     </p>
                     <button
                       className="primary"
@@ -1537,7 +1558,7 @@ export function App() {
                         !chain ||
                         !(active.mode === "postbox"
                           ? writesReady(d, "postbox")
-                          : claimsReady(d)) ||
+                          : claimsReady(d, createAccount)) ||
                         (active.mode === "postbox" &&
                           !wallet?.accounts.some(
                             (a) =>
@@ -1570,6 +1591,7 @@ export function App() {
                                   destination,
                                   secret.current,
                                   localStorage,
+                                  createAccount,
                                 );
                           setStatus(
                             `Claim submitted ${id}. Verify delivery through Network & verification.`,

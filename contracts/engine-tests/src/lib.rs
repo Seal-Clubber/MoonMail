@@ -246,13 +246,26 @@ mod tests {
         assert!(!p.discoverable);
         let (sk, _) = t.new_key_pair(77);
         t.execute_expect_failure(
-            t.transaction().call_method(office,"rotate_postbox_key",args!["box-1".to_string(),"attacker-key".to_string()]).build_and_seal(&sk),vec![],
+            t.transaction()
+                .call_method(
+                    office,
+                    "rotate_postbox_key",
+                    args!["box-1".to_string(), "attacker-key".to_string()],
+                )
+                .build_and_seal(&sk),
+            vec![],
         );
-        t.call_method::<()>(office,"rotate_postbox_key",args!["box-1".to_string(),"version-two-public-key".to_string()],vec![]);
-        let rotated: ghostdrop_template::ghostdrop::Postbox = get(&mut t,office,"postbox",args!["box-1".to_string()]);
-        assert_eq!(rotated.controller,p.controller);
-        assert_eq!(rotated.id,p.id);
-        assert_eq!(rotated.encryption_key,"version-two-public-key");
+        t.call_method::<()>(
+            office,
+            "rotate_postbox_key",
+            args!["box-1".to_string(), "version-two-public-key".to_string()],
+            vec![],
+        );
+        let rotated: ghostdrop_template::ghostdrop::Postbox =
+            get(&mut t, office, "postbox", args!["box-1".to_string()]);
+        assert_eq!(rotated.controller, p.controller);
+        assert_eq!(rotated.id, p.id);
+        assert_eq!(rotated.encryption_key, "version-two-public-key");
         t.execute_expect_failure(
             t.transaction()
                 .call_method(
@@ -408,6 +421,79 @@ mod tests {
         t.execute_expect_success(tx, vec![]);
         assert!(letter(&mut t, office, "js-private").claimed);
         assert_eq!(balance(&t, destination), Amount::from(1_000_000u64));
+    }
+    #[test]
+    #[ignore = "requires Node and tsx; native account creation in the fee stage"]
+    fn javascript_guest_creates_an_unfunded_account_in_the_claim_checkpoint() {
+        let (mut t, office, _) = fixture();
+        let (_, recipient_pk) = t.new_key_pair(78);
+        let component = child(&mut t, office, "gift");
+        let (tx, _) = js_transaction(serde_json::json!({
+            "component": component.to_string(),
+            "newAccountPublicKey": recipient_pk.to_byte_type().to_string(),
+            "testSecret": serde_json::to_value(t.secret_key()).unwrap(),
+            "inputs": []
+        }));
+        t.enable_fees();
+        t.execute_expect_success(tx, vec![]);
+        let e = letter(&mut t, office, "gift");
+        assert!(e.claimed);
+        assert_eq!(
+            balance(&t, e.destination.unwrap()),
+            Amount::from(1_000_000u64)
+        );
+    }
+    #[test]
+    #[ignore = "requires Node and tsx; creation rollback and private claim authorization"]
+    fn javascript_guest_creation_rolls_back_for_bad_authority_and_insufficient_fees() {
+        let (mut t, office, _) = fixture();
+        let (_, authority) = t.new_key_pair(81);
+        for (id, mode, reserve) in [
+            ("bad-authority", 1, 1_000_000),
+            ("small-creation-reserve", 0, 1),
+        ] {
+            let (_, recipient_pk) = t.new_key_pair(if mode == 1 { 82 } else { 83 });
+            let destination =
+                tari_engine_types::component::derive_component_address_from_public_key(
+                    // Public built-in Account constant; the template ABI accessor
+                    // requires a running WASM context and cannot run on this host.
+                    &TemplateAddress::from_array([0; 32]),
+                    &recipient_pk.to_byte_type(),
+                );
+            publish(
+                &mut t,
+                office,
+                id,
+                mode,
+                if mode == 1 {
+                    authority.to_byte_type().to_string()
+                } else {
+                    String::new()
+                },
+                String::new(),
+                1_000_000,
+                reserve,
+            );
+            let component = child(&mut t, office, id);
+            let (tx, _) = js_transaction(serde_json::json!({
+                "component": component.to_string(),
+                "newAccountPublicKey": recipient_pk.to_byte_type().to_string(),
+                "testSecret": serde_json::to_value(t.secret_key()).unwrap(),
+                "inputs": []
+            }));
+            t.enable_fees();
+            t.execute_expect_failure(tx, vec![]);
+            assert!(!letter(&mut t, office, id).claimed);
+            assert_eq!(
+                gift_balance(&mut t, office, id),
+                Amount::from(1_000_000 + reserve)
+            );
+            assert!(
+                t.read_only_state_store()
+                    .get_component(destination)
+                    .is_err()
+            );
+        }
     }
     #[test]
     #[ignore = "requires Node and tsx; full isolated JS crypto -> engine round trip"]

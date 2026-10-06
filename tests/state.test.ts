@@ -90,6 +90,16 @@ it("verified guest claims work without granting sender or postbox wallet access"
     },
   };
   expect(claimsReady(verified)).toBe(true);
+  expect(claimsReady(verified, true)).toBe(false);
+  expect(
+    claimsReady(
+      {
+        ...verified,
+        evidence: { ...verified.evidence, guestAccountCreation: true },
+      },
+      true,
+    ),
+  ).toBe(true);
   expect(writesReady(verified, "public")).toBe(false);
   expect(writesReady(verified, "link")).toBe(false);
   expect(writesReady(verified, "postbox")).toBe(false);

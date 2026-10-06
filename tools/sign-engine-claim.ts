@@ -1,7 +1,11 @@
 // Engine bridge: accepts only an isolated test fixture through stdin. No RPC.
 import { signTransaction, sealTransaction, Network } from "@tari-project/ootle";
 import { SecretKeyWallet } from "@tari-project/ootle-secret-key-wallet";
-import { claimTransaction, publishTransaction } from "../src/core/transactions";
+import {
+  claimTransaction,
+  claimToNewAccountTransaction,
+  publishTransaction,
+} from "../src/core/transactions";
 import { emptyDeployment } from "../src/core/config";
 import { sealLetter, openLetter } from "../src/core/crypto";
 let input = "";
@@ -52,7 +56,9 @@ if (f.operation === "publish") {
     if (opened.letter.subject !== "Hidden engine letter")
       throw new Error("Letter mismatch");
   }
-  tx = claimTransaction(d, f.component, f.destination, 0);
+  tx = f.newAccountPublicKey
+    ? claimToNewAccountTransaction(d, f.component, f.newAccountPublicKey, 0)
+    : claimTransaction(d, f.component, f.destination, 0);
 }
 tx.inputs = f.inputs;
 if (!claimSecret) throw new Error("Isolated signer key missing");
