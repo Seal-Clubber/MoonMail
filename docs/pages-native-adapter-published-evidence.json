@@ -1,0 +1,74 @@
+{
+  "base": "https://seal-clubber.github.io/GhostDrop/",
+  "checkedAt": "2026-10-06T17:56:27.043Z",
+  "frontendCommit": "5d582a34c4685953e30b565021172cb42e3a0941",
+  "publishedAssetsMatchReviewedBuild": true,
+  "assets": [
+    {
+      "path": "index.html",
+      "sha256": "cf51678c0e4388582a4597044c57535339234e3899b0e2251777da3b8aad37dc",
+      "bytes": 689
+    },
+    {
+      "path": "deployment.json",
+      "sha256": "84145836e1594288a2b4f25f8ac606d6d7b406291b16b80764b2533a74bb4359",
+      "bytes": 616
+    },
+    {
+      "path": "assets/index-DOgn5dYb.css",
+      "sha256": "9ab2226aa85be536bc5381f8bae24f56bf63257271415e9f962f78079b3556fa",
+      "bytes": 14336
+    },
+    {
+      "path": "assets/index-DzFRUyBn.js",
+      "sha256": "fa37caa75037506265b4bac02e8b0437672d0b4f75dc3528808e1261ce4c3e25",
+      "bytes": 299712
+    },
+    {
+      "path": "assets/ootle_wasm-BfiRg-2B.js",
+      "sha256": "05d75e599e926d72fe30c361dcf1202efa38f4acd307385d7bbd01a37c20bc7e",
+      "bytes": 209
+    },
+    {
+      "path": "assets/ootle_wasm-BYB-6FlJ.js",
+      "sha256": "4deb0cea9ef5aeb02143e5eb6d671fafdbb9d754f4c7d625f8d73f1be2da415f",
+      "bytes": 18913
+    },
+    {
+      "path": "assets/ootle_wasm_bg-Dvm5bzZ4.wasm",
+      "sha256": "d3969f2f738a70cf3199992d52c3e766000b5f31b859427849ed4171395897f1",
+      "bytes": 1288441
+    }
+  ],
+  "pages": {
+    "httpsEnforced": true,
+    "buildType": "workflow",
+    "url": "https://seal-clubber.github.io/GhostDrop/"
+  },
+  "workflowRuns": [
+    {
+      "name": "Verify GhostDrop",
+      "headSha": "5d582a34c4685953e30b565021172cb42e3a0941",
+      "status": "in_progress",
+      "conclusion": null,
+      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37506399912"
+    },
+    {
+      "name": "Publish reviewed GhostDrop to GitHub Pages",
+      "headSha": "5d582a34c4685953e30b565021172cb42e3a0941",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37506400156"
+    }
+  ],
+  "githubRunMetadataVerified": true,
+  "hostedBrowserRegressions": {
+    "testsPassed": 14,
+    "testsFailed": 0,
+    "exitCode": 0,
+    "seconds": 11.3,
+    "viewports": ["desktop", "mobile"],
+    "baseUrl": "https://seal-clubber.github.io/GhostDrop/",
+    "caveat": "Regression cases include isolated reader fixtures. The separate pages-native-adapter-reader-evidence.json verifies actual public chain letters without configuration or RPC interception. No authenticated wallet or new claim was tested."
+  }
+}
