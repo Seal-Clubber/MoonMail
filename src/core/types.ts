@@ -70,5 +70,6 @@ export interface Deployment extends Context {
     daemonScopes: boolean;
     httpsWallet: boolean;
     mailboxRecovery: boolean;
+    sapientWallet?: boolean;
   };
 }

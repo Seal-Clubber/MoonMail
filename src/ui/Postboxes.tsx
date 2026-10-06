@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Deployment, Envelope, Postbox } from "../core/types";
-import type { WalletSession } from "../core/wallet";
+import type { ConnectedWallet } from "../core/wallet";
 import type { PostOfficeClient } from "../core/chain";
 import { mailboxKey } from "../core/mailbox";
 import { writesReady } from "../core/config";
@@ -21,7 +21,7 @@ export function Postboxes({
   onMore,
   hasMore,
 }: {
-  wallet?: WalletSession;
+  wallet?: ConnectedWallet;
   chain?: PostOfficeClient;
   deployment: Deployment;
   boxes: Postbox[];
@@ -58,7 +58,10 @@ export function Postboxes({
     (e) => e.mode === "postbox" && e.recipientPostbox === box?.id,
   );
   const enabled =
-    !!wallet && !!chain && writesReady(deployment, "postbox") && !busy;
+    !!wallet &&
+    !!chain &&
+    writesReady(deployment, "postbox", "sapient") &&
+    !busy;
   const recoverySetups = readPending(localStorage).filter((p) => {
     const c = p.capsule;
     if (
@@ -202,7 +205,7 @@ export function Postboxes({
       </h1>
       <p>
         One controlling wallet can own several postboxes. Names may repeat; IDs
-        stay distinct. Changing an API key preserves their identity.
+        stay distinct. Reconnecting the same wallet preserves their identity.
       </p>
       {!wallet ? (
         <button className="primary" onClick={onConnect}>
@@ -306,11 +309,10 @@ export function Postboxes({
                     />
                   </label>
                   <p className="fine-print">
-                    Setup first stores an encrypted memo in your standard wallet
-                    and permanently locks 1 µTARI. Your account pays up to this
-                    fee cap, then a separate publication fee below. Review both
-                    transactions separately. Never clear an uncertain setup to
-                    retry.
+                    This saved setup uses the earlier native-memo recovery
+                    route. Sapient recovery is not yet verified, so new setup
+                    remains disabled. Existing keys and pending transactions are
+                    preserved.
                   </p>
                   {prepared && (
                     <p className="info">
@@ -390,10 +392,10 @@ export function Postboxes({
               </p>
               <p className="fine-print">
                 Rotation affects new mail. Historical key versions remain
-                recoverable through their original recovery route. New keys use
-                encrypted standard-wallet memos; older extension keys still
-                require their original adapter. Rotation changes only the
-                encryption key; save nickname and listing changes separately.
+                recoverable through their original recovery route. Sapient
+                recovery is being validated before new keys can be published.
+                Rotation changes only the encryption key; save nickname and
+                listing changes separately.
               </p>
             </article>
           )}
@@ -426,12 +428,12 @@ export function Postboxes({
           )}
         </>
       )}
-      {!writesReady(deployment, "postbox") && (
+      {!writesReady(deployment, "postbox", "sapient") && (
         <p className="info">
-          Postbox writes await verified deployment, wallet transport and key
-          recovery. New postboxes use the standard wallet's encrypted payment
-          memos, with account-scoped memo-read permission. The hosted connection
-          is still unverified; no extra GhostDrop bridge is part of this route.
+          Postbox writes await verified Sapient key recovery. Connecting a
+          wallet for signing does not give GhostDrop a recoverable mail
+          decryption key. Existing postbox keys are preserved; no extra bridge
+          is required.
         </p>
       )}
     </section>

@@ -91,15 +91,18 @@ test("real browser WASM encrypts subject locally; send stays disabled; drafts su
     page.getByRole("button", { name: "Fund & publish letter" }),
   ).toBeDisabled();
   await page.getByRole("button", { name: "Connect to send" }).click();
-  await page.getByLabel("API key · held in memory only").fill("tw_test");
+  await expect(
+    page.getByRole("heading", { name: "Connect Sapient" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("API key · held in memory only")).toHaveCount(0);
   await page.getByRole("button", { name: "Close wallet connection" }).click();
   await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(
     "A private thought",
   );
   await page.getByRole("button", { name: "Connect to send" }).click();
-  await expect(page.getByLabel("API key · held in memory only")).toHaveValue(
-    "",
-  );
+  await expect(
+    page.getByRole("heading", { name: "Connect Sapient" }),
+  ).toBeVisible();
   expect(errors).toEqual([]);
 });
 test("subpath deep link removes capability before network requests and copy material stays local", async ({
@@ -118,7 +121,7 @@ test("subpath deep link removes capability before network requests and copy mate
   await page.reload();
   await expect(page.getByRole("alert")).toContainText("complete private link");
 });
-test("addressed mail explains the standard wallet and remains gated", async ({
+test("addressed mail explains Sapient recovery and remains gated", async ({
   page,
 }) => {
   await page.goto("./#/compose");
@@ -129,7 +132,7 @@ test("addressed mail explains the standard wallet and remains gated", async ({
     }),
   ).toBeVisible();
   await expect(
-    page.getByText("Hosted wallet connection is still", { exact: false }),
+    page.getByText("postbox key recovery are still", { exact: false }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Review letter" }),

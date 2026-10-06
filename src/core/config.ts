@@ -12,6 +12,7 @@ export const emptyDeployment: Deployment = {
     guestAccountCreation: false,
     daemonScopes: false,
     httpsWallet: false,
+    sapientWallet: false,
     mailboxRecovery: false,
   },
 };
@@ -36,11 +37,13 @@ export function claimsReady(d: Deployment, createAccount = false) {
 export function writesReady(
   d: Deployment,
   mode: "public" | "link" | "postbox" = "link",
+  provider: "daemon" | "sapient" = "daemon",
 ) {
   return (
     deploymentReady(d) &&
-    d.evidence.daemonScopes === true &&
-    d.evidence.httpsWallet === true &&
+    (provider === "sapient"
+      ? d.evidence.sapientWallet === true
+      : d.evidence.daemonScopes === true && d.evidence.httpsWallet === true) &&
     (mode !== "postbox" || d.evidence.mailboxRecovery === true)
   );
 }

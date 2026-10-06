@@ -1,5 +1,7 @@
 # Local wallet extension
 
+**Historical implementation only.** GhostDrop's website now connects to the stock [Sapient browser wallet](../docs/SAPIENT.md). Visitors do not need this daemon patch or another helper program. This directory remains to preserve previous recovery work and evidence; Sapient postbox recovery is separately incomplete.
+
 Experimental patch for official Ootle wallet daemon **v0.43.0**, source commit `392d805579db35fcc8e8bc1aba84adc1fffe0c22`. It adds GhostDrop postbox encryption and an opt-in exact-origin policy. It runs on the wallet owner's machine. GhostDrop still needs no application backend.
 
 An [alternative using standard-wallet encrypted memos](../docs/STANDARD-WALLET-POSTBOXES.md) now has an isolated-chain recovery proof, including a fresh seed-restored stock wallet. It can remove the custom patch requirement after the website adapter and hosted connection are migrated and verified. Existing patched-wallet postboxes remain supported by the current implementation.

@@ -13,7 +13,8 @@ import {
 } from "@tari-project/ootle-secret-key-wallet";
 import { parseOotleAddress } from "@tari-project/ootle-wasm";
 import type { Deployment, Envelope, Postbox } from "./types";
-import type { WalletSession, WalletAccount } from "./wallet";
+import type { ConnectedWallet, WalletAccount } from "./wallet";
+import { SapientSession } from "./sapient";
 import { claimsReady, writesReady, endpoint } from "./config";
 import { hex } from "./crypto";
 import {
@@ -262,13 +263,13 @@ export class PostOfficeClient {
     }
   }
   async publish(
-    wallet: WalletSession,
+    wallet: ConnectedWallet,
     account: WalletAccount,
     envelope: Envelope,
     fee: string,
     storage: Storage,
   ) {
-    if (!writesReady(this.deployment, envelope.mode))
+    if (!writesReady(this.deployment, envelope.mode, wallet.kind ?? "daemon"))
       throw new Error("Production sending awaits deployment evidence");
     if (
       hasUnresolved(
@@ -286,6 +287,20 @@ export class PostOfficeClient {
       fee,
       await this.provider.getCurrentEpoch(),
     );
+    if (wallet instanceof SapientSession) {
+      if (
+        wallet.network !== this.deployment.network ||
+        wallet.accounts[0].account.component_address !==
+          account.account.component_address
+      )
+        throw new Error("Choose the connected Sapient funding account");
+      return wallet.submitOperation(tx, fee, storage, {
+        network: this.deployment.network,
+        registry: this.deployment.registry,
+        operation: "publish",
+        envelopeId: envelope.id,
+      });
+    }
     if (!account.account.owner_key_id)
       throw new Error("Account has no signing key");
     const request = {
@@ -333,7 +348,7 @@ export class PostOfficeClient {
       throw new Error("Guest claiming awaits engine and delivery evidence");
     if (envelope.mode === "postbox")
       throw new Error(
-        "Addressed claims require the controlling daemon, which remains unverified",
+        "Addressed claims require the controlling wallet; Sapient postbox claims remain unverified",
       );
     if (envelope.claimed || BigInt(envelope.gift) === 0n)
       throw new Error("Gift is unavailable");
@@ -418,7 +433,7 @@ export class PostOfficeClient {
     return r.transaction_id;
   }
   private async submitControlled(
-    wallet: WalletSession,
+    wallet: ConnectedWallet,
     account: WalletAccount,
     tx: ReturnType<typeof publishTransaction>,
     feeCap: string,
@@ -426,6 +441,29 @@ export class PostOfficeClient {
     operation: "postbox" | "claim",
     identity: string,
   ) {
+    if (wallet instanceof SapientSession) {
+      if (
+        wallet.network !== this.deployment.network ||
+        wallet.accounts[0].account.component_address !==
+          account.account.component_address
+      )
+        throw new Error("Wrong Sapient account or network");
+      if (
+        hasUnresolved(
+          storage,
+          this.deployment.network,
+          this.deployment.registry,
+          identity,
+        )
+      )
+        throw new Error("Resume the existing submission first");
+      return wallet.submitOperation(tx, feeCap, storage, {
+        network: this.deployment.network,
+        registry: this.deployment.registry,
+        operation,
+        envelopeId: identity,
+      });
+    }
     if (!account.account.owner_key_id)
       throw new Error("Controlling account has no signing key");
     if (wallet.network !== this.deployment.network)
@@ -464,14 +502,14 @@ export class PostOfficeClient {
     return result.transaction_id;
   }
   async savePostbox(
-    wallet: WalletSession,
+    wallet: ConnectedWallet,
     account: WalletAccount,
     box: Postbox,
     operation: "create" | "edit" | "rotate",
     fee: string,
     storage: Storage,
   ) {
-    if (!writesReady(this.deployment, "postbox"))
+    if (!writesReady(this.deployment, "postbox", wallet.kind ?? "daemon"))
       throw new Error("Postbox writes await deployment and recovery evidence");
     if (box.controller !== account.account.owner_public_key)
       throw new Error("Choose the controlling account");
@@ -535,14 +573,14 @@ export class PostOfficeClient {
     );
   }
   async claimPostbox(
-    wallet: WalletSession,
+    wallet: ConnectedWallet,
     account: WalletAccount,
     envelope: Envelope,
     address: string,
     component: string,
     storage: Storage,
   ) {
-    if (!writesReady(this.deployment, "postbox"))
+    if (!writesReady(this.deployment, "postbox", wallet.kind ?? "daemon"))
       throw new Error("Postbox claims await deployment and recovery evidence");
     if (
       envelope.mode !== "postbox" ||

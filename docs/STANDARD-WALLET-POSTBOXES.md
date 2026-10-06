@@ -1,5 +1,7 @@
 # Postboxes with the standard wallet
 
+**Historical daemon adapter.** The website now targets [Sapient](SAPIENT.md). This proof and its descriptors remain preserved, but Sapient's provider does not yet establish the permanent carrier/historical memo interface required below. New postbox setup remains disabled. Visitors are not instructed to run a daemon or a patched wallet.
+
 New postbox keys in the local source now use the standard Ootle wallet's encrypted payment memos. Recovery has been exercised on an isolated chain using the **unmodified official wallet daemon 0.43.0**, including the new application adapter and an independently restored wallet. The hosted build has not yet received this source change, and its standard-wallet connection remains unresolved.
 
 ## Preserve the original model

@@ -1,5 +1,7 @@
 # Standard wallet handoff candidate
 
+**Superseded for the current wallet target.** The user selected [Sapient](SAPIENT.md); the website now connects through its provider and approval popup. This daemon manifest research is retained as historical evidence, not a visitor setup requirement.
+
 GhostDrop's required setup is the HTTPS website and an unmodified standard Ootle wallet daemon. An additional local proxy, patched wallet or browser extension is outside that requirement.
 
 ## Built-in manifest import

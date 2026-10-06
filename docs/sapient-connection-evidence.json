@@ -1,0 +1,36 @@
+{
+  "checkedAt": "2026-10-06T20:43:50.198Z",
+  "wallet": "Sapient",
+  "sourceCommit": "7ad3c4f117a76c64d472fd371b7d75bbe297abec",
+  "sourceVersion": "0.6.6",
+  "network": "esmeralda",
+  "origins": ["http://127.0.0.1:4173", "https://seal-clubber.github.io"],
+  "httpsOriginUsesLocalStaticBuildOverride": true,
+  "checks": {
+    "unmodifiedWalletBuild": true,
+    "disposableSelfCustodyWallet": true,
+    "seedEnteredIntoGhostDrop": false,
+    "actualConnectionApproval": true,
+    "publicRegistryReadThroughWallet": true,
+    "draftPreserved": true,
+    "persistedApprovalSurvivesReload": true,
+    "actualWalletRejectionReconciled": true,
+    "originDisconnected": true,
+    "apiKeyRequested": false,
+    "daemonRequired": false,
+    "transactionsBroadcast": 0
+  },
+  "automatedChecks": {
+    "clientTests": 50,
+    "browserTests": 14,
+    "typecheck": "passed",
+    "pagesBaseBuild": "passed"
+  },
+  "limitations": [
+    "Source build of Sapient; store-distributed version not separately tested.",
+    "HTTPS-origin probe substitutes local app assets; changed source is not yet published.",
+    "Reload probe seeds a public journal entry for a real wallet request, then rejects it; it is not a publication or postbox creation proof.",
+    "Funded publication and aggregate wallet retry fees remain unverified.",
+    "Sapient historical postbox recovery remains unverified."
+  ]
+}

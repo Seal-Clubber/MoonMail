@@ -2,6 +2,10 @@
 
 Evidence applies to the stated build and isolated network. GitHub Pages HTTPS hosting is verified separately from wallet connectivity and public-chain deployment.
 
+## Current Sapient migration
+
+The website now targets Sapient instead of the daemon API-key form. An **unmodified Sapient 0.6.6** source build, pinned at `7ad3c4f117a76c64d472fd371b7d75bbe297abec`, passed real connection approval, public registry reads, draft preservation, saved approval after app reload, wallet rejection reconciliation and origin disconnect. Both localhost and Pages HTTPS-origin checks passed using disposable wallets. The HTTPS probe substitutes local app assets only; the changed source is not yet published. The reload proof seeds a public journal fixture for a real wallet request and rejects it before submission. **Zero public transactions were broadcast.** [Verification record](sapient-connection-evidence.json) and [API/recovery boundaries](SAPIENT.md) distinguish this from funded publication and historical postbox recovery, which remain incomplete. `sapientWallet` and `mailboxRecovery` stay false; existing guest gates stay enabled. Older daemon/extension evidence below remains historical and does not authorize Sapient spending.
+
 ## Real Esmeralda deployment
 
 On 2026-10-06, the saved L1 burn was claimed on Ootle and its funds were revealed in the same disposable account for deployment fees. Both templates, the ownerless registry and three text-only public letters were accepted on network 38. The application's `PostOfficeClient` then read their complete subjects/bodies from the official public indexer and checked the published template identities and owner rules. Confirmed identities, accepted transaction IDs, actual paid fees, artifact hashes and public letter contents are recorded in [esmeralda-deployment-evidence.json](esmeralda-deployment-evidence.json). Funding receipts are in [esmeralda-funding-evidence.json](esmeralda-funding-evidence.json).
@@ -36,7 +40,7 @@ Two further guest gifts were collected through the actual published site: deskto
 
 GitHub Verify run [37496235886](https://github.com/Seal-Clubber/GhostDrop/actions/runs/37496235886) and Pages run [37496236688](https://github.com/Seal-Clubber/GhostDrop/actions/runs/37496236688) succeeded for `da995ff2d3b4fa867be45c8d50d6cf4118f9a298`. The repository's GitHub API confirms Pages uses workflow deployment and enforces HTTPS. All 14 hosted regressions passed for this published build. New donor-tool/doc checkpoints remain local for the user's push. For future builds use `GHOSTDROP_TEST_BASE_URL=https://seal-clubber.github.io/GhostDrop/ pnpm test:browser` (use the appropriate environment-variable syntax for your shell).
 
-- `pnpm test`: **38 passed**, including the standard-wallet adapter's historical recovery, carrier validation, permission/session failures, simulation fee caps, uncertain/reloaded setup and overlapping dry-run guards, plus guest/sender gate separation and local donor guards.
+- `pnpm test`: **50 passed**, including Sapient network/account checks, accepted simulation and fee caps, persisted approval, lost-response reconciliation, rejection, session invalidation and fee-checkpoint separation. Preserved standard-wallet recovery, guest/sender and donor guards also pass.
 - `pnpm build`: strict TypeScript/static Vite build passed, including `GHOSTDROP_BASE=/GhostDrop/`.
 - `pnpm test:browser`: **14 passed**, desktop 1440×1100/mobile 390×844. Includes retry after an initial indexer outage and rejection of late data after a network switch. Scene screenshots visually inspected.
 - Six native Envelope validation cases passed; both release WASM artifacts built.

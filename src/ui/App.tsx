@@ -9,7 +9,8 @@ import type {
   MailboxPayload,
 } from "../core/types";
 import { emptyDeployment, claimsReady, writesReady } from "../core/config";
-import { WalletSession } from "../core/wallet";
+import type { ConnectedWallet } from "../core/wallet";
+import { SapientSession, sapientProvider } from "../core/sapient";
 import { PostOfficeClient } from "../core/chain";
 import { sealLetter, openLetter, assertEnvelopeSize } from "../core/crypto";
 import {
@@ -84,11 +85,10 @@ export function App() {
     [preview, setPreview] = useState(false),
     [list, setList] = useState(false),
     [cursor, setCursor] = useState("");
-  const [wallet, setWallet] = useState<WalletSession>(),
+  const [wallet, setWallet] = useState<ConnectedWallet>(),
     [account, setAccount] = useState(0),
     [connect, setConnect] = useState(false),
-    [url, setUrl] = useState("http://localhost:5100/json_rpc"),
-    [apiKey, setApiKey] = useState("");
+    [sapientAvailable, setSapientAvailable] = useState(!!sapientProvider());
   const [error, setError] = useState(""),
     [status, setStatus] = useState(""),
     [busy, setBusy] = useState(false),
@@ -120,6 +120,7 @@ export function App() {
     openSequence = useRef(0),
     draftSequence = useRef(0),
     readSequence = useRef(0),
+    connectionSequence = useRef(0),
     retryReader = useRef<PostOfficeClient | undefined>(undefined),
     [indexerStatus, setIndexerStatus] = useState("");
   const owned = boxes.filter(
@@ -136,6 +137,28 @@ export function App() {
       setBusy(false);
     }
   }
+  useEffect(() => {
+    const detected = () => setSapientAvailable(!!sapientProvider());
+    window.addEventListener("tari#initialized", detected);
+    window.addEventListener("tari:announceProvider", detected);
+    detected();
+    return () => {
+      window.removeEventListener("tari#initialized", detected);
+      window.removeEventListener("tari:announceProvider", detected);
+    };
+  }, []);
+  useEffect(() => {
+    if (!(wallet instanceof SapientSession)) return;
+    const changed = () => {
+      wallet.invalidate();
+      clearWallet(false);
+      setStatus(
+        "Sapient account changed or site permission was removed. Reconnect to continue.",
+      );
+    };
+    window.addEventListener("tari#accountsChanged", changed);
+    return () => window.removeEventListener("tari#accountsChanged", changed);
+  }, [wallet]);
   useEffect(() => {
     let cancelled = false;
     fetch(`${import.meta.env.BASE_URL}deployment.json`, { cache: "no-store" })
@@ -275,8 +298,8 @@ export function App() {
       if (e.key === "Escape") {
         e.preventDefault();
         if (connect) {
+          connectionSequence.current += 1;
           setConnect(false);
-          setApiKey("");
         } else closeLetter();
       }
       if (e.key === "Tab") {
@@ -392,12 +415,12 @@ export function App() {
     (e) => e.mode !== "postbox",
   );
   const current = wallet?.accounts[account];
-  function disconnect() {
+  function clearWallet(revoke: boolean) {
+    connectionSequence.current += 1;
     draftSequence.current += 1;
     openSequence.current += 1;
-    wallet?.disconnect();
+    if (revoke) wallet?.disconnect();
     setWallet(undefined);
-    setApiKey("");
     secret.current?.fill(0);
     secret.current = undefined;
     setPlain(undefined);
@@ -407,8 +430,11 @@ export function App() {
     setPrepared(undefined);
     setCreateAccount(false);
     setStatus(
-      "Disconnected. Revoke the API key in your daemon if you want to remove its authority.",
+      "Disconnected from Sapient. Private session state was cleared; manage site permissions in your wallet.",
     );
+  }
+  function disconnect() {
+    clearWallet(true);
   }
   async function prepare() {
     const sequence = draftSequence.current;
@@ -776,9 +802,9 @@ export function App() {
             {mode === "postbox" && (
               <p className="info">
                 Addressed mail requires a registered postbox and its controlling
-                Ootle wallet. New postboxes recover keys from the standard
-                wallet's encrypted memos. Hosted wallet connection is still
-                unverified, so this mode remains disabled.
+                wallet. Sapient signing for public and private-link mail and
+                postbox key recovery are still being verified, so this mode
+                remains disabled.
               </p>
             )}
             <form
@@ -1000,7 +1026,12 @@ export function App() {
                 )}
                 <button
                   className="primary"
-                  disabled={!wallet || !chain || !writesReady(d, mode) || busy}
+                  disabled={
+                    !wallet ||
+                    !chain ||
+                    !writesReady(d, mode, "sapient") ||
+                    busy
+                  }
                   onClick={() =>
                     void task(async () => {
                       if (!wallet || !chain || !current) return;
@@ -1019,11 +1050,10 @@ export function App() {
                 >
                   Fund & publish letter
                 </button>
-                {!writesReady(d, mode) && (
+                {!writesReady(d, mode, "sapient") && (
                   <p className="info">
                     Sending is gated until local engine claims, guest delivery,
-                    daemon scope enforcement and HTTPS wallet connectivity are
-                    verified.
+                    Sapient signing and confirmation are verified.
                   </p>
                 )}
               </div>
@@ -1090,8 +1120,8 @@ export function App() {
               Your <em>post office.</em>
             </h1>
             <p>
-              Static hosting, a replaceable Ootle indexer, and your local wallet
-              daemon. No GhostDrop server.
+              Static hosting, a replaceable Ootle indexer, and your Sapient
+              wallet. No GhostDrop server.
             </p>
             <label>
               Ootle test network
@@ -1274,6 +1304,22 @@ export function App() {
                   >
                     Reconcile
                   </button>
+                  {p.walletRequest && p.state === "unknown" && (
+                    <button
+                      disabled={busy || !(wallet instanceof SapientSession)}
+                      onClick={() =>
+                        void task(async () => {
+                          if (!(wallet instanceof SapientSession)) return;
+                          const id = await wallet.resume(p.id, localStorage);
+                          setStatus(
+                            `Sapient submission ${id}. Reconcile chain confirmation next.`,
+                          );
+                        })
+                      }
+                    >
+                      Resume Sapient approval
+                    </button>
+                  )}
                 </div>
               ))}
             {privateLink && (
@@ -1322,76 +1368,74 @@ export function App() {
               className="close"
               aria-label="Close wallet connection"
               onClick={() => {
+                connectionSequence.current += 1;
                 setConnect(false);
-                setApiKey("");
               }}
             >
               ×
             </button>
-            <span className="kicker">YOUR LOCAL OOTLE DAEMON</span>
-            <h2 id="wallet-title">Connect your wallet</h2>
+            <span className="kicker">YOUR SAPIENT WALLET</span>
+            <h2 id="wallet-title">Connect Sapient</h2>
             <p>
-              Use a scoped, short-lived API key created in your wallet daemon. A
-              spending key can authorize transactions without a popup.
+              Approve GhostDrop in Sapient. Your wallet holds your keys and asks
+              you to approve each transaction. No daemon URL, API key or file
+              import is needed.
             </p>
             <details>
-              <summary>Does this require an extra wallet program?</summary>
+              <summary>What do I need?</summary>
               <p className="fine-print">
-                GhostDrop is being built for the standard Ootle wallet daemon.
-                New postboxes use its encrypted payment memos to recover their
-                mail keys. Your financial seed and private view key stay in the
-                wallet. No separate GhostDrop bridge is part of this route.
+                Sapient is the wallet itself. Open GhostDrop in the browser
+                where you use Sapient, unlock it, and choose your Ootle account.
+                There is no separate GhostDrop bridge or background program.
               </p>
               <p className="fine-print">
                 Public mail and private-link mail open without a wallet. Sending
-                requires a wallet to sign and pay fees. Wallet-controlled
-                postboxes also need permission to read that account's decrypted
-                payment memos. The hosted site still needs a supported secure
-                connection to the standard daemon; that connection is not yet
-                verified, so sending and postbox writes remain disabled.
+                requires a wallet to sign and pay fees. Postbox key recovery is
+                being verified separately for Sapient; existing mail keys have
+                been preserved. Unsupported deployment actions stay disabled.
               </p>
             </details>
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 void task(async () => {
-                  const w = await WalletSession.connect(url, apiKey, d.network);
-                  wallet?.disconnect();
+                  const sequence = ++connectionSequence.current;
+                  const w = await SapientSession.connect(d.network);
+                  if (sequence !== connectionSequence.current) {
+                    w.invalidate();
+                    return;
+                  }
+                  if (wallet instanceof SapientSession) wallet.invalidate();
+                  else wallet?.disconnect();
                   setWallet(w);
                   setAccount(0);
-                  setApiKey("");
                   setConnect(false);
                   setStatus(
-                    `Connected daemon ${w.version}; ${w.accounts.length} account(s).`,
+                    "Connected to Sapient. Transactions require your wallet approval.",
                   );
                 });
               }}
             >
-              <label>
-                Daemon JSON-RPC URL
-                <input
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  required
-                />
-              </label>
-              <label>
-                API key · held in memory only
-                <input
-                  type="password"
-                  autoComplete="off"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  required
-                />
-              </label>
+              <p role="status">
+                {sapientAvailable
+                  ? "Sapient detected in this browser."
+                  : "Sapient has not been detected in this browser."}
+              </p>
+              {!sapientAvailable && (
+                <a
+                  href="https://sapient.tari.mw/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Get Sapient wallet ↗
+                </a>
+              )}
               <p className="fine-print">
-                No Admin key is needed. Check CORS/preflight and browser
-                local-network permission. Disconnect clears page credentials;
-                revoke the key in your daemon to remove its authority.
+                Switch accounts in Sapient. If you change its account or
+                network, reconnect here. Disconnect clears private page state.
               </p>
               <button className="primary" disabled={busy}>
-                {busy ? "Connecting…" : "Connect wallet"}
+                {busy ? "Connecting…" : "Connect Sapient"}
               </button>
             </form>
             {error && (
@@ -1562,7 +1606,7 @@ export function App() {
                         busy ||
                         !chain ||
                         !(active.mode === "postbox"
-                          ? writesReady(d, "postbox")
+                          ? writesReady(d, "postbox", "sapient")
                           : claimsReady(d, createAccount)) ||
                         (active.mode === "postbox" &&
                           !wallet?.accounts.some(

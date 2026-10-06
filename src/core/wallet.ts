@@ -8,10 +8,20 @@ import type {
 } from "./types";
 import { mailboxKey } from "./mailbox";
 import { NativeMailboxAdapter } from "./native-mailbox";
-export type WalletAccount = Awaited<
+type DaemonAccount = Awaited<
   ReturnType<WalletDaemonClient["accountsList"]>
 >["accounts"][number];
+export type WalletAccount = Pick<DaemonAccount, "address"> & {
+  account: Pick<
+    DaemonAccount["account"],
+    "name" | "component_address" | "owner_public_key" | "owner_key_id"
+  >;
+};
+export type ConnectedWallet =
+  | WalletSession
+  | import("./sapient").SapientSession;
 export class WalletSession {
+  readonly kind = "daemon" as const;
   private client: WalletDaemonClient;
   readonly accounts: WalletAccount[];
   readonly version: string;

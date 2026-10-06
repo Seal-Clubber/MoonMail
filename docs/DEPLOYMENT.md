@@ -1,5 +1,7 @@
 # Deployment
 
+**Current wallet target: Sapient.** The source uses its browser provider rather than daemon credentials. Connection and approval recovery pass with an unmodified stock source build, including a Pages HTTPS-origin local-asset probe. The changed source has not yet been published or used for a funded publication. Keep `sapientWallet` false until that deployment-specific proof passes, and `mailboxRecovery` false until Sapient historical recovery passes. Existing guest evidence and contract identities remain unchanged. [Sapient setup and limits](SAPIENT.md) supersede the browser-daemon instructions below; daemon instructions remain relevant to optional local deployment/donor tools and historical evidence.
+
 Templates and registry are deployed on real Esmeralda, with three public demonstration letters verified through the application's reader. Their confirmed identities are in `public/deployment.json`. Public/private-link guest claims pass real browser and stock-recipient payout/spend checks; their chain/guest gates are enabled. Sender-wallet and postbox gates remain false. The reviewed `da995ff` frontend is published on GitHub Pages with HTTPS enforced. Its actual default configuration, production asset bytes and desktop/mobile public reader pass verification. Two further claims through that live site delivered exact test gifts to the stock recipient, which spent part of each payout. See [the testnet deployment status](ESMERALDA.md) and [published-build evidence](pages-published-evidence.json).
 
 ## Public network presets

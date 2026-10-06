@@ -13,6 +13,7 @@ export interface Pending {
   envelopeId: string;
   state: "submitted" | "confirmed" | "rejected" | "unknown";
   capsule?: CapsuleRecord;
+  walletRequest?: { provider: "sapient"; id: string; account: string };
 }
 export function capsuleIdentity(context: MailboxContext) {
   return `capsule:${context.postbox}:${context.keyVersion}`;
@@ -46,6 +47,12 @@ function strictPending(storage: Pick<Storage, "getItem">): Pending[] {
           !Number.isInteger(p.network) ||
           !["publish", "claim", "postbox", "capsule"].includes(p.operation) ||
           !validCapsule(p) ||
+          (p.walletRequest !== undefined &&
+            (!["publish", "postbox"].includes(p.operation) ||
+              p.walletRequest.provider !== "sapient" ||
+              typeof p.walletRequest.id !== "string" ||
+              !/^[A-Za-z0-9_-]{1,128}$/.test(p.walletRequest.id) ||
+              !/^component_[a-f0-9]{64}$/.test(p.walletRequest.account))) ||
           !["submitted", "confirmed", "rejected", "unknown"].includes(p.state),
       )
     )
