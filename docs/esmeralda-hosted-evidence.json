@@ -21,42 +21,48 @@
       "component": "component_c8fb6fa2792972005d55bdb0a32462960bd4ebba40a88723d167e2f184a1afb6",
       "publication": "ad19e117512bcc37016395b7a92f4366276a843a2f1a84ed718fc4074eccc302",
       "publicationAccepted": true,
-      "collectedDuringHostedProof": true
+      "collectedDuringHostedProof": true,
+      "paidPublicationFeeMicroTari": "4916"
     },
     {
       "id": "esmeralda-demo-public-2-20261006",
       "component": "component_03f9834b315813a0a682ddd8f2e05c8b70f816cc987c3d96ab5deeb4211dba06",
       "publication": "02035d8b6e20a26e00c12e521225d266183a2d8dd572dcee8d27f07c9245c907",
       "publicationAccepted": true,
-      "collectedDuringHostedProof": false
+      "collectedDuringHostedProof": false,
+      "paidPublicationFeeMicroTari": "5024"
     },
     {
       "id": "esmeralda-demo-public-3-20261006",
       "component": "component_8984bf02a5018927a547cac9a576d79c1b16b34834124eced8a24aa7e23a8c2d",
       "publication": "4a004e6d368af182d7a78bf81222383a740426e48a4d85a2c30789eb0db1f813",
       "publicationAccepted": true,
-      "collectedDuringHostedProof": false
+      "collectedDuringHostedProof": false,
+      "paidPublicationFeeMicroTari": "5237"
     },
     {
       "id": "esmeralda-demo-public-4-20261006",
       "component": "component_ebbedffdde69e5f41a0602dac59a213ddc51895eb02910d9b537d3a6aa003ac6",
       "publication": "3a0dea417d47d7ad0a4f037c73b4239ec380f42b2c193e42581001814927ecdb",
       "publicationAccepted": true,
-      "collectedDuringHostedProof": false
+      "collectedDuringHostedProof": false,
+      "paidPublicationFeeMicroTari": "5345"
     },
     {
       "id": "esmeralda-demo-public-5-20261006",
       "component": "component_5603f6d838bda2988f3dddbb343f6243384752a2f50cbee955df137364d997c2",
       "publication": "045d1813baec086be238d47ae9dcc86f539f837a7c99d9c332975db162283f7d",
       "publicationAccepted": true,
-      "collectedDuringHostedProof": false
+      "collectedDuringHostedProof": false,
+      "paidPublicationFeeMicroTari": "5453"
     },
     {
       "id": "esmeralda-demo-public-6-20261006",
       "component": "component_1a723b7cd2194ed91fb510c5056c13e8decb48f807cbd4bf47820ae64ebe47e7",
       "publication": "f47be7c5ddb61e699233ff5e2284d8a36c1ab22266f5c4b7a2dc6471f1d98c8f",
       "publicationAccepted": true,
-      "collectedDuringHostedProof": false
+      "collectedDuringHostedProof": false,
+      "paidPublicationFeeMicroTari": "5563"
     }
   ],
   "hostedClaims": [
@@ -120,7 +126,8 @@
         "noPageErrors": true,
         "senderTransportGatesFalse": true,
         "journalRestoredFromRecordedTransaction": false
-      }
+      },
+      "paidPublicationFeeMicroTari": "5628"
     }
   ],
   "confidentialCapabilityIncluded": false,
@@ -156,5 +163,43 @@
       "cost": "1200000",
       "count": 2
     }
-  ]
+  ],
+  "finalAvailability": {
+    "verifiedAt": "2026-10-06T16:52:37.609Z",
+    "claimablePublicGifts": 5,
+    "eachGiftMicroTari": "1000000",
+    "eachReserveMicroTari": "100000",
+    "desktopAndMobileVisible": true,
+    "senderStopped": true,
+    "recipientStopped": true,
+    "taskWalletsStoppedAt": "2026-10-06T16:51:29.133648+00:00",
+    "noKeeperWorker": true,
+    "availabilityMayDecreaseWhenVisitorsClaim": true
+  },
+  "keeperCliRun": {
+    "boundedOnce": true,
+    "runMode": true,
+    "journalRetained": true,
+    "claimable": 5,
+    "outstanding": 0,
+    "remaining": "0",
+    "cost": "1200000",
+    "count": 0,
+    "submittedNewTransaction": false,
+    "completedBeforeOwnerKeyRevocation": true,
+    "journalSavedAt": "2026-10-06T16:45:37.509Z"
+  },
+  "postShutdownCliReadOnly": {
+    "confirmed": true,
+    "claimable": 5,
+    "count": 0,
+    "walletConnectionRequired": false
+  },
+  "automatedChecks": {
+    "clientTests": 29,
+    "hostedBrowserTests": 14,
+    "strictTypeScriptAndProductionBuild": true,
+    "previousEngineAndSdkTests": 13,
+    "engineSourceChangedInThisIncrement": false
+  }
 }
