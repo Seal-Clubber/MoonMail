@@ -26,6 +26,8 @@ This is an experimental GhostDrop integration, not an independently audited or s
 
 ## Build in isolation
 
+The GitHub Actions native wallet-extension checks are manual-only. Open **Actions → Verify GhostDrop → Run workflow** to run them with the application and contract checks. Pushes and pull requests skip the native wallet-extension job; GitHub Pages deployment does not depend on it.
+
 Use Linux/Ubuntu WSL, Rust 1.97.1, C/C++ build tools, CMake, OpenSSL development headers, `pkg-config`, `libdbus-1-dev` and `protobuf-compiler`. A first native build compiles the upstream WASM optimizer and can take considerable time and disk space. Keep this checkout, build cache and test wallet stores outside the GhostDrop repository. No installed wallet is changed automatically.
 
 ```sh

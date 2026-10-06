@@ -50,7 +50,7 @@ The stock daemon's OPTIONS response for the Pages origin lacks CORS allow-origin
 
 ## GitHub Pages
 
-`.github/workflows/verify.yml` runs JS/build/browser, Linux engine and wallet-extension checks. `.github/workflows/pages.yml` automatically builds/deploys every push to `main` after its own client tests and build pass. The manual `workflow_dispatch` trigger remains available. It uses a repository base path dynamically. The verified live URL is [GhostDrop](https://seal-clubber.github.io/GhostDrop/); hosted checks cover the build at `72b853c`. See [the evidence](EVIDENCE.md) for successful workflow runs.
+`.github/workflows/verify.yml` runs JS/build/browser and Linux engine checks on pushes and pull requests. Its expensive native wallet-extension job runs only when **Verify GhostDrop** is started manually with **Run workflow**; it also runs the normal checks in that case. `.github/workflows/pages.yml` automatically builds/deploys every push to `main` after its own client tests and build pass. The manual `workflow_dispatch` trigger remains available. It uses a repository base path dynamically. The verified live URL is [GhostDrop](https://seal-clubber.github.io/GhostDrop/); hosted checks cover the build at `72b853c`. See [the evidence](EVIDENCE.md) for successful workflow runs.
 
 After authorization and confirmed repository access:
 

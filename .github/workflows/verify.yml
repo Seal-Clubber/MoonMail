@@ -39,6 +39,7 @@ jobs:
       - run: cargo build --manifest-path contracts/ghostdrop/Cargo.toml --target wasm32-unknown-unknown --release --locked
       - run: cargo test --manifest-path contracts/engine-tests/Cargo.toml --locked -- --include-ignored
   wallet-extension:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
