@@ -13,6 +13,10 @@ import { sealMailbox, mailboxKey } from "../src/core/mailbox";
 import { hex } from "../src/core/crypto";
 import { readPending } from "../src/core/pending";
 import type { WalletAccount } from "../src/core/wallet";
+import type { WalletSession } from "../src/core/wallet";
+import { PostOfficeClient } from "../src/core/chain";
+import { IndexerProvider } from "@tari-project/ootle-indexer";
+import { savePending, capsuleIdentity } from "../src/core/pending";
 
 type Client = ConstructorParameters<typeof NativeMailboxAdapter>[0];
 type Output = Awaited<ReturnType<Client["stealthUtxosList"]>>["utxos"][number];
@@ -131,6 +135,10 @@ test("standard adapter restores historical keys and distinct postboxes, skipping
       { ...original, is_on_chain: false },
       { ...original, value: 2n },
       { ...original, auth: { Key: f.context.controller } },
+      {
+        ...original,
+        auth: { Script: await denyAllCarrierRoot(), Key: f.context.controller },
+      },
       {
         ...original,
         auth: {
@@ -340,4 +348,125 @@ test("session changes during dry run cannot authorize a subsequent broadcast", a
   ).rejects.toThrow("session changed");
   expect(f.transfer).toHaveBeenCalledTimes(1);
   expect(f.journal()).toBe("");
+});
+
+test("overlapping dry runs for one postbox version cannot broadcast two recovery keys", async () => {
+  const f = fixture();
+  const results = await Promise.allSettled([
+    f
+      .adapter()
+      .store(f.account.account.component_address, f.context, "100", f.storage),
+    f
+      .adapter()
+      .store(f.account.account.component_address, f.context, "100", f.storage),
+  ]);
+  expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  expect(
+    f.transfer.mock.calls.filter(([request]) => !request.dry_run),
+  ).toHaveLength(1);
+  expect(readPending(f.storage)).toHaveLength(1);
+});
+
+test("registry publication requires confirmed matching setup and a fresh native recovery read", async () => {
+  const f = fixture(),
+    key = await capsule(f.context);
+  const deployment = {
+    ...f.context,
+    envelopeTemplate: "f".repeat(64),
+    resource: nativeTariResource,
+    indexerUrl: "http://localhost:15910",
+    evidence: {
+      engineClaims: true,
+      guestPayout: true,
+      daemonScopes: true,
+      httpsWallet: true,
+      mailboxRecovery: true,
+    },
+  };
+  const provider = { getCurrentEpoch: vi.fn().mockResolvedValue(100) };
+  const connection = vi
+    .spyOn(IndexerProvider, "connect")
+    .mockResolvedValue(provider as unknown as IndexerProvider);
+  const recover = vi
+    .fn()
+    .mockRejectedValue(new Error("No matching confirmed recovery memo"));
+  const submit = vi.fn(),
+    dryRun = vi.fn();
+  const wallet = {
+    network: 16,
+    nativeMailbox: () => ({ recover }),
+    submit,
+    submitDryRun: dryRun,
+  } as unknown as WalletSession;
+  const account = {
+    ...f.account,
+    account: {
+      ...f.account.account,
+      owner_key_id: { Imported: { local_key_id: 1 } },
+    },
+  } as WalletAccount;
+  const box = {
+    id: f.context.postbox,
+    nickname: "test",
+    controller: f.context.controller,
+    discoverable: true,
+    encryptionKey: JSON.stringify(key.descriptor),
+  };
+  try {
+    const office = await PostOfficeClient.connect(deployment);
+    await expect(
+      office.savePostbox(wallet, account, box, "create", "100", f.storage),
+    ).rejects.toThrow("Resume a confirmed");
+    const p = {
+      id: "2".repeat(64),
+      network: 16,
+      registry: f.context.registry,
+      operation: "capsule" as const,
+      state: "submitted" as const,
+      envelopeId: capsuleIdentity(f.context),
+      capsule: {
+        account: account.account.component_address,
+        context: f.context,
+        descriptor: key.descriptor,
+      },
+    };
+    savePending(f.storage, p);
+    await expect(
+      office.savePostbox(wallet, account, box, "create", "100", f.storage),
+    ).rejects.toThrow("Confirm the recovery transaction");
+    savePending(f.storage, { ...p, state: "confirmed" });
+    await expect(
+      office.savePostbox(wallet, account, box, "create", "100", f.storage),
+    ).rejects.toThrow("No matching confirmed recovery memo");
+    expect(recover).toHaveBeenCalledTimes(1);
+    expect(dryRun).not.toHaveBeenCalled();
+    expect(submit).not.toHaveBeenCalled();
+    const secret = new Uint8Array(32).fill(7);
+    recover.mockResolvedValue(secret);
+    dryRun.mockResolvedValue({
+      result: { finalize: { result: { Accept: {} } } },
+      required_fees: 5n,
+    });
+    submit.mockResolvedValue({ transaction_id: "3".repeat(64) });
+    expect(
+      await office.savePostbox(
+        wallet,
+        account,
+        box,
+        "create",
+        "100",
+        f.storage,
+      ),
+    ).toBe("3".repeat(64));
+    expect(secret.every((b) => b === 0)).toBe(true);
+    expect(
+      readPending(f.storage).some(
+        (p) => p.operation === "postbox" && p.state === "submitted",
+      ),
+    ).toBe(true);
+    const requests = submit.mock.calls[0][0];
+    expect(JSON.stringify(requests)).not.toContain("0707070707");
+  } finally {
+    connection.mockRestore();
+  }
 });

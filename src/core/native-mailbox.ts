@@ -67,16 +67,7 @@ export class NativeMailboxAdapter {
         "Wallet session changed; reconcile and reopen the postbox",
       );
   }
-  async store(
-    accountAddress: string,
-    context: MailboxContext,
-    feeCap: string,
-    storage: Storage,
-  ): Promise<{ transactionId: string; capsule: CapsuleRecord }> {
-    const account = this.account(accountAddress, context),
-      token = this.session();
-    if (money(feeCap) <= 0n)
-      throw new Error("A positive recovery transaction-fee cap is required");
+  private unused(storage: Storage, context: MailboxContext) {
     const identity = capsuleIdentity(context);
     if (
       hasUnresolved(storage, context.network, context.registry, identity) ||
@@ -91,8 +82,22 @@ export class NativeMailboxAdapter {
       throw new Error(
         "A recovery setup already exists; reconcile and resume it instead of generating another key",
       );
+  }
+  async store(
+    accountAddress: string,
+    context: MailboxContext,
+    feeCap: string,
+    storage: Storage,
+  ): Promise<{ transactionId: string; capsule: CapsuleRecord }> {
+    const account = this.account(accountAddress, context),
+      token = this.session();
+    if (money(feeCap) <= 0n)
+      throw new Error("A positive recovery transaction-fee cap is required");
+    const identity = capsuleIdentity(context);
+    this.unused(storage, context);
     const { generateKeypair, parseOotleAddress } =
       await import("@tari-project/ootle-wasm");
+    this.unchanged(token);
     const parsed = parseOotleAddress(account.address);
     try {
       if (
@@ -109,6 +114,7 @@ export class NativeMailboxAdapter {
     pair.free();
     try {
       const encoded = await encodeMailboxCapsule(context, secret);
+      this.unchanged(token);
       const descriptor: MailboxKey = {
         ...encoded.descriptor,
         recovery: "native-memo-1",
@@ -150,6 +156,7 @@ export class NativeMailboxAdapter {
       };
       try {
         const dry = await this.client.stealthTransfer(request);
+        this.unchanged(token);
         if (!/^[a-f0-9]{64}$/.test(dry.transaction_id)) throw new Error();
         const receipt = await this.client.getTransactionResult({
           transaction_id: dry.transaction_id,
@@ -161,11 +168,14 @@ export class NativeMailboxAdapter {
         )
           throw new Error();
       } catch {
+        this.unchanged(token);
         throw new Error(
           "Recovery transfer simulation failed; no transaction submitted",
         );
       }
       this.unchanged(token);
+      // Another setup may have completed while this dry run was in flight.
+      this.unused(storage, context);
       const attempt = beginSubmission(storage, {
         network: context.network,
         registry: context.registry,
@@ -219,6 +229,8 @@ export class NativeMailboxAdapter {
     for (const output of response.utxos) {
       if (
         !output.is_on_chain ||
+        !output.auth ||
+        Object.keys(output.auth).length !== 1 ||
         !("Script" in output.auth) ||
         output.auth.Script !== root ||
         String(output.value) !== "1"
@@ -227,6 +239,7 @@ export class NativeMailboxAdapter {
       if (
         !output.memo ||
         !("Message" in output.memo) ||
+        typeof output.memo.Message !== "string" ||
         !output.memo.Message.startsWith('["gd-capsule-1",')
       )
         continue;

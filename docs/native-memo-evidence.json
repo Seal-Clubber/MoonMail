@@ -25,5 +25,28 @@
   "freshProcessChainRead": true,
   "stockPagesCorsPreflightStatus": 200,
   "stockPagesCorsAllowOrigin": false,
-  "stockPagesCorsAllowHeaders": false
+  "stockPagesCorsAllowHeaders": false,
+  "applicationAdapterRecovery": {
+    "observedAt": "2026-10-06T17:20:15.585Z",
+    "stockWalletVersion": "0.43.0",
+    "independentRestoredWallet": true,
+    "applicationAdapter": true,
+    "readActualChainCiphertext": true,
+    "completeLetterOpened": true,
+    "carrierScriptOnlyDenyAll": true,
+    "customRpcUsed": false,
+    "hostedTransportVerified": false
+  },
+  "localSourceIntegratesNativeAdapter": true,
+  "applicationAdapterCreationProbe": {
+    "temporaryOwnerKeyRevoked": true,
+    "transactionId": "8278fb28f5ee11334206234eb1cbb63efddf44aa15436863794f554fb78467c5",
+    "carrierValueMicroTari": 1,
+    "dryRunReceiptChecked": true,
+    "confirmed": false,
+    "maxFeeMicroTari": 1000000,
+    "state": "submitted",
+    "blocker": "Restored validator behind configured epoch clock; do not resubmit",
+    "network": 16
+  }
 }

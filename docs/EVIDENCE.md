@@ -36,7 +36,7 @@ Two further guest gifts were collected through the actual published site: deskto
 
 GitHub Verify run [37496235886](https://github.com/Seal-Clubber/GhostDrop/actions/runs/37496235886) and Pages run [37496236688](https://github.com/Seal-Clubber/GhostDrop/actions/runs/37496236688) succeeded for `da995ff2d3b4fa867be45c8d50d6cf4118f9a298`. The repository's GitHub API confirms Pages uses workflow deployment and enforces HTTPS. All 14 hosted regressions passed for this published build. New donor-tool/doc checkpoints remain local for the user's push. For future builds use `GHOSTDROP_TEST_BASE_URL=https://seal-clubber.github.io/GhostDrop/ pnpm test:browser` (use the appropriate environment-variable syntax for your shell).
 
-- `pnpm test`: **29 passed**, including native-memo capsule recovery, tamper/context checks, guest/sender gate separation and local donor fee/authority/unknown-response guards.
+- `pnpm test`: **38 passed**, including the standard-wallet adapter's historical recovery, carrier validation, permission/session failures, simulation fee caps, uncertain/reloaded setup and overlapping dry-run guards, plus guest/sender gate separation and local donor guards.
 - `pnpm build`: strict TypeScript/static Vite build passed, including `GHOSTDROP_BASE=/GhostDrop/`.
 - `pnpm test:browser`: **14 passed**, desktop 1440×1100/mobile 390×844. Includes retry after an initial indexer outage and rejection of late data after a network switch. Scene screenshots visually inspected.
 - Six native Envelope validation cases passed; both release WASM artifacts built.
@@ -86,6 +86,14 @@ The actual keeper CLI was run only in bounded `--run --once` increments using a 
 Authenticated Pages-to-loopback verification is pending approval for entering a temporary, non-spending disposable-wallet API key into the user-owned hosted page. No credential was sent there. Exact-origin support passing local tests does not establish hosted browser transport. Neither financial seeds nor mailbox secrets were exported; native mnemonic testing uses synthetic unit-test material.
 
 The later credential-free Pages probe verifies the origin/CORS/loopback portion, with `credentials:"omit"` and no Authorization header. It requests only intentionally public wallet metadata and does not replace authenticated verification. The `httpsWallet` public evidence flag remains false. The [keeper receipts and bounded plans](keeper-network-evidence.json) record only public localnet identifiers and reservations.
+
+## Standard-wallet adapter integration
+
+New postbox creation/rotation now uses the standard daemon's native encrypted memos, with separate recovery/publication fee reviews and public-only pending records. The adapter checks the accepted dry-run receipt against the cap, validates script-only `DenyAll` recovery outputs and binds recovered keys to the published descriptor/context. Unmarked legacy mail retains its original adapter. Details and public receipts are in [the standard-wallet guide](STANDARD-WALLET-POSTBOXES.md) and [native-memo evidence](native-memo-evidence.json).
+
+At 2026-10-06T17:20:15Z, a fresh process using the independently restored unmodified 0.43.0 wallet read the actual earlier chain envelope and opened the complete letter through the new application adapter. No custom RPC was called. A new recovery transfer passed native simulation/receipt checks and returned transaction ID `8278fb28f5ee11334206234eb1cbb63efddf44aa15436863794f554fb78467c5`; confirmation remained pending while the restored validator lagged hundreds of epochs behind its clock. Its public journal remains saved, its owner-issued key was revoked, and no replacement was submitted. This is not a confirmed new-setup or new-browser-flow result.
+
+The local build passes 38 client tests, strict TypeScript/Vite build and 14 desktop/mobile browser regressions. The normal Windows browser runner hung during web-server teardown after all cases passed; a second run against that same task-owned static server, using the external no-server config, completed with exit 0 and **14 passed**. After the identity-checked static server was stopped, the normal runner also exited 0 with **14 passed**. All task-owned test services stopped and their chain state was preserved in a new external snapshot. The output scan checked 85 source/build files against ten known private capability/passkey values and found no matches or tracked development files. This source change has not been pushed or verified on Pages. Hosted sending/postboxes stay disabled: `daemonScopes`, `httpsWallet` and `mailboxRecovery` remain false.
 
 ## Primary sources
 
