@@ -42,13 +42,13 @@ The stock daemon's OPTIONS response for the Pages origin lacks CORS allow-origin
 
 ## GitHub Pages
 
-`.github/workflows/verify.yml` runs JS/build/browser and Linux engine checks. `.github/workflows/pages.yml` is a manual `workflow_dispatch` build/deploy workflow. It uses a repository base path dynamically. The verified live URL is [GhostDrop](https://seal-clubber.github.io/GhostDrop/); hosted checks cover the build at `72b853c`. See [the evidence](EVIDENCE.md) for successful workflow runs.
+`.github/workflows/verify.yml` runs JS/build/browser, Linux engine and wallet-extension checks. `.github/workflows/pages.yml` automatically builds/deploys every push to `main` after its own client tests and build pass. The manual `workflow_dispatch` trigger remains available. It uses a repository base path dynamically. The verified live URL is [GhostDrop](https://seal-clubber.github.io/GhostDrop/); hosted checks cover the build at `72b853c`. See [the evidence](EVIDENCE.md) for successful workflow runs.
 
 After authorization and confirmed repository access:
 
-1. Push the reviewed `main` commit, require verification to pass, and select **Settings → Pages → Source: GitHub Actions**.
-2. Review `public/deployment.json` and the public static artifact. Enable **Enforce HTTPS** in Pages settings.
-3. Manually dispatch the Pages workflow. Verify all assets/WASM, homepage, private fragment deep links, refresh and copy under `/GhostDrop/`.
+1. Select **Settings → Pages → Source: GitHub Actions** and enable **Enforce HTTPS**.
+2. Review `public/deployment.json` and the public static artifact, then push the reviewed `main` commit. This starts the Pages workflow automatically; the separate Verify workflow also runs.
+3. Check the Pages and Verify results. To redeploy the same commit, manually dispatch Pages. Verify all assets/WASM, homepage, private fragment deep links, refresh and copy under `/GhostDrop/`.
 4. Test daemon connectivity from that actual HTTPS origin before setting `httpsWallet` true and redeploying.
 
 [GitHub documents](https://docs.github.com/en/pages/getting-started-with-github-pages/what-is-github-pages) that Pages from private repositories requires an eligible paid plan. A private repository's ordinary Pages site can still be publicly accessible; review the output accordingly. HTTPS setup is described in [GitHub's HTTPS instructions](https://docs.github.com/en/pages/getting-started-with-github-pages/securing-your-github-pages-site-with-https).

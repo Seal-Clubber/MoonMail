@@ -1,6 +1,7 @@
 name: Publish reviewed GhostDrop to GitHub Pages
-# Manual only: creating these files does not authorize publication.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read

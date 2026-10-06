@@ -43,6 +43,6 @@ The final command requires Node and installed JS dependencies on the same host. 
 - [Demo walkthrough](docs/DEMO.md)
 - [Dedicated donor Faucet Keeper](docs/KEEPER.md)
 
-The Pages workflow is manual. Keep API keys, wallet data, donor configuration and private links out of public configuration, git and build variables. No spending worker is started by the web app.
+The Pages workflow automatically publishes pushes to `main` after its client tests and build pass; it can also be run manually. Keep API keys, wallet data, donor configuration and private links out of public configuration, git and build variables. No spending worker is started by the web app.
 
 MIT licensed. Tari libraries retain their upstream licenses. The visual scene is CSS and original text; no external artwork is required.
