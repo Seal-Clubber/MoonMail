@@ -44,8 +44,20 @@ export function writesReady(
     (provider === "sapient"
       ? d.evidence.sapientWallet === true
       : d.evidence.daemonScopes === true && d.evidence.httpsWallet === true) &&
-    (mode !== "postbox" || d.evidence.mailboxRecovery === true)
+    (mode !== "postbox" ||
+      (d.evidence.mailboxRecovery === true &&
+        (provider !== "sapient" ||
+          (!!d.capsule &&
+            /^[a-f0-9]{64}$/.test(d.capsule.template) &&
+            /^component_[a-f0-9]{64}$/.test(d.capsule.component) &&
+            /^resource_[a-f0-9]{64}$/.test(d.capsule.resource)))))
   );
+}
+export function postboxClaimsReady(
+  d: Deployment,
+  provider: "daemon" | "sapient",
+) {
+  return provider === "daemon" && writesReady(d, "postbox", provider);
 }
 export function endpoint(value: string, local = false) {
   const u = new URL(value);

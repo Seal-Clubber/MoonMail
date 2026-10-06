@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { Deployment, Envelope, Postbox } from "../core/types";
 import type { ConnectedWallet } from "../core/wallet";
 import type { PostOfficeClient } from "../core/chain";
 import { mailboxKey } from "../core/mailbox";
 import { writesReady } from "../core/config";
 import { readPending, savePending, type Pending } from "../core/pending";
+import { SapientSession } from "../core/sapient";
 
 export function Postboxes({
   wallet,
@@ -44,7 +45,13 @@ export function Postboxes({
     [editing, setEditing] = useState(false),
     [draftId, setDraftId] = useState<string>(() => crypto.randomUUID()),
     [rotating, setRotating] = useState(false),
-    [prepared, setPrepared] = useState<Pending>();
+    [prepared, setPrepared] = useState<Pending>(),
+    [viewAcknowledged, setViewAcknowledged] = useState(false),
+    [viewApproved, setViewApproved] = useState(false);
+  useEffect(() => {
+    setViewAcknowledged(false);
+    setViewApproved(false);
+  }, [wallet]);
   const owned = boxes.filter((p) =>
     wallet?.accounts.some((a) => a.account.owner_public_key === p.controller),
   );
@@ -108,18 +115,31 @@ export function Postboxes({
     setEditing(true);
   }
   async function confirmRecovery() {
-    if (!chain || !prepared || prepared.id.startsWith("attempt:"))
+    if (
+      !chain ||
+      !prepared ||
+      (prepared.id.startsWith("attempt:") && !prepared.walletRequest)
+    )
       throw new Error(
         "Inspect wallet history to resolve this recovery attempt; do not resubmit",
       );
-    const result = await chain.reconcile(prepared.id);
+    let current = prepared;
+    if (prepared.id.startsWith("attempt:") && prepared.walletRequest) {
+      if (!(wallet instanceof SapientSession))
+        throw new Error("Reconnect the same Sapient account");
+      const id = await wallet.resume(prepared.id, localStorage);
+      current = readPending(localStorage).find((p) => p.id === id)!;
+      if (!current)
+        throw new Error("Recovery journal missing; reconcile wallet history");
+    }
+    const result = await chain.reconcile(current.id);
     const state =
       !result || result.outcome === "FeeIntentCommit"
         ? "unknown"
         : result.outcome === "Commit"
           ? "confirmed"
           : "rejected";
-    const next: Pending = { ...prepared, state };
+    const next: Pending = { ...current, state };
     savePending(localStorage, next);
     setPrepared(next);
     onStatus(
@@ -129,6 +149,8 @@ export function Postboxes({
   async function save(operation: "create" | "edit" | "rotate") {
     if (!wallet || !chain || !account)
       throw new Error("Connect the controlling wallet");
+    if (!enabled)
+      throw new Error("Postbox writes await deployment and recovery evidence");
     const id = box?.id || draftId;
     let encryptionKey = box?.encryptionKey || "";
     if (operation !== "edit") {
@@ -143,14 +165,22 @@ export function Postboxes({
         keyVersion,
       };
       if (!prepared) {
-        const result = await wallet
-          .nativeMailbox()
-          .store(
-            account.account.component_address,
-            context,
-            recoveryFee,
-            localStorage,
-          );
+        const result =
+          wallet instanceof SapientSession
+            ? await chain.storeSapientCapsule(
+                wallet,
+                context,
+                recoveryFee,
+                localStorage,
+              )
+            : await wallet
+                .nativeMailbox()
+                .store(
+                  account.account.component_address,
+                  context,
+                  recoveryFee,
+                  localStorage,
+                );
         setPrepared(
           readPending(localStorage).find((p) => p.id === result.transactionId),
         );
@@ -247,6 +277,53 @@ export function Postboxes({
               </button>
             )}
           </div>
+          {wallet instanceof SapientSession && (
+            <div className="info">
+              <p>
+                Sapient postbox recovery needs separate private view access.
+                This lets GhostDrop read the connected account's private output
+                summaries, including amounts and memos for other resources. It
+                does not reveal your wallet seed or signing keys.
+              </p>
+              <label className="checkbox">
+                <input
+                  type="checkbox"
+                  checked={viewAcknowledged}
+                  disabled={busy}
+                  onChange={(e) => setViewAcknowledged(e.target.checked)}
+                />
+                I understand the account-wide private view permission
+              </label>
+              <button
+                disabled={
+                  busy ||
+                  !viewAcknowledged ||
+                  !(
+                    enabled ||
+                    prepared?.capsule?.descriptor.recovery ===
+                      "sapient-capsule-1" ||
+                    (box &&
+                      inbox.some(
+                        (e) =>
+                          "recovery" in e.payload &&
+                          e.payload.recovery === "sapient-capsule-1",
+                      ))
+                  )
+                }
+                onClick={() =>
+                  void task(async () => {
+                    await wallet.requestPostboxViewAccess();
+                    setViewApproved(true);
+                    onStatus(
+                      "Sapient private view access approved. Disconnect to revoke this site's wallet access.",
+                    );
+                  })
+                }
+              >
+                Approve postbox view access
+              </button>
+            </div>
+          )}
           {recoverySetups.length > 0 && (
             <div>
               <h2>Resume recovery setup</h2>
@@ -309,10 +386,11 @@ export function Postboxes({
                     />
                   </label>
                   <p className="fine-print">
-                    This saved setup uses the earlier native-memo recovery
-                    route. Sapient recovery is not yet verified, so new setup
-                    remains disabled. Existing keys and pending transactions are
-                    preserved.
+                    Recovery stores an encrypted application key on Ootle.
+                    Confirm its transaction and wallet recovery before
+                    publishing the postbox. Existing native-memo setups keep
+                    their original route. New setup remains disabled until
+                    public deployment evidence is recorded.
                   </p>
                   {prepared && (
                     <p className="info">
@@ -322,7 +400,10 @@ export function Postboxes({
                       <button
                         type="button"
                         disabled={
-                          busy || !chain || prepared.id.startsWith("attempt:")
+                          busy ||
+                          !chain ||
+                          (prepared.id.startsWith("attempt:") &&
+                            !prepared.walletRequest)
                         }
                         onClick={() => void task(confirmRecovery)}
                       >
@@ -357,7 +438,11 @@ export function Postboxes({
               <button
                 className="primary"
                 disabled={
-                  !enabled || (!!prepared && prepared.state !== "confirmed")
+                  !enabled ||
+                  (!!prepared && prepared.state !== "confirmed") ||
+                  (wallet instanceof SapientSession &&
+                    (!box || rotating) &&
+                    !viewApproved)
                 }
               >
                 {box && !rotating

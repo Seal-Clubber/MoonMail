@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { emptyDeployment } from "../../src/core/config";
+import {
+  generateKeypair,
+  generateOotleAddress,
+} from "@tari-project/ootle-wasm";
 
 test.beforeEach(async ({ page }) => {
   await page.route("**/deployment.json", (route) =>
@@ -137,4 +141,167 @@ test("addressed mail explains Sapient recovery and remains gated", async ({
   await expect(
     page.getByRole("button", { name: "Review letter" }),
   ).toBeDisabled();
+});
+test("postbox private view access requires explicit account-wide consent and never submits", async ({
+  page,
+}) => {
+  // Provider/ledger fixtures test UI consent only; stock-wallet evidence is separate.
+  const owner = generateKeypair(),
+    view = generateKeypair();
+  const address = generateOotleAddress(owner.public_key, view.public_key, 38),
+    controller = Buffer.from(owner.public_key).toString("hex");
+  owner.free();
+  view.free();
+  const registry = `component_${"a".repeat(64)}`,
+    component = `component_${"d".repeat(64)}`;
+  const deployment = {
+    ...emptyDeployment,
+    network: 38,
+    registry,
+    template: "b".repeat(64),
+    envelopeTemplate: "c".repeat(64),
+    indexerUrl: "https://fixture-indexer.invalid/",
+  };
+  const capsuleDeployment = {
+    resource: `resource_${"5".repeat(64)}`,
+    component: `component_${"6".repeat(64)}`,
+    template: "7".repeat(64),
+  };
+  const pending = {
+    id: "1".repeat(64),
+    network: 38,
+    registry,
+    operation: "capsule",
+    envelopeId: "capsule:privacy-lab:1",
+    state: "confirmed",
+    capsule: {
+      account: component,
+      context: {
+        network: 38,
+        registry,
+        template: deployment.template,
+        postbox: "privacy-lab",
+        controller,
+        keyVersion: 1,
+      },
+      descriptor: {
+        version: "gd-postbox-1",
+        keyVersion: 1,
+        publicKey: "8".repeat(64),
+        recovery: "sapient-capsule-1",
+        capsule: {
+          resource: capsuleDeployment.resource,
+          commitment: "9".repeat(64),
+        },
+      },
+      deployment: capsuleDeployment,
+    },
+  };
+  await page.route("**/deployment.json", (route) =>
+    route.fulfill({ json: deployment }),
+  );
+  await page.route("https://fixture-indexer.invalid/**", (route) =>
+    route.fulfill({
+      json: {
+        substate: {
+          Component: {
+            header: {
+              template_address: deployment.template,
+              owner_rule: "None",
+            },
+            body: {
+              state: [38, {}, {}, `template_${deployment.envelopeTemplate}`],
+            },
+          },
+        },
+      },
+    }),
+  );
+  await page.addInitScript(
+    ({ address, component, pending }) => {
+      localStorage.setItem("ghostdrop:pending:v1", JSON.stringify([pending]));
+      const state = window as unknown as {
+        tari: unknown;
+        capsuleMethods: string[];
+      };
+      state.capsuleMethods = [];
+      let connected = false,
+        granted = false;
+      state.tari = {
+        isTariWallet: true,
+        info: {
+          name: "Sapient fixture",
+          rdns: "mw.tari.sapient",
+          embedded: false,
+        },
+        request: async ({ method }: { method: string }) => {
+          state.capsuleMethods.push(method);
+          if (method === "tari_getNetwork") return "esmeralda";
+          if (method === "tari_requestAccounts") {
+            connected = true;
+            return [component];
+          }
+          if (method === "tari_getAccounts")
+            return connected ? [component] : [];
+          if (method === "tari_getWalletAddress") return address;
+          if (method === "tari_getCapabilities")
+            return { transactionRequests: true, walletAddress: true };
+          if (method === "tari_requestViewAccess") {
+            granted = true;
+            return { granted };
+          }
+          if (method === "tari_getViewAccess") return { granted };
+          if (method === "tari_disconnect") {
+            connected = false;
+            granted = false;
+            return null;
+          }
+          throw new Error("Unexpected provider method");
+        },
+      };
+    },
+    { address, component, pending },
+  );
+  await page.goto("./#/postboxes");
+  await page
+    .getByRole("button", { name: "Connect wallet", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Connect Sapient", exact: true })
+    .click();
+  await page.getByRole("button", { name: /privacy-lab · key/ }).click();
+  const approval = page.getByRole("button", {
+    name: "Approve postbox view access",
+  });
+  await expect(approval).toBeDisabled();
+  await expect(
+    page.getByText("including amounts and memos for other resources", {
+      exact: false,
+    }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() =>
+      (window as any).capsuleMethods.includes("tari_requestViewAccess"),
+    ),
+  ).toBe(false);
+  await page
+    .getByRole("checkbox", {
+      name: "I understand the account-wide private view permission",
+    })
+    .check();
+  await expect(approval).toBeEnabled();
+  await approval.click();
+  await expect(page.getByRole("status")).toContainText(
+    "private view access approved",
+  );
+  await expect(
+    page.getByRole("button", { name: "Publish postbox", exact: true }),
+  ).toBeDisabled();
+  expect(
+    await page.evaluate(() =>
+      (window as any).capsuleMethods.filter((m: string) =>
+        /sign|submit|createTransaction/.test(m),
+      ),
+    ),
+  ).toEqual([]);
 });

@@ -4,6 +4,7 @@ import type {
   MailboxKey,
   MailboxPayload,
   CapsuleReference,
+  CapsuleDeployment,
 } from "./types";
 import type { WalletAccount } from "./wallet";
 import { mailboxAAD, mailboxKey, openMailbox } from "./mailbox";
@@ -35,9 +36,24 @@ export async function verifyPermanentCarrier(
     !/^[a-f0-9]{64}$/.test(reference.commitment)
   )
     throw new Error("Invalid permanent capsule reference");
-  const resource = object(
-    object((await read(reference.resource)).substate).Resource,
-  );
+  await verifyCapsuleResource(reference.resource, read);
+  const id = `utxo_${reference.resource.slice("resource_".length)}_${reference.commitment}`;
+  const utxo = object(object((await read(id)).substate).Utxo);
+  const output = object(utxo.output),
+    auth = object(output.auth);
+  if (
+    utxo.is_frozen !== false ||
+    Object.keys(auth).length !== 1 ||
+    auth.Script !== (await denyAllCarrierRoot())
+  )
+    throw new Error("Capsule carrier is not permanently locked");
+  return id;
+}
+async function verifyCapsuleResource(
+  address: string,
+  read: CapsuleSubstateReader,
+) {
+  const resource = object(object((await read(address)).substate).Resource);
   const rules = object(resource.access_rules);
   if (
     resource.resource_type !== "Stealth" ||
@@ -60,17 +76,32 @@ export async function verifyPermanentCarrier(
     !/^component_[a-f0-9]{64}$/.test(mint.ScopedToComponent)
   )
     throw new Error("Unsupported capsule mint authority");
-  const id = `utxo_${reference.resource.slice("resource_".length)}_${reference.commitment}`;
-  const utxo = object(object((await read(id)).substate).Utxo);
-  const output = object(utxo.output),
-    auth = object(output.auth);
+  return mint.ScopedToComponent;
+}
+export async function verifyCapsuleDeployment(
+  deployment: CapsuleDeployment,
+  read: CapsuleSubstateReader,
+) {
   if (
-    utxo.is_frozen !== false ||
-    Object.keys(auth).length !== 1 ||
-    auth.Script !== (await denyAllCarrierRoot())
+    !/^[a-f0-9]{64}$/.test(deployment.template) ||
+    !/^component_[a-f0-9]{64}$/.test(deployment.component) ||
+    !/^resource_[a-f0-9]{64}$/.test(deployment.resource)
   )
-    throw new Error("Capsule carrier is not permanently locked");
-  return id;
+    throw new Error("Invalid capsule deployment identity");
+  const component = object(
+    object((await read(deployment.component)).substate).Component,
+  );
+  const header = object(component.header);
+  if (
+    header.owner_rule !== "None" ||
+    typeof header.template_address !== "string" ||
+    header.template_address.replace(/^template_/, "") !== deployment.template ||
+    (await verifyCapsuleResource(deployment.resource, read)) !==
+      deployment.component
+  )
+    throw new Error(
+      "Capsule deployment does not match the reviewed template and resource",
+    );
 }
 
 // Deliberately separate from transaction submission. View permission must already

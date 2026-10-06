@@ -8,7 +8,12 @@ import type {
   SealedPayload,
   MailboxPayload,
 } from "../core/types";
-import { emptyDeployment, claimsReady, writesReady } from "../core/config";
+import {
+  emptyDeployment,
+  claimsReady,
+  writesReady,
+  postboxClaimsReady,
+} from "../core/config";
 import type { ConnectedWallet } from "../core/wallet";
 import { SapientSession, sapientProvider } from "../core/sapient";
 import { PostOfficeClient } from "../core/chain";
@@ -332,7 +337,15 @@ export function App() {
     setLetters([]);
     setBoxes([]);
     setCursor("");
-    setD({ ...d, ...change, evidence: { ...emptyDeployment.evidence } });
+    setD({
+      ...d,
+      ...change,
+      capsule:
+        change.network !== undefined && change.network !== d.network
+          ? undefined
+          : (change.capsule ?? d.capsule),
+      evidence: { ...emptyDeployment.evidence },
+    });
   }
   function navigate(v: string) {
     setView(v);
@@ -403,12 +416,31 @@ export function App() {
     );
     if (!wallet || !owner)
       throw new Error("Connect the wallet controlling this postbox");
-    const letter = await wallet.decryptPostbox(
-      owner.account.component_address,
-      envelopeMailboxContext(envelope),
-      envelope.id,
-      envelope.payload as MailboxPayload,
-    );
+    const payload = envelope.payload as MailboxPayload;
+    if (
+      !chain ||
+      envelope.context.network !== chain.deployment.network ||
+      envelope.context.registry !== chain.deployment.registry ||
+      envelope.context.template !== chain.deployment.template
+    )
+      throw new Error("Choose the chain deployment containing this postbox");
+    const letter =
+      wallet instanceof SapientSession &&
+      payload.recovery === "sapient-capsule-1"
+        ? await wallet
+            .capsuleMailbox((id) => chain.provider.getSubstate(id))
+            .open(
+              owner.account.component_address,
+              envelopeMailboxContext(envelope),
+              envelope.id,
+              payload,
+            )
+        : await wallet.decryptPostbox(
+            owner.account.component_address,
+            envelopeMailboxContext(envelope),
+            envelope.id,
+            payload,
+          );
     if (openSequence.current === sequence) setPlain(letter);
   }
   const shown = (preview ? exampleLetters : letters).filter(
@@ -1613,7 +1645,7 @@ export function App() {
                         busy ||
                         !chain ||
                         !(active.mode === "postbox"
-                          ? writesReady(d, "postbox", "sapient")
+                          ? postboxClaimsReady(d, wallet?.kind ?? "sapient")
                           : claimsReady(d, createAccount)) ||
                         (active.mode === "postbox" &&
                           !wallet?.accounts.some(

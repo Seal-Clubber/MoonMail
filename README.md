@@ -8,7 +8,7 @@ The HTTPS static interface is live at [GhostDrop on GitHub Pages](https://seal-c
 
 Network settings default to the official Esmeralda HTTPS indexer, native test TARI resource and confirmed GhostDrop registry/templates. Open `#/network` and use **Check indexer connection** to read public network/health/resource information without a wallet. Switching networks clears these contract identities to avoid reusing them on a different chain.
 
-Historical postbox descriptors and recovery code are preserved. The new Sapient capsule recovery core checks ledger permanence and restores keys with the stock wallet; each letter retains an authenticated reference for its key version. It passed an independent restored-wallet lab. Capsule creation/journal, privacy UI and public verification remain incomplete, and new postboxes stay disabled. The optional donor/deployment CLI still uses a daemon; website visitors do not need it.
+Historical postbox descriptors and recovery code are preserved. Sapient capsule creation/recovery, the public approval journal and explicit private-view consent are implemented behind a disabled deployment gate. Production preparation and recovery passed the engine and restored-wallet lab; each letter retains an authenticated reference for its key version. Funded registered creation/rotation and public verification remain incomplete. Addressed gift creation/collection also awaits compatible prepaid signing. The optional donor/deployment CLI still uses a daemon; website visitors do not need it.
 
 ## Run
 

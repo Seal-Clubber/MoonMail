@@ -12,7 +12,7 @@ import {
   SecretKeyWallet,
 } from "@tari-project/ootle-secret-key-wallet";
 import { parseOotleAddress } from "@tari-project/ootle-wasm";
-import type { Deployment, Envelope, Postbox } from "./types";
+import type { Deployment, Envelope, Postbox, MailboxContext } from "./types";
 import type { ConnectedWallet, WalletAccount } from "./wallet";
 import { SapientSession } from "./sapient";
 import { claimsReady, writesReady, endpoint } from "./config";
@@ -271,6 +271,12 @@ export class PostOfficeClient {
     fee: string,
     storage: Storage,
   ) {
+    if (
+      wallet instanceof SapientSession &&
+      envelope.mode === "postbox" &&
+      BigInt(envelope.gift) > 0n
+    )
+      throw new Error("Addressed gifts await Sapient prepaid signing support");
     if (!writesReady(this.deployment, envelope.mode, wallet.kind ?? "daemon"))
       throw new Error("Production sending awaits deployment evidence");
     if (
@@ -482,6 +488,30 @@ export class PostOfficeClient {
         )
       )
         throw new Error("Resume the existing submission first");
+      const ids = [
+        this.deployment.registry,
+        account.account.component_address,
+        this.deployment.resource,
+        `template_${this.deployment.template}`,
+        ...(await getVaultIdsForAccount(
+          this.provider,
+          account.account.component_address,
+        )),
+      ];
+      tx.inputs = Array.from(
+        new Map(
+          [
+            ...tx.inputs,
+            ...ids.map((substate_id) => ({
+              substate_id,
+              version: null,
+              is_write:
+                substate_id !== this.deployment.resource &&
+                !substate_id.startsWith("template_"),
+            })),
+          ].map((input) => [input.substate_id, input]),
+        ).values(),
+      );
       return wallet.submitOperation(tx, feeCap, storage, {
         network: this.deployment.network,
         registry: this.deployment.registry,
@@ -540,9 +570,14 @@ export class PostOfficeClient {
       throw new Error("Choose the controlling account");
     if (operation !== "edit") {
       const descriptor = mailboxKey(box.encryptionKey);
-      if (descriptor.recovery !== "native-memo-1")
+      if (
+        descriptor.recovery !==
+        (wallet instanceof SapientSession
+          ? "sapient-capsule-1"
+          : "native-memo-1")
+      )
         throw new Error(
-          "New postbox keys require standard-wallet recovery memos",
+          "New postbox keys require a supported permanent recovery capsule",
         );
       const context = {
         network: this.deployment.network,
@@ -567,16 +602,33 @@ export class PostOfficeClient {
           p.capsule?.account === account.account.component_address &&
           p.capsule.context.template === context.template &&
           p.capsule.context.controller === context.controller &&
-          p.capsule.descriptor.publicKey === descriptor.publicKey,
+          p.capsule.descriptor.publicKey === descriptor.publicKey &&
+          (descriptor.recovery !== "sapient-capsule-1" ||
+            (p.capsule.descriptor.capsule?.resource ===
+              descriptor.capsule?.resource &&
+              p.capsule.descriptor.capsule?.commitment ===
+                descriptor.capsule?.commitment &&
+              p.capsule.deployment?.template ===
+                this.deployment.capsule?.template &&
+              p.capsule.deployment?.component ===
+                this.deployment.capsule?.component &&
+              p.capsule.deployment?.resource ===
+                this.deployment.capsule?.resource)),
       );
       if (!confirmed)
         throw new Error(
           "Resume a confirmed recovery setup before publishing this key",
         );
       // Re-read the actual native output; a local journal alone is not key-recovery proof.
-      const secret = await wallet
-        .nativeMailbox()
-        .recover(account.account.component_address, context, descriptor);
+      const recovery =
+        wallet instanceof SapientSession
+          ? wallet.capsuleMailbox((id) => this.provider.getSubstate(id))
+          : wallet.nativeMailbox();
+      const secret = await recovery.recover(
+        account.account.component_address,
+        context,
+        descriptor,
+      );
       secret.fill(0);
     }
     const tx = postboxTransaction(
@@ -597,6 +649,37 @@ export class PostOfficeClient {
       `postbox:${box.id}`,
     );
   }
+  async storeSapientCapsule(
+    wallet: SapientSession,
+    context: MailboxContext,
+    feeCap: string,
+    storage: Storage,
+  ) {
+    if (
+      !writesReady(this.deployment, "postbox", "sapient") ||
+      !this.deployment.capsule
+    )
+      throw new Error(
+        "Postbox writes await capsule deployment and recovery evidence",
+      );
+    if (
+      context.network !== this.deployment.network ||
+      context.registry !== this.deployment.registry ||
+      context.template !== this.deployment.template
+    )
+      throw new Error("Wrong postbox deployment");
+    return wallet.storeCapsule(
+      context,
+      this.deployment.capsule,
+      feeCap,
+      storage,
+      {
+        readSubstate: (id) => this.provider.getSubstate(id),
+        vaults: (account) => getVaultIdsForAccount(this.provider, account),
+        epoch: () => this.provider.getCurrentEpoch(),
+      },
+    );
+  }
   async claimPostbox(
     wallet: ConnectedWallet,
     account: WalletAccount,
@@ -605,6 +688,10 @@ export class PostOfficeClient {
     component: string,
     storage: Storage,
   ) {
+    if (wallet instanceof SapientSession)
+      throw new Error(
+        "Sapient cannot yet authorize the prepaid addressed gift checkpoint",
+      );
     if (!writesReady(this.deployment, "postbox", wallet.kind ?? "daemon"))
       throw new Error("Postbox claims await deployment and recovery evidence");
     if (

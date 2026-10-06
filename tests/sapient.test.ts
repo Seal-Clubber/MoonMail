@@ -4,10 +4,55 @@ import {
   generateOotleAddress,
 } from "@tari-project/ootle-wasm";
 import { SapientSession, type SapientProvider } from "../src/core/sapient";
-import { emptyDeployment, writesReady } from "../src/core/config";
+import {
+  emptyDeployment,
+  writesReady,
+  postboxClaimsReady,
+} from "../src/core/config";
 import { publishTransaction } from "../src/core/transactions";
 import { PostOfficeClient } from "../src/core/chain";
 import { readPending } from "../src/core/pending";
+import capsuleLedger from "./fixtures/capsule-carrier.json";
+async function capsuleFixture() {
+  const f = fixture(),
+    wallet = await SapientSession.connect(38, f.provider);
+  const resource = Object.keys(capsuleLedger).find((id) =>
+    id.startsWith("resource_"),
+  )!;
+  const resourceState = (capsuleLedger as any)[resource];
+  const component =
+    resourceState.substate.Resource.access_rules.mint.Restricted.Require.Require
+      .ScopedToComponent;
+  const deployment = { component, resource, template: "f".repeat(64) };
+  const context = {
+    network: 38,
+    registry: f.d.registry,
+    template: f.d.template,
+    postbox: "new-postbox",
+    controller: wallet.accounts[0].account.owner_public_key,
+    keyVersion: 1,
+  };
+  const funding = {
+    readSubstate: vi.fn(async (id: string) => {
+      if (id === resource) return structuredClone(resourceState);
+      if (id === component)
+        return {
+          substate: {
+            Component: {
+              header: {
+                template_address: deployment.template,
+                owner_rule: "None",
+              },
+            },
+          },
+        };
+      throw new Error("Unknown deployment");
+    }),
+    vaults: vi.fn(async () => [`vault_${"e".repeat(64)}`]),
+    epoch: vi.fn(async () => 123),
+  };
+  return { ...f, wallet, deployment, capsuleContext: context, funding };
+}
 function fixture() {
   const owner = generateKeypair(),
     view = generateKeypair();
@@ -400,6 +445,329 @@ test("Sapient publication declares the registry and funding dependencies before 
       expect.objectContaining({
         substate_id: `template_${f.d.envelopeTemplate}`,
         is_write: false,
+      }),
+    ]),
+  );
+});
+test("capsule creation journals only public recovery data before approval and declares funding inputs", async () => {
+  const f = await capsuleFixture(),
+    call = f.provider.request;
+  f.provider.request = async (args) => {
+    if (args.method === "tari_createTransactionRequest") {
+      const pending = readPending(f.storage)[0];
+      expect(pending.state).toBe("unknown");
+      expect(pending.capsule?.descriptor.recovery).toBe("sapient-capsule-1");
+      expect(pending.capsule?.descriptor.capsule?.commitment).toMatch(
+        /^[a-f0-9]{64}$/,
+      );
+    }
+    return call(args);
+  };
+  const result = await f.wallet.storeCapsule(
+    f.capsuleContext,
+    f.deployment,
+    "100",
+    f.storage,
+    f.funding,
+  );
+  const journal = JSON.stringify(readPending(f.storage));
+  for (const forbidden of [
+    "statementJson",
+    "encrypted_data",
+    "Message",
+    "secret_key",
+    "gd-capsule-1",
+  ])
+    expect(journal).not.toContain(forbidden);
+  expect(readPending(f.storage)[0]).toMatchObject({
+    id: result.transactionId,
+    operation: "capsule",
+    state: "submitted",
+    walletRequest: { id: f.id },
+    capsule: { deployment: f.deployment },
+  });
+  const tx = f.request.mock.calls.find(
+    ([a]) => a.method === "tari_createTransactionRequest",
+  )![0].params as any;
+  expect(tx.instructions).toHaveLength(1);
+  expect(tx.instructions[0].CallMethod.method).toBe("store");
+  expect(tx.inputs).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        substate_id: f.deployment.resource,
+        is_write: true,
+      }),
+      expect.objectContaining({
+        substate_id: f.deployment.component,
+        is_write: false,
+      }),
+      expect.objectContaining({
+        substate_id: `template_${f.deployment.template}`,
+        is_write: false,
+      }),
+      expect.objectContaining({
+        substate_id: f.wallet.accounts[0].account.component_address,
+        is_write: true,
+      }),
+      expect.objectContaining({
+        substate_id: `vault_${"e".repeat(64)}`,
+        is_write: true,
+      }),
+    ]),
+  );
+});
+test("lost capsule submission resumes the same approval after reconnect without minting another capsule", async () => {
+  const f = await capsuleFixture();
+  f.loseSubmit();
+  await expect(
+    f.wallet.storeCapsule(
+      f.capsuleContext,
+      f.deployment,
+      "100",
+      f.storage,
+      f.funding,
+    ),
+  ).rejects.toThrow("lost response");
+  const p = readPending(f.storage)[0];
+  await expect(
+    f.wallet.storeCapsule(
+      f.capsuleContext,
+      f.deployment,
+      "100",
+      f.storage,
+      f.funding,
+    ),
+  ).rejects.toThrow("setup already exists");
+  const restored = await SapientSession.connect(38, f.provider);
+  expect(await restored.resume(p.id, f.storage)).toBe("1".repeat(64));
+  expect(
+    f.request.mock.calls.filter(
+      ([a]) => a.method === "tari_createTransactionRequest",
+    ),
+  ).toHaveLength(1);
+  expect(
+    f.request.mock.calls.filter(
+      ([a]) => a.method === "tari_submitTransactionRequest",
+    ),
+  ).toHaveLength(1);
+});
+test("lost capsule creation response blocks a replacement before ledger reads or key generation", async () => {
+  const f = await capsuleFixture();
+  f.loseCreate();
+  await expect(
+    f.wallet.storeCapsule(
+      f.capsuleContext,
+      f.deployment,
+      "100",
+      f.storage,
+      f.funding,
+    ),
+  ).rejects.toThrow("lost response");
+  const originalDescriptor = readPending(f.storage)[0].capsule?.descriptor;
+  f.funding.readSubstate.mockClear();
+  await expect(
+    f.wallet.storeCapsule(
+      f.capsuleContext,
+      f.deployment,
+      "100",
+      f.storage,
+      f.funding,
+    ),
+  ).rejects.toThrow("setup already exists");
+  expect(f.funding.readSubstate).not.toHaveBeenCalled();
+  expect(readPending(f.storage)[0].capsule?.descriptor).toEqual(
+    originalDescriptor,
+  );
+  expect(readPending(f.storage)[0].walletRequest).toBeUndefined();
+});
+test("capsule creation rejects the wrong reviewed template and corrupt journals before approval", async () => {
+  const f = await capsuleFixture();
+  await expect(
+    f.wallet.storeCapsule(
+      f.capsuleContext,
+      { ...f.deployment, template: "a".repeat(64) },
+      "100",
+      f.storage,
+      f.funding,
+    ),
+  ).rejects.toThrow("reviewed template");
+  f.storage.setItem("ghostdrop:pending:v1", "invalid");
+  await expect(
+    f.wallet.storeCapsule(
+      f.capsuleContext,
+      f.deployment,
+      "100",
+      f.storage,
+      f.funding,
+    ),
+  ).rejects.toThrow("spending is blocked");
+  expect(
+    f.request.mock.calls.some(
+      ([a]) => a.method === "tari_createTransactionRequest",
+    ),
+  ).toBe(false);
+});
+test("capsule refusal preserves its metadata and never broadcasts or replaces the key", async () => {
+  const f = await capsuleFixture();
+  f.setStatus("rejected");
+  await expect(
+    f.wallet.storeCapsule(
+      f.capsuleContext,
+      f.deployment,
+      "100",
+      f.storage,
+      f.funding,
+    ),
+  ).rejects.toThrow("rejected in Sapient");
+  expect(readPending(f.storage)[0].state).toBe("rejected");
+  await expect(
+    f.wallet.storeCapsule(
+      f.capsuleContext,
+      f.deployment,
+      "100",
+      f.storage,
+      f.funding,
+    ),
+  ).rejects.toThrow("setup already exists");
+  expect(
+    f.request.mock.calls.some(
+      ([a]) => a.method === "tari_submitTransactionRequest",
+    ),
+  ).toBe(false);
+});
+test("capsule evidence never enables Sapient addressed gifts or prepaid collection", async () => {
+  const f = await capsuleFixture();
+  const deployment = {
+    ...f.d,
+    capsule: f.deployment,
+    evidence: { ...f.d.evidence, mailboxRecovery: true },
+  };
+  expect(writesReady(deployment, "postbox", "sapient")).toBe(true);
+  expect(
+    writesReady({ ...deployment, capsule: undefined }, "postbox", "sapient"),
+  ).toBe(false);
+  expect(postboxClaimsReady(deployment, "sapient")).toBe(false);
+  const chain = { deployment, provider: {} } as PostOfficeClient;
+  const gift = {
+    ...f.envelope,
+    mode: "postbox" as const,
+    gift: "1",
+    reserve: "1",
+  };
+  await expect(
+    PostOfficeClient.prototype.publish.call(
+      chain,
+      f.wallet,
+      f.wallet.accounts[0],
+      gift,
+      "100",
+      f.storage,
+    ),
+  ).rejects.toThrow("prepaid signing");
+  await expect(
+    PostOfficeClient.prototype.claimPostbox.call(
+      chain,
+      f.wallet,
+      f.wallet.accounts[0],
+      gift,
+      "unused",
+      "unused",
+      f.storage,
+    ),
+  ).rejects.toThrow("prepaid addressed");
+  expect(
+    f.request.mock.calls.some(
+      ([a]) => a.method === "tari_createTransactionRequest",
+    ),
+  ).toBe(false);
+});
+test("concurrent capsule setup creates only one persisted wallet approval", async () => {
+  const f = await capsuleFixture();
+  const results = await Promise.allSettled(
+    [1, 2].map(() =>
+      f.wallet.storeCapsule(
+        f.capsuleContext,
+        f.deployment,
+        "100",
+        f.storage,
+        f.funding,
+      ),
+    ),
+  );
+  expect(
+    results.filter((result) => result.status === "fulfilled"),
+  ).toHaveLength(1);
+  expect(
+    f.request.mock.calls.filter(
+      ([a]) => a.method === "tari_createTransactionRequest",
+    ),
+  ).toHaveLength(1);
+  expect(
+    f.request.mock.calls.filter(
+      ([a]) => a.method === "tari_submitTransactionRequest",
+    ),
+  ).toHaveLength(1);
+  expect(readPending(f.storage)).toHaveLength(1);
+});
+test("postbox registration declares account and fee vault dependencies before Sapient simulation", async () => {
+  const f = await capsuleFixture();
+  const deployment = {
+    ...f.d,
+    capsule: f.deployment,
+    evidence: { ...f.d.evidence, mailboxRecovery: true },
+  };
+  const chain = {
+    deployment,
+    provider: {
+      getCurrentEpoch: async () => 123,
+      getSubstate: async () => ({
+        substate: {
+          Component: {
+            body: {
+              state: [
+                {
+                  "@cbor": "tag",
+                  tag: 132,
+                  value: { "@cbor": "bytes", hex: "e".repeat(64) },
+                },
+              ],
+            },
+          },
+        },
+      }),
+    },
+  } as unknown as PostOfficeClient;
+  await PostOfficeClient.prototype.savePostbox.call(
+    chain,
+    f.wallet,
+    f.wallet.accounts[0],
+    {
+      id: "existing",
+      nickname: "edited",
+      controller: f.capsuleContext.controller,
+      discoverable: false,
+      encryptionKey: "unused-for-edit",
+    },
+    "edit",
+    "100",
+    f.storage,
+  );
+  const dry = f.request.mock.calls.find(
+    ([a]) => a.method === "tari_signAndSubmitTransaction",
+  )![0].params as any;
+  expect(dry.inputs).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        substate_id: deployment.registry,
+        is_write: true,
+      }),
+      expect.objectContaining({
+        substate_id: f.wallet.accounts[0].account.component_address,
+        is_write: true,
+      }),
+      expect.objectContaining({
+        substate_id: `vault_${"e".repeat(64)}`,
+        is_write: true,
       }),
     ]),
   );

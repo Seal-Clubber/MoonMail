@@ -1,12 +1,22 @@
 import { parseOotleAddress } from "@tari-project/ootle-wasm";
 import type { WalletAccount } from "./wallet";
 import type { NativeMailboxAdapter } from "./native-mailbox";
-import type { MailboxContext, MailboxPayload, Letter } from "./types";
+import type {
+  MailboxContext,
+  MailboxPayload,
+  Letter,
+  CapsuleDeployment,
+} from "./types";
 import { hex } from "./crypto";
 import {
   SapientCapsuleMailbox,
   type CapsuleSubstateReader,
+  verifyCapsuleDeployment,
 } from "./sapient-capsule";
+import {
+  prepareSapientCapsule,
+  capsuleStoreTransaction,
+} from "./sapient-capsule-create";
 import { money, type publishTransaction } from "./transactions";
 import {
   beginSubmission,
@@ -15,6 +25,8 @@ import {
   readPending,
   savePending,
   type Pending,
+  capsuleIdentity,
+  validCapsule,
 } from "./pending";
 
 export interface SapientProvider {
@@ -220,11 +232,89 @@ export class SapientSession {
       throw new Error(
         "Sapient cannot replace prepaid fee instructions or native key recovery",
       );
+    return this.submitInstructions(tx, feeCap, storage, context);
+  }
+  private unusedCapsule(storage: Storage, context: MailboxContext) {
+    const identity = capsuleIdentity(context);
+    if (
+      hasUnresolved(storage, context.network, context.registry, identity) ||
+      readPending(storage).some(
+        (p) =>
+          p.network === context.network &&
+          p.registry === context.registry &&
+          p.operation === "capsule" &&
+          p.envelopeId === identity,
+      )
+    )
+      throw new Error(
+        "A recovery setup already exists; resume it before generating another key",
+      );
+  }
+  async storeCapsule(
+    context: MailboxContext,
+    deployment: CapsuleDeployment,
+    feeCap: string,
+    storage: Storage,
+    funding: {
+      readSubstate: CapsuleSubstateReader;
+      vaults(account: string): Promise<string[]>;
+      epoch(): Promise<number>;
+    },
+  ) {
+    if (
+      context.network !== this.network ||
+      context.controller !== this.accounts[0].account.owner_public_key
+    )
+      throw new Error("Choose the connected Sapient controller and network");
+    if (money(feeCap) <= 0n)
+      throw new Error("A positive transaction fee cap is required");
+    this.unusedCapsule(storage, context);
+    await this.assertCurrent();
+    await verifyCapsuleDeployment(deployment, funding.readSubstate);
+    const vaults = await funding.vaults(
+        this.accounts[0].account.component_address,
+      ),
+      epoch = await funding.epoch();
+    await this.assertCurrent();
+    const prepared = await prepareSapientCapsule(
+      context,
+      this.accounts[0],
+      deployment,
+    );
+    this.unusedCapsule(storage, context);
+    const tx = capsuleStoreTransaction(prepared, feeCap, epoch, vaults);
+    const transactionId = await this.submitInstructions(tx, feeCap, storage, {
+      network: context.network,
+      registry: context.registry,
+      envelopeId: capsuleIdentity(context),
+      operation: "capsule",
+      capsule: prepared.capsule,
+    });
+    return { transactionId, capsule: prepared.capsule };
+  }
+  private async submitInstructions(
+    tx: ReturnType<typeof publishTransaction>,
+    feeCap: string,
+    storage: Storage,
+    context: Omit<Pending, "id" | "state" | "walletRequest">,
+  ) {
+    if (
+      context.operation === "capsule" &&
+      (!validCapsule(context) ||
+        context.capsule?.descriptor.recovery !== "sapient-capsule-1" ||
+        context.capsule.account !==
+          this.accounts[0].account.component_address ||
+        context.capsule.context.controller !==
+          this.accounts[0].account.owner_public_key)
+    )
+      throw new Error("Invalid Sapient capsule operation");
     if (context.network !== this.network)
       throw new Error("Wrong Sapient operation network");
     if (money(feeCap) <= 0n)
       throw new Error("A positive transaction fee cap is required");
     await this.assertCurrent();
+    if (context.operation === "capsule")
+      this.unusedCapsule(storage, context.capsule!.context);
     const params = {
       instructions: tx.instructions,
       inputs: tx.inputs,
@@ -247,6 +337,8 @@ export class SapientSession {
         "Sapient simulation rejected or exceeded the fee cap; nothing submitted",
       );
     await this.assertCurrent();
+    if (context.operation === "capsule")
+      this.unusedCapsule(storage, context.capsule!.context);
     if (
       hasUnresolved(
         storage,
@@ -289,7 +381,10 @@ export class SapientSession {
       !pending ||
       !request ||
       pending.operation === "claim" ||
-      pending.operation === "capsule" ||
+      (pending.operation === "capsule" &&
+        (pending.capsule?.descriptor.recovery !== "sapient-capsule-1" ||
+          pending.capsule.context.controller !==
+            this.accounts[0].account.owner_public_key)) ||
       pending.network !== this.network ||
       request.account !== this.accounts[0].account.component_address ||
       pending.state !== "unknown"

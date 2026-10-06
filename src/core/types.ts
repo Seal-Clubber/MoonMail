@@ -25,6 +25,11 @@ export interface CapsuleReference {
   resource: string;
   commitment: string;
 }
+export interface CapsuleDeployment {
+  template: string;
+  component: string;
+  resource: string;
+}
 export interface MailboxKey {
   version: "gd-postbox-1";
   keyVersion: number;
@@ -65,6 +70,7 @@ export interface Postbox {
   discoverable: boolean;
 }
 export interface Deployment extends Context {
+  capsule?: CapsuleDeployment;
   envelopeTemplate: string;
   indexerUrl: string;
   resource: string;

@@ -1,9 +1,10 @@
-import type { MailboxContext, MailboxKey } from "./types";
+import type { MailboxContext, MailboxKey, CapsuleDeployment } from "./types";
 import { mailboxAAD, mailboxKey } from "./mailbox";
 export interface CapsuleRecord {
   account: string;
   context: MailboxContext;
   descriptor: MailboxKey;
+  deployment?: CapsuleDeployment;
 }
 export interface Pending {
   id: string;
@@ -18,14 +19,24 @@ export interface Pending {
 export function capsuleIdentity(context: MailboxContext) {
   return `capsule:${context.postbox}:${context.keyVersion}`;
 }
-function validCapsule(p: Pending) {
+export function validCapsule(
+  p: Pick<
+    Pending,
+    "operation" | "capsule" | "network" | "registry" | "envelopeId"
+  >,
+) {
   if (p.operation !== "capsule") return p.capsule === undefined;
   const c = p.capsule;
   if (!c || !/^component_[a-f0-9]{64}$/.test(c.account)) return false;
   mailboxAAD(c.context, "key-capsule", "00".repeat(32), "00".repeat(32));
   const descriptor = mailboxKey(c.descriptor);
   return (
-    descriptor.recovery === "native-memo-1" &&
+    ((descriptor.recovery === "native-memo-1" && c.deployment === undefined) ||
+      (descriptor.recovery === "sapient-capsule-1" &&
+        c.deployment &&
+        /^[a-f0-9]{64}$/.test(c.deployment.template) &&
+        /^component_[a-f0-9]{64}$/.test(c.deployment.component) &&
+        c.deployment.resource === descriptor.capsule?.resource)) &&
     descriptor.keyVersion === c.context.keyVersion &&
     c.context.network === p.network &&
     c.context.registry === p.registry &&
@@ -48,7 +59,12 @@ function strictPending(storage: Pick<Storage, "getItem">): Pending[] {
           !["publish", "claim", "postbox", "capsule"].includes(p.operation) ||
           !validCapsule(p) ||
           (p.walletRequest !== undefined &&
-            (!["publish", "postbox"].includes(p.operation) ||
+            (!(
+              ["publish", "postbox"].includes(p.operation) ||
+              (p.operation === "capsule" &&
+                p.capsule?.descriptor.recovery === "sapient-capsule-1" &&
+                p.walletRequest.account === p.capsule.account)
+            ) ||
               p.walletRequest.provider !== "sapient" ||
               typeof p.walletRequest.id !== "string" ||
               !/^[A-Za-z0-9_-]{1,128}$/.test(p.walletRequest.id) ||

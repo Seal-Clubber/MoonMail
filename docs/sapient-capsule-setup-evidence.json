@@ -1,0 +1,38 @@
+{
+  "checkedAt": "2026-10-06T22:21:17.6928352Z",
+  "publicTransactions": 0,
+  "publicCapsuleDeployment": false,
+  "mailboxRecovery": false,
+  "productionPreparationUsedByEngineFixture": true,
+  "clientTestsPassed": 66,
+  "desktopMobileBrowserTestsPassed": 16,
+  "clientChecks": [
+    "Canonical SDK encrypted output; temporary application key cleared",
+    "Reviewed template, component and mint authority checked",
+    "Public capsule metadata journaled before request creation",
+    "Same approval ID resumed after lost submission and reconnect",
+    "Lost creation response, corruption and prior setup block replacement",
+    "Account-wide privacy consent explicit in desktop/mobile UI",
+    "Sapient prepaid addressed gifts remain blocked independently",
+    "Concurrent setup creates one approval; registration declares fee dependencies"
+  ],
+  "engineChecks": {
+    "nativeSpendPathsRejected": 2,
+    "testsPassed": 1,
+    "unsafeStoreCasesRejected": 6,
+    "engine": "0.45.0"
+  },
+  "stockWalletLab": {
+    "fullProductUiFundedCreation": false,
+    "originalAndBackupRestoredWallets": true,
+    "record": "sapient-capsule-adapter-evidence.json",
+    "engineFixtureReads": true,
+    "productionPreparation": true
+  },
+  "remaining": [
+    "Supported operator deployment and fresh bounded public funding approval",
+    "Funded capsule creation, registration and rotation/history",
+    "Public unknown-response reconciliation",
+    "Compatible prepaid addressed claim authorization"
+  ]
+}

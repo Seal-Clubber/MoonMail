@@ -129,5 +129,32 @@
     "Official store package was loaded unpacked in an isolated automation profile; Chrome Store installation UI was not automated.",
     "Connection, read, reload and rejection were tested against published assets. No further public transaction was authorized or broadcast.",
     "The prior funded publication used the byte-matching unmodified source build. No new gifted/private-link publication or postbox recovery proof."
-  ]
+  ],
+  "publishedReaderUpdate": {
+    "checkedAt": "2026-10-06T22:14:27.373Z",
+    "base": "https://seal-clubber.github.io/GhostDrop/",
+    "frontendCommit": "0bbb708386f815e445c5573d5aa2a33299e074ef",
+    "publishedBuild": true,
+    "assetOrConfigOverrides": false,
+    "publicRpcUnmodified": true,
+    "walletConnected": false,
+    "transactionsBroadcast": 0,
+    "publicFundedGiftsRemaining": 4,
+    "checks": [
+      {
+        "viewport": "desktop",
+        "completeChainLetter": true,
+        "newWalletDialog": true,
+        "noPageErrors": true,
+        "noHorizontalOverflow": true
+      },
+      {
+        "viewport": "mobile",
+        "completeChainLetter": true,
+        "newWalletDialog": true,
+        "noPageErrors": true,
+        "noHorizontalOverflow": true
+      }
+    ]
+  }
 }
