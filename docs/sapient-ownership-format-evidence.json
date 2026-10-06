@@ -1,0 +1,14 @@
+{
+  "checkedAt": "2026-10-06T22:29:31.601Z",
+  "sdk": "0.1.20",
+  "wasm": "stock SDK vendor 0.42.0",
+  "syntheticKeysOnly": true,
+  "walletProviderInvoked": false,
+  "publicTransactions": 0,
+  "signingFormat": "length-prefixed com.tari.schnorr_signature.v1.challenge; R, P, ownership message",
+  "positiveCases": 1,
+  "negativeCases": 7,
+  "nativeVerifierFormatsRejected": 3,
+  "engineVerification": false,
+  "claimContractImplemented": false
+}
