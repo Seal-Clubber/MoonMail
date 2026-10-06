@@ -72,6 +72,13 @@ pub mod ghostdrop {
             p.nickname = nickname;
             p.discoverable = discoverable;
         }
+        pub fn rotate_postbox_key(&mut self, id: String, encryption_key: String) {
+            assert!(!encryption_key.is_empty() && encryption_key.len() <= 512, "Invalid encryption key");
+            let p = self.postboxes.get_mut(&id).expect("Unknown postbox");
+            let proof = CallerContext::get_signer_proof_for_public_key(p.controller);
+            proof.drop();
+            p.encryption_key = encryption_key;
+        }
         pub fn publish(
             &mut self,
             id: String,

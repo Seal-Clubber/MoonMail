@@ -16,7 +16,12 @@ import type { Deployment, Envelope, Postbox } from "./types";
 import type { WalletSession, WalletAccount } from "./wallet";
 import { writesReady, endpoint } from "./config";
 import { hex } from "./crypto";
-import { claimTransaction, publishTransaction } from "./transactions";
+import {
+  claimTransaction,
+  publishTransaction,
+  postboxTransaction,
+} from "./transactions";
+import { mailboxKey } from "./mailbox";
 import { beginSubmission, completeSubmission, hasUnresolved } from "./pending";
 // Strict codec for positional minicbor component state, not an invented RPC.
 function arr(v: unknown): unknown[] {
@@ -82,6 +87,20 @@ export function decodeEnvelope(
     (typeof payload.subject !== "string" || typeof payload.body !== "string")
   )
     throw new Error("Invalid public letter");
+  if (mode === "postbox") {
+    if (
+      !payload ||
+      payload.version !== "gd-postbox-1" ||
+      !/^[A-Za-z0-9_-]{1,64}$/.test(text(e[7])) ||
+      !/^[a-f0-9]{64}$/.test(bytes(e[6]))
+    )
+      throw new Error("Invalid addressed envelope");
+    mailboxKey({
+      version: payload.version,
+      keyVersion: payload.keyVersion,
+      publicKey: payload.recipientKey,
+    });
+  }
   return {
     component,
     id,
@@ -92,6 +111,7 @@ export function decodeEnvelope(
     reserve: amount(e[4]),
     claimed: e[5],
     recipientPostbox: text(e[7]),
+    claimAuthority: mode === "public" ? undefined : bytes(e[6]),
     replyPostbox: text(e[8]),
     sender: bytes(e[9]),
     campaign: text(e[10]),
@@ -367,6 +387,128 @@ export class PostOfficeClient {
     const r = await this.provider.submitTransaction(sealTransaction(signed));
     completeSubmission(storage, attempt, r.transaction_id);
     return r.transaction_id;
+  }
+  private async submitControlled(
+    wallet: WalletSession,
+    account: WalletAccount,
+    tx: ReturnType<typeof publishTransaction>,
+    feeCap: string,
+    storage: Storage,
+    operation: "postbox" | "claim",
+    identity: string,
+  ) {
+    if (!account.account.owner_key_id)
+      throw new Error("Controlling account has no signing key");
+    if (wallet.network !== this.deployment.network)
+      throw new Error("Wrong wallet network");
+    if (
+      hasUnresolved(
+        storage,
+        this.deployment.network,
+        this.deployment.registry,
+        identity,
+      )
+    )
+      throw new Error("Reconcile the existing submission first");
+    const request = {
+      transaction: { V1: tx },
+      seal_signer: account.account.owner_key_id,
+      other_signers: [account.account.owner_key_id],
+      signatures: [],
+      detect_inputs: true,
+      detect_inputs_use_unversioned: true,
+      lock_ids: [],
+    };
+    const dry = await wallet.submitDryRun(request);
+    if (!("Accept" in dry.result.finalize.result))
+      throw new Error("Wallet dry run rejected; nothing submitted");
+    if (BigInt(dry.required_fees) > BigInt(feeCap))
+      throw new Error("Fee cap is too low");
+    const attempt = beginSubmission(storage, {
+      network: this.deployment.network,
+      registry: this.deployment.registry,
+      operation,
+      envelopeId: identity,
+    });
+    const result = await wallet.submit(request);
+    completeSubmission(storage, attempt, result.transaction_id);
+    return result.transaction_id;
+  }
+  async savePostbox(
+    wallet: WalletSession,
+    account: WalletAccount,
+    box: Postbox,
+    operation: "create" | "edit" | "rotate",
+    fee: string,
+    storage: Storage,
+  ) {
+    if (!writesReady(this.deployment, "postbox"))
+      throw new Error("Postbox writes await deployment and recovery evidence");
+    if (box.controller !== account.account.owner_public_key)
+      throw new Error("Choose the controlling account");
+    const tx = postboxTransaction(
+      this.deployment,
+      account.account.component_address,
+      fee,
+      await this.provider.getCurrentEpoch(),
+      operation,
+      box,
+    );
+    return this.submitControlled(
+      wallet,
+      account,
+      tx,
+      fee,
+      storage,
+      "postbox",
+      `postbox:${box.id}`,
+    );
+  }
+  async claimPostbox(
+    wallet: WalletSession,
+    account: WalletAccount,
+    envelope: Envelope,
+    address: string,
+    component: string,
+    storage: Storage,
+  ) {
+    if (!writesReady(this.deployment, "postbox"))
+      throw new Error("Postbox claims await deployment and recovery evidence");
+    if (
+      envelope.mode !== "postbox" ||
+      envelope.claimed ||
+      BigInt(envelope.gift) === 0n
+    )
+      throw new Error("Addressed gift unavailable");
+    if (
+      envelope.context.network !== this.deployment.network ||
+      envelope.context.registry !== this.deployment.registry ||
+      envelope.context.template !== this.deployment.template
+    )
+      throw new Error("Wrong envelope deployment");
+    const latest = await this.readLetter(envelope.id, envelope.component);
+    if (
+      latest.claimed ||
+      latest.claimAuthority !== account.account.owner_public_key ||
+      !latest.component
+    )
+      throw new Error("Choose the wallet account controlling this gift");
+    const destination = await this.validateDestination(address, component);
+    const tx = claimTransaction(
+      this.deployment,
+      latest.component,
+      destination,
+      await this.provider.getCurrentEpoch(),
+    );
+    return this.submitControlled(
+      wallet,
+      account,
+      tx,
+      latest.reserve,
+      storage,
+      "claim",
+      latest.id,
+    );
   }
   async reconcile(id: string) {
     const r = await this.provider.getTransactionResult(id);

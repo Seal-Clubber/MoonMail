@@ -6,9 +6,11 @@ import {
   intLiteral,
   componentAddressLiteral,
   resourceAddressLiteral,
+  boolLiteral,
 } from "@tari-project/ootle";
-import type { Deployment, Envelope } from "./types";
+import type { Deployment, Envelope, Postbox } from "./types";
 import { assertEnvelopeSize } from "./crypto";
+import { mailboxKey } from "./mailbox";
 export function money(value: string) {
   if (!/^\d+$/.test(value)) throw new Error("Amounts must be whole microTARI");
   const n = BigInt(value);
@@ -22,9 +24,15 @@ export function publishTransaction(
   fee: string,
   epoch: number,
 ) {
-  if (envelope.mode === "postbox")
+  if (
+    envelope.mode === "postbox" &&
+    (!envelope.recipientPostbox ||
+      !/^[a-f0-9]{64}$/.test(envelope.claimAuthority || "") ||
+      !("version" in envelope.payload) ||
+      envelope.payload.version !== "gd-postbox-1")
+  )
     throw new Error(
-      "Addressed publication awaits a verified wallet encryption/recovery provider",
+      "Addressed mail requires a sealed payload and frozen controller",
     );
   if (
     d.network !== envelope.context.network ||
@@ -62,13 +70,64 @@ export function publishTransaction(
       stringLiteral(
         envelope.mode === "link" && "claimPublicKey" in envelope.payload
           ? envelope.payload.claimPublicKey
-          : "",
+          : envelope.mode === "postbox"
+            ? envelope.claimAuthority!
+            : "",
       ),
       stringLiteral(envelope.recipientPostbox || ""),
       stringLiteral(envelope.replyPostbox || ""),
       stringLiteral(envelope.campaign || ""),
       { Workspace: "funding" },
     ])
+    .buildUnsignedTransaction();
+}
+export function postboxTransaction(
+  d: Deployment,
+  account: string,
+  fee: string,
+  epoch: number,
+  operation: "create" | "edit" | "rotate",
+  box: Postbox,
+) {
+  if (
+    !/^[A-Za-z0-9_-]{1,64}$/.test(box.id) ||
+    !box.nickname.trim() ||
+    new TextEncoder().encode(box.nickname).length > 80
+  )
+    throw new Error(
+      "Choose a postbox ID and a nickname of at most 80 UTF-8 bytes",
+    );
+  const args =
+    operation === "create"
+      ? [
+          stringLiteral(box.id),
+          stringLiteral(box.nickname),
+          stringLiteral(JSON.stringify(mailboxKey(box.encryptionKey))),
+          boolLiteral(box.discoverable),
+        ]
+      : operation === "edit"
+        ? [
+            stringLiteral(box.id),
+            stringLiteral(box.nickname),
+            boolLiteral(box.discoverable),
+          ]
+        : [
+            stringLiteral(box.id),
+            stringLiteral(JSON.stringify(mailboxKey(box.encryptionKey))),
+          ];
+  return TransactionBuilder.new(d.network as Network, epoch + 10)
+    .feeTransactionPayFromComponent(account, money(fee))
+    .callMethod(
+      {
+        componentAddress: d.registry,
+        methodName: {
+          create: "create_postbox",
+          edit: "edit_postbox",
+          rotate: "rotate_postbox_key",
+        }[operation],
+      },
+      args,
+    )
     .buildUnsignedTransaction();
 }
 export function claimTransaction(

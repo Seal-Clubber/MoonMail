@@ -16,16 +16,35 @@ export interface SealedPayload {
   wrappedClaimKey: string;
   claimPublicKey: string;
 }
+export interface MailboxContext extends Context {
+  postbox: string;
+  controller: string;
+  keyVersion: number;
+}
+export interface MailboxKey {
+  version: "gd-postbox-1";
+  keyVersion: number;
+  publicKey: string;
+}
+export interface MailboxPayload {
+  version: "gd-postbox-1";
+  keyVersion: number;
+  recipientKey: string;
+  ephemeralPublicKey: string;
+  iv: string;
+  ciphertext: string;
+}
 export interface Envelope {
   component?: string;
   id: string;
   mode: MailMode;
   context: Context;
-  payload: Letter | SealedPayload;
+  payload: Letter | SealedPayload | MailboxPayload;
   gift: string;
   reserve: string;
   claimed: boolean;
   recipientPostbox?: string;
+  claimAuthority?: string;
   replyPostbox?: string;
   campaign?: string;
   sender: string;

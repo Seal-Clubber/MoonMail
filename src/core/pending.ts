@@ -2,7 +2,7 @@ export interface Pending {
   id: string;
   network: number;
   registry: string;
-  operation: "publish" | "claim";
+  operation: "publish" | "claim" | "postbox";
   envelopeId: string;
   state: "submitted" | "confirmed" | "rejected" | "unknown";
 }
@@ -19,7 +19,7 @@ function strictPending(storage: Pick<Storage, "getItem">): Pending[] {
           typeof p.envelopeId !== "string" ||
           typeof p.registry !== "string" ||
           !Number.isInteger(p.network) ||
-          !["publish", "claim"].includes(p.operation) ||
+          !["publish", "claim", "postbox"].includes(p.operation) ||
           !["submitted", "confirmed", "rejected", "unknown"].includes(p.state),
       )
     )

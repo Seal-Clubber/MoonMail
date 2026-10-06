@@ -1,5 +1,12 @@
 import { WalletDaemonClient } from "@tari-project/wallet_jrpc_client";
 import { endpoint } from "./config";
+import type {
+  Letter,
+  MailboxContext,
+  MailboxKey,
+  MailboxPayload,
+} from "./types";
+import { mailboxKey } from "./mailbox";
 export type WalletAccount = Awaited<
   ReturnType<WalletDaemonClient["accountsList"]>
 >["accounts"][number];
@@ -45,6 +52,54 @@ export class WalletSession {
   }
   disconnect() {
     this.client.setToken("");
+  }
+  private async postboxCall<T>(
+    method: "public_key" | "decrypt",
+    params: unknown,
+  ): Promise<T> {
+    const token = this.client.getToken();
+    if (!token)
+      throw new Error("Connect the controlling wallet to open a postbox");
+    const result = await this.client
+      .getTransport()
+      .sendRequest<T>(
+        { jsonrpc: "2.0", id: 1, method: `postboxes.${method}`, params },
+        { token, timeout_millis: 15000 },
+      );
+    if (result.error || result.result === undefined) {
+      throw new Error(
+        result.error?.code === -32601
+          ? "This daemon needs the GhostDrop wallet extension for recoverable postbox keys"
+          : "Postbox operation failed: verify controller, key version, context and the account-scoped postbox permission",
+      );
+    }
+    if (this.client.getToken() !== token)
+      throw new Error("Wallet session changed; reopen the letter");
+    return result.result;
+  }
+  async postboxPublicKey(
+    account: string,
+    context: MailboxContext,
+  ): Promise<MailboxKey> {
+    return mailboxKey(
+      await this.postboxCall("public_key", { account, context }),
+    );
+  }
+  async decryptPostbox(
+    account: string,
+    context: MailboxContext,
+    envelopeId: string,
+    payload: MailboxPayload,
+  ): Promise<Letter> {
+    const letter = await this.postboxCall<Letter>("decrypt", {
+      account,
+      context,
+      envelopeId,
+      payload,
+    });
+    if (typeof letter.subject !== "string" || typeof letter.body !== "string")
+      throw new Error("Invalid wallet letter response");
+    return letter;
   }
   submitDryRun(
     request: Parameters<WalletDaemonClient["submitTransactionDryRun"]>[0],

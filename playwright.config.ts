@@ -1,13 +1,22 @@
 import { defineConfig } from "@playwright/test";
+const hosted = process.env.GHOSTDROP_TEST_BASE_URL;
+if (hosted && (!hosted.startsWith("https://") || !hosted.endsWith("/"))) {
+  throw new Error("Hosted checks require an HTTPS base URL ending in /");
+}
 export default defineConfig({
   testDir: "./tests/browser",
   fullyParallel: true,
-  use: { baseURL: "http://127.0.0.1:4173/GhostDrop/", headless: true },
-  webServer: {
-    command: "node tools/static-server.mjs",
-    url: "http://127.0.0.1:4173/GhostDrop/",
-    reuseExistingServer: false,
+  use: {
+    baseURL: hosted || "http://127.0.0.1:4173/GhostDrop/",
+    headless: true,
   },
+  webServer: hosted
+    ? undefined
+    : {
+        command: "node tools/static-server.mjs",
+        url: "http://127.0.0.1:4173/GhostDrop/",
+        reuseExistingServer: false,
+      },
   projects: [
     { name: "desktop", use: { viewport: { width: 1440, height: 1100 } } },
     {

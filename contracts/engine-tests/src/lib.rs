@@ -246,6 +246,14 @@ mod tests {
         assert!(!p.discoverable);
         let (sk, _) = t.new_key_pair(77);
         t.execute_expect_failure(
+            t.transaction().call_method(office,"rotate_postbox_key",args!["box-1".to_string(),"attacker-key".to_string()]).build_and_seal(&sk),vec![],
+        );
+        t.call_method::<()>(office,"rotate_postbox_key",args!["box-1".to_string(),"version-two-public-key".to_string()],vec![]);
+        let rotated: ghostdrop_template::ghostdrop::Postbox = get(&mut t,office,"postbox",args!["box-1".to_string()]);
+        assert_eq!(rotated.controller,p.controller);
+        assert_eq!(rotated.id,p.id);
+        assert_eq!(rotated.encryption_key,"version-two-public-key");
+        t.execute_expect_failure(
             t.transaction()
                 .call_method(
                     office,

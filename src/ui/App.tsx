@@ -6,6 +6,7 @@ import type {
   MailMode,
   Postbox,
   SealedPayload,
+  MailboxPayload,
 } from "../core/types";
 import { emptyDeployment, writesReady } from "../core/config";
 import { WalletSession } from "../core/wallet";
@@ -19,6 +20,12 @@ import {
 } from "../core/links";
 import { money } from "../core/transactions";
 import { readPending, savePending } from "../core/pending";
+import {
+  mailboxKey,
+  sealMailbox,
+  envelopeMailboxContext,
+} from "../core/mailbox";
+import { Postboxes } from "./Postboxes";
 
 const exampleLetters: Envelope[] = [
   {
@@ -108,7 +115,7 @@ export function App() {
   const secret = useRef<Uint8Array | undefined>(undefined),
     routeOnce = useRef(false),
     [page, setPage] = useState(1),
-    [selectedBox, setSelectedBox] = useState("");
+    openSequence = useRef(0);
   const owned = boxes.filter(
     (p) => p.controller === wallet?.accounts[account]?.account.owner_public_key,
   );
@@ -286,6 +293,7 @@ export function App() {
     history.replaceState(null, "", `${location.pathname}#/${v}`);
   }
   function closeLetter() {
+    openSequence.current += 1;
     secret.current?.fill(0);
     secret.current = undefined;
     setActive(undefined);
@@ -303,11 +311,39 @@ export function App() {
     setPage(1);
     if (active) setActive(await chain.readLetter(active.id, active.component));
   }
+  async function loadMore() {
+    if (!chain || !cursor) return;
+    const data = await chain.read(cursor);
+    setLetters((old) => [
+      ...old,
+      ...data.letters.filter((e) => !old.some((x) => x.id === e.id)),
+    ]);
+    setBoxes(data.postboxes);
+    setCursor(data.nextCursor);
+  }
+  async function openPostbox(envelope: Envelope) {
+    closeLetter();
+    setActive(envelope);
+    const sequence = openSequence.current;
+    const owner = wallet?.accounts.find(
+      (a) => a.account.owner_public_key === envelope.claimAuthority,
+    );
+    if (!wallet || !owner)
+      throw new Error("Connect the wallet controlling this postbox");
+    const letter = await wallet.decryptPostbox(
+      owner.account.component_address,
+      envelopeMailboxContext(envelope),
+      envelope.id,
+      envelope.payload as MailboxPayload,
+    );
+    if (openSequence.current === sequence) setPlain(letter);
+  }
   const shown = (preview ? exampleLetters : letters).filter(
     (e) => e.mode !== "postbox",
   );
   const current = wallet?.accounts[account];
   function disconnect() {
+    openSequence.current += 1;
     wallet?.disconnect();
     setWallet(undefined);
     setApiKey("");
@@ -328,23 +364,40 @@ export function App() {
     money(fee);
     if (!subject.trim() || !body.trim())
       throw new Error("Write a subject and a message");
-    if (mode === "postbox")
-      throw new Error(
-        "Wallet-based letter decryption and recovery are not verified yet",
-      );
+    const postbox =
+      mode === "postbox" ? boxes.find((p) => p.id === recipient) : undefined;
+    if (mode === "postbox" && !postbox)
+      throw new Error("Choose a registered recipient postbox");
     const id = crypto.randomUUID();
     const sealed =
       mode === "link" ? await sealLetter({ subject, body }, d, id) : undefined;
+    const key = postbox ? mailboxKey(postbox.encryptionKey) : undefined;
+    const addressed =
+      postbox && key
+        ? await sealMailbox(
+            { subject, body },
+            {
+              ...d,
+              postbox: postbox.id,
+              controller: postbox.controller,
+              keyVersion: key.keyVersion,
+            },
+            id,
+            key,
+          )
+        : undefined;
     const envelope: Envelope = {
       id,
       mode,
       context: d,
-      payload: sealed?.payload || { subject, body },
+      payload: addressed || sealed?.payload || { subject, body },
       gift,
       reserve,
       claimed: false,
       sender: current?.account.owner_public_key || "",
       replyPostbox: reply,
+      recipientPostbox: postbox?.id,
+      claimAuthority: postbox?.controller,
     };
     assertEnvelopeSize(envelope);
     setPrepared({ envelope, capability: sealed?.capability });
@@ -701,7 +754,10 @@ export function App() {
                   Recipient postbox
                   <select
                     value={recipient}
-                    onChange={(e) => setRecipient(e.target.value)}
+                    onChange={(e) => {
+                      setRecipient(e.target.value);
+                      setReview(false);
+                    }}
                   >
                     <option value="">Choose a registered postbox</option>
                     {boxes
@@ -803,7 +859,9 @@ export function App() {
                 <button
                   type="submit"
                   className="primary"
-                  disabled={busy || mode === "postbox"}
+                  disabled={
+                    busy || (mode === "postbox" && (!recipient || !d.registry))
+                  }
                 >
                   {busy ? "Sealing…" : "Review letter"} <span>↗</span>
                 </button>
@@ -890,62 +948,21 @@ export function App() {
           </section>
         )}
         {view === "postboxes" && (
-          <section className="page-panel">
-            <span className="kicker">BRASS & SECRETS</span>
-            <h1>
-              My <em>postboxes.</em>
-            </h1>
-            <p>
-              One controlling wallet can own several postboxes. Names may
-              repeat; IDs stay distinct.
-            </p>
-            {!wallet ? (
-              <button className="primary" onClick={() => setConnect(true)}>
-                Connect controlling wallet
-              </button>
-            ) : (
-              <>
-                <label>
-                  My postboxes
-                  <select
-                    value={selectedBox}
-                    onChange={(e) => setSelectedBox(e.target.value)}
-                  >
-                    <option value="">Select a postbox</option>
-                    {owned.map((p) => (
-                      <option value={p.id} key={p.id}>
-                        {p.nickname} · {short(p.id)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <div className="postbox-grid">
-                  {owned.map((p) => (
-                    <article className="postbox" key={p.id}>
-                      <span>▥</span>
-                      <h3>{p.nickname}</h3>
-                      <code>{short(p.id)}</code>
-                      <p>{p.discoverable ? "Listed in ledger" : "Unlisted"}</p>
-                      <p>
-                        {
-                          letters.filter((e) => e.recipientPostbox === p.id)
-                            .length
-                        }{" "}
-                        addressed envelopes
-                      </p>
-                    </article>
-                  ))}
-                </div>
-                <button disabled>Create another postbox</button>
-              </>
-            )}
-            <p className="info">
-              Registration and inbox decryption remain disabled until a
-              user-controlled wallet extension has demonstrated key recovery in
-              a second client. API-key replacement is separate from postbox
-              identity.
-            </p>
-          </section>
+          <Postboxes
+            wallet={wallet}
+            chain={chain}
+            deployment={d}
+            boxes={boxes}
+            letters={letters}
+            busy={busy}
+            task={task}
+            onStatus={setStatus}
+            onConnect={() => setConnect(true)}
+            onOpen={(e) => void task(() => openPostbox(e))}
+            onRefresh={refresh}
+            onMore={loadMore}
+            hasMore={!!cursor}
+          />
         )}
         {view === "ledger" && (
           <section className="page-panel">
@@ -1249,8 +1266,9 @@ export function App() {
               <div className="sealed-state">
                 <span>⌘</span>
                 <p>
-                  This letter is sealed. Only its complete private link can
-                  unlock its subject and contents.
+                  {active.mode === "postbox"
+                    ? "This letter is sealed to its postbox. Connect the controlling wallet and use its account-scoped decrypt permission to open it."
+                    : "This letter is sealed. Only its complete private link can unlock its subject and contents."}
                 </p>
               </div>
             )}
@@ -1359,19 +1377,40 @@ export function App() {
                       disabled={
                         busy ||
                         !chain ||
-                        !writesReady(d) ||
+                        !writesReady(d, active.mode) ||
+                        (active.mode === "postbox" &&
+                          !wallet?.accounts.some(
+                            (a) =>
+                              a.account.owner_public_key ===
+                              active.claimAuthority,
+                          )) ||
                         (active.mode === "link" && !secret.current)
                       }
                       onClick={() =>
                         void task(async () => {
                           if (!chain) return;
-                          const id = await chain.claim(
-                            active,
-                            address,
-                            destination,
-                            secret.current,
-                            localStorage,
+                          const owner = wallet?.accounts.find(
+                            (a) =>
+                              a.account.owner_public_key ===
+                              active.claimAuthority,
                           );
+                          const id =
+                            active.mode === "postbox" && wallet && owner
+                              ? await chain.claimPostbox(
+                                  wallet,
+                                  owner,
+                                  active,
+                                  address,
+                                  destination,
+                                  localStorage,
+                                )
+                              : await chain.claim(
+                                  active,
+                                  address,
+                                  destination,
+                                  secret.current,
+                                  localStorage,
+                                );
                           setStatus(
                             `Claim submitted ${id}. Verify delivery through Network & verification.`,
                           );
