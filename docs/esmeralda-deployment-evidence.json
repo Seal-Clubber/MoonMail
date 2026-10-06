@@ -147,5 +147,39 @@
         "confirmedRegistryPrefilled": true
       }
     ]
+  },
+  "publishedBrowserPublicRead": {
+    "confirmed": true,
+    "base": "https://seal-clubber.github.io/GhostDrop/",
+    "verifiedAt": "2026-10-06T16:34:49.725Z",
+    "hostedConfigInterceptedForReadOnlyProbe": false,
+    "checks": [
+      {
+        "viewport": "desktop",
+        "subjectsAndBodiesMatch": true,
+        "readThreeRealChainLetters": true,
+        "previewNotAdvertised": true,
+        "noGiftClaimAdvertised": true,
+        "noWalletCredential": true,
+        "noPageErrors": true
+      },
+      {
+        "viewport": "desktop",
+        "confirmedRegistryPrefilled": true
+      },
+      {
+        "viewport": "mobile",
+        "subjectsAndBodiesMatch": true,
+        "readThreeRealChainLetters": true,
+        "previewNotAdvertised": true,
+        "noGiftClaimAdvertised": true,
+        "noWalletCredential": true,
+        "noPageErrors": true
+      },
+      {
+        "viewport": "mobile",
+        "confirmedRegistryPrefilled": true
+      }
+    ]
   }
 }

@@ -1,0 +1,160 @@
+{
+  "network": 38,
+  "registry": "component_2afdeb8728a3ffbf04da19218964243c63cd63e9d77ca5b7877e4dd29873b4b7",
+  "indexerUrl": "https://ootle-indexer-a.tari.com/",
+  "pagesBase": "https://seal-clubber.github.io/GhostDrop/",
+  "reviewedFrontendCommit": "da995ff2d3b4fa867be45c8d50d6cf4118f9a298",
+  "stockRecipientVersion": "0.43.0",
+  "stockRecipientUnmodified": true,
+  "ownerAuthentication": "Local owner UI, virtual ES256-only stock authenticator; scoped temporary keys revoked",
+  "physicalPasskeyOnboardingProven": false,
+  "publicCampaign": "esmeralda-demo-20261006",
+  "publicBudgetMicroTari": "7200000",
+  "privateProofBudgetMicroTari": "1200000",
+  "giftMicroTari": "1000000",
+  "reserveMicroTari": "100000",
+  "publicationFeeCapMicroTari": "100000",
+  "publicFundingMethod": "Bounded external deployment actor using the application transaction builder and keeper planner; not the CLI",
+  "publicGiftPublications": [
+    {
+      "id": "esmeralda-demo-public-1-20261006",
+      "component": "component_c8fb6fa2792972005d55bdb0a32462960bd4ebba40a88723d167e2f184a1afb6",
+      "publication": "ad19e117512bcc37016395b7a92f4366276a843a2f1a84ed718fc4074eccc302",
+      "publicationAccepted": true,
+      "collectedDuringHostedProof": true
+    },
+    {
+      "id": "esmeralda-demo-public-2-20261006",
+      "component": "component_03f9834b315813a0a682ddd8f2e05c8b70f816cc987c3d96ab5deeb4211dba06",
+      "publication": "02035d8b6e20a26e00c12e521225d266183a2d8dd572dcee8d27f07c9245c907",
+      "publicationAccepted": true,
+      "collectedDuringHostedProof": false
+    },
+    {
+      "id": "esmeralda-demo-public-3-20261006",
+      "component": "component_8984bf02a5018927a547cac9a576d79c1b16b34834124eced8a24aa7e23a8c2d",
+      "publication": "4a004e6d368af182d7a78bf81222383a740426e48a4d85a2c30789eb0db1f813",
+      "publicationAccepted": true,
+      "collectedDuringHostedProof": false
+    },
+    {
+      "id": "esmeralda-demo-public-4-20261006",
+      "component": "component_ebbedffdde69e5f41a0602dac59a213ddc51895eb02910d9b537d3a6aa003ac6",
+      "publication": "3a0dea417d47d7ad0a4f037c73b4239ec380f42b2c193e42581001814927ecdb",
+      "publicationAccepted": true,
+      "collectedDuringHostedProof": false
+    },
+    {
+      "id": "esmeralda-demo-public-5-20261006",
+      "component": "component_5603f6d838bda2988f3dddbb343f6243384752a2f50cbee955df137364d997c2",
+      "publication": "045d1813baec086be238d47ae9dcc86f539f837a7c99d9c332975db162283f7d",
+      "publicationAccepted": true,
+      "collectedDuringHostedProof": false
+    },
+    {
+      "id": "esmeralda-demo-public-6-20261006",
+      "component": "component_1a723b7cd2194ed91fb510c5056c13e8decb48f807cbd4bf47820ae64ebe47e7",
+      "publication": "f47be7c5ddb61e699233ff5e2284d8a36c1ab22266f5c4b7a2dc6471f1d98c8f",
+      "publicationAccepted": true,
+      "collectedDuringHostedProof": false
+    }
+  ],
+  "hostedClaims": [
+    {
+      "mode": "public",
+      "id": "esmeralda-demo-public-1-20261006",
+      "component": "component_c8fb6fa2792972005d55bdb0a32462960bd4ebba40a88723d167e2f184a1afb6",
+      "publication": "ad19e117512bcc37016395b7a92f4366276a843a2f1a84ed718fc4074eccc302",
+      "claim": "ceac42cedee38f64821f44ce363d7fac8c454fa874c6ecbfd7ce8837994eb60c",
+      "recipientProofSpend": "c7f43a471dfea459ff852e22450b3f2ad3e39c7bdca661c44cdc473c4f6e1344",
+      "recipient": {
+        "component": "component_3465c312f59ca4ca6c203e31a93fee550a366b050fc23b5b45e4d45fc9540b86",
+        "address": "otl_esm_1hf8mmt338p2hrrxlutv0az6d5qxhc8fldqw4rnp53herqj592y0jvmsc93rlwkpltt008rfxzyqxtfewk6jmugfr5ttz6a302rjcqzckjf9hc",
+        "publicKey": "ba4fbdae313855718cdfe2d8fe8b4da00d7c1d3f681d51cc348df2304a85511f",
+        "balanceBefore": "1898353"
+      },
+      "exactGiftDeltaMicroTari": "1000000",
+      "recipientSpendConfirmed": true,
+      "browser": {
+        "base": "https://seal-clubber.github.io/GhostDrop/",
+        "verifiedAt": "2026-10-06T16:39:18.329Z",
+        "viewport": "desktop",
+        "configurationOverridden": false,
+        "rpcMocked": false,
+        "plaintextMatched": true,
+        "claimConfirmed": true,
+        "noWalletConnection": true,
+        "noWalletCredentials": true,
+        "capabilityAbsentFromHttpRequests": true,
+        "noPageErrors": true,
+        "senderTransportGatesFalse": true,
+        "journalRestoredFromRecordedTransaction": false
+      }
+    },
+    {
+      "mode": "link",
+      "id": "esmeralda-demo-link-20261006",
+      "component": "component_33bd26849101e297c3242376d6953fbe6afdc36c56fa8619498a299e6d9bbef3",
+      "publication": "62a0b749643684cbaadf5064aa9e8fc691d2c1022dd9a674b64a8864b7fbdc72",
+      "claim": "c86a0dc20a5bc068f8a3acca80e56c21c0e2e282c5c9e228bbdc78bd60edd666",
+      "recipientProofSpend": "3532b4ec37c39310621fe2d5ea50d34c742e2d19c2ef74576fe379ebfa65973b",
+      "recipient": {
+        "component": "component_159cf780b44ed10ddbba661a838e1289d51084ab8c423712318cb61ed1d19978",
+        "address": "otl_esm_1ke2jrl64zezpvsccd4fjcj9p4fcfeh4dz42cvv3lkgcrn98ytdw09fvw9hrpln08nssfue4x49zqc2gz4lca28wc559a6e6ll93hqecdzurqq",
+        "publicKey": "b65521ff5516441643186d532c48a1aa709cdead155586323fb2303994e45b5c",
+        "balanceBefore": "1898353"
+      },
+      "exactGiftDeltaMicroTari": "1000000",
+      "recipientSpendConfirmed": true,
+      "browser": {
+        "base": "https://seal-clubber.github.io/GhostDrop/",
+        "verifiedAt": "2026-10-06T16:39:22.509Z",
+        "viewport": "mobile",
+        "configurationOverridden": false,
+        "rpcMocked": false,
+        "plaintextMatched": true,
+        "claimConfirmed": true,
+        "noWalletConnection": true,
+        "noWalletCredentials": true,
+        "capabilityAbsentFromHttpRequests": true,
+        "noPageErrors": true,
+        "senderTransportGatesFalse": true,
+        "journalRestoredFromRecordedTransaction": false
+      }
+    }
+  ],
+  "confidentialCapabilityIncluded": false,
+  "privateLetterPlaintextIncluded": false,
+  "apiCredentialsIncluded": false,
+  "websiteWalletGates": {
+    "daemonScopes": false,
+    "httpsWallet": false,
+    "mailboxRecovery": false
+  },
+  "boundedActorPlans": [
+    {
+      "at": "2026-10-06T16:37:38.180Z",
+      "claimable": 0,
+      "outstanding": 0,
+      "remaining": "7200000",
+      "cost": "1200000",
+      "count": 2
+    },
+    {
+      "at": "2026-10-06T16:38:48.174Z",
+      "claimable": 2,
+      "outstanding": 0,
+      "remaining": "4800000",
+      "cost": "1200000",
+      "count": 2
+    },
+    {
+      "at": "2026-10-06T16:40:50.094Z",
+      "claimable": 3,
+      "outstanding": 0,
+      "remaining": "2400000",
+      "cost": "1200000",
+      "count": 2
+    }
+  ]
+}

@@ -1,22 +1,37 @@
 import fs from "node:fs/promises";
 import { PostOfficeClient } from "../src/core/chain";
 import { WalletSession } from "../src/core/wallet";
-import { emptyDeployment, writesReady } from "../src/core/config";
-import { planRefill, type Journal, type KeeperConfig } from "./keeper";
+import { emptyDeployment, claimsReady } from "../src/core/config";
+import { publishDonorGift } from "./keeper-submit";
+import {
+  planRefill,
+  validateKeeper,
+  type Journal,
+  type KeeperConfig,
+} from "./keeper";
 import type { Deployment, Envelope } from "../src/core/types";
 const args = process.argv.slice(2),
   run = args.includes("--run"),
   once = args.includes("--once");
+const journalOption = args.indexOf("--journal");
+const journalPath =
+  journalOption < 0 ? ".keeper-state.json" : args[journalOption + 1];
+if (!journalPath || journalPath.startsWith("--"))
+  throw new Error("--journal needs a local journal path");
 const configPath =
-  args.find((a) => a.endsWith(".json")) || "keeper.config.json";
+  args.find(
+    (a, i) =>
+      a.endsWith(".json") && (journalOption < 0 || i !== journalOption + 1),
+  ) || "keeper.config.json";
 const c: KeeperConfig = JSON.parse(await fs.readFile(configPath, "utf8"));
+validateKeeper(c);
 const d: Deployment = JSON.parse(
   await fs.readFile("public/deployment.json", "utf8"),
 );
 const journalContext = JSON.stringify([d.network, d.registry, c.campaign]);
 let journal: Journal;
 try {
-  journal = JSON.parse(await fs.readFile(".keeper-state.json", "utf8"));
+  journal = JSON.parse(await fs.readFile(journalPath, "utf8"));
 } catch (e) {
   if ((e as NodeJS.ErrnoException).code !== "ENOENT") throw e;
   journal = { reservations: [] };
@@ -27,20 +42,20 @@ if (journal.reservations.length && journal.context !== journalContext)
   );
 journal.context = journalContext;
 const persist = async () => {
-  await fs.writeFile(
-    ".keeper-state.json.tmp",
-    JSON.stringify(journal, null, 2),
-    { mode: 0o600 },
-  );
-  await fs.rename(".keeper-state.json.tmp", ".keeper-state.json");
+  await fs.writeFile(journalPath + ".tmp", JSON.stringify(journal, null, 2), {
+    mode: 0o600,
+  });
+  await fs.rename(journalPath + ".tmp", journalPath);
 };
 if (!d.registry) {
   console.log("No deployed registry configured. Keeper will not spend.");
   process.exit(0);
 }
+if (run && !claimsReady(d))
+  throw new Error(
+    "Refusing donor spending: gift-rule and delivery evidence is incomplete",
+  );
 const chain = await PostOfficeClient.connect({ ...emptyDeployment, ...d });
-if (run && !writesReady(d, "public"))
-  throw new Error("Refusing donor spending: deployment evidence is incomplete");
 let wallet: WalletSession | undefined,
   stop = false;
 process.once("SIGINT", () => {
@@ -146,7 +161,8 @@ try {
         },
       } as Storage;
       try {
-        const txId = await chain.publish(
+        const txId = await publishDonorGift(
+          chain,
           wallet!,
           funding,
           e,
