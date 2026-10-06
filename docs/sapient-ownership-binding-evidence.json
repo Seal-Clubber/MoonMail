@@ -1,0 +1,27 @@
+{
+  "checkedAt": "2026-10-06T22:55:05.6534290Z",
+  "engine": "0.45.0",
+  "sdk": "0.1.20",
+  "testPassed": 1,
+  "testSeconds": 8.8,
+  "positiveCases": 2,
+  "negativeCases": 20,
+  "syntheticKeysOnly": true,
+  "validOotleAddressGeneratedAndParsedBySdk": true,
+  "immutableConfiguredContextVerified": true,
+  "walletProviderInvoked": false,
+  "publicTransactions": 0,
+  "claimContractImplemented": false,
+  "sourceHashes": {
+    "template/src/lib.rs": "6df51bed8f9fd010a5c9d6c110c8df2864e0171122a6c53de54a5c474f85add3",
+    "harness/src/lib.rs": "97d23b99469670303b1ca665a971e44c98a58d6fad10db2c2744fe783557f06e",
+    "generate.mjs": "5d70976e55e9d75ca2b171fe62e5929ecc02627b847771bda364966d2cc4568b"
+  },
+  "limitations": [
+    "Lab constructor does not authenticate a real postbox registry or controller",
+    "Canonical address parsing occurs in SDK fixture, not in the contract",
+    "Challenge binds bytes but does not validate registry/resource identities, amount or expiry semantics",
+    "No replay flag, payout, reserve cap or fee checkpoint implementation",
+    "No actual stock-wallet approval"
+  ]
+}
