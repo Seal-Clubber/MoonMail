@@ -2,7 +2,9 @@
 
 Static React/TypeScript + Rust Ootle templates. Full letters/ciphertext and gift rules live on Ootle; no GhostDrop backend. Public visitors and private-link holders use a prepaid claim path without connecting a wallet. Sending uses the official local wallet daemon API-key client.
 
-**Development status:** public/link gifts and recipient discovery/spending verified on isolated Ootle localnet; static browser interface, wallet/indexer adapters and deployment tooling. No public deployment is configured. Production spending is disabled pending deployment-specific HTTPS-origin verification. Wallet-addressed encryption/recovery is explicitly incomplete. See [evidence](docs/EVIDENCE.md).
+**Development status:** all three mail modes work on an isolated Ootle localnet, including addressed encryption, rotation, historical decryption and recipient discovery/spending. Postboxes require the [local wallet extension](wallet-extension/README.md). No public chain deployment is configured; spending stays disabled until deployment-specific evidence is complete. Authenticated GitHub Pages-to-wallet transport still needs verification. See [evidence](docs/EVIDENCE.md).
+
+The HTTPS static interface is live at [GhostDrop on GitHub Pages](https://seal-clubber.github.io/GhostDrop/). All 10 browser checks passed against the hosted site. This verifies hosting and browser crypto; the public configuration still advertises no funded gifts.
 
 ## Run
 

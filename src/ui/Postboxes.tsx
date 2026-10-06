@@ -72,7 +72,9 @@ export function Postboxes({
       const key = await wallet.postboxPublicKey(
         account.account.component_address,
         {
-          ...deployment,
+          network: deployment.network,
+          registry: deployment.registry,
+          template: deployment.template,
           postbox: id,
           controller: account.account.owner_public_key,
           keyVersion,
@@ -117,7 +119,7 @@ export function Postboxes({
         <>
           <label>
             My postboxes
-            <select value={selected} onChange={(e) => choose(e.target.value)}>
+            <select disabled={busy} value={selected} onChange={(e) => choose(e.target.value)}>
               <option value="">Select a postbox</option>
               {owned.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -157,6 +159,7 @@ export function Postboxes({
                   Controlling account
                   <select
                     value={controller}
+                    disabled={busy}
                     onChange={(e) => setController(Number(e.target.value))}
                   >
                     {wallet.accounts.map((a, i) => (
@@ -171,6 +174,7 @@ export function Postboxes({
                 Nickname
                 <input
                   value={nickname}
+                  disabled={busy}
                   onChange={(e) => setNickname(e.target.value)}
                   maxLength={80}
                   required
@@ -180,6 +184,7 @@ export function Postboxes({
                 <input
                   type="checkbox"
                   checked={discoverable}
+                  disabled={busy}
                   onChange={(e) => setDiscoverable(e.target.checked)}
                 />
                 List in the address ledger
@@ -188,6 +193,7 @@ export function Postboxes({
                 Postbox transaction-fee cap · µTARI
                 <input
                   value={fee}
+                  disabled={busy}
                   inputMode="numeric"
                   onChange={(e) => setFee(e.target.value)}
                 />
@@ -220,7 +226,8 @@ export function Postboxes({
               </p>
               <p className="fine-print">
                 Rotation affects new mail. Historical key versions remain
-                recoverable from the same wallet seed.
+                recoverable from the same wallet seed. Rotation changes only
+                the encryption key; save nickname and listing changes separately.
               </p>
             </article>
           )}

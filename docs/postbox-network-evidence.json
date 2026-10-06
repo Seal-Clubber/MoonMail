@@ -1,0 +1,75 @@
+{
+  "deployment": {
+    "network": 16,
+    "registry": "component_4d640da08dcaac8bab1f0bc2bf7ac59f46a6f9147c2bb9249b0677dcd605bb7b",
+    "template": "369b8710a783dd16ed7789535848b1cdf49fe10dabaec42691385943f41677c5",
+    "envelopeTemplate": "fc3925e486669c0c51e1656276f9817e6fc930df7d5dc9da8f6a0792d4f1c14a",
+    "resource": "resource_0101010101010101010101010101010101010101010101010101010101010101"
+  },
+  "checks": {
+    "multipleStableIdsSameNickname": true,
+    "wrongControllerEditRejected": true,
+    "controllerEditCommitted": true,
+    "actualOnChainCiphertextOpened": true,
+    "frozenController": true,
+    "wrongControllerClaimRejected": true,
+    "rotationKeepsIdController": true,
+    "independentClientOldCiphertextAfterRotation": true,
+    "exactGiftDelta": true,
+    "duplicateClaimRejected": true,
+    "recipientGiftSpendCommitted": true,
+    "publicGuestGiftDelta": true,
+    "linkGuestGiftDelta": true
+  },
+  "transactions": [
+    {
+      "transaction": "4a7ab8282c24f7b7af6a2575bce4b861b73000605a1228553a4fa6fd80b1588b",
+      "outcome": "Commit"
+    },
+    {
+      "transaction": "e2518c51ee3fdb0c3ec2079c6127aeeaeca3364660d644c40bc394fa75cc39d2",
+      "outcome": "Commit"
+    },
+    {
+      "transaction": "f8ebe509a8e2b8e8d9ccc27f62051d221b6adec5716d2c014e378dc3faae3a13",
+      "outcome": "Commit"
+    },
+    {
+      "transaction": "25a96459c437a0eac6896e9eacf871f3f5e5505a4f47edfe7ef7be36fdbb3988",
+      "outcome": "Commit"
+    },
+    {
+      "transaction": "0d964097c7851db8dfabb3b200af836ad1b6a07bd2b29adb0fb908bd2aa33252",
+      "outcome": "Commit"
+    },
+    {
+      "transaction": "2da8845b8a7c8a38060ab95f807ed1e79e80da7eda23920908f8c8c45d138e61",
+      "outcome": "Commit"
+    },
+    {
+      "transaction": "2a768b8f4dccb22b50a2b1ee854e31d877062b4c37a9b30eb48c50e2cb12bec3",
+      "outcome": "Commit"
+    },
+    {
+      "transaction": "f643fac269ecc7399622aa9b1b24278860ef9cba31dc9aea960c0640848e88da",
+      "outcome": "Commit"
+    },
+    {
+      "transaction": "2564509636a4dad39a5830cb7ec34583e7d56b8d4ab9a44f485ef0993677caf8",
+      "outcome": "Commit"
+    },
+    {
+      "transaction": "97c017f11536aa2a3e7a8886f1b97ef810cd5e671462e40421ead9bf8fc496d1",
+      "outcome": "Commit"
+    },
+    {
+      "transaction": "38078b7f1268019ee1189f6f136ead2ccac6cd541d9d35c1fd9d2b46c4c6976c",
+      "outcome": "Commit"
+    }
+  ],
+  "allPassed": true,
+  "recipient": "component_fc0b52123e9da14fcca5f170fe5b31063493d95216daef889b7220f74553bede",
+  "boxId": "network-box-1791259773515",
+  "letterId": "network-addressed-1791259776782",
+  "scope": "Ephemeral isolated localnet only; not public deployment or HTTPS wallet evidence"
+}

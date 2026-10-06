@@ -110,13 +110,13 @@ test("subpath deep link removes capability before network requests and copy mate
   await page.reload();
   await expect(page.getByRole("alert")).toContainText("complete private link");
 });
-test("wallet-controlled addressed mail is visibly incomplete", async ({
+test("addressed mail explains its wallet extension and requires a deployment", async ({
   page,
 }) => {
   await page.goto("./#/compose");
   await page.getByRole("button", { name: "▥ To a postbox" }).click();
   await expect(
-    page.getByText("Addressed mail is incomplete:", { exact: false }),
+    page.getByText("Addressed mail requires a registered postbox", { exact: false }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Review letter" }),

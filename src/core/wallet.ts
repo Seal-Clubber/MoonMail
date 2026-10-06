@@ -29,8 +29,8 @@ export class WalletSession {
     if (!apiKey.startsWith("tw_"))
       throw new Error("Use a scoped daemon API key beginning tw_");
     const client = WalletDaemonClient.usingFetchTransport(endpoint(url, true));
-    client.authenticateWithApiKey(apiKey);
     client.setReauthenticationEnabled(false);
+    client.authenticateWithApiKey(apiKey);
     try {
       const info = await client.walletGetInfo();
       if (info.network_byte !== network)

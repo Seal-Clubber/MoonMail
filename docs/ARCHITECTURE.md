@@ -30,7 +30,9 @@ The wallet adapter uses official `authenticateWithApiKey`, disables reauthentica
 
 ## Mailbox recovery boundary
 
-Stock daemon operations decrypt stealth payment data; no reviewed arbitrary-letter unwrap/recovery operation was found. Registration and addressed sending/decryption remain disabled. The template can enforce postbox controller/gift rules, but that does not prove encryption recovery. A local extension must store versioned mailbox-specific keys within the user-controlled wallet, expose a narrowly authorized unwrap operation, and demonstrate recovery in a second client without the original browser. API keys, signatures, master view keys and exported wallet seeds must not be used as substitutes.
+Stock daemon operations decrypt stealth payment data rather than arbitrary letters. The pinned [local wallet extension](../wallet-extension/README.md) adds independent account-scoped public-key/decrypt operations. Its seed-derived, versioned mailbox branch binds network, registry, template, postbox and controller. Sender encryption combines official Tari ephemeral Ristretto DH, domain-separated HKDF-SHA256 and AES-256-GCM; authenticated metadata also binds the envelope ID and both public keys. Complete subject/body ciphertext remains on chain. Neither mailbox secrets nor financial seeds leave the daemon.
+
+Native tests restore an independent key store from mnemonic words and decrypt historical versions. Actual RPC and chain tests show replacement API keys and a second wallet client decrypting stored mail after advertised key rotation, without original browser state. Desktop/mobile browser tests also open that stored mail through real daemon RPC. This is an experimental protocol requiring independent review; imported/view-only accounts do not inherit this seed recovery claim. Public write gates remain closed until the chosen deployment and hosted transport have evidence.
 
 ## Infrastructure, pagination and history
 

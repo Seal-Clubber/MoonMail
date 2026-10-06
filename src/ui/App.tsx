@@ -115,7 +115,8 @@ export function App() {
   const secret = useRef<Uint8Array | undefined>(undefined),
     routeOnce = useRef(false),
     [page, setPage] = useState(1),
-    openSequence = useRef(0);
+    openSequence = useRef(0),
+    draftSequence = useRef(0);
   const owned = boxes.filter(
     (p) => p.controller === wallet?.accounts[account]?.account.owner_public_key,
   );
@@ -278,6 +279,7 @@ export function App() {
     };
   }, [connect, active]);
   function changeDeployment(change: Partial<Deployment>) {
+    draftSequence.current += 1;
     closeLetter();
     setPrepared(undefined);
     setChain(undefined);
@@ -343,6 +345,7 @@ export function App() {
   );
   const current = wallet?.accounts[account];
   function disconnect() {
+    draftSequence.current += 1;
     openSequence.current += 1;
     wallet?.disconnect();
     setWallet(undefined);
@@ -359,6 +362,7 @@ export function App() {
     );
   }
   async function prepare() {
+    const sequence = draftSequence.current;
     money(gift);
     money(reserve);
     money(fee);
@@ -400,6 +404,7 @@ export function App() {
       claimAuthority: postbox?.controller,
     };
     assertEnvelopeSize(envelope);
+    if (draftSequence.current !== sequence) return;
     setPrepared({ envelope, capability: sealed?.capability });
     setReview(true);
   }
@@ -686,8 +691,10 @@ export function App() {
               {(["public", "link", "postbox"] as const).map((m) => (
                 <button
                   aria-pressed={mode === m}
+                  disabled={busy}
                   className={mode === m ? "selected" : ""}
                   onClick={() => {
+                    draftSequence.current += 1;
                     setMode(m);
                     setReview(false);
                     setPrepared(undefined);
@@ -711,9 +718,9 @@ export function App() {
             )}
             {mode === "postbox" && (
               <p className="info">
-                Addressed mail is incomplete: the stock wallet daemon has no
-                verified letter-decryption and recovery path. Creation and
-                sending are disabled.
+                Addressed mail requires a registered postbox and the local
+                GhostDrop wallet extension. Its controlling wallet opens the
+                letter and authorizes gift collection.
               </p>
             )}
             <form
@@ -726,6 +733,7 @@ export function App() {
                 Subject
                 <input
                   value={subject}
+                  disabled={busy}
                   maxLength={120}
                   onChange={(e) => {
                     setSubject(e.target.value);
@@ -739,6 +747,7 @@ export function App() {
                 Your letter
                 <textarea
                   value={body}
+                  disabled={busy}
                   maxLength={2600}
                   onChange={(e) => {
                     setBody(e.target.value);
@@ -754,6 +763,7 @@ export function App() {
                   Recipient postbox
                   <select
                     value={recipient}
+                    disabled={busy}
                     onChange={(e) => {
                       setRecipient(e.target.value);
                       setReview(false);
@@ -768,6 +778,16 @@ export function App() {
                         </option>
                       ))}
                   </select>
+                  <input
+                    aria-label="Recipient postbox ID"
+                    value={recipient}
+                    onChange={(e) => {
+                      setRecipient(e.target.value);
+                      setReview(false);
+                    }}
+                    placeholder="Or paste a registered ID, including an unlisted postbox"
+                    disabled={busy}
+                  />
                 </label>
               )}
               <div className="form-row">
@@ -776,6 +796,7 @@ export function App() {
                   <input
                     inputMode="numeric"
                     value={gift}
+                    disabled={busy}
                     onChange={(e) => {
                       setGift(e.target.value);
                       setReview(false);
@@ -787,6 +808,7 @@ export function App() {
                   <input
                     inputMode="numeric"
                     value={reserve}
+                    disabled={busy}
                     onChange={(e) => {
                       setReserve(e.target.value);
                       setReview(false);
@@ -803,7 +825,7 @@ export function App() {
                 <input
                   type="checkbox"
                   checked={!!reply}
-                  disabled={!owned.length}
+                  disabled={busy || !owned.length}
                   onChange={(e) =>
                     setReply(e.target.checked ? owned[0]?.id || "" : "")
                   }
@@ -815,6 +837,7 @@ export function App() {
                   Verified owned reply postbox
                   <select
                     value={reply}
+                    disabled={busy}
                     onChange={(e) => setReply(e.target.value)}
                   >
                     {owned.map((p) => (
@@ -830,6 +853,7 @@ export function App() {
                   Funding account
                   <select
                     value={account}
+                    disabled={busy}
                     onChange={(e) => {
                       setAccount(Number(e.target.value));
                       setReview(false);
@@ -848,6 +872,7 @@ export function App() {
                 Publication-fee cap · µTARI
                 <input
                   value={fee}
+                  disabled={busy}
                   inputMode="numeric"
                   onChange={(e) => {
                     setFee(e.target.value);
@@ -1077,6 +1102,12 @@ export function App() {
                       void task(async () => {
                         if (!chain) return;
                         if (p.id.startsWith("attempt:")) {
+                          if (p.operation === "postbox") {
+                            setStatus(
+                              "This postbox submission has no transaction ID. Inspect the controlling wallet's transaction history before resolving it; matching postbox state alone cannot prove which edit committed. Retrying remains blocked.",
+                            );
+                            return;
+                          }
                           const e = await chain.readLetter(p.envelopeId);
                           if (p.operation === "publish" || e.claimed) {
                             savePending(localStorage, {

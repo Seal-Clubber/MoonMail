@@ -1,0 +1,894 @@
+diff --git a/Cargo.lock b/Cargo.lock
+--- a/Cargo.lock
++++ b/Cargo.lock
+@@ -12678,6 +12678,7 @@
+ name = "tari_ootle_walletd"
+ version = "0.43.0"
+ dependencies = [
++ "aes-gcm",
+  "anyhow",
+  "apple-native-keyring-store",
+  "async-trait",
+@@ -12694,6 +12695,7 @@
+  "either",
+  "futures 0.3.34",
+  "hex",
++ "hkdf 0.12.4",
+  "humantime-serde",
+  "include_dir",
+  "indexmap 2.14.2",
+diff --git a/applications/tari_walletd/Cargo.toml b/applications/tari_walletd/Cargo.toml
+--- a/applications/tari_walletd/Cargo.toml
++++ b/applications/tari_walletd/Cargo.toml
+@@ -9,6 +9,8 @@
+ license.workspace = true
+ 
+ [dependencies]
++aes-gcm = "=0.10.3"
++hkdf = "=0.12.4"
+ tari_common = { workspace = true }
+ tari_common_types = { workspace = true }
+ tari_crypto = { workspace = true }
+diff --git a/applications/tari_walletd/src/lib.rs b/applications/tari_walletd/src/lib.rs
+--- a/applications/tari_walletd/src/lib.rs
++++ b/applications/tari_walletd/src/lib.rs
+@@ -24,6 +24,7 @@
+ pub mod config;
+ mod handlers;
+ mod server;
++mod ghostdrop_origin;
+ mod services;
+ mod webrtc;
+ 
+diff --git a/applications/tari_walletd/src/server.rs b/applications/tari_walletd/src/server.rs
+--- a/applications/tari_walletd/src/server.rs
++++ b/applications/tari_walletd/src/server.rs
+@@ -33,6 +33,7 @@
+     confidential,
+     error::HandlerError,
+     keys,
++    ghostdrop,
+     nfts,
+     resources,
+     settings,
+@@ -51,6 +52,12 @@
+     context: HandlerContext,
+ ) -> anyhow::Result<(SocketAddr, task::JoinHandle<anyhow::Result<()>>)> {
+     let enable_permissive_cors = context.config().enable_permissive_cors;
++    let origin_policy = crate::ghostdrop_origin::OriginPolicy::from_environment(preferred_address)?;
++    if origin_policy.is_some() { anyhow::ensure!(!enable_permissive_cors, "Disable permissive CORS when using exact origins"); }
++    // Exact-origin mode keeps the configured port and Host policy aligned.
++    // A busy port is an explicit error rather than a silent alternative wallet endpoint.
++    let listener = if origin_policy.is_some() { tokio::net::TcpListener::bind(preferred_address).await? } else { try_bind_with_fallback(preferred_address).await? };
++    let cors = origin_policy.as_ref().map(|p| p.cors()).unwrap_or_else(|| if enable_permissive_cors { CorsLayer::permissive() } else { CorsLayer::new() });
+     let shutdown_signal = context.shutdown_signal().clone();
+     let router = Router::new()
+         .route("/json_rpc", post(handler))
+@@ -59,16 +66,17 @@
+         .layer(TraceLayer::new_for_http())
+         .layer(Extension(Arc::new(context)))
+         .layer(Extension((preferred_address,signaling_server_address)))
+-        .layer(if enable_permissive_cors { CorsLayer::permissive() } else { CorsLayer::new() })
++        .layer(cors)
+         // Limit the body size to 5MB to allow for wasm uploads
+         .layer(DefaultBodyLimit::max(5*1024*1024));
++
++    let router = match origin_policy { Some(policy) => router.layer(axum::middleware::from_fn_with_state(policy, crate::ghostdrop_origin::guard)), None => router };
+ 
+     #[cfg(feature = "web_ui")]
+     let router = router.fallback(crate::handlers::web_ui::handler);
+     #[cfg(not(feature = "web_ui"))]
+     let router = router.fallback(crate::handlers::web_ui::feature_disabled_handler);
+ 
+-    let listener = try_bind_with_fallback(preferred_address).await?;
+     let server = axum::serve(listener, router);
+     let listen_addr = server.local_addr()?;
+     info!(target: LOG_TARGET, "🌐 JSON-RPC listening on {listen_addr}");
+@@ -151,6 +159,8 @@
+             _ => value.method_not_found(&value.method).into_response(),
+         },
+         Some(("webrtc", "start")) => webrtc::handle_start(context, value, token.as_ref(), addresses).into_response(),
++        Some(("postboxes", "public_key")) => call_handler(context, value, token, ghostdrop::handle_public_key).await,
++        Some(("postboxes", "decrypt")) => call_handler(context, value, token, ghostdrop::handle_decrypt).await,
+         Some(("keys", method)) => match method {
+             "create" => call_handler(context, value, token, keys::handle_create).await,
+             "import" => call_handler(context, value, token, keys::handle_import).await,
+diff --git a/applications/tari_walletd/src/handlers/mod.rs b/applications/tari_walletd/src/handlers/mod.rs
+--- a/applications/tari_walletd/src/handlers/mod.rs
++++ b/applications/tari_walletd/src/handlers/mod.rs
+@@ -10,6 +10,7 @@
+ pub mod error;
+ pub(crate) mod helpers;
+ pub mod keys;
++pub mod ghostdrop;
+ pub mod nfts;
+ pub mod resources;
+ pub mod settings;
+diff --git a/applications/tari_walletd/src/handlers/ghostdrop.rs b/applications/tari_walletd/src/handlers/ghostdrop.rs
+new file mode 100644
+--- /dev/null
++++ b/applications/tari_walletd/src/handlers/ghostdrop.rs
+@@ -0,0 +1,388 @@
++// GhostDrop extension; MIT. Pinned to official wallet daemon v0.43.0.
++// Private mailbox keys are derived inside the wallet and never returned by RPC.
++use super::context::HandlerContext;
++use aes_gcm::{
++    Aes256Gcm, KeyInit, Nonce,
++    aead::{Aead, Payload},
++};
++use anyhow::{bail, ensure};
++use axum_extra::headers::authorization::Bearer;
++use base64::{Engine, engine::general_purpose::URL_SAFE_NO_PAD};
++use hkdf::Hkdf;
++use serde::{Deserialize, Serialize};
++use sha2::Sha256;
++use tari_crypto::{
++    keys::PublicKey,
++    ristretto::{RistrettoPublicKey, RistrettoSecretKey},
++    tari_utilities::{ByteArray, hex::Hex},
++};
++use tari_ootle_wallet_crypto::kdfs::encrypted_data_dh_kdf_aead;
++use tari_ootle_walletd_client::permissions::Permission;
++use tari_template_lib_types::ComponentAddress;
++use zeroize::Zeroizing;
++
++#[derive(Clone, Debug, Deserialize, Serialize)]
++#[serde(rename_all = "camelCase", deny_unknown_fields)]
++pub struct MailboxContext {
++    pub network: u8,
++    pub registry: String,
++    pub template: String,
++    pub postbox: String,
++    pub controller: String,
++    pub key_version: u32,
++}
++impl MailboxContext {
++    fn validate(&self) -> anyhow::Result<()> {
++        ensure!([16, 36, 38].contains(&self.network), "Test networks only");
++        self.registry.parse::<ComponentAddress>()?;
++        ensure!(
++            self.template.len() == 64
++                && self
++                    .template
++                    .bytes()
++                    .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase()),
++            "Invalid template"
++        );
++        ensure!(
++            !self.postbox.is_empty()
++                && self.postbox.len() <= 64
++                && self
++                    .postbox
++                    .bytes()
++                    .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-'),
++            "Invalid postbox ID"
++        );
++        ensure!(
++            self.key_version > 0 && self.key_version <= 1_000_000,
++            "Invalid key version"
++        );
++        RistrettoPublicKey::from_hex(&self.controller).map_err(|_|anyhow::anyhow!("Invalid controller key"))?;
++        Ok(())
++    }
++    pub fn branch(&self) -> anyhow::Result<String> {
++        self.validate()?;
++        Ok(format!(
++            "ghostdrop/mailbox/{}",
++            serde_json::to_string(&serde_json::json!([
++                "gd-postbox-1",
++                self.network,
++                self.registry,
++                self.template,
++                self.postbox,
++                self.controller,
++                self.key_version
++            ]))?
++        ))
++    }
++}
++#[derive(Deserialize)]
++#[serde(rename_all = "camelCase", deny_unknown_fields)]
++pub struct PublicKeyRequest {
++    pub account: ComponentAddress,
++    pub context: MailboxContext,
++}
++#[derive(Serialize)]
++#[serde(rename_all = "camelCase")]
++pub struct PublicKeyResponse {
++    pub version: &'static str,
++    pub key_version: u32,
++    pub public_key: String,
++}
++#[derive(Deserialize, Serialize, Clone)]
++#[serde(rename_all = "camelCase", deny_unknown_fields)]
++pub struct SealedMailbox {
++    pub version: String,
++    pub key_version: u32,
++    pub recipient_key: String,
++    pub ephemeral_public_key: String,
++    pub iv: String,
++    pub ciphertext: String,
++}
++#[derive(Deserialize)]
++#[serde(rename_all = "camelCase", deny_unknown_fields)]
++pub struct DecryptRequest {
++    pub account: ComponentAddress,
++    pub context: MailboxContext,
++    pub envelope_id: String,
++    pub payload: SealedMailbox,
++}
++#[derive(Serialize)]
++pub struct Letter {
++    pub subject: String,
++    pub body: String,
++}
++
++fn derive(
++    context: &HandlerContext,
++    token: Option<&Bearer>,
++    req: &PublicKeyRequest,
++    permission: Permission,
++) -> anyhow::Result<RistrettoSecretKey> {
++    context.authorize(token, &[permission])?;
++    req.context.validate()?;
++    let sdk = context.wallet_sdk();
++    ensure!(req.context.network == sdk.network().as_byte(), "Wrong wallet network");
++    let account = sdk.accounts_api().get_account_by_address(&req.account)?;
++    ensure!(
++        account
++            .account
++            .owner_key_id
++            .is_some_and(|id| id.derived_index().is_some()),
++        "A seed-derived controlling account is required"
++    );
++    ensure!(
++        account.account.owner_public_key.to_string() == req.context.controller,
++        "Wrong postbox controller"
++    );
++    sdk.key_manager_api()
++        .derive_ghostdrop_mailbox_key(&req.context.branch()?)
++        .map_err(Into::into)
++}
++pub async fn handle_public_key(
++    context: &HandlerContext,
++    token: Option<&Bearer>,
++    req: PublicKeyRequest,
++) -> anyhow::Result<PublicKeyResponse> {
++    let secret = derive(context, token, &req, Permission::PostboxKeys(Some(req.account)))?;
++    Ok(PublicKeyResponse {
++        version: "gd-postbox-1",
++        key_version: req.context.key_version,
++        public_key: RistrettoPublicKey::from_secret_key(&secret).to_hex(),
++    })
++}
++pub async fn handle_decrypt(
++    context: &HandlerContext,
++    token: Option<&Bearer>,
++    req: DecryptRequest,
++) -> anyhow::Result<Letter> {
++    let public_req = PublicKeyRequest {
++        account: req.account,
++        context: req.context.clone(),
++    };
++    let secret = derive(
++        context,
++        token,
++        &public_req,
++        Permission::PostboxDecrypt(Some(req.account)),
++    )?;
++    decrypt_letter(&secret, &req.context, &req.envelope_id, &req.payload)
++}
++pub fn decrypt_letter(
++    secret: &RistrettoSecretKey,
++    context: &MailboxContext,
++    envelope_id: &str,
++    payload: &SealedMailbox,
++) -> anyhow::Result<Letter> {
++    context.validate()?;
++    ensure!(
++        serde_json::to_vec(payload)?.len() <= 4096 && !envelope_id.is_empty() && envelope_id.len() <= 64,
++        "Invalid envelope size/ID"
++    );
++    ensure!(
++        payload.version == "gd-postbox-1" && payload.key_version == context.key_version,
++        "Wrong envelope version"
++    );
++    ensure!(
++        RistrettoPublicKey::from_secret_key(secret).to_hex() == payload.recipient_key,
++        "Wrong historical mailbox key"
++    );
++    let peer = RistrettoPublicKey::from_hex(&payload.ephemeral_public_key).map_err(|_|anyhow::anyhow!("Invalid ephemeral key"))?;
++    ensure!(peer != RistrettoPublicKey::default(), "Identity key is not allowed");
++    let shared = encrypted_data_dh_kdf_aead(secret, &peer);
++    let aad = serde_json::to_vec(&serde_json::json!([
++        "GhostDrop",
++        "gd-postbox-1",
++        context.network,
++        context.registry,
++        context.template,
++        context.postbox,
++        context.controller,
++        context.key_version,
++        envelope_id,
++        payload.recipient_key,
++        payload.ephemeral_public_key
++    ]))?;
++    let salt = serde_json::to_vec(&serde_json::json!(["GhostDrop", "gd-postbox-1", "salt"]))?;
++    let mut key = Zeroizing::new([0u8; 32]);
++    Hkdf::<Sha256>::new(Some(&salt), shared.as_bytes())
++        .expand(&aad, key.as_mut())
++        .map_err(|_| anyhow::anyhow!("Key derivation failed"))?;
++    let iv = URL_SAFE_NO_PAD.decode(&payload.iv)?;
++    ensure!(
++        iv.len() == 12 && URL_SAFE_NO_PAD.encode(&iv) == payload.iv,
++        "Invalid nonce"
++    );
++    let ciphertext = URL_SAFE_NO_PAD.decode(&payload.ciphertext)?;
++    ensure!(
++        URL_SAFE_NO_PAD.encode(&ciphertext) == payload.ciphertext,
++        "Invalid ciphertext"
++    );
++    let cipher = Aes256Gcm::new_from_slice(key.as_ref()).map_err(|_| anyhow::anyhow!("Key rejected"))?;
++    let plain = Zeroizing::new(
++        cipher
++            .decrypt(
++                Nonce::from_slice(&iv),
++                Payload {
++                    msg: &ciphertext,
++                    aad: &aad,
++                },
++            )
++            .map_err(|_| anyhow::anyhow!("Cannot authenticate this letter"))?,
++    );
++    let value: serde_json::Value = serde_json::from_slice(plain.as_ref())?;
++    let (Some(subject), Some(body)) = (
++        value.get("subject").and_then(|v| v.as_str()),
++        value.get("body").and_then(|v| v.as_str()),
++    ) else {
++        bail!("Invalid letter")
++    };
++    Ok(Letter {
++        subject: subject.into(),
++        body: body.into(),
++    })
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use tari_common_types::seeds::mnemonic::{Mnemonic, MnemonicLanguage};
++    use tari_ootle_wallet_sdk::{CipherSeed, key_managers::WalletKeyStore, local_key_store::LocalKeyStore};
++
++    fn context() -> MailboxContext {
++        let seed = CipherSeed::random();
++        let controller = RistrettoPublicKey::from_secret_key(&seed.derive_secret("account", 0).unwrap()).to_hex();
++        MailboxContext {
++            network: 16,
++            registry: format!("component_{}", "a".repeat(64)),
++            template: "b".repeat(64),
++            postbox: "box-one".into(),
++            controller,
++            key_version: 1,
++        }
++    }
++    fn seal(secret: &RistrettoSecretKey, c: &MailboxContext, id: &str) -> SealedMailbox {
++        let ephemeral = CipherSeed::random().derive_secret("test-ephemeral", 0).unwrap();
++        let recipient = RistrettoPublicKey::from_secret_key(secret);
++        let recipient_key = recipient.to_hex();
++        let ephemeral_public_key = RistrettoPublicKey::from_secret_key(&ephemeral).to_hex();
++        let aad = serde_json::to_vec(&serde_json::json!([
++            "GhostDrop",
++            "gd-postbox-1",
++            c.network,
++            c.registry,
++            c.template,
++            c.postbox,
++            c.controller,
++            c.key_version,
++            id,
++            recipient_key,
++            ephemeral_public_key
++        ]))
++        .unwrap();
++        let salt = serde_json::to_vec(&serde_json::json!(["GhostDrop", "gd-postbox-1", "salt"])).unwrap();
++        let shared = encrypted_data_dh_kdf_aead(&ephemeral, &recipient);
++        let mut key = Zeroizing::new([0u8; 32]);
++        Hkdf::<Sha256>::new(Some(&salt), shared.as_bytes())
++            .expand(&aad, key.as_mut())
++            .unwrap();
++        let nonce = [7u8; 12];
++        let cipher = Aes256Gcm::new_from_slice(key.as_ref()).unwrap();
++        let ciphertext = cipher
++            .encrypt(
++                Nonce::from_slice(&nonce),
++                Payload {
++                    msg: br#"{"subject":"historical subject","body":"private message"}"#,
++                    aad: &aad,
++                },
++            )
++            .unwrap();
++        SealedMailbox {
++            version: "gd-postbox-1".into(),
++            key_version: c.key_version,
++            recipient_key,
++            ephemeral_public_key,
++            iv: URL_SAFE_NO_PAD.encode(nonce),
++            ciphertext: URL_SAFE_NO_PAD.encode(ciphertext),
++        }
++    }
++    #[test]
++    fn mailbox_mnemonic_recovery_and_historical_versions() {
++        let original = CipherSeed::random();
++        let c = context();
++        let secret = original.derive_secret(&c.branch().unwrap(), 0).unwrap();
++        let payload = seal(&secret, &c, "letter-1");
++        let words = original.to_mnemonic(MnemonicLanguage::English, None).unwrap();
++        let restored = LocalKeyStore::new(CipherSeed::from_mnemonic(&words, None).unwrap().into());
++        drop(original);
++        drop(words);
++        drop(secret);
++        let recovered = restored.derive_secret(&c.branch().unwrap(), 0).unwrap();
++        assert_eq!(
++            decrypt_letter(&recovered, &c, "letter-1", &payload).unwrap().subject,
++            "historical subject"
++        );
++        for changed in [
++            MailboxContext {
++                key_version: 2,
++                ..c.clone()
++            },
++            MailboxContext {
++                postbox: "box-two".into(),
++                ..c.clone()
++            },
++            MailboxContext {
++                network: 36,
++                ..c.clone()
++            },
++            MailboxContext {
++                registry: format!("component_{}", "c".repeat(64)),
++                ..c.clone()
++            },
++            MailboxContext {
++                template: "c".repeat(64),
++                ..c.clone()
++            },
++        ] {
++            let other = restored.derive_secret(&changed.branch().unwrap(), 0).unwrap();
++            assert_ne!(
++                RistrettoPublicKey::from_secret_key(&other),
++                RistrettoPublicKey::from_secret_key(&recovered)
++            );
++            assert!(decrypt_letter(&other, &changed, "letter-1", &payload).is_err());
++        }
++        assert_eq!(
++            decrypt_letter(&recovered, &c, "letter-1", &payload).unwrap().body,
++            "private message"
++        );
++    }
++    #[test]
++    fn tampering_and_readdressing_reject_without_plaintext() {
++        let c = context();
++        let secret = CipherSeed::random().derive_secret("mail-test", 0).unwrap();
++        let payload = seal(&secret, &c, "letter-1");
++        assert!(decrypt_letter(&secret, &c, "other-letter", &payload).is_err());
++        let mut changed = payload.clone();
++        let mut bytes = URL_SAFE_NO_PAD.decode(&changed.ciphertext).unwrap();
++        bytes[0] ^= 1;
++        changed.ciphertext = URL_SAFE_NO_PAD.encode(bytes);
++        assert!(decrypt_letter(&secret, &c, "letter-1", &changed).is_err());
++        let mut changed = payload.clone();
++        changed.ephemeral_public_key = "00".repeat(32);
++        assert!(decrypt_letter(&secret, &c, "letter-1", &changed).is_err());
++        let mut changed = payload.clone();
++        changed.iv.push('=');
++        assert!(decrypt_letter(&secret, &c, "letter-1", &changed).is_err());
++        assert!(
++            decrypt_letter(
++                &secret,
++                &MailboxContext {
++                    controller: context().controller,
++                    ..c.clone()
++                },
++                "letter-1",
++                &payload
++            )
++            .is_err()
++        );
++    }
++}
+diff --git a/applications/tari_walletd/src/ghostdrop_origin.rs b/applications/tari_walletd/src/ghostdrop_origin.rs
+new file mode 100644
+--- /dev/null
++++ b/applications/tari_walletd/src/ghostdrop_origin.rs
+@@ -0,0 +1,110 @@
++// GhostDrop extension; MIT. Origin policy is explicit and does not bypass bearer auth.
++use anyhow::ensure;
++use axum::{
++    extract::{Request, State},
++    http::{HeaderValue, Method, StatusCode, header},
++    middleware::Next,
++    response::{IntoResponse, Response},
++};
++use std::{net::SocketAddr, sync::Arc};
++use tower_http::cors::CorsLayer;
++
++#[derive(Clone)]
++pub struct OriginPolicy {
++    origins: Arc<Vec<HeaderValue>>,
++    host_port: u16,
++}
++impl OriginPolicy {
++    pub fn from_environment(address: SocketAddr) -> anyhow::Result<Option<Self>> {
++        let Ok(raw) = std::env::var("GHOSTDROP_WALLET_ORIGINS") else {
++            return Ok(None);
++        };
++        ensure!(
++            address.ip().is_loopback(),
++            "GhostDrop web access requires a loopback listener"
++        );
++        Self::parse(&raw, address.port()).map(Some)
++    }
++    fn parse(raw: &str, host_port: u16) -> anyhow::Result<Self> {
++        let mut origins = vec![];
++        for value in raw.split(',') {
++            let value = value.trim();
++            let u = url::Url::parse(value)?;
++            let local = matches!(u.host_str(), Some("localhost" | "127.0.0.1" | "[::1]"));
++            ensure!(
++                (u.scheme() == "https" || u.scheme() == "http" && local)
++                    && u.username().is_empty()
++                    && u.password().is_none()
++                    && u.path() == "/"
++                    && u.query().is_none()
++                    && u.fragment().is_none()
++                    && u.origin().ascii_serialization() == value,
++                "Supply exact HTTPS origins or loopback development origins"
++            );
++            origins.push(value.parse()?);
++        }
++        ensure!(
++            !origins.is_empty() && origins.len() <= 8,
++            "Choose 1..8 trusted web origins"
++        );
++        Ok(Self {
++            origins: Arc::new(origins),
++            host_port,
++        })
++    }
++    pub fn cors(&self) -> CorsLayer {
++        CorsLayer::new()
++            .allow_origin(self.origins.as_ref().clone())
++            .allow_methods([Method::POST, Method::OPTIONS])
++            .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
++            .allow_private_network(true)
++    }
++    fn allows(&self, host: Option<&HeaderValue>, origin: Option<&HeaderValue>) -> bool {
++        let Some(host) = host.and_then(|v| v.to_str().ok()) else {
++            return false;
++        };
++        let good_host = [
++            format!("localhost:{}", self.host_port),
++            format!("127.0.0.1:{}", self.host_port),
++            format!("[::1]:{}", self.host_port),
++        ]
++        .contains(&host.to_string());
++        good_host && origin.is_none_or(|o| self.origins.contains(o))
++    }
++}
++pub async fn guard(State(policy): State<OriginPolicy>, req: Request, next: Next) -> Response {
++    if !policy.allows(req.headers().get(header::HOST), req.headers().get(header::ORIGIN)) {
++        return (StatusCode::FORBIDDEN, "Wallet origin/host rejected").into_response();
++    }
++    next.run(req).await
++}
++#[cfg(test)]
++mod tests {
++    use super::*;
++    #[test]
++    fn origins_and_rebinding() {
++        let p = OriginPolicy::parse("https://seal-clubber.github.io", 15100).unwrap();
++        let host = HeaderValue::from_static("127.0.0.1:15100");
++        assert!(p.allows(
++            Some(&host),
++            Some(&HeaderValue::from_static("https://seal-clubber.github.io"))
++        ));
++        assert!(!p.allows(Some(&host), Some(&HeaderValue::from_static("https://evil.example"))));
++        assert!(!p.allows(Some(&HeaderValue::from_static("evil.example:15100")), None));
++        assert!(p.allows(Some(&host), None));
++    }
++    #[test]
++    fn malformed_configuration_fails() {
++        for o in [
++            "*",
++            "null",
++            "http://evil.example",
++            "https://example.com/path",
++            "https://example.com/",
++            "https://user@example.com",
++            "https://example.com?key=test",
++        ] {
++            assert!(OriginPolicy::parse(o, 15100).is_err(), "{o}");
++        }
++    }
++}
+diff --git a/crates/wallet/sdk/src/apis/key_manager.rs b/crates/wallet/sdk/src/apis/key_manager.rs
+--- a/crates/wallet/sdk/src/apis/key_manager.rs
++++ b/crates/wallet/sdk/src/apis/key_manager.rs
+@@ -181,6 +181,15 @@
+         self.derive_key(KeyBranch::ElgamalEncryptionViewKey, index)
+     }
+ 
++    /// Internal wallet-only derivation for versioned GhostDrop postbox keys.
++    /// The caller validates the full context; arbitrary branches are rejected.
++    pub fn derive_ghostdrop_mailbox_key(&self, branch: &str) -> Result<RistrettoSecretKey, KeyManagerApiError> {
++        if !branch.starts_with("ghostdrop/mailbox/[\"gd-postbox-1\",") || branch.len() > 512 {
++            return Err(KeyManagerApiError::InvalidKeyId { details: "Invalid mailbox branch".into() });
++        }
++        self.key_store.derive_secret(branch, 0).map_err(KeyManagerApiError::key_store_error)
++    }
++
+     pub(crate) fn derive_key(
+         &self,
+         branch: KeyBranch,
+diff --git a/clients/wallet_daemon_client/src/permissions.rs b/clients/wallet_daemon_client/src/permissions.rs
+--- a/clients/wallet_daemon_client/src/permissions.rs
++++ b/clients/wallet_daemon_client/src/permissions.rs
+@@ -22,6 +22,10 @@
+ #[cfg_attr(feature = "ts", derive(ts_rs::TS), ts(export))]
+ pub enum Permission {
+     Admin,
++    /// Read a postbox encryption public key; does not permit unwrap or spending.
++    PostboxKeys(Option<ComponentAddress>),
++    /// Unwrap letters for postboxes controlled by exactly this account.
++    PostboxDecrypt(Option<ComponentAddress>),
+     Accounts(Crud, Option<ComponentAddress>),
+     Keys(Crud),
+     Transactions(Crud),
+@@ -85,6 +89,7 @@
+             return true;
+         }
+         match (self, required) {
++            (Permission::PostboxKeys(gs), Permission::PostboxKeys(rs)) | (Permission::PostboxDecrypt(gs), Permission::PostboxDecrypt(rs)) => scope_satisfies(gs, rs),
+             (Permission::Accounts(ga, gs), Permission::Accounts(ra, rs)) => {
+                 crud_satisfies(*ga, *ra) && scope_satisfies(gs, rs)
+             },
+@@ -190,6 +195,8 @@
+     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+         match self {
+             Permission::Admin => write!(f, "admin"),
++            Permission::PostboxKeys(s) => match s { Some(a) => write!(f, "postboxes:key:{a}"), None => write!(f, "postboxes:key") },
++            Permission::PostboxDecrypt(s) => match s { Some(a) => write!(f, "postboxes:decrypt:{a}"), None => write!(f, "postboxes:decrypt") },
+             Permission::Webrtc => write!(f, "webrtc"),
+             Permission::Accounts(a, s) => display_scoped(f, "accounts", *a, s),
+             Permission::Keys(a) => write!(f, "keys:{a}"),
+@@ -244,6 +251,10 @@
+         let entity_str = parts.next();
+ 
+         match resource {
++            "postboxes" => {
++                let scope = entity_str.map(|v| v.parse::<ComponentAddress>().map_err(|e| InvalidPermissionsFormat(format!("Invalid postbox scope: {e}")))).transpose()?;
++                match action_str { "key" => Ok(Permission::PostboxKeys(scope)), "decrypt" => Ok(Permission::PostboxDecrypt(scope)), _ => Err(InvalidPermissionsFormat("Expected postboxes:key or postboxes:decrypt".into())) }
++            },
+             "accounts" => parse_scoped(action_str, entity_str, Permission::Accounts),
+             "keys" => parse_unscoped(action_str, entity_str, Permission::Keys),
+             "transactions" => parse_unscoped(action_str, entity_str, Permission::Transactions),
+@@ -762,4 +773,25 @@
+         assert!(!set.satisfies(&Permission::Accounts(Crud::Read, None)));
+         assert!(!set.satisfies(&Permission::Admin));
+     }
+-}
++
++    #[test]
++    fn ghostdrop_mailbox_scopes_do_not_grant_decrypt_or_spending_implicitly() {
++        let key=Permission::PostboxKeys(Some(component(1)));
++        let decrypt=Permission::PostboxDecrypt(Some(component(1)));
++        for granted in [&key,&decrypt] {
++            assert!(granted.satisfies(granted));
++            assert_eq!(granted.to_string().parse::<Permission>().unwrap(),*granted);
++            assert!(!granted.satisfies(&Permission::Transactions(Crud::Create)));
++            assert!(!granted.satisfies(&Permission::Keys(Crud::Read)));
++            assert!(!granted.satisfies(&Permission::PostboxKeys(Some(component(2)))));
++            assert!(!granted.satisfies(&Permission::PostboxDecrypt(Some(component(2)))));
++            assert!(!granted.satisfies(&Permission::PostboxDecrypt(None)));
++        }
++        assert!(!key.satisfies(&decrypt));assert!(!decrypt.satisfies(&key));
++        assert!(!Permission::Keys(Crud::Read).satisfies(&decrypt));
++        assert!(!Permission::Accounts(Crud::Read,None).satisfies(&key));
++        for invalid in ["postboxes:read","postboxes:admin","postboxes:decrypt:garbage","postboxes:key:a:b"] {
++            assert!(invalid.parse::<Permission>().is_err());
++        }
++    }
++}
+diff --git a/bindings/src/types/Permission.ts b/bindings/src/types/Permission.ts
+--- a/bindings/src/types/Permission.ts
++++ b/bindings/src/types/Permission.ts
+@@ -17,6 +17,8 @@
+  */
+ export type Permission =
+   | "Admin"
++  | { PostboxKeys: ComponentAddress | null }
++  | { PostboxDecrypt: ComponentAddress | null }
+   | { Accounts: [Crud, ComponentAddress | null] }
+   | { Keys: Crud }
+   | { Transactions: Crud }
+diff --git a/bindings/src/helpers/helpers.ts b/bindings/src/helpers/helpers.ts
+--- a/bindings/src/helpers/helpers.ts
++++ b/bindings/src/helpers/helpers.ts
+@@ -157,6 +157,8 @@
+   if ("BurnProofs" in permission) return "burn_proofs:read";
+   if ("SwapPools" in permission) return "swap_pools:read";
+   if ("Resources" in permission) return "resources:read";
++  if ("PostboxKeys" in permission) return permission.PostboxKeys ? `postboxes:key:${permission.PostboxKeys}` : "postboxes:key";
++  if ("PostboxDecrypt" in permission) return permission.PostboxDecrypt ? `postboxes:decrypt:${permission.PostboxDecrypt}` : "postboxes:decrypt";
+ 
+   // Unscoped CRUD resources: { Keys: "Read" } -> "keys:read".
+   if ("Keys" in permission) return `keys:${permission.Keys.toLowerCase()}`;
+diff --git a/applications/tari_walletd/web_ui/src/routes/Wallet/Components/ApiKeys.tsx b/applications/tari_walletd/web_ui/src/routes/Wallet/Components/ApiKeys.tsx
+--- a/applications/tari_walletd/web_ui/src/routes/Wallet/Components/ApiKeys.tsx
++++ b/applications/tari_walletd/web_ui/src/routes/Wallet/Components/ApiKeys.tsx
+@@ -62,6 +62,8 @@
+ /// list because granting it to a long-lived agent key is high-risk.
+ /// Sorted alphabetically by grant string; keep it that way when adding entries.
+ const PERMISSION_OPTIONS: Array<{ value: string; label: string; description: string }> = [
++  {value:"postboxes:key",label:"postboxes:key",description:"GhostDrop public mailbox keys for the selected controlling account; no decryption or spending."},
++  {value:"postboxes:decrypt",label:"postboxes:decrypt",description:"Open GhostDrop mail for the selected controlling account; no spending."},
+   {
+     value: "accounts:create",
+     label: "accounts:create",
+@@ -250,6 +252,7 @@
+   const [createdKey, setCreatedKey] = useState<AuthCreateApiKeyResponse | null>(null);
+   const [createOpen, setCreateOpen] = useState(false);
+   const [createName, setCreateName] = useState("");
++  const [postboxAccount, setPostboxAccount] = useState("");
+   // Tracked as a Set for O(1) toggle + membership checks. We convert to an
+   // ordered Array on submit so the daemon sees them in PERMISSION_OPTIONS order.
+   const [selectedPerms, setSelectedPerms] = useState<Set<string>>(() => new Set());
+@@ -265,6 +268,7 @@
+ 
+   const resetCreateForm = () => {
+     setCreateName("");
++    setPostboxAccount("");
+     setSelectedPerms(new Set());
+     setGrantAdmin(false);
+     setConfirmAdmin(false);
+@@ -284,7 +288,10 @@
+     // Build the permission list in PERMISSION_OPTIONS order so the wire
+     // payload is stable regardless of click order. Then append Admin last
+     // if granted (and gated by the explicit confirmation checkbox).
+-    const permissions = PERMISSION_OPTIONS.filter((opt) => selectedPerms.has(opt.value)).map((opt) => opt.value);
++    if ([...selectedPerms].some(p=>p.startsWith("postboxes:")) && !/^component_[a-f0-9]{64}$/.test(postboxAccount)) {
++      setCreateError("Enter the controlling account component for postbox permissions.");return;
++    }
++    const permissions = PERMISSION_OPTIONS.filter((opt) => selectedPerms.has(opt.value)).map((opt) => opt.value.startsWith("postboxes:") ? `${opt.value}:${postboxAccount}` : opt.value);
+     if (grantAdmin) {
+       permissions.push(ADMIN_PERMISSION_VALUE);
+     }
+@@ -465,6 +472,7 @@
+               helperText="A friendly label for this key. Not unique."
+               fullWidth
+             />
++            <TextField label="Postbox controlling account component" value={postboxAccount} onChange={e=>setPostboxAccount(e.target.value)} helperText="Required for GhostDrop key/decrypt permissions. These permissions do not authorize gift collection or spending." fullWidth/>
+             <Box>
+               <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                 Permissions
+diff --git a/applications/tari_walletd/src/cli.rs b/applications/tari_walletd/src/cli.rs
+--- a/applications/tari_walletd/src/cli.rs
++++ b/applications/tari_walletd/src/cli.rs
+@@ -46,7 +46,7 @@
+ pub struct Cli {
+     #[clap(flatten)]
+     pub common: CommonCliArgs,
+-    #[clap(long, short = 'l', alias = "listen-on", env = "JRPC_LISTEN_ON")]
++    #[clap(long, alias = "listen-on", env = "JRPC_LISTEN_ON")]
+     /// The address to listen on for Web and JSON-RPC requests. Defaults to localhost:5100.
+     pub listen_on: Option<SocketAddr>,
+     #[clap(long, env = "SIGNALING_SERVER_ADDRESS")]
+@@ -181,3 +181,14 @@
+         confirm: bool,
+     },
+ }
++
++#[cfg(test)]
++mod ghostdrop_tests {
++    use super::*;
++    #[test]
++    fn ghostdrop_cli_parses_loopback_listener_without_duplicate_short_flags() {
++        let cli=Cli::try_parse_from(["walletd","--network","localnet","--listen-on","127.0.0.1:15110","run"]).unwrap();
++        assert_eq!(cli.listen_on.unwrap().to_string(),"127.0.0.1:15110");
++        assert!(matches!(cli.command,Some(Subcommand::Run)));
++    }
++}
+diff --git a/applications/tari_walletd/web_ui/src/components/auth/web_authn/components/Registration.tsx b/applications/tari_walletd/web_ui/src/components/auth/web_authn/components/Registration.tsx
+--- a/applications/tari_walletd/web_ui/src/components/auth/web_authn/components/Registration.tsx
++++ b/applications/tari_walletd/web_ui/src/components/auth/web_authn/components/Registration.tsx
+@@ -14,55 +14,21 @@
+ import { FormEvent, useState } from "react";
+ import { Form } from "react-router-dom";
+ 
+-const WEBAUTHN_RP_ID = import.meta.env.VITE_DAEMON_WEBAUTHN_RP_ID || window.location.hostname;
+-
+-const createCredential = async (
+-  rpOptions: { rpId: string; rpName: string },
+-  username: string,
+-  challenge: BufferSource,
+-) => {
+-  const publicKeyCredentialCreationOptions: PublicKeyCredentialCreationOptions = {
+-    rp: {
+-      name: rpOptions.rpName,
+-      id: rpOptions.rpId,
+-    },
+-    user: {
+-      id: Uint8Array.from(username, (c) => c.charCodeAt(0)),
+-      name: username,
+-      displayName: username,
+-    },
+-    challenge,
+-    pubKeyCredParams: [
+-      {
+-        type: "public-key",
+-        // Ed25519
+-        alg: -8,
+-      },
+-      {
+-        type: "public-key",
+-        // ES256
+-        alg: -7,
+-      },
+-      {
+-        type: "public-key",
+-        // RS256
+-        alg: -257,
+-      },
+-    ],
+-    timeout: 60000,
+-    excludeCredentials: [],
+-    attestation: "none",
+-    extensions: {
+-      credProps: true,
+-    },
+-    authenticatorSelection: {
+-      userVerification: "required",
+-    },
+-  };
+-  return await navigator.credentials.create({
+-    publicKey: publicKeyCredentialCreationOptions,
+-  });
++// Use the daemon's challenge, RP, user ID and allowed algorithms verbatim.
++type CreationWire = Omit<PublicKeyCredentialCreationOptions, "challenge" | "user" | "excludeCredentials"> & {
++  challenge: string;
++  user: Omit<PublicKeyCredentialUserEntity, "id"> & { id: string };
++  excludeCredentials?: (Omit<PublicKeyCredentialDescriptor, "id"> & { id: string })[];
+ };
++const decodeChallenge = (value: string) => Uint8Array.from(Buffer.from(value.replace(/-/g, "+").replace(/_/g, "/"), "base64")).buffer;
++const createCredential = async (options: CreationWire) => navigator.credentials.create({
++  publicKey: {
++    ...options,
++    challenge: decodeChallenge(options.challenge),
++    user: { ...options.user, id: decodeChallenge(options.user.id) },
++    excludeCredentials: (options.excludeCredentials || []).map(item => ({ ...item, id: decodeChallenge(item.id) })),
++  },
++});
+ 
+ function WebauthnRegistration(props: WebauthnProps) {
+   const { onAuthenticated } = props;
+@@ -89,18 +55,8 @@
+         throw new Error("Failed to start registration: missing public_key");
+       }
+ 
+-      const challenge = Buffer.from((startRegisterResponse.public_key as any).challenge, "base64");
+       const regSessionId = startRegisterResponse.session_id;
+-
+-      // get credential
+-      const credential = await createCredential(
+-        {
+-          rpId: WEBAUTHN_RP_ID,
+-          rpName: "Tari Ootle Wallet Web UI",
+-        },
+-        APP_NAME,
+-        challenge,
+-      );
++      const credential = await createCredential(startRegisterResponse.public_key as unknown as CreationWire);
+ 
+       if (!credential) {
+         throw new Error("Failed to create credential");

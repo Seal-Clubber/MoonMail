@@ -1,6 +1,6 @@
 # Deployment
 
-Templates and registry were verified on isolated localnet. No hosted site or public-chain deployment has been published. Public-network spending, git push and Pages publication require separate authorization.
+Templates and registry were verified on isolated localnet. The static interface is live on GitHub Pages with HTTPS enforced. No public-chain deployment is configured. Public-network spending requires explicit authorization.
 
 ## Isolated local chain
 
@@ -38,11 +38,11 @@ The browser directly uses `authenticateWithApiKey`. Current source checks `trans
 
 The isolated 0.43.0 probe verified scope enforcement, expiry/revocation and WalletSession connection/disconnect/token replacement. Real localnet publication and public/link claims committed; a separate recipient daemon discovered and spent both payouts. Dry runs can sign with read permission. Repeat against the intended hosted deployment before enabling writes.
 
-Default daemon OPTIONS responses to the **planned** Pages Origin returned HTTP 200 but no `Access-Control-Allow-Origin` or allowed-header fields. A successful OPTIONS status alone is insufficient. Current daemon source exposes either disabled CORS or permissive development CORS, not a reviewed origin allowlist. Production Pages connectivity therefore remains blocked pending a supported, tested daemon origin policy. A minimal user-controlled daemon change should allow only the chosen HTTPS origin, POST/OPTIONS and Authorization/Content-Type, retaining API-key enforcement. This is a deployment requirement, not a completed extension. Do not enable broad development CORS as the production fix. From the actual Pages origin also test credentials mode, HTTPS-to-loopback transport and browser local-network permissions separately. Do not add a central wallet proxy or disable browser security.
+The stock daemon's OPTIONS response for the Pages origin lacks CORS allow-origin/header fields. The [pinned local extension](../wallet-extension/README.md) adds an opt-in exact-origin policy, loopback-only fixed-port listener, Host checks, POST/OPTIONS and Authorization/Content-Type support while retaining API-key authentication. Native restrictions and actual local-browser authenticated RPC pass. Authenticated transport from the actual Pages HTTPS origin still needs testing; a successful OPTIONS status alone is insufficient. Grant browser Local Network Access through normal site permissions. Do not enable permissive development CORS, add a central wallet proxy or disable browser security.
 
 ## GitHub Pages
 
-`.github/workflows/verify.yml` runs JS/build/browser and Linux engine checks. `.github/workflows/pages.yml` is a manual `workflow_dispatch` build/deploy workflow. It uses a repository base path dynamically; for `Seal-Clubber/GhostDrop`, the intended URL is `https://Seal-Clubber.github.io/GhostDrop/`. This URL is planned, **not a verified live site**.
+`.github/workflows/verify.yml` runs JS/build/browser and Linux engine checks. `.github/workflows/pages.yml` is a manual `workflow_dispatch` build/deploy workflow. It uses a repository base path dynamically. The verified live URL is [GhostDrop](https://seal-clubber.github.io/GhostDrop/); hosted checks cover the build at `72b853c`. See [the evidence](EVIDENCE.md) for successful workflow runs.
 
 After authorization and confirmed repository access:
 

@@ -1,22 +1,24 @@
 # Verification evidence
 
-Evidence applies to this build and isolated network. It does not establish a public deployment or hosted HTTPS wallet connection.
+Evidence applies to the stated build and isolated network. GitHub Pages HTTPS hosting is verified separately from wallet connectivity and public-chain deployment.
 
-| Requirement               | Verified                                                                                                    | Remaining                                                               |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Pages architecture        | Static build/manual workflow; Chromium assets, WASM, hash links and refresh at exact `/GhostDrop/` path     | Authorized publication, eligible private-repo plan, actual HTTPS origin |
-| Ootle storage/rules       | Engine and isolated consensus tests; complete letters/ciphertext in separate ownerless envelopes            | Intended public deployment                                              |
-| Link encryption           | HKDF/AES-GCM and official Tari keys; context/tamper tests; actual stored ciphertext decrypted/claimed       | Independent cryptographic review                                        |
-| Public/link guest payouts | Actual indexer submission; separate recipient daemon discovers exact gift and spends it                     | Intended hosted deployment                                              |
-| Fees/authority            | Engine checks wrong keys, replay, one payout, destination/network, inadequate fees and fee/main checkpoints | Distributed races and production fee calibration                        |
-| Postboxes                 | Engine checks IDs, duplicate nicknames, controller edits and frozen gift authority                          | Wallet key storage/unwrap/second-client recovery; UI disabled           |
-| Wallet adapter            | Actual scoped submission, token replacement/clearing, expiry/revocation and network checks                  | Interactive key issuance and Pages transport                            |
-| Submission recovery       | Pre-broadcast journal, corrupt-journal spending block, uncertain keeper reservations                        | Live lost-response/account-history recovery                             |
-| Keeper                    | Filter/target/buffer/budget/concurrency/restart tests and full pagination                                   | Dedicated donor execution; worker never started                         |
-| Accessible UI             | Desktop/mobile, reduced-motion/list view, focus trap/Escape/restoration, draft survival and fragment scrub  | Broader browser/assistive technology review                             |
-| Independent hosting       | Configurable asset base and deployment-bound links                                                          | Two HTTPS hosts; original-host outage test                              |
+| Requirement               | Verified                                                                                                              | Remaining                                                     |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Pages architecture        | Live enforced-HTTPS Pages site; all 10 hosted Chromium checks passed for assets, WASM, hash links, refresh and mobile | Updated builds repeat hosted checks                           |
+| Ootle storage/rules       | Engine and isolated consensus tests; complete letters/ciphertext in separate ownerless envelopes                      | Intended public deployment                                    |
+| Link encryption           | HKDF/AES-GCM and official Tari keys; context/tamper tests; actual stored ciphertext decrypted/claimed                 | Independent cryptographic review                              |
+| Public/link guest payouts | Actual indexer submission; separate recipient daemon discovers exact gift and spends it                               | Intended hosted deployment                                    |
+| Fees/authority            | Engine checks wrong keys, replay, one payout, destination/network, inadequate fees and fee/main checkpoints           | Distributed races and production fee calibration              |
+| Postboxes                 | Actual chain create/edit/rotate, ciphertext unwrap, frozen controller, exact payout/spend; historical decryption in second client | Full restored daemon installation; intended public deployment |
+| Wallet adapter            | Actual scoped submission, token replacement/clearing, expiry/revocation, owner UI key issuance/revocation and local-browser RPC | Authenticated Pages transport; physical passkey device |
+| Submission recovery       | Pre-broadcast journal, corrupt-journal spending block, uncertain keeper reservations                                  | Live lost-response/account-history recovery                   |
+| Keeper                    | Filter/target/buffer/budget/concurrency/restart tests and full pagination                                             | Dedicated donor execution; worker never started               |
+| Accessible UI             | Desktop/mobile, reduced-motion/list view, focus trap/Escape/restoration, draft survival and fragment scrub            | Broader browser/assistive technology review                   |
+| Independent hosting       | Configurable asset base and deployment-bound links                                                                    | Two HTTPS hosts; original-host outage test                    |
 
 ## Automated checks
+
+GitHub Verify run [37390878555](https://github.com/Seal-Clubber/GhostDrop/actions/runs/37390878555) and Pages run [37391283346](https://github.com/Seal-Clubber/GhostDrop/actions/runs/37391283346) succeeded for `72b853c7dc583c438c9bd917271aa674697c96ea`. The repository's GitHub API confirms Pages uses workflow deployment and enforces HTTPS. Test the existing hosted build with `GHOSTDROP_TEST_BASE_URL=https://seal-clubber.github.io/GhostDrop/ pnpm test:browser` (use the appropriate environment-variable syntax for your shell).
 
 - `pnpm test`: **18 passed**.
 - `pnpm build`: strict TypeScript/static Vite build passed, including `GHOSTDROP_BASE=/GhostDrop/`.
@@ -48,6 +50,18 @@ Live probes fixed account authorization in `other_signers` separately from seali
 - Default preflight for planned `https://seal-clubber.github.io`: HTTP 200 with no CORS allow-origin/allow-header fields. **Hosted transport remains blocked/unverified.** Security settings were not disabled.
 
 Public deployment configuration stays blank/false. Local tests do not override production UI gates. Capabilities, test private keys, databases and session research stay outside the repo. No donor worker was started.
+
+## Wallet extension and addressed-chain continuation
+
+The extension pins official v0.43.0 source `392d805579db35fcc8e8bc1aba84adc1fffe0c22`. A fresh checkout applies the shipped patch and exactly reproduces all 14 tested files. Six native tests pass: authenticated crypto/tampering, independent mnemonic-restored key store with historical versions, independent permission scopes, origin/Host/configuration restrictions and listener CLI parsing.
+
+Sixteen actual daemon RPC checks pass for JS/WebCrypto + official WASM encryption/native Rust unwrap, wrong context/controller/account/network, tampering, permission separation, key replacement/history, expiration/revocation and disconnect. Those key hashes were provisioned only in disposable stores. Separately, the actual wallet owner UI passes WebAuthn registration, scoped key issuance and revocation using a Chromium virtual authenticator. No GhostDrop Admin or spending key was issued in that owner-UI test; physical passkey hardware remains untested.
+
+Thirteen isolated-chain checks pass: multiple IDs/duplicate nicknames, controller edits, stored addressed ciphertext decryption, frozen authority, wrong controller rejection, rotation preserving ID/controller, historical decryption from a second client, exact 2,000,000 microTARI payout, duplicate rejection, recipient spending, and fresh public/link guest payouts. See [public identities and committed transaction IDs](postbox-network-evidence.json). These fresh identities supersede the older ephemeral deployment for continuation tests; they are not public configuration.
+
+Six browser integration checks pass on desktop/mobile against real wallet/indexer RPC. Only deployment.json is a local test fixture: stored historical mail decrypts, desktop postbox creation commits and reconciles, and disconnect clears sessions. No RPC is mocked. Public configuration remains blank/false.
+
+Authenticated Pages-to-loopback verification is pending approval for entering a temporary, non-spending disposable-wallet API key into the user-owned hosted page. No credential was sent there. Exact-origin support passing local tests does not establish hosted browser transport. Neither financial seeds nor mailbox secrets were exported; native mnemonic testing uses synthetic unit-test material.
 
 ## Primary sources
 

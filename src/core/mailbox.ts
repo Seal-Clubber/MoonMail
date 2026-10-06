@@ -92,7 +92,7 @@ export async function sealMailbox(
   const pair = generateKeypair();
   let secret: Uint8Array | undefined, shared: Uint8Array | undefined;
   try {
-    secret = new Uint8Array(pair.secret_key);
+    secret = pair.secret_key;
     const ephemeralPublicKey = hex(pair.public_key);
     shared = encryptedDataDhKdfAead(secret, unhex(key.publicKey));
     const aad = mailboxAAD(context, id, key.publicKey, ephemeralPublicKey);

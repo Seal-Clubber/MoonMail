@@ -38,3 +38,16 @@ jobs:
       - run: cargo build --manifest-path contracts/envelope/Cargo.toml --target wasm32-unknown-unknown --release --locked
       - run: cargo build --manifest-path contracts/ghostdrop/Cargo.toml --target wasm32-unknown-unknown --release --locked
       - run: cargo test --manifest-path contracts/engine-tests/Cargo.toml --locked -- --include-ignored
+  wallet-extension:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@master
+        with: { toolchain: "1.97.1" }
+      - run: sudo apt-get update && sudo apt-get install -y cmake pkg-config libssl-dev libdbus-1-dev protobuf-compiler
+      - run: bash wallet-extension/build.sh "$RUNNER_TEMP/ghostdrop-wallet-source" source
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ runner.temp }}/ghostdrop-wallet-source -> target
+      - run: cargo test -p tari_ootle_walletd -p tari_ootle_walletd_client --no-default-features --locked --lib ghostdrop
+        working-directory: ${{ runner.temp }}/ghostdrop-wallet-source
