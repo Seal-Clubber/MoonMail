@@ -119,7 +119,11 @@ export function Postboxes({
         <>
           <label>
             My postboxes
-            <select disabled={busy} value={selected} onChange={(e) => choose(e.target.value)}>
+            <select
+              disabled={busy}
+              value={selected}
+              onChange={(e) => choose(e.target.value)}
+            >
               <option value="">Select a postbox</option>
               {owned.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -226,8 +230,8 @@ export function Postboxes({
               </p>
               <p className="fine-print">
                 Rotation affects new mail. Historical key versions remain
-                recoverable from the same wallet seed. Rotation changes only
-                the encryption key; save nickname and listing changes separately.
+                recoverable from the same wallet seed. Rotation changes only the
+                encryption key; save nickname and listing changes separately.
               </p>
             </article>
           )}

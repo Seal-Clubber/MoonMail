@@ -2,19 +2,19 @@
 
 Evidence applies to the stated build and isolated network. GitHub Pages HTTPS hosting is verified separately from wallet connectivity and public-chain deployment.
 
-| Requirement               | Verified                                                                                                              | Remaining                                                     |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Pages architecture        | Live enforced-HTTPS Pages site; all 10 hosted Chromium checks passed for assets, WASM, hash links, refresh and mobile | Updated builds repeat hosted checks                           |
-| Ootle storage/rules       | Engine and isolated consensus tests; complete letters/ciphertext in separate ownerless envelopes                      | Intended public deployment                                    |
-| Link encryption           | HKDF/AES-GCM and official Tari keys; context/tamper tests; actual stored ciphertext decrypted/claimed                 | Independent cryptographic review                              |
-| Public/link guest payouts | Actual indexer submission; separate recipient daemon discovers exact gift and spends it                               | Intended hosted deployment                                    |
-| Fees/authority            | Engine checks wrong keys, replay, one payout, destination/network, inadequate fees and fee/main checkpoints           | Distributed races and production fee calibration              |
-| Postboxes                 | Actual chain create/edit/rotate, ciphertext unwrap, frozen controller, exact payout/spend; historical decryption in second client | Full restored daemon installation; intended public deployment |
-| Wallet adapter            | Actual scoped submission, token replacement/clearing, expiry/revocation, owner UI key issuance/revocation and local-browser RPC | Authenticated Pages transport; physical passkey device |
-| Submission recovery       | Pre-broadcast journal, corrupt-journal spending block, uncertain keeper reservations                                  | Live lost-response/account-history recovery                   |
-| Keeper                    | Filter/target/buffer/budget/concurrency/restart tests and full pagination                                             | Dedicated donor execution; worker never started               |
-| Accessible UI             | Desktop/mobile, reduced-motion/list view, focus trap/Escape/restoration, draft survival and fragment scrub            | Broader browser/assistive technology review                   |
-| Independent hosting       | Configurable asset base and deployment-bound links                                                                    | Two HTTPS hosts; original-host outage test                    |
+| Requirement               | Verified                                                                                                                            | Remaining                                                     |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Pages architecture        | Live enforced-HTTPS Pages site; all 10 hosted Chromium checks passed for assets, WASM, hash links, refresh and mobile               | Updated builds repeat hosted checks                           |
+| Ootle storage/rules       | Engine and isolated consensus tests; complete letters/ciphertext in separate ownerless envelopes                                    | Intended public deployment                                    |
+| Link encryption           | HKDF/AES-GCM and official Tari keys; context/tamper tests; actual stored ciphertext decrypted/claimed                               | Independent cryptographic review                              |
+| Public/link guest payouts | Actual indexer submission; separate recipient daemon discovers exact gift and spends it                                             | Intended hosted deployment                                    |
+| Fees/authority            | Engine checks wrong keys, replay, one payout, destination/network, inadequate fees and fee/main checkpoints                         | Distributed races and production fee calibration              |
+| Postboxes                 | Actual chain create/edit/rotate, ciphertext unwrap, frozen controller, exact payout/spend; historical decryption in second client   | Full restored daemon installation; intended public deployment |
+| Wallet adapter            | Actual scoped submission, token replacement/clearing, expiry/revocation, owner UI key issuance/revocation and local-browser RPC     | Authenticated Pages transport; physical passkey device        |
+| Submission recovery       | Pre-broadcast journal, corrupt-journal spending block, uncertain keeper reservations                                                | Live lost-response/account-history recovery                   |
+| Keeper                    | Actual dedicated disposable donor funds five, restarts from journal, refills claimed gift, stops at budget; guest claims after exit | Intended deployment and lost-response recovery                |
+| Accessible UI             | Desktop/mobile, reduced-motion/list view, focus trap/Escape/restoration, draft survival and fragment scrub                          | Broader browser/assistive technology review                   |
+| Independent hosting       | Configurable asset base and deployment-bound links                                                                                  | Two HTTPS hosts; original-host outage test                    |
 
 ## Automated checks
 
@@ -47,9 +47,9 @@ Live probes fixed account authorization in `other_signers` separately from seali
 - `transactions:create`: real scoped transactions committed. This is broad spending authority, not account-limited.
 - Expired/revoked keys and wrong network rejected by the project adapter. Replacement retained identity; disconnect cleared credentials and later lookup failed.
 - Dry-run signing can pass with read scope; do not call this a no-signing permission.
-- Default preflight for planned `https://seal-clubber.github.io`: HTTP 200 with no CORS allow-origin/allow-header fields. **Hosted transport remains blocked/unverified.** Security settings were not disabled.
+- Stock-daemon preflight lacks CORS allow-origin/header fields. The pinned extension passes actual Pages-origin credential-free `wallet.get_info` transport with a normal Chromium Local Network Access permission grant (HTTP 200, network 16, daemon 0.43.0). Authenticated account access remains unverified; no API key was sent. Security settings were not disabled.
 
-Public deployment configuration stays blank/false. Local tests do not override production UI gates. Capabilities, test private keys, databases and session research stay outside the repo. No donor worker was started.
+Public deployment configuration stays blank/false. Local tests do not override production UI gates. Capabilities, test private keys, databases and session research stay outside the repo. Keeper execution is limited to the bounded disposable-donor continuation described below; no ongoing worker remains.
 
 ## Wallet extension and addressed-chain continuation
 
@@ -61,7 +61,13 @@ Thirteen isolated-chain checks pass: multiple IDs/duplicate nicknames, controlle
 
 Six browser integration checks pass on desktop/mobile against real wallet/indexer RPC. Only deployment.json is a local test fixture: stored historical mail decrypts, desktop postbox creation commits and reconciles, and disconnect clears sessions. No RPC is mocked. Public configuration remains blank/false.
 
+Four further browser checks pass through actual local UI sending and guest receiving: public and link letters publish/confirm, an independent browser reads/decrypts them without a wallet connection, and each prepaid claim confirms. This run uses the supported reduced-motion mode and actual hall pagination.
+
+The actual keeper CLI was run only in bounded `--run --once` increments using a fresh dedicated donor daemon and an external journal. Six checks pass: five confirmed public gifts, retained journal across process restarts, collection after keeper exit, refill to five after collection, fixed 24,000,000 microTARI budget exhaustion, and independent donor identity. Six gifts were funded total; one was claimed. The first claim probe used an incomplete disposable Storage adapter and lost its returned transaction journal entry after broadcast; continuation reconciled the existing on-chain claimed state and did not repeat that claim. This does not prove general live lost-response recovery. All keeper increments exited and temporary keys were revoked.
+
 Authenticated Pages-to-loopback verification is pending approval for entering a temporary, non-spending disposable-wallet API key into the user-owned hosted page. No credential was sent there. Exact-origin support passing local tests does not establish hosted browser transport. Neither financial seeds nor mailbox secrets were exported; native mnemonic testing uses synthetic unit-test material.
+
+The later credential-free Pages probe verifies the origin/CORS/loopback portion, with `credentials:"omit"` and no Authorization header. It requests only intentionally public wallet metadata and does not replace authenticated verification. The `httpsWallet` public evidence flag remains false. The [keeper receipts and bounded plans](keeper-network-evidence.json) record only public localnet identifiers and reservations.
 
 ## Primary sources
 

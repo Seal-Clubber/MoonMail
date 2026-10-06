@@ -1,0 +1,130 @@
+{
+  "checks": {
+    "fiveConfirmedPublicGifts": true,
+    "restartJournalRetained": true,
+    "claimWorksAfterKeeperExited": true,
+    "refillsClaimedGift": true,
+    "budgetExhaustionStops": true,
+    "donorSeparateFromRecipient": true
+  },
+  "plans": [
+    {
+      "campaign": "isolated-dedicated-donor",
+      "claimable": 4,
+      "outstanding": 0,
+      "remaining": "4000000",
+      "cost": "4000000",
+      "count": 1,
+      "dryRun": false
+    },
+    {
+      "campaign": "isolated-dedicated-donor",
+      "claimable": 5,
+      "outstanding": 0,
+      "remaining": "0",
+      "cost": "4000000",
+      "count": 0,
+      "dryRun": false
+    },
+    {
+      "campaign": "isolated-dedicated-donor",
+      "claimable": 5,
+      "outstanding": 0,
+      "remaining": "0",
+      "cost": "4000000",
+      "count": 0,
+      "dryRun": false
+    },
+    {
+      "campaign": "isolated-dedicated-donor",
+      "claimable": 5,
+      "outstanding": 0,
+      "remaining": "0",
+      "cost": "4000000",
+      "count": 0,
+      "dryRun": false
+    },
+    {
+      "campaign": "isolated-dedicated-donor",
+      "claimable": 5,
+      "outstanding": 0,
+      "remaining": "0",
+      "cost": "4000000",
+      "count": 0,
+      "dryRun": false
+    },
+    {
+      "campaign": "isolated-dedicated-donor",
+      "claimable": 5,
+      "outstanding": 0,
+      "remaining": "0",
+      "cost": "4000000",
+      "count": 0,
+      "dryRun": false
+    },
+    {
+      "campaign": "isolated-dedicated-donor",
+      "claimable": 5,
+      "outstanding": 0,
+      "remaining": "0",
+      "cost": "4000000",
+      "count": 0,
+      "dryRun": false
+    },
+    {
+      "campaign": "isolated-dedicated-donor",
+      "claimable": 5,
+      "outstanding": 0,
+      "remaining": "0",
+      "cost": "4000000",
+      "count": 0,
+      "dryRun": false
+    }
+  ],
+  "donor": "component_a7a7ae112782e1caf4c6a9514deb4c84780679f81c3956bd6648bfaffef92694",
+  "faucet": "541a167c840972cb67a44b5ea8a699cf276e603d6ea1d4b879a3a450c229a611",
+  "claim": "Prior isolated probe response lacked journal confirmation; on-chain claimed state reconciled",
+  "journal": {
+    "reservations": [
+      {
+        "envelopeId": "9bf54d57-83ee-4002-9b50-34dc0a69a040",
+        "cost": "4000000",
+        "state": "confirmed",
+        "txId": "1354acb497fc7d3dbd2a85999b16ec500c850785b3b357368983f2422149807b"
+      },
+      {
+        "envelopeId": "a43a1e08-f082-4d2f-9173-a322b7c76d94",
+        "cost": "4000000",
+        "state": "confirmed",
+        "txId": "6699796eafab2390c47c9eb51fd25907a99743ebc34d3182bc3892346a47de8e"
+      },
+      {
+        "envelopeId": "9fe340a4-f3b6-487f-9c5f-965a6bdce65d",
+        "cost": "4000000",
+        "state": "confirmed",
+        "txId": "eb0eb56b04e7ff291065d2af357de9b677e64890e45e22906eff6586b6937626"
+      },
+      {
+        "envelopeId": "13035eff-a6df-4d8e-8415-2401337b3d15",
+        "cost": "4000000",
+        "state": "confirmed",
+        "txId": "00ceefdb24f254396b5960292c72e366096ec28d481d8d8e4f14e14bbc3338b1"
+      },
+      {
+        "envelopeId": "c1319edf-1736-47d9-b63a-8165c12e3fd1",
+        "cost": "4000000",
+        "state": "confirmed",
+        "txId": "dc2d4f08097fbda39a9f2c8ff372a63b3e77d6c0c2615203249e48b63749bc1e"
+      },
+      {
+        "envelopeId": "febc836b-3cdd-41a5-a6d1-71c3c9813e2a",
+        "cost": "4000000",
+        "state": "confirmed",
+        "txId": "e456a7ae43ec804259a51061c3fbf76317ac09364ce297b0c8df320c11f7473b"
+      }
+    ],
+    "context": "[16,\"component_4d640da08dcaac8bab1f0bc2bf7ac59f46a6f9147c2bb9249b0677dcd605bb7b\",\"isolated-dedicated-donor\"]"
+  },
+  "allPassed": true,
+  "scope": "Ephemeral isolated localnet, bounded keeper --once test only"
+}

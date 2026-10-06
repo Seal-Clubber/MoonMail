@@ -116,7 +116,9 @@ test("addressed mail explains its wallet extension and requires a deployment", a
   await page.goto("./#/compose");
   await page.getByRole("button", { name: "▥ To a postbox" }).click();
   await expect(
-    page.getByText("Addressed mail requires a registered postbox", { exact: false }),
+    page.getByText("Addressed mail requires a registered postbox", {
+      exact: false,
+    }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Review letter" }),

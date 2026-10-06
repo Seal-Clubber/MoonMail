@@ -77,7 +77,10 @@ const client = WalletDaemonClient.usingFetchTransport(url);
 client.authenticateWithApiKey(key);
 client.setReauthenticationEnabled(false);
 const journalPath = config.journalPath || ".deployment-state.local.json";
-if (typeof journalPath !== "string" || !journalPath.endsWith(".local.json")) throw new Error("Use an explicit local deployment journal path ending .local.json");
+if (typeof journalPath !== "string" || !journalPath.endsWith(".local.json"))
+  throw new Error(
+    "Use an explicit local deployment journal path ending .local.json",
+  );
 let journal: Record<
   string,
   { state: string; txId?: string; identity: string }
