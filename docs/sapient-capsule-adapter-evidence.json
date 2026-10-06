@@ -1,0 +1,57 @@
+{
+  "checkedAt": "2026-10-06T22:02:50.304Z",
+  "wallet": "official Sapient 0.6.6 store package",
+  "application": "actual published Pages build",
+  "engine": "0.45.0",
+  "publicTransactions": 0,
+  "extraVisitorPrograms": 0,
+  "financialSeedEnteredIntoGhostDrop": false,
+  "seedOrRecoveredApplicationKeyLoggedOrSaved": false,
+  "encryptedFixtureOnly": true,
+  "independentBrowserProfiles": true,
+  "walletSubstateReadsUseEngineFixture": true,
+  "publicDeployment": false,
+  "productionCoreAdapterExecutedInOwnerTestProcessThroughRealInjectedProvider": true,
+  "uiIntegration": false,
+  "checks": [
+    {
+      "wallet": "original",
+      "productionCoreAdapter": true,
+      "deterministicLedgerRead": true,
+      "immutableCarrierChecked": true,
+      "cacheInitiallyEmpty": true,
+      "privateOutputsDeniedBeforeViewGrant": true,
+      "adapterDeniedBeforeViewGrant": true,
+      "recoveredPermanentEngineCapsule": true,
+      "applicationPublicKeyMatches": true,
+      "memoAvailableThroughScopedWalletView": true,
+      "wrongKeyVersionRejected": true,
+      "authenticatedCapsuleReference": true,
+      "addressedLetterDecrypted": true
+    },
+    {
+      "wallet": "independent restoration",
+      "productionCoreAdapter": true,
+      "deterministicLedgerRead": true,
+      "immutableCarrierChecked": true,
+      "cacheInitiallyEmpty": true,
+      "privateOutputsDeniedBeforeViewGrant": true,
+      "adapterDeniedBeforeViewGrant": true,
+      "recoveredPermanentEngineCapsule": true,
+      "applicationPublicKeyMatches": true,
+      "memoAvailableThroughScopedWalletView": true,
+      "wrongKeyVersionRejected": true,
+      "authenticatedCapsuleReference": true,
+      "addressedLetterDecrypted": true
+    },
+    {
+      "wallet": "foreign",
+      "capsuleRecoveryDenied": true
+    }
+  ],
+  "limits": [
+    "Finance-free lab proof: custom capsule substates came from a real local engine and were substituted only for their resource/UTXO reads. This is not testnet consensus or production recovery evidence.",
+    "Wallet view approval exposes private output summaries for the account, not only a GhostDrop-specific resource.",
+    "Original token carriers and historical descriptors remain unchanged; production mailbox gate remains false."
+  ]
+}

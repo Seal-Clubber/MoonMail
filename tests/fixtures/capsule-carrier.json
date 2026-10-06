@@ -1,0 +1,63 @@
+{
+  "resource_6ed3fd3ba32cf18e14a7d27ce5dc03ef835502d040b8602f6846c03b52f0d9cf": {
+    "substate": {
+      "Resource": {
+        "access_rules": {
+          "auth_hook_updater": "Locked",
+          "burn": "DenyAll",
+          "burn_updater": "Locked",
+          "deposit": "AllowAll",
+          "deposit_updater": "Locked",
+          "freeze": "DenyAll",
+          "freeze_updater": "Locked",
+          "metadata_updater": "Owner",
+          "mint": {
+            "Restricted": {
+              "Require": {
+                "Require": {
+                  "ScopedToComponent": "component_6e3e429904f527aab7d82f88035d3f4395e1cd97ed6ec8e456af6659b144c2b4"
+                }
+              }
+            }
+          },
+          "mint_updater": "Locked",
+          "nft_data_updater": "Owner",
+          "recall": "DenyAll",
+          "recall_updater": "Locked",
+          "update_metadata": "DenyAll",
+          "update_nft_data": "DenyAll",
+          "withdraw": "AllowAll",
+          "withdraw_updater": "Locked"
+        },
+        "auth_hook": null,
+        "divisibility": 8,
+        "metadata": {},
+        "owner_rule": "None",
+        "resource_type": "Stealth",
+        "total_supply": "1",
+        "view_key": null
+      }
+    },
+    "version": 1
+  },
+  "utxo_6ed3fd3ba32cf18e14a7d27ce5dc03ef835502d040b8602f6846c03b52f0d9cf_640e7e0987ed5a8951d67a9f04397e85dee67da3cbb8f08c7f1e7e4bcf81ad09": {
+    "substate": {
+      "Utxo": {
+        "is_frozen": false,
+        "output": {
+          "auth": {
+            "Script": "51fc79d1cad4e2dccb4fd1edaff44dc395b5c290b71a48c731111a776548a788"
+          },
+          "output": {
+            "encrypted_data": "a8e4cff6f08866fca2b8a697fa4d20b2ce1795b8f22f0112c33a283b07fe1a32453aaf09f73e43562e21516f8263aed0d5ee7f1b27fd5f60b6475f5bffee24b76c3afbd32846e77a9ed25bae3f25675e012b1510e8252a5e22968a76fd44ceadcdc6594d3b45ca3c706786dfb0f1df1b89dfd0eebb5bbe3860f6a66b354021a5d2a354c77770073ec5c3fd06b50a498f1e78678e78635c8c0be330c8f3c672b47d2d7cab7088e3f251c2f59f74cbc0aa80656683b19f8ee5b05a126707d6460f1af835c558e9fa7bf334b44143f06642ecbb11e44d892e28930d116f253f2356a1a8e064406b73ee840bc26127c85433d6604ca948f1f31ae5d62942e43f990bc87df844929dc5d278774d084051496d7cef0559453f433f7878136d58238dfa6a51990967efc90f2c57e0fbee04a4cfda3b8b8bc51b3c54de5910e7f113447e0850dbdd7b889967ff2bc38202164d",
+            "minimum_value_promise": 0,
+            "public_nonce": "e27c23a989a9e8dc97c8f9ccfd8ab0fe73a30698d828abd1dbe05ba27b59c44c",
+            "viewable_balance": null
+          },
+          "tag": 1072848648
+        }
+      }
+    },
+    "version": 0
+  }
+}

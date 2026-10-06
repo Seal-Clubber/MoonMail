@@ -3,6 +3,10 @@ import type { WalletAccount } from "./wallet";
 import type { NativeMailboxAdapter } from "./native-mailbox";
 import type { MailboxContext, MailboxPayload, Letter } from "./types";
 import { hex } from "./crypto";
+import {
+  SapientCapsuleMailbox,
+  type CapsuleSubstateReader,
+} from "./sapient-capsule";
 import { money, type publishTransaction } from "./transactions";
 import {
   beginSubmission,
@@ -172,6 +176,28 @@ export class SapientSession {
   nativeMailbox(): NativeMailboxAdapter {
     throw new Error(
       "Sapient postbox key recovery has not been verified. No daemon or bridge is required for public/private-link sending.",
+    );
+  }
+  // UI integration remains gated until public deployment/recovery evidence exists.
+  // The wallet popup explains the grant; the website must also explain its account-wide scope.
+  async requestPostboxViewAccess() {
+    await this.assertCurrent();
+    const result = record(
+      await this.call("tari_requestViewAccess", undefined, 120000),
+    );
+    await this.assertCurrent();
+    if (result.granted !== true)
+      throw new Error("Sapient private view access was declined");
+  }
+  capsuleMailbox(read: CapsuleSubstateReader) {
+    return new SapientCapsuleMailbox(
+      {
+        network: this.network,
+        account: this.accounts[0],
+        assertCurrent: () => this.assertCurrent(),
+        request: (method, params) => this.call(method, params),
+      },
+      read,
     );
   }
   async decryptPostbox(

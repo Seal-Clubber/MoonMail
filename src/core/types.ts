@@ -21,11 +21,16 @@ export interface MailboxContext extends Context {
   controller: string;
   keyVersion: number;
 }
+export interface CapsuleReference {
+  resource: string;
+  commitment: string;
+}
 export interface MailboxKey {
   version: "gd-postbox-1";
   keyVersion: number;
   publicKey: string;
-  recovery?: "native-memo-1";
+  recovery?: "native-memo-1" | "sapient-capsule-1";
+  capsule?: CapsuleReference;
 }
 export interface MailboxPayload {
   version: "gd-postbox-1";
@@ -34,7 +39,8 @@ export interface MailboxPayload {
   ephemeralPublicKey: string;
   iv: string;
   ciphertext: string;
-  recovery?: "native-memo-1";
+  recovery?: "native-memo-1" | "sapient-capsule-1";
+  capsule?: CapsuleReference;
 }
 export interface Envelope {
   component?: string;

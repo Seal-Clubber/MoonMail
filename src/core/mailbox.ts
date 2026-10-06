@@ -4,6 +4,7 @@ import type {
   MailboxContext,
   MailboxKey,
   MailboxPayload,
+  CapsuleReference,
 } from "./types";
 import {
   assertEnvelopeSize,
@@ -41,7 +42,15 @@ export function mailboxKey(value: string | unknown): MailboxKey {
     key.keyVersion > 1_000_000 ||
     !/^[a-f0-9]{64}$/.test(key.publicKey) ||
     /^0+$/.test(key.publicKey) ||
-    (key.recovery !== undefined && key.recovery !== "native-memo-1")
+    (key.recovery !== undefined &&
+      key.recovery !== "native-memo-1" &&
+      key.recovery !== "sapient-capsule-1") ||
+    (key.recovery === "sapient-capsule-1"
+      ? !key.capsule ||
+        !/^resource_[a-f0-9]{64}$/.test(key.capsule.resource) ||
+        !/^[a-f0-9]{64}$/.test(key.capsule.commitment) ||
+        /^0+$/.test(key.capsule.commitment)
+      : key.capsule !== undefined)
   ) {
     throw new Error("Unsupported postbox encryption key");
   }
@@ -50,6 +59,14 @@ export function mailboxKey(value: string | unknown): MailboxKey {
     keyVersion: key.keyVersion,
     publicKey: key.publicKey,
     ...(key.recovery ? { recovery: key.recovery } : {}),
+    ...(key.recovery === "sapient-capsule-1"
+      ? {
+          capsule: {
+            resource: key.capsule.resource,
+            commitment: key.capsule.commitment,
+          },
+        }
+      : {}),
   };
 }
 export function mailboxAAD(
@@ -57,6 +74,7 @@ export function mailboxAAD(
   id: string,
   recipientKey: string,
   ephemeralPublicKey: string,
+  capsule?: CapsuleReference,
 ) {
   if (
     ![16, 36, 38].includes(context.network) ||
@@ -72,7 +90,7 @@ export function mailboxAAD(
   ) {
     throw new Error("Invalid mailbox context");
   }
-  return encode([
+  const tuple: unknown[] = [
     "GhostDrop",
     "gd-postbox-1",
     context.network,
@@ -84,7 +102,10 @@ export function mailboxAAD(
     id,
     recipientKey,
     ephemeralPublicKey,
-  ]);
+  ];
+  if (capsule)
+    tuple.push("sapient-capsule-1", capsule.resource, capsule.commitment);
+  return encode(tuple);
 }
 export async function sealMailbox(
   letter: Letter,
@@ -103,7 +124,13 @@ export async function sealMailbox(
     secret = pair.secret_key;
     const ephemeralPublicKey = hex(pair.public_key);
     shared = encryptedDataDhKdfAead(secret, unhex(key.publicKey));
-    const aad = mailboxAAD(context, id, key.publicKey, ephemeralPublicKey);
+    const aad = mailboxAAD(
+      context,
+      id,
+      key.publicKey,
+      ephemeralPublicKey,
+      key.capsule,
+    );
     const material = await crypto.subtle.importKey(
       "raw",
       buffer(shared),
@@ -137,6 +164,7 @@ export async function sealMailbox(
       iv: base64url(iv),
       ciphertext: base64url(new Uint8Array(ciphertext)),
       ...(key.recovery ? { recovery: key.recovery } : {}),
+      ...(key.capsule ? { capsule: { ...key.capsule } } : {}),
     };
     assertEnvelopeSize(payload);
     return payload;
@@ -155,6 +183,13 @@ export async function openMailbox(
 ): Promise<Letter> {
   const { publicKeyFromSecretKey, encryptedDataDhKdfAead } =
     await import("@tari-project/ootle-wasm");
+  const descriptor = mailboxKey({
+    version: payload.version,
+    keyVersion: payload.keyVersion,
+    publicKey: payload.recipientKey,
+    recovery: payload.recovery,
+    capsule: payload.capsule,
+  });
   if (
     payload.version !== "gd-postbox-1" ||
     payload.keyVersion !== context.keyVersion ||
@@ -174,6 +209,7 @@ export async function openMailbox(
       id,
       payload.recipientKey,
       payload.ephemeralPublicKey,
+      descriptor.capsule,
     );
     const material = await crypto.subtle.importKey(
       "raw",

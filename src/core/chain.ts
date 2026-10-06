@@ -107,6 +107,8 @@ export function decodeEnvelope(
       version: payload.version,
       keyVersion: payload.keyVersion,
       publicKey: payload.recipientKey,
+      recovery: payload.recovery,
+      capsule: payload.capsule,
     });
   }
   return {
