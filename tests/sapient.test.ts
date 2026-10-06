@@ -737,6 +737,7 @@ test("postbox registration declares account and fee vault dependencies before Sa
       }),
     },
   } as unknown as PostOfficeClient;
+  Object.setPrototypeOf(chain, PostOfficeClient.prototype);
   await PostOfficeClient.prototype.savePostbox.call(
     chain,
     f.wallet,
