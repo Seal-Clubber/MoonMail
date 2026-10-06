@@ -14,10 +14,7 @@ export const emptyDeployment: Deployment = {
     mailboxRecovery: false,
   },
 };
-export function writesReady(
-  d: Deployment,
-  mode: "public" | "link" | "postbox" = "link",
-) {
+function deploymentReady(d: Deployment) {
   return (
     [16, 36, 38].includes(d.network) &&
     /^component_[a-f0-9]{64}$/.test(d.registry) &&
@@ -26,7 +23,18 @@ export function writesReady(
     /^resource_[a-f0-9]{64}$/.test(d.resource) &&
     !!d.indexerUrl &&
     d.evidence.engineClaims === true &&
-    d.evidence.guestPayout === true &&
+    d.evidence.guestPayout === true
+  );
+}
+export function claimsReady(d: Deployment) {
+  return deploymentReady(d);
+}
+export function writesReady(
+  d: Deployment,
+  mode: "public" | "link" | "postbox" = "link",
+) {
+  return (
+    deploymentReady(d) &&
     d.evidence.daemonScopes === true &&
     d.evidence.httpsWallet === true &&
     (mode !== "postbox" || d.evidence.mailboxRecovery === true)

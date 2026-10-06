@@ -1,6 +1,6 @@
 # Esmeralda deployment status
 
-On 2026-10-06, GhostDrop's two templates, registry and **three complete public letters** were deployed on the real Esmeralda network (38), using the official HTTPS indexer `https://ootle-indexer-a.tari.com/`. The application's public reader independently fetched all three subjects/bodies and validated the templates and owner rules. `public/deployment.json` now contains these confirmed identities; its spending evidence flags remain false.
+On 2026-10-06, GhostDrop's two templates, registry and **three complete public letters** were deployed on the real Esmeralda network (38), using the official HTTPS indexer `https://ootle-indexer-a.tari.com/`. The application's public reader independently fetched all three subjects/bodies and validated the templates and owner rules. `public/deployment.json` now contains these confirmed identities. Engine and guest-delivery gates are verified; sending and postbox actions retain their unverified wallet gates.
 
 | Identity            | Confirmed address                                                            |
 | ------------------- | ---------------------------------------------------------------------------- |
@@ -48,8 +48,12 @@ The publication plan capped each template at 10 tTARI, registry creation at 1 tT
 
 ## Remaining verification and publication
 
+Public and private-link gift proofs also committed on Esmeralda. Each SDK proof deposited exactly 2 tTARI into an initially unfunded independent stock-wallet account, then spent part of that payout. The sender paid for that account's initial on-chain creation. A second pair used the actual GhostDrop production UI: desktop public claim and mobile private-link claim, with no wallet connection or credential. The stock recipient independently discovered their combined 4 tTARI and committed another spend. All four proof gifts are now collected. The [curated gift evidence](esmeralda-gift-evidence.json) contains accepted IDs and checks, without private capabilities or letter plaintext.
+
+The stock recipient used unmodified daemon 0.43.0. Its owner UI registration initially chose EdDSA despite the daemon permitting ES256/RSA. The test constrained its virtual authenticator to ES256; no daemon or RPC response was patched. This does not establish stock browser connection or physical-passkey onboarding.
+
 1. Desktop/mobile public reading passes against this deployment, with all subjects/bodies compared. A separate credential-free probe from the existing Pages HTTPS origin also passes with only `deployment.json` overridden to these confirmed identities. This proves origin compatibility, not that the new configuration has been published. Do not repeat completed publication transactions.
 2. Push the reviewed `main` checkpoint to trigger GitHub Pages, then verify the deployed HTTPS site reads the same public letters.
-3. Verify actual Esmeralda guest gifts, daemon scopes, recovery and authenticated hosted-wallet transport before enabling the corresponding spending gates. Existing isolated-chain tests do not substitute for those checks. The standard-wallet postbox adapter and secure browser connection remain pending.
+3. Real Esmeralda guest collection and stock-recipient payout/spend are verified. Verify deployment-specific daemon scopes, recovery and authenticated hosted-wallet transport before enabling sending/postbox gates. The standard-wallet postbox adapter and secure browser connection remain pending. Browser guests currently supply an existing built-in account component plus its matching Ootle address; automatic account creation during collection is not implemented.
 
 The local-only deployment command retains its localnet restriction. Deployment preparation and wallet state for this particular authorized testnet run are stored in the development environment, outside the clone.

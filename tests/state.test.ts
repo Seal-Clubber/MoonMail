@@ -4,7 +4,12 @@ import {
   publishTransaction,
   money,
 } from "../src/core/transactions";
-import { emptyDeployment, writesReady, endpoint } from "../src/core/config";
+import {
+  emptyDeployment,
+  claimsReady,
+  writesReady,
+  endpoint,
+} from "../src/core/config";
 import { decodeOffice, decodeEnvelope } from "../src/core/chain";
 import {
   savePending,
@@ -72,6 +77,29 @@ it("production gates fail closed", () => {
   expect(endpoint("http://localhost:5100/json_rpc", true)).toContain(
     "localhost",
   );
+});
+it("verified guest claims work without granting sender or postbox wallet access", () => {
+  const verified = {
+    ...d,
+    envelopeTemplate: "f".repeat(64),
+    indexerUrl: "http://localhost:12500/",
+    evidence: {
+      ...emptyDeployment.evidence,
+      engineClaims: true,
+      guestPayout: true,
+    },
+  };
+  expect(claimsReady(verified)).toBe(true);
+  expect(writesReady(verified, "public")).toBe(false);
+  expect(writesReady(verified, "link")).toBe(false);
+  expect(writesReady(verified, "postbox")).toBe(false);
+  for (const evidence of [
+    { ...verified.evidence, engineClaims: false },
+    { ...verified.evidence, guestPayout: false },
+  ])
+    expect(claimsReady({ ...verified, evidence })).toBe(false);
+  expect(claimsReady({ ...verified, registry: "" })).toBe(false);
+  expect(claimsReady({ ...verified, network: 1 })).toBe(false);
 });
 it("never converts large money through floating-point and rejects invalid/overflow amounts", () => {
   expect(money("9007199254740993")).toBe(9007199254740993n);

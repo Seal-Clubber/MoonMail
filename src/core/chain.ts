@@ -14,7 +14,7 @@ import {
 import { parseOotleAddress } from "@tari-project/ootle-wasm";
 import type { Deployment, Envelope, Postbox } from "./types";
 import type { WalletSession, WalletAccount } from "./wallet";
-import { writesReady, endpoint } from "./config";
+import { claimsReady, writesReady, endpoint } from "./config";
 import { hex } from "./crypto";
 import {
   claimTransaction,
@@ -321,10 +321,8 @@ export class PostOfficeClient {
       envelope.context.template !== this.deployment.template
     )
       throw new Error("Envelope belongs to another deployment");
-    if (!writesReady(this.deployment, envelope.mode))
-      throw new Error(
-        "Guest claiming awaits engine and wallet-delivery evidence",
-      );
+    if (!claimsReady(this.deployment))
+      throw new Error("Guest claiming awaits engine and delivery evidence");
     if (envelope.mode === "postbox")
       throw new Error(
         "Addressed claims require the controlling daemon, which remains unverified",

@@ -80,7 +80,8 @@
       "reserve": "0"
     }
   ],
-  "deploymentGiftProof": false,
+  "deploymentGiftProof": true,
+  "deploymentGiftEvidence": "esmeralda-gift-evidence.json",
   "hostedAuthenticatedWalletProof": false,
   "hostedDefaultConfigUpdated": false,
   "localBrowserPublicRead": {

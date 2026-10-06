@@ -1,0 +1,132 @@
+{
+  "network": 38,
+  "registry": "component_2afdeb8728a3ffbf04da19218964243c63cd63e9d77ca5b7877e4dd29873b4b7",
+  "indexerUrl": "https://ootle-indexer-a.tari.com/",
+  "recipient": {
+    "component": "component_2562bbb46eefcdd17e24e2685b7c9a0dec2df3e1368ea5517aa20b3e186e9b33",
+    "address": "otl_esm_13m7766dzartvr0kz6rretnv5yn8ju46gqc59d9fvq4wmqxkr9ar6ek87vn26vxhdyv4cu6zycjws4cn2s70r8gx7qteutrjfrurvgrg3uy6gq",
+    "publicKey": "8efded69a2e8d6c1bec2d0c795cd9424cf2e5748062856952c055db01ac32f47",
+    "stockDaemon": "0.43.0"
+  },
+  "recipientDaemonUnmodified": true,
+  "recipientInitiallyUnfunded": true,
+  "recipientAccountCreationPaidBySender": true,
+  "claimUsesTemporaryOrLinkSigner": true,
+  "walletCredentialSentToIndexer": false,
+  "ghostdropWalletConnectionForClaim": false,
+  "ownerAuthentication": "Local owner UI; virtual ES256-only authenticator for stock recipient, temporary scoped keys revoked",
+  "stockOwnerUiEdDsaMismatchObserved": true,
+  "stockBrowserConnectionProven": false,
+  "transactions": {
+    "publish-public": {
+      "id": "ddb62a51796abd4960f3dd97c01cd266967f6fea77063dd539f6105228d6f879",
+      "confirmed": true
+    },
+    "publish-link": {
+      "id": "8fa4a74cf484c2af92c1d3d9bcfe88b6acfc1fc94c6d0bed0e43f561a7892d36",
+      "confirmed": true
+    },
+    "claim-public": {
+      "id": "75ac29f61872bd0d1ceaf62302fe8b4fc9344e928c12b52d622ef31602548573",
+      "confirmed": true
+    },
+    "spend-public": {
+      "id": "691fa087cd0f76b4e8b94999517632135b072645ac6f15f15f52c7cde68ea171",
+      "confirmed": true
+    },
+    "claim-link": {
+      "id": "b14c4443be38f535ebb818e7b5441c2e9ffdcdce7091c65d61dd7a16972083f6",
+      "confirmed": true
+    },
+    "spend-link": {
+      "id": "1ae8a0d78384299d245bcf9149fefabd4bc2878d6502b1a2bfb8ffc497f82635",
+      "confirmed": true
+    }
+  },
+  "gifts": [
+    {
+      "mode": "public",
+      "id": "esmeralda-gift-public-20261006",
+      "component": "component_fddbd45cb5645c991366fc8c0588d894c85421afae67c0c6dbcef1febd441db9",
+      "giftMicroTari": "2000000",
+      "collectionReserveMicroTari": "100000",
+      "publicationFeeCapMicroTari": "100000",
+      "recipientSpendFeeCapMicroTari": "100000",
+      "exactGiftDiscovered": true,
+      "recipientSpendConfirmed": true,
+      "recipientBalanceBeforeMicroTari": "0",
+      "recipientBalanceAfterMicroTari": "2000000",
+      "plaintextMatched": true,
+      "encryptedOnChain": false
+    },
+    {
+      "mode": "link",
+      "id": "esmeralda-gift-link-20261006",
+      "component": "component_93848249ee3d92e72c475b8e34ffbf36d07b8c50b534d2187a51f5c565b1fbc5",
+      "giftMicroTari": "2000000",
+      "collectionReserveMicroTari": "100000",
+      "publicationFeeCapMicroTari": "100000",
+      "recipientSpendFeeCapMicroTari": "100000",
+      "exactGiftDiscovered": true,
+      "recipientSpendConfirmed": true,
+      "recipientBalanceBeforeMicroTari": "1898353",
+      "recipientBalanceAfterMicroTari": "3898353",
+      "plaintextMatched": true,
+      "encryptedOnChain": true
+    }
+  ],
+  "browser": {
+    "productionBuild": true,
+    "configurationOnlyFixture": true,
+    "rpcMocks": false,
+    "senderTransportGatesFalse": true,
+    "stockRecipientExactCombinedGiftMicroTari": "4000000",
+    "stockRecipientSpendConfirmed": true,
+    "recipientBalanceBeforeMicroTari": "3796706",
+    "recipientBalanceAfterMicroTari": "7796706",
+    "claims": [
+      {
+        "mode": "public",
+        "id": "esmeralda-browser-gift-public-20261006",
+        "component": "component_f9ede8a2c28486d79a6b760065a11545f568d0f38a87b7e4bbf50c79ec3ec586",
+        "publication": "d615414ead1830879a3f8b2d53ac3e0426f9b89a3107b22a7677e92c7c543ff4",
+        "claim": "9053a0093719f4043ec3de04d5afbaffbcc2678578ebb022d2e8a32f8e1d411e",
+        "checks": {
+          "viewport": "desktop",
+          "plaintextMatched": true,
+          "claimConfirmed": true,
+          "noWalletConnection": true,
+          "noWalletCredentials": true,
+          "capabilityAbsentFromHttpRequests": true,
+          "noPageErrors": true,
+          "senderTransportGatesFalse": true,
+          "journalRestoredFromRecordedTransaction": true
+        }
+      },
+      {
+        "mode": "link",
+        "id": "esmeralda-browser-gift-link-20261006",
+        "component": "component_b4bfbaf6d6863def2d14d523f0aed6e5b386776d077af3c79708a219011d13ce",
+        "publication": "8fa3fd52a45889565ac19830fa6853789af763e96367d33b720054c005d7245e",
+        "claim": "a70af328c822ebfd1f603418c5bb51354866e8d88584942ef8bc0b3274cb3f0b",
+        "checks": {
+          "viewport": "mobile",
+          "plaintextMatched": true,
+          "claimConfirmed": true,
+          "noWalletConnection": true,
+          "noWalletCredentials": true,
+          "capabilityAbsentFromHttpRequests": true,
+          "noPageErrors": true,
+          "senderTransportGatesFalse": true,
+          "journalRestoredFromRecordedTransaction": false
+        }
+      }
+    ],
+    "recipientSpend": "433abae0897822502bd7e23e57560f924741be34669fcad62b38f4e6d9ea722b"
+  },
+  "engine": {
+    "testsPassed": 11,
+    "includesJavascriptWasmBorBridge": true,
+    "deploymentArtifactHashesMatched": true
+  }
+}

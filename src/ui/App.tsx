@@ -8,7 +8,7 @@ import type {
   SealedPayload,
   MailboxPayload,
 } from "../core/types";
-import { emptyDeployment, writesReady } from "../core/config";
+import { emptyDeployment, claimsReady, writesReady } from "../core/config";
 import { WalletSession } from "../core/wallet";
 import { PostOfficeClient } from "../core/chain";
 import { sealLetter, openLetter, assertEnvelopeSize } from "../core/crypto";
@@ -118,6 +118,8 @@ export function App() {
     [page, setPage] = useState(1),
     openSequence = useRef(0),
     draftSequence = useRef(0),
+    readSequence = useRef(0),
+    retryReader = useRef<PostOfficeClient | undefined>(undefined),
     [indexerStatus, setIndexerStatus] = useState("");
   const owned = boxes.filter(
     (p) => p.controller === wallet?.accounts[account]?.account.owner_public_key,
@@ -178,6 +180,9 @@ export function App() {
     };
   }, []);
   useEffect(() => {
+    const sequence = ++readSequence.current;
+    retryReader.current?.provider.stopWatcher();
+    retryReader.current = undefined;
     if (!d.registry || !d.indexerUrl) return;
     let cancelled = false;
     let connected: PostOfficeClient | undefined;
@@ -198,6 +203,7 @@ export function App() {
         }
       })
       .catch(() => {
+        connected?.provider.stopWatcher();
         if (!cancelled)
           setError(
             "Could not read the configured post office. Check deployment identity, network, state encoding and indexer connectivity.",
@@ -205,6 +211,9 @@ export function App() {
       });
     return () => {
       cancelled = true;
+      if (readSequence.current === sequence) readSequence.current += 1;
+      retryReader.current?.provider.stopWatcher();
+      retryReader.current = undefined;
       connected?.provider.stopWatcher();
     };
   }, [d]);
@@ -318,13 +327,37 @@ export function App() {
     setRoute(undefined);
   }
   async function refresh() {
-    if (!chain) return;
-    const data = await chain.read();
+    if (!d.registry || !d.indexerUrl) return;
+    const sequence = readSequence.current;
+    const letterSequence = openSequence.current;
+    const reader = chain || (await PostOfficeClient.connect(d));
+    let data;
+    try {
+      data = await reader.read();
+    } catch (error) {
+      if (!chain) reader.provider.stopWatcher();
+      throw error;
+    }
+    if (sequence !== readSequence.current) {
+      if (!chain) reader.provider.stopWatcher();
+      return;
+    }
+    setChain(reader);
+    if (!chain) retryReader.current = reader;
     setLetters(data.letters);
     setBoxes(data.postboxes);
     setCursor(data.nextCursor);
     setPage(1);
-    if (active) setActive(await chain.readLetter(active.id, active.component));
+    setPreview(false);
+    setStatus("Chain state loaded through your selected indexer.");
+    if (active) {
+      const updated = await reader.readLetter(active.id, active.component);
+      if (
+        sequence === readSequence.current &&
+        letterSequence === openSequence.current
+      )
+        setActive(updated);
+    }
   }
   async function loadMore() {
     if (!chain || !cursor) return;
@@ -508,7 +541,7 @@ export function App() {
                   </button>
                   <button
                     onClick={() => void task(refresh)}
-                    disabled={!chain || busy}
+                    disabled={!d.registry || !d.indexerUrl || busy}
                   >
                     ↻ Refresh
                   </button>
@@ -518,20 +551,27 @@ export function App() {
                 <div className="deployment-note">
                   <span className="dot" />
                   <div>
-                    <strong>The post office is awaiting deployment.</strong>
+                    <strong>
+                      {d.registry
+                        ? "A deployed post office is configured."
+                        : "The post office is awaiting deployment."}
+                    </strong>
                     <p>
-                      No funded gifts are being advertised. You can explore a
-                      clearly labelled visual preview.
+                      {d.registry
+                        ? "Waiting for chain data. Use Refresh to retry the selected indexer."
+                        : "No funded gifts are being advertised. You can explore a clearly labelled visual preview."}
                     </p>
                   </div>
-                  <button
-                    onClick={() => {
-                      setPreview(!preview);
-                      setPage(1);
-                    }}
-                  >
-                    {preview ? "Leave preview" : "Explore preview"}
-                  </button>
+                  {!d.registry && (
+                    <button
+                      onClick={() => {
+                        setPreview(!preview);
+                        setPage(1);
+                      }}
+                    >
+                      {preview ? "Leave preview" : "Explore preview"}
+                    </button>
+                  )}
                 </div>
               )}
               {preview && (
@@ -1495,7 +1535,9 @@ export function App() {
                       disabled={
                         busy ||
                         !chain ||
-                        !writesReady(d, active.mode) ||
+                        !(active.mode === "postbox"
+                          ? writesReady(d, "postbox")
+                          : claimsReady(d)) ||
                         (active.mode === "postbox" &&
                           !wallet?.accounts.some(
                             (a) =>

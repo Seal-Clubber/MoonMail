@@ -3,10 +3,11 @@
 ## Available now
 
 1. `pnpm dev`: enter as a guest, without connecting a wallet.
-2. Explore the explicitly labelled visual preview. Open a public note, inspect Ghost View, close it using Escape, and switch between scene and list views. Check a narrow viewport and reduced-motion preference.
+2. Read the real Esmeralda public letters without a wallet. Open Ghost View, close with Escape, and switch between scene and list views. Check a narrow viewport and reduced-motion preference. Refresh retries a temporary indexer failure. The explicitly labelled visual preview is available when no registry is configured.
 3. Write a private-link letter; review to run real device encryption with official Tari WASM. The funding button explains the missing live deployment evidence. Connect/close the daemon form and confirm the draft survives while the API-key field clears.
-4. Select addressed mail: the interface explains the local wallet extension and requires a registered postbox. The default blank deployment keeps writes disabled.
-5. Run the real engine tests and SDK bridge tests from README. These execute funded public/link claims and separately enforce addressed controller rules. They do not represent a public-network demo.
+4. Select addressed mail: the interface explains the local wallet extension and requires a registered postbox. Sending and addressed actions remain disabled by pending wallet transport/recovery evidence.
+5. Public and private-link collection passes real Esmeralda browser and stock-recipient payout/spend checks. The four proof gifts have already been collected. A newly funded gift can be collected without a wallet connection by entering an existing built-in account component and its matching Ootle receiving address. Opening a letter performs no claim.
+6. Run the real engine tests and SDK bridge tests from README. These enforce fee/authority/replay rules and addressed controllers; the public-network proof is recorded separately in the evidence documents.
 
 ## After deployment evidence is complete
 

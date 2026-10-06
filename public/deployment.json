@@ -6,8 +6,8 @@
   "indexerUrl": "https://ootle-indexer-a.tari.com/",
   "resource": "resource_0101010101010101010101010101010101010101010101010101010101010101",
   "evidence": {
-    "engineClaims": false,
-    "guestPayout": false,
+    "engineClaims": true,
+    "guestPayout": true,
     "daemonScopes": false,
     "httpsWallet": false,
     "mailboxRecovery": false
