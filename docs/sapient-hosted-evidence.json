@@ -1,0 +1,133 @@
+{
+  "checkedAt": "2026-10-06T21:20:38.132Z",
+  "application": "https://seal-clubber.github.io/GhostDrop/",
+  "frontendCommit": "cd49dbcb7ed585d33bb90844388cabe986cb35ba",
+  "reader": {
+    "checkedAt": "2026-10-06T21:17:54.422Z",
+    "base": "https://seal-clubber.github.io/GhostDrop/",
+    "frontendCommit": "cd49dbcb7ed585d33bb90844388cabe986cb35ba",
+    "publishedBuild": true,
+    "assetOrConfigOverrides": false,
+    "publicRpcUnmodified": true,
+    "walletConnected": false,
+    "transactionsBroadcast": 0,
+    "publicFundedGiftsRemaining": 4,
+    "checks": [
+      {
+        "viewport": "desktop",
+        "completeChainLetter": true,
+        "newWalletDialog": true,
+        "noPageErrors": true,
+        "noHorizontalOverflow": true
+      },
+      {
+        "viewport": "mobile",
+        "completeChainLetter": true,
+        "newWalletDialog": true,
+        "noPageErrors": true,
+        "noHorizontalOverflow": true
+      }
+    ]
+  },
+  "store": {
+    "version": "0.6.6",
+    "extensionId": "demkeckolenopkgnfbnpflkpbbdhpgkl",
+    "downloadSource": "https://clients2.google.com/service/update2/crx?response=redirect&prodversion=140.0.7339.0&acceptformat=crx3&x=id%3Ddemkeckolenopkgnfbnpflkpbbdhpgkl%26uc",
+    "downloadHost": "clients2.googleusercontent.com",
+    "packageSha256": "fe4c3743d32bce89e6f7cbe2287cffe03db3eedf26442e1ecb9917b872927cd8",
+    "sourceCommit": "7ad3c4f117a76c64d472fd371b7d75bbe297abec",
+    "allRuntimeAssetsMatchVerifiedSourceBuild": true,
+    "assets": [
+      {
+        "path": "assets/content-script.ts-C0EwF-Tg.js",
+        "sha256": "2b79bc20915cf259ff3add1d1f24b3a4af1b23f86fc6ebc2383cc0a1baec9f7a",
+        "bytes": 1763,
+        "matchesVerifiedSourceBuild": true
+      },
+      {
+        "path": "assets/format-bAIN1uOz.js",
+        "sha256": "462c909ac06e2b7ed3d2b76bc36cc0fd22c1dbc86e22731851b1364aa8cfcec4",
+        "bytes": 324658,
+        "matchesVerifiedSourceBuild": true
+      },
+      {
+        "path": "assets/index.ts-B5aqFgbi.js",
+        "sha256": "d37fe691d87f9ec41d68604d4bd4372c6e05c72e0eadec14375e09901d3c1cae",
+        "bytes": 95156,
+        "matchesVerifiedSourceBuild": true
+      },
+      {
+        "path": "assets/inject.ts-Cvitz7WB.js",
+        "sha256": "fe692c7f8743724c7de9808096a36b15e38f7dfac6c43f77eada8f75ac1d7e65",
+        "bytes": 4351,
+        "matchesVerifiedSourceBuild": true
+      },
+      {
+        "path": "assets/ootle_wasm_bg-ljEmjhtJ.wasm",
+        "sha256": "f2e1de55e3288ba7c72eedc67766cdbbc72dea31b306bbaf0facd4f63edd83d7",
+        "bytes": 1308957,
+        "matchesVerifiedSourceBuild": true
+      },
+      {
+        "path": "assets/popup-YhzUKhne.css",
+        "sha256": "b15af741add013ba1d909e1935ed8d894ab9fa44ae83518475416211ed5cfeda",
+        "bytes": 20762,
+        "matchesVerifiedSourceBuild": true
+      },
+      {
+        "path": "assets/popup.html-DQfcF7BA.js",
+        "sha256": "6a1b9bbd1ab55699d3c9c8276075b46d85a34cd0d2c46769d3aa806527526ac0",
+        "bytes": 187268,
+        "matchesVerifiedSourceBuild": true
+      }
+    ]
+  },
+  "connection": {
+    "origin": "https://seal-clubber.github.io",
+    "officialStorePackage": true,
+    "loadedUnpackedForAutomation": true,
+    "localBuildOverride": false,
+    "network": "esmeralda",
+    "capabilities": {
+      "exactInputSelection": true,
+      "stealthWithdraw": true,
+      "stealthRedeem": true,
+      "stealthRedeemPrivateFee": true,
+      "htlcFund": true,
+      "scriptPathSpend": true,
+      "privateSpend": true,
+      "shieldFunds": true,
+      "privateBalanceView": true,
+      "privateScan": true,
+      "privateViewGranted": false,
+      "transactionResultLookup": true,
+      "transactionRequests": true,
+      "walletAddress": true,
+      "minimumValuePromise": true,
+      "ownershipProof": true,
+      "walletOwnershipProof": true,
+      "confidentialDeposit": true,
+      "supportsPrivateFees": true,
+      "dryRunIsLocal": false
+    },
+    "checks": {
+      "unmodifiedStorePackage": true,
+      "disposableSelfCustodyWallet": true,
+      "seedEnteredIntoGhostDrop": false,
+      "actualConnectionApproval": true,
+      "publicRegistryReadThroughWallet": true,
+      "draftPreserved": true,
+      "persistedApprovalSurvivesReload": true,
+      "actualWalletRejectionReconciled": true,
+      "originDisconnected": true,
+      "apiKeyRequested": false,
+      "daemonRequired": false,
+      "transactionsBroadcast": 0
+    }
+  },
+  "limitations": [
+    "Official store package was loaded unpacked in an isolated automation profile; Chrome Store installation UI was not automated.",
+    "Connection, read, reload and rejection were tested against published assets. No further public transaction was authorized or broadcast.",
+    "The prior funded publication used the byte-matching unmodified source build. No new gifted/private-link publication or postbox recovery proof."
+  ]
+}

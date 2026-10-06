@@ -1,45 +1,8 @@
 {
   "base": "https://seal-clubber.github.io/GhostDrop/",
-  "checkedAt": "2026-10-06T16:48:11.981Z",
-  "frontendCommit": "da995ff2d3b4fa867be45c8d50d6cf4118f9a298",
-  "publishedAssetsMatchReviewedBuild": true,
-  "assets": [
-    {
-      "path": "index.html",
-      "sha256": "d3302d3a63f179d571eac228b180dec0c4b647c9b6e93d5202a6483e2e034497",
-      "bytes": 689
-    },
-    {
-      "path": "deployment.json",
-      "sha256": "84145836e1594288a2b4f25f8ac606d6d7b406291b16b80764b2533a74bb4359",
-      "bytes": 616
-    },
-    {
-      "path": "assets/index-DOgn5dYb.css",
-      "sha256": "9ab2226aa85be536bc5381f8bae24f56bf63257271415e9f962f78079b3556fa",
-      "bytes": 14336
-    },
-    {
-      "path": "assets/index-DZUYs01t.js",
-      "sha256": "f188a217cf1f1b51d079a618203a80f8ee89bb94b23e27354ea3a262a53fa54a",
-      "bytes": 287771
-    },
-    {
-      "path": "assets/ootle_wasm-BCPdPyS0.js",
-      "sha256": "cb344ea83c93f0e64f9297dddd56c611f430663041f26ba1751b8b8f42250217",
-      "bytes": 144
-    },
-    {
-      "path": "assets/ootle_wasm-BGzFSm2o.js",
-      "sha256": "1b4febdc91614d1d230b77c945477abc6f518c3917ce999c2cc5cd7791779ff6",
-      "bytes": 18591
-    },
-    {
-      "path": "assets/ootle_wasm_bg-Dvm5bzZ4.wasm",
-      "sha256": "d3969f2f738a70cf3199992d52c3e766000b5f31b859427849ed4171395897f1",
-      "bytes": 1288441
-    }
-  ],
+  "checkedAt": "2026-10-06T21:17:03.380Z",
+  "frontendCommit": "cd49dbcb7ed585d33bb90844388cabe986cb35ba",
+  "remoteMainCommit": "cd49dbcb7ed585d33bb90844388cabe986cb35ba",
   "pages": {
     "httpsEnforced": true,
     "buildType": "workflow",
@@ -48,18 +11,63 @@
   "workflowRuns": [
     {
       "name": "Publish reviewed GhostDrop to GitHub Pages",
-      "headSha": "da995ff2d3b4fa867be45c8d50d6cf4118f9a298",
+      "headSha": "cd49dbcb7ed585d33bb90844388cabe986cb35ba",
       "status": "completed",
       "conclusion": "success",
-      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37496236688"
+      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37532286998"
     },
     {
       "name": "Verify GhostDrop",
-      "headSha": "da995ff2d3b4fa867be45c8d50d6cf4118f9a298",
+      "headSha": "cd49dbcb7ed585d33bb90844388cabe986cb35ba",
       "status": "completed",
       "conclusion": "success",
-      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37496235886"
+      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37532287129"
     }
   ],
+  "assets": [
+    {
+      "path": "index.html",
+      "sha256": "63457d9de7c589bc363fafb1b3bc6c2ebf7764eb4d5bef2f5390c3be9ba56673",
+      "bytes": 689,
+      "matchesReviewedBuild": true
+    },
+    {
+      "path": "deployment.json",
+      "sha256": "5f5dd3aba4b2fd7b2e0402d5ee9ad66c4dee882232b85d35785d4d9b2a2def91",
+      "bytes": 643,
+      "matchesReviewedBuild": true
+    },
+    {
+      "path": "assets/index-DOgn5dYb.css",
+      "sha256": "9ab2226aa85be536bc5381f8bae24f56bf63257271415e9f962f78079b3556fa",
+      "bytes": 14336,
+      "matchesReviewedBuild": true
+    },
+    {
+      "path": "assets/index-DVSVJl2j.js",
+      "sha256": "836a1b47a2651b470685115b0e6894165dac5de9164b4c552ef5ee6ce8a40921",
+      "bytes": 289691,
+      "matchesReviewedBuild": true
+    },
+    {
+      "path": "assets/ootle_wasm-BCPdPyS0.js",
+      "sha256": "cb344ea83c93f0e64f9297dddd56c611f430663041f26ba1751b8b8f42250217",
+      "bytes": 144,
+      "matchesReviewedBuild": true
+    },
+    {
+      "path": "assets/ootle_wasm-BGzFSm2o.js",
+      "sha256": "1b4febdc91614d1d230b77c945477abc6f518c3917ce999c2cc5cd7791779ff6",
+      "bytes": 18591,
+      "matchesReviewedBuild": true
+    },
+    {
+      "path": "assets/ootle_wasm_bg-Dvm5bzZ4.wasm",
+      "sha256": "d3969f2f738a70cf3199992d52c3e766000b5f31b859427849ed4171395897f1",
+      "bytes": 1288441,
+      "matchesReviewedBuild": true
+    }
+  ],
+  "publishedAssetsMatchReviewedBuild": true,
   "githubRunMetadataVerified": true
 }
