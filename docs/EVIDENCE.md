@@ -49,9 +49,11 @@ Live probes fixed account authorization in `other_signers` separately from seali
 - Dry-run signing can pass with read scope; do not call this a no-signing permission.
 - Stock-daemon preflight lacks CORS allow-origin/header fields. The pinned extension passes actual Pages-origin credential-free `wallet.get_info` transport with a normal Chromium Local Network Access permission grant (HTTP 200, network 16, daemon 0.43.0). Authenticated account access remains unverified; no API key was sent. Security settings were not disabled.
 
-Public deployment configuration stays blank/false. Local tests do not override production UI gates. Capabilities, test private keys, databases and session research stay outside the repo. Keeper execution is limited to the bounded disposable-donor continuation described below; no ongoing worker remains.
+Public configuration prefills Esmeralda network 38, its official HTTPS indexer and native test TARI resource. Registry/template identities remain unset and all spending evidence flags stay false. Local tests do not override production UI gates. Capabilities, test private keys, databases and session research stay outside the repo. Keeper execution is limited to the bounded disposable-donor continuation described below; no ongoing worker remains.
 
 ## Wallet extension and addressed-chain continuation
+
+The public-source settings update has six additional real-browser checks: desktop/mobile Esmeralda network/health/resource reads, clearing old contract context on network changes, wrong-network rejection, and public indexer CORS from the actual Pages origin. The new interface was tested locally; the hosted-origin check independently reads public metadata. No wallet or transaction is used. Native test TARI metadata reports `tTARI`; service version is 0.43.0. `#/network` now opens the settings page directly.
 
 The extension pins official v0.43.0 source `392d805579db35fcc8e8bc1aba84adc1fffe0c22`. A fresh checkout applies the shipped patch and exactly reproduces all 14 tested files. Six native tests pass: authenticated crypto/tampering, independent mnemonic-restored key store with historical versions, independent permission scopes, origin/Host/configuration restrictions and listener CLI parsing.
 
@@ -59,7 +61,7 @@ Sixteen actual daemon RPC checks pass for JS/WebCrypto + official WASM encryptio
 
 Thirteen isolated-chain checks pass: multiple IDs/duplicate nicknames, controller edits, stored addressed ciphertext decryption, frozen authority, wrong controller rejection, rotation preserving ID/controller, historical decryption from a second client, exact 2,000,000 microTARI payout, duplicate rejection, recipient spending, and fresh public/link guest payouts. See [public identities and committed transaction IDs](postbox-network-evidence.json). These fresh identities supersede the older ephemeral deployment for continuation tests; they are not public configuration.
 
-Six browser integration checks pass on desktop/mobile against real wallet/indexer RPC. Only deployment.json is a local test fixture: stored historical mail decrypts, desktop postbox creation commits and reconciles, and disconnect clears sessions. No RPC is mocked. Public configuration remains blank/false.
+Six browser integration checks pass on desktop/mobile against real wallet/indexer RPC. Only deployment.json is a local test fixture: stored historical mail decrypts, desktop postbox creation commits and reconciles, and disconnect clears sessions. No RPC is mocked. Public contract identities remain unset and spending flags stay false.
 
 Four further browser checks pass through actual local UI sending and guest receiving: public and link letters publish/confirm, an independent browser reads/decrypts them without a wallet connection, and each prepaid claim confirms. This run uses the supported reduced-motion mode and actual hall pagination.
 

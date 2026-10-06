@@ -6,6 +6,8 @@ Static React/TypeScript + Rust Ootle templates. Full letters/ciphertext and gift
 
 The HTTPS static interface is live at [GhostDrop on GitHub Pages](https://seal-clubber.github.io/GhostDrop/). All 10 browser checks passed against the hosted site. This verifies hosting and browser crypto; the public configuration still advertises no funded gifts.
 
+Network settings default to the official Esmeralda HTTPS indexer and native test TARI resource. Open `#/network` and use **Check indexer connection** to read public network/health/resource information without a wallet. Registry and template identities must come from a real GhostDrop deployment; they remain unset until then.
+
 ## Run
 
 Node 24.19+ and pnpm 11.19.0:

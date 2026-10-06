@@ -2,6 +2,14 @@
 
 Templates and registry were verified on isolated localnet. The static interface is live on GitHub Pages with HTTPS enforced. No public-chain deployment is configured. Public-network spending requires explicit authorization.
 
+## Public network presets
+
+The website defaults to Esmeralda (network byte 38), `https://ootle-indexer-a.tari.com/`, and native test TARI resource `resource_0101010101010101010101010101010101010101010101010101010101010101`. The HTTPS endpoint is the [official wallet CLI default](https://github.com/tari-project/ootle-wallet-cli), also present in the pinned SDK. Read-only checks on 2026-10-06 confirm health OK, network 38, daemon/indexer 0.43.0, the test TARI resource, and browser CORS support.
+
+Open `#/network` directly. **Check indexer connection** checks the selected network, service health and resource with credential-free GET requests; it sends no transaction and enables no evidence flag. Localnet prefills the official SDK's `http://localhost:12500/`; Igor requires an operator-provided endpoint. Switching networks clears GhostDrop contract identities, evidence and wallet credentials. Custom compatible HTTPS indexers remain editable.
+
+Only public infrastructure is prefilled. A public indexer does not deploy GhostDrop's registry or templates. The local evidence addresses are from a separate chain and must never be inserted into the public preset. Keep those identities unset and write flags false until an authorized public deployment is confirmed.
+
 ## Isolated local chain
 
 Use the supported official Ootle localnet with fresh donor/sender/recipient wallet directories. Never reuse a personal wallet or import a financial seed. SDK packages are pinned to 0.7.0, crypto WASM 0.43.0, wallet client 1.24.0, template lib 0.33.0, engine tooling 0.43.0 and Rust 1.97.1. Source compatibility was checked against `tari-ootle` commit `44d96cd6a5f22a0f4d104feb21a92f9440267274` and `ootle.ts` commit `c41c0ce04efd08df392203846b37496caa5844c7`. Do not invent network endpoints from examples.

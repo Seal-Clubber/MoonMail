@@ -26,6 +26,7 @@ import {
   envelopeMailboxContext,
 } from "../core/mailbox";
 import { Postboxes } from "./Postboxes";
+import { networkPreset, checkPublicIndexer } from "../core/networks";
 
 const exampleLetters: Envelope[] = [
   {
@@ -76,7 +77,7 @@ const short = (v: string) =>
   v.length > 20 ? `${v.slice(0, 10)}…${v.slice(-6)}` : v;
 export function App() {
   const [view, setView] = useState("hall"),
-    [d, setD] = useState<Deployment>(emptyDeployment),
+    [d, setD] = useState<Deployment>(() => networkPreset(38)),
     [chain, setChain] = useState<PostOfficeClient>();
   const [letters, setLetters] = useState<Envelope[]>([]),
     [boxes, setBoxes] = useState<Postbox[]>([]),
@@ -116,7 +117,8 @@ export function App() {
     routeOnce = useRef(false),
     [page, setPage] = useState(1),
     openSequence = useRef(0),
-    draftSequence = useRef(0);
+    draftSequence = useRef(0),
+    [indexerStatus, setIndexerStatus] = useState("");
   const owned = boxes.filter(
     (p) => p.controller === wallet?.accounts[account]?.account.owner_public_key,
   );
@@ -158,7 +160,15 @@ export function App() {
             "",
             `${location.pathname}${location.search}#/letter/${encodeURIComponent(parsed.id)}`,
           );
-        } else if (location.hash === "#/compose") setView("compose");
+        } else {
+          const initialView = location.hash.slice(2);
+          if (
+            ["hall", "compose", "postboxes", "ledger", "network"].includes(
+              initialView,
+            )
+          )
+            setView(initialView);
+        }
       } catch (e) {
         setError((e as Error).message);
       }
@@ -280,6 +290,9 @@ export function App() {
   }, [connect, active]);
   function changeDeployment(change: Partial<Deployment>) {
     draftSequence.current += 1;
+    if (change.network !== undefined && change.network !== d.network)
+      disconnect();
+    setIndexerStatus("");
     closeLetter();
     setPrepared(undefined);
     setChain(undefined);
@@ -1036,9 +1049,24 @@ export function App() {
               daemon. No GhostDrop server.
             </p>
             <label>
+              Ootle test network
+              <select
+                disabled={busy}
+                value={d.network}
+                onChange={(e) =>
+                  changeDeployment(networkPreset(Number(e.target.value)))
+                }
+              >
+                <option value={38}>Esmeralda · public testnet</option>
+                <option value={36}>Igor · custom testnet endpoint</option>
+                <option value={16}>Localnet · your local indexer</option>
+              </select>
+            </label>
+            <label>
               Indexer endpoint
               <input
                 value={d.indexerUrl}
+                disabled={busy}
                 onChange={(e) =>
                   changeDeployment({ indexerUrl: e.target.value })
                 }
@@ -1046,9 +1074,50 @@ export function App() {
               />
             </label>
             <label>
+              Test asset resource
+              <input
+                disabled={busy}
+                value={d.resource}
+                onChange={(e) => changeDeployment({ resource: e.target.value })}
+              />
+            </label>
+            <div className="actions">
+              <button
+                disabled={busy || !d.indexerUrl}
+                onClick={() =>
+                  void task(async () => {
+                    setIndexerStatus("");
+                    const result = await checkPublicIndexer(d);
+                    setIndexerStatus(
+                      `Connected to ${result.network} · epoch ${result.epoch} · indexer ${result.version} · asset ${result.symbol}. No wallet or transaction was used.`,
+                    );
+                  })
+                }
+              >
+                Check indexer connection
+              </button>
+              <a
+                href="https://ootle.tari.com/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Ootle documentation ↗
+              </a>
+            </div>
+            {indexerStatus && <p role="status">{indexerStatus}</p>}
+            {!d.registry && (
+              <p className="info">
+                Public network settings are ready to check. GhostDrop still
+                needs its own deployed registry and two template addresses
+                before live mail can load. Addresses from a local test chain do
+                not work on the public testnet.
+              </p>
+            )}
+            <label>
               Registry component
               <input
                 value={d.registry}
+                disabled={busy}
                 onChange={(e) => changeDeployment({ registry: e.target.value })}
               />
             </label>
@@ -1056,6 +1125,7 @@ export function App() {
               Registry template identity
               <input
                 value={d.template}
+                disabled={busy}
                 onChange={(e) => changeDeployment({ template: e.target.value })}
               />
             </label>
@@ -1063,6 +1133,7 @@ export function App() {
               Envelope template identity
               <input
                 value={d.envelopeTemplate}
+                disabled={busy}
                 onChange={(e) =>
                   changeDeployment({ envelopeTemplate: e.target.value })
                 }
