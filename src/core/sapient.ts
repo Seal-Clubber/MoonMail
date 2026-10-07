@@ -481,7 +481,7 @@ export class SapientSession {
       await new Promise((resolve) => setTimeout(resolve, 700));
     } while (true);
     throw new Error(
-      "Approval or submission is still pending in Sapient. Resume the saved request in Network & verification.",
+      "Approval or submission is still pending in Sapient. Resume the saved request in Activity.",
     );
   }
 }

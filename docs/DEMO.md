@@ -1,21 +1,35 @@
-# Demo walkthrough
+# Using GhostDrop with Sapient
 
-## Available now
+Use Esmeralda in Sapient. All amounts are test TARI. The website needs no separate bridge or daemon. The current source uses the verified Sapient office; older office mail does not carry over.
 
-1. `pnpm dev`: enter as a guest, without connecting a wallet.
-2. Read the real Esmeralda public letters without a wallet. Open Ghost View, close with Escape, and switch between scene and list views. Check a narrow viewport and reduced-motion preference. Refresh retries a temporary indexer failure. The explicitly labelled visual preview is available when no registry is configured.
-3. Write a private-link letter; review to run real device encryption with official Tari WASM. Open **Connect Sapient**, approve the account in your wallet, and confirm the draft survives. No daemon URL, API key or file import is requested. Sapient sending is enabled in the reviewed source after a funded text-only public proof. Review gift, reserve and the per-attempt publication cap before signing. Close/disconnect and check that private session state clears. Publication of the changed frontend still needs verification after the user's push.
-4. Select addressed mail: the interface explains pending Sapient postbox recovery and requires a registered postbox. Addressed actions remain disabled by their recovery gate.
-5. Public and private-link collection passes real Esmeralda browser and stock-recipient payout/spend checks. The six proof gifts have already been collected. A newly funded gift can be collected without a wallet connection using an existing account component and matching address, or by selecting **Create a new receiving account** with only a fresh Ootle address. Its gift reserve covers creation and collection fees. Opening a letter performs no claim.
-6. Run the real engine tests and SDK bridge tests from README. These enforce fee/authority/replay rules and addressed controllers; the public-network proof is recorded separately in the evidence documents.
+## Read a letter
 
-## After deployment evidence is complete
+Open **Public mail** and choose a letter. Public reading needs no wallet. If someone gives you a private link, open the complete link to decrypt the letter on your device. Opening a letter never collects a gift. Empty and loading states show no invented mail or funded gifts.
 
-1. Sender opens the site in a browser with Sapient, unlocks the wallet, chooses its funded Ootle account, and approves **Connect Sapient**. Compose public or link mail. Replies remain unchecked unless a supported owned postbox is selected.
-2. Review gift, additional fee reserve and publication cap. Save the pending private link before funding. Submit once, reconcile confirmation, and copy the confirmed fragment link.
-3. Open a separate browser without a wallet connection. Read public mail or decrypt the link locally. Opening performs no claim. Enter a checksummed same-network Ootle address and existing built-in account component, review full payout/reserve, and explicitly collect.
-4. Confirm the receiving wallet discovers and can spend the payout. Verify that a second collection fails, a wrong link cannot decrypt/claim, and a changed destination invalidates an existing signature.
-5. Open the same static build from a second HTTPS host with identical public deployment configuration and compatible indexer. Turn off the first host. Existing mail and gifts remain accessible on Ootle; private access still requires the saved fragment.
-6. Postboxes require a supported and independently restored Sapient recovery flow before enabling setup or addressed claims. Historical daemon setup records remain preserved, but do not prove Sapient compatibility. Once supported, test two IDs with duplicate nicknames, edits, addressed mail, a second-client inbox, key rotation and historical decryption. Never repeat an uncertain transaction. See [Sapient's current recovery blocker](SAPIENT.md#postbox-recovery-remains-incomplete).
+## Send a little kindness
 
-Never put private links into screenshots, issue reports, logs or analytics. Use isolated test assets and dedicated demo wallets.
+1. Open **Write a letter** and choose public mail, a private link, or a postbox. For a postbox, browse the spirit directory or paste your friend’s registered ID. Check the ID with your friend because names can repeat.
+2. Write the subject and body. Set the gift to `0` for a plain letter, or enter a TARI amount. A funded gift gets a separate collection reserve; the recipient receives the full gift when that reserve covers execution. Unused reserve stays locked, and there are no refunds or expiry.
+3. Connect Sapient, approve the site and review. **Sending fee limit** shows the per-attempt cap; Sapient estimates the actual fee before approval. Its own retries can charge multiple attempt fees.
+4. For a private link, use **Save pending private link** before publishing. Keep the complete link safely: it is not stored in browser history or the transaction journal, and cannot be recovered after closing or refreshing the session.
+5. Choose **Fund & publish letter** and approve in Sapient. The app takes you to **Activity**. Check status, then copy the confirmed private link or refresh the public hall. An uncertain request stays blocked; resume the original Sapient approval rather than sending a replacement.
+
+## Make a postbox
+
+1. Open **My inbox** and connect Sapient. Existing owned postboxes appear automatically. Otherwise choose **Create my postbox**.
+2. Read the separate private-view explanation. Acknowledge its account-wide scope, then approve view access in Sapient. This exposes private output summaries, including amounts and memos for other resources, but not your seed or financial signing key.
+3. Give the postbox a name and choose whether it appears in the directory. Review the backup and postbox fee limits.
+4. Choose **Store recovery memo** and approve the backup transaction. **Check recovery transaction** must confirm it before **Publish postbox** becomes available. Approve that second transaction, then check it in **Activity**.
+5. Return to **My inbox**, refresh and copy your postbox ID for friends. Select private mail to open it. Restore the same Sapient wallet to recover mail on another device; recovery keys are encrypted on Ootle. Key rotation affects new mail while earlier keys remain recoverable.
+
+## Collect a gift
+
+Open the letter and choose the receiving account. Connecting Sapient selects it automatically; public/private-link guests can instead provide a compatible Ootle receiving address and existing built-in account component, or select fresh-account creation with a new address. Recipient validation runs before signing/submission.
+
+Review the exact payout and reserve, then explicitly claim. A postbox claim asks Sapient for an ownership proof scoped to this gift, destination and at most 10 network epochs. Its fee comes from the sender’s reserve and needs no recipient coins. Rejection submits nothing. Opening alone never claims. Use **Activity** to confirm delivery, then refresh Sapient.
+
+## Developer checks
+
+Client and desktop/mobile browser tests use isolated fixtures; real funded stock-wallet and engine evidence is linked from README. Do not treat fixture tests as new public financial verification. Advanced settings are under **Settings**; editing identities clears the reviewed evidence. No financial worker starts with the site.
+
+Never put private links in screenshots, logs or issue reports. Use isolated test funds for demonstrations.

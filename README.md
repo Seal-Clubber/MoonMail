@@ -1,14 +1,22 @@
 # GhostDrop — The Haunted Post Office
 
-Static React/TypeScript + Rust Ootle templates. Full letters/ciphertext and gift rules live on Ootle; no GhostDrop backend. Public visitors and private-link holders use a prepaid claim path without connecting a wallet. The website connects directly to the [Sapient wallet](https://sapient.tari.mw/) through its browser provider. No extra daemon, GhostDrop bridge, API key or manifest import is required for this connection.
+A spooky place to leave a kind letter, send a gift, or open your private inbox. Visitors need the website and their normal [Sapient wallet](https://sapient.tari.mw/). No GhostDrop bridge, daemon, API key or file import is needed.
 
-**Development status:** the original public/private-link office remains the default with confirmed Esmeralda mail and guest gifts. A second real office now supports stock Sapient postbox creation, key rotation, actual ledger recovery in an independently restored wallet, and gift-funded collection into an account with zero TARI. The recipient received the full 1 TARI and then signed an independent spend. The V2 interface/profile is published on HTTPS Pages and passes actual stock restored-wallet recovery and approval recovery after reload. See [published verification](docs/postbox-v2-published-wallet-evidence.json). See [V2 public evidence](docs/postbox-v2-esmeralda-evidence.json) and [claim design](docs/POSTBOX-PROOF-CLAIMS.md).
+- **Public mail:** read letters without connecting. Anyone can collect an available public gift once.
+- **Private links:** encrypted letters for whoever holds the complete secret link. Read and collect without connecting, or connect Sapient to choose a receiving account.
+- **My inbox:** create a wallet-controlled postbox, share its ID, and open mail encrypted for you. Separate, explicit private view consent lets the same Sapient wallet recover your mail after restoration.
+- **Write a letter:** choose your audience, enter gifts in TARI, review the full gift and separate collection funds, then approve in Sapient. Save private links before sending.
+- **Activity:** check delivery and resume an existing uncertain wallet request. GhostDrop never automatically resends a financial operation.
 
-The HTTPS static interface is live at [GhostDrop on GitHub Pages](https://seal-clubber.github.io/GhostDrop/). The current `ad8831a` publication has eight matching reviewed assets, successful Pages/Verify workflows, 22 hosted browser regressions and real public readers for both offices; the earlier `da995ff` publication also passed 14 hosted browser regressions. Desktop public and mobile private-link claims through that actual site delivered exact gifts which the stock recipient spent. Four unclaimed public gifts, each 1 test TARI, remained at the 2026-10-06 22:44 UTC reader check; their current availability is shown by the site. Capsule setup source is published behind the closed postbox gate. No funding worker remains running. [Published build](docs/pages-published-evidence.json) and [hosted gift evidence](docs/esmeralda-hosted-evidence.json) record the checks.
+**Testnet only:** the current office uses Esmeralda test TARI. Choose Esmeralda in Sapient. Sending and creating a postbox cost wallet fees. Collection uses the sender’s separate fee reserve; an addressed recipient can collect the full gift with zero coins. Gifts have no expiry or refund, and unused collection funds stay locked.
 
-Network settings default to the official Esmeralda HTTPS indexer, native test TARI resource and confirmed GhostDrop registry/templates. Open `#/network` and use **Check indexer connection** to read public network/health/resource information without a wallet. Switching networks clears these contract identities to avoid reusing them on a different chain.
+The current source defaults directly to the verified Sapient office in `public/deployment.json`. The original office is no longer selectable and its mail is not carried over. `deployment-v2.json` remains an identical public profile for historical verification references. Immutable older contracts and evidence remain available to developers.
 
-Open **Network & verification → Use Sapient postbox office** for new inboxes. **Use original public office** preserves historical public letters and private links; reloading selects that original office. The new `public/deployment-v2.json` enables recovery and proof claims only for the reviewed new identities. `public/deployment.json` and historical immutable contracts are unchanged. Creation/sending require Sapient funds. Addressed gift collection uses an explicit ownership approval and the sender's separate fee reserve, without recipient coins or a financial-wallet signature. Recovery requests separate account-wide private view permission. Visitors need the site and stock Sapient only; optional donor/deployment tools use a daemon.
+The GUI keeps the moonlit, haunted post office theme, with phone layouts, reduced-motion support, keyboard focus handling and plain-language empty/error states. The directory searches listed postboxes; unlisted recipients share their IDs directly. Advanced connection settings are under **Settings** and invalidate write evidence when edited.
+
+Letters/ciphertext, postboxes and gift rules live on Ootle. The static React app reads an HTTPS indexer directly; there is no central GhostDrop backend. The indexer remains trusted infrastructure and this client does not verify consensus proofs. Encryption hides sealed subjects and bodies, while gift amounts and routing metadata remain public.
+
+[GitHub Pages website](https://seal-clubber.github.io/GhostDrop/). Pushes to `main` automatically run client verification and the HTTPS Pages deployment. The GUI redesign must be pushed and published before it appears there. Prior real stock-Sapient recovery, ownership-proof claims and independent payout spending are recorded in [the public evidence](docs/postbox-v2-esmeralda-evidence.json) and [published wallet verification](docs/postbox-v2-published-wallet-evidence.json). These historical records do not assert that the new GUI is already published.
 
 ## Run
 
@@ -23,7 +31,7 @@ pnpm exec playwright install chromium
 pnpm test:browser
 ```
 
-Open the local URL printed by Vite. Guests enter immediately; “Explore preview” is explicitly example-only, with zero funded gifts. Assets, fonts and crypto WASM are served locally.
+Open the local URL printed by Vite. Guests enter immediately. Assets, fonts and crypto WASM are served locally. With the real Sapient office configured, the hall shows live mail or an honest empty/loading state. The clearly labelled example preview is reserved for an unconfigured development instance.
 
 ## Contracts
 
