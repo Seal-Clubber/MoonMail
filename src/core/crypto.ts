@@ -59,8 +59,12 @@ async function key(
     ["encrypt", "decrypt"],
   );
 }
+export const ENVELOPE_LIMIT = 4096;
+export function envelopeSize(payload: unknown) {
+  return te.encode(JSON.stringify(payload)).byteLength;
+}
 export function assertEnvelopeSize(payload: unknown) {
-  if (te.encode(JSON.stringify(payload)).byteLength > 4096)
+  if (envelopeSize(payload) > ENVELOPE_LIMIT)
     throw new Error(
       "The complete letter envelope must fit within 4 KiB. Shorten your message.",
     );

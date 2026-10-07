@@ -17,7 +17,13 @@ import {
 import type { ConnectedWallet } from "../core/wallet";
 import { SapientSession, sapientProvider } from "../core/sapient";
 import { PostOfficeClient } from "../core/chain";
-import { sealLetter, openLetter, assertEnvelopeSize } from "../core/crypto";
+import {
+  sealLetter,
+  openLetter,
+  assertEnvelopeSize,
+  ENVELOPE_LIMIT,
+} from "../core/crypto";
+import { draftEnvelopeSize } from "../core/letter-size";
 import {
   createGiftLink,
   parseGiftLink,
@@ -727,6 +733,32 @@ export function App() {
   const shown = filterHallMail(hallLetters, mailFilter, mailQuery);
   const visiblePage = Math.min(page, Math.max(1, Math.ceil(shown.length / 12)));
   const current = wallet?.accounts[account];
+  const draftPostbox =
+    mode === "postbox" ? boxes.find((p) => p.id === recipient) : undefined;
+  const draftMetadata = {
+    mode,
+    context: d,
+    gift,
+    reserve,
+    claimed: false,
+    sender: current?.account.owner_public_key || "",
+    replyPostbox: reply,
+    recipientPostbox: draftPostbox?.id,
+    claimAuthority: draftPostbox?.controller,
+  };
+  let draftSize: number | undefined;
+  try {
+    if (mode !== "postbox" || draftPostbox)
+      draftSize = draftEnvelopeSize(
+        { subject, body },
+        { ...draftMetadata, id: "0".repeat(36) },
+        draftPostbox ? mailboxKey(draftPostbox.encryptionKey) : undefined,
+      );
+  } catch {
+    /* Invalid postbox keys stay blocked by the existing preparation checks. */
+  }
+  const draftTooLarge = draftSize !== undefined && draftSize > ENVELOPE_LIMIT;
+
   function clearWallet(revoke: boolean) {
     connectionSequence.current += 1;
     draftSequence.current += 1;
@@ -751,6 +783,10 @@ export function App() {
   }
   async function prepare() {
     const sequence = draftSequence.current;
+    if (draftTooLarge)
+      throw new Error(
+        "This letter is full. Shorten the subject or message before reviewing.",
+      );
     const giftAmount = money(gift),
       collection = money(reserve);
     if (money(fee) <= 0n) throw new Error("Set a positive sending fee limit.");
@@ -764,8 +800,7 @@ export function App() {
       throw new Error("Gift and collection funds together are too large.");
     if (!subject.trim() || !body.trim())
       throw new Error("Write a subject and a message");
-    const postbox =
-      mode === "postbox" ? boxes.find((p) => p.id === recipient) : undefined;
+    const postbox = draftPostbox;
     if (mode === "postbox" && !postbox)
       throw new Error("Choose a registered recipient postbox");
     const id = crypto.randomUUID();
@@ -787,17 +822,9 @@ export function App() {
           )
         : undefined;
     const envelope: Envelope = {
+      ...draftMetadata,
       id,
-      mode,
-      context: d,
       payload: addressed || sealed?.payload || { subject, body },
-      gift,
-      reserve,
-      claimed: false,
-      sender: current?.account.owner_public_key || "",
-      replyPostbox: reply,
-      recipientPostbox: postbox?.id,
-      claimAuthority: postbox?.controller,
     };
     assertEnvelopeSize(envelope);
     if (draftSequence.current !== sequence) return;
@@ -1282,21 +1309,58 @@ export function App() {
                   required
                 />
               </label>
-              <label>
+              <label className="letter-body-label" htmlFor="letter-body">
                 Your letter
-                <textarea
-                  value={body}
-                  disabled={busy}
-                  maxLength={2600}
-                  onChange={(e) => {
-                    setBody(e.target.value);
-                    setReview(false);
-                  }}
-                  placeholder="Dear wandering soul…"
-                  rows={7}
-                  required
-                />
               </label>
+              <textarea
+                id="letter-body"
+                value={body}
+                disabled={busy}
+                maxLength={2600}
+                aria-describedby="letter-space"
+                aria-invalid={draftTooLarge}
+                onChange={(e) => {
+                  setBody(e.target.value);
+                  setReview(false);
+                }}
+                placeholder="Dear wandering soul…"
+                rows={7}
+                required
+              />
+              <div
+                id="letter-space"
+                className={`letter-space ${draftTooLarge ? "letter-full" : ""}`}
+              >
+                {draftSize !== undefined ? (
+                  <>
+                    <div>
+                      <span>Letter space</span>
+                      <strong>
+                        {draftTooLarge
+                          ? "Letter is full"
+                          : `${Math.max(0, Math.floor((1 - draftSize / ENVELOPE_LIMIT) * 100))}% remaining`}
+                      </strong>
+                    </div>
+                    <progress
+                      aria-label="Letter space used"
+                      aria-valuetext={`${Math.min(100, Math.ceil((draftSize / ENVELOPE_LIMIT) * 100))}% used`}
+                      max={ENVELOPE_LIMIT}
+                      value={Math.min(draftSize, ENVELOPE_LIMIT)}
+                    />
+                    <p role={draftTooLarge ? "alert" : undefined}>
+                      {draftTooLarge
+                        ? "Shorten your subject or message before reviewing. Your text stays here."
+                        : mode === "public"
+                          ? "Addressing and gift details also need room in the letter."
+                          : "Sealed letters also need room for encryption, addressing and gift details."}
+                    </p>
+                  </>
+                ) : (
+                  <p>
+                    Choose a registered postbox to check available letter space.
+                  </p>
+                )}
+              </div>
               {mode === "postbox" && (
                 <label>
                   Recipient postbox
@@ -1448,7 +1512,9 @@ export function App() {
                   type="submit"
                   className="primary"
                   disabled={
-                    busy || (mode === "postbox" && (!recipient || !d.registry))
+                    busy ||
+                    draftTooLarge ||
+                    (mode === "postbox" && (!recipient || !d.registry))
                   }
                 >
                   {busy ? "Sealing…" : "Review letter"} <span>↗</span>
