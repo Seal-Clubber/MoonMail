@@ -6,6 +6,7 @@ if (hosted && (!hosted.startsWith("https://") || !hosted.endsWith("/"))) {
 export default defineConfig({
   testDir: "./tests/browser",
   fullyParallel: true,
+  workers: process.env.CI ? 1 : undefined,
   use: {
     baseURL: hosted || "http://127.0.0.1:4173/GhostDrop/",
     headless: true,

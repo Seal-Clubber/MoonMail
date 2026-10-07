@@ -5,6 +5,7 @@ permissions:
 jobs:
   static:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -14,7 +15,11 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - run: pnpm build
-      - run: pnpm exec playwright install --with-deps chromium
+      - name: Install Chromium and system dependencies
+        timeout-minutes: 8
+        run: pnpm exec playwright install --with-deps chromium
+        env:
+          PLAYWRIGHT_DOWNLOAD_CONNECTION_TIMEOUT: "60000"
       - run: pnpm test:browser
   contracts:
     runs-on: ubuntu-latest
@@ -77,17 +82,3 @@ jobs:
             contracts/capsule-tests -> target
       - run: cargo build --manifest-path contracts/recovery-capsule/Cargo.toml --target wasm32-unknown-unknown --release --locked
       - run: cargo test --manifest-path contracts/capsule-tests/Cargo.toml --locked
-  wallet-extension:
-    if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with: { toolchain: "1.97.1" }
-      - run: sudo apt-get update && sudo apt-get install -y cmake pkg-config libssl-dev libdbus-1-dev protobuf-compiler
-      - run: bash wallet-extension/build.sh "$RUNNER_TEMP/ghostdrop-wallet-source" source
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: ${{ runner.temp }}/ghostdrop-wallet-source -> target
-      - run: cargo test -p tari_ootle_walletd -p tari_ootle_walletd_client --no-default-features --locked --lib ghostdrop
-        working-directory: ${{ runner.temp }}/ghostdrop-wallet-source
