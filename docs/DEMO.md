@@ -30,6 +30,6 @@ Choose **Review gift collection**. Check the complete receiving address/account,
 
 ## Developer checks
 
-Client and desktop/mobile browser tests use isolated fixtures; real funded stock-wallet and engine evidence is linked from README. Do not treat fixture tests as new public financial verification. Advanced settings are under **Settings**; editing identities clears the reviewed evidence. No financial worker starts with the site.
+Client and desktop/mobile browser tests use isolated fixtures. The published GUI also passed real stock Sapient connection and private-inbox reading with no new financial operation; [GUI evidence](gui-evidence.json) records the exact build and limits. Real funded stock-wallet and engine evidence is linked from README. Do not treat fixture tests as new public financial verification. Advanced settings are under **Settings**; editing identities clears the reviewed evidence. No financial worker starts with the site.
 
 Never put private links in screenshots, logs or issue reports. Use isolated test funds for demonstrations.

@@ -26,7 +26,7 @@ Private-link opening failures can retry in the same tab, keeping the URL secret 
 
 Letters/ciphertext, postboxes and gift rules live on Ootle. The static React app reads an HTTPS indexer directly; there is no central GhostDrop backend. The indexer remains trusted infrastructure and this client does not verify consensus proofs. Encryption hides sealed subjects and bodies, while gift amounts and routing metadata remain public.
 
-[GitHub Pages website](https://seal-clubber.github.io/GhostDrop/). Pushes to `main` automatically run client verification and the HTTPS Pages deployment. The GUI redesign must be pushed and published before it appears there. Prior real stock-Sapient recovery, ownership-proof claims and independent payout spending are recorded in [the public evidence](docs/postbox-v2-esmeralda-evidence.json) and [published wallet verification](docs/postbox-v2-published-wallet-evidence.json). These historical records do not assert that the new GUI is already published.
+[GitHub Pages website](https://seal-clubber.github.io/GhostDrop/). Pushes to `main` automatically run client verification and the HTTPS Pages deployment. The Sapient GUI is published and verified on desktop and phone layouts. All nine hosted files match the successful Pages workflow for `fd4d90c`; a real restored stock Sapient wallet opened existing V2 private mail after key rotation, with no new signing or transaction submission. [GUI verification](docs/gui-evidence.json) records the build, checks and limits. Prior funded ownership-proof claims and independent payout spending retain their original scope in [public financial evidence](docs/postbox-v2-esmeralda-evidence.json) and [earlier published wallet verification](docs/postbox-v2-published-wallet-evidence.json).
 
 ## Run
 

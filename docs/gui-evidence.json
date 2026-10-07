@@ -1,0 +1,187 @@
+{
+  "checkedAt": "2026-10-07T18:52:29.045Z",
+  "frontendCommit": "fd4d90c353699dc8c848951a2af60857d4d2c6d6",
+  "site": "https://seal-clubber.github.io/GhostDrop/",
+  "pages": {
+    "httpsEnforced": true,
+    "buildType": "workflow",
+    "url": "https://seal-clubber.github.io/GhostDrop/",
+    "workflow": {
+      "id": 37666638677,
+      "name": "Publish reviewed GhostDrop to GitHub Pages",
+      "headSha": "fd4d90c353699dc8c848951a2af60857d4d2c6d6",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37666638677"
+    }
+  },
+  "publishedAssets": {
+    "frontendCommit": "fd4d90c353699dc8c848951a2af60857d4d2c6d6",
+    "base": "https://seal-clubber.github.io/GhostDrop/",
+    "publishedMatchesExactWorkflowArtifact": true,
+    "assetFiles": [
+      {
+        "path": "favicon.svg",
+        "bytes": 317,
+        "sha256": "11ae2dfa17e407f39b94831d394d644d061126791b7224feb17dc9259eed6f19"
+      },
+      {
+        "path": "deployment.json",
+        "bytes": 1005,
+        "sha256": "52df5ef95e81f906f1063fa7f593be8cab11fd6f4f5dfd4225c10bdc7ce78acf"
+      },
+      {
+        "path": "assets/index-D8OrVGvb.js",
+        "bytes": 344527,
+        "sha256": "5c196164a901eee517fcd68d716144b25aab87f3bfe2344a40524b22d1c7446e"
+      },
+      {
+        "path": "assets/ootle_wasm-DixGV7PA.js",
+        "bytes": 21319,
+        "sha256": "e0dfe02134916f3202e8e84cc8b522bcbeb210fcffb31c900325288d27335810"
+      },
+      {
+        "path": "assets/ootle_wasm_bg-Dvm5bzZ4.wasm",
+        "bytes": 1288441,
+        "sha256": "d3969f2f738a70cf3199992d52c3e766000b5f31b859427849ed4171395897f1"
+      },
+      {
+        "path": "assets/ootle_wasm-CLPAruJ_.js",
+        "bytes": 209,
+        "sha256": "e490145dfae574781fe74c176955b03a51d16d8170cbcc7d7a021414595baa56"
+      },
+      {
+        "path": "assets/index-DpfxtKCS.css",
+        "bytes": 26212,
+        "sha256": "c9901ea295a5a0b66167b0693c6e2b1d38018f8f89d20b2fb1969ae0b31431d3"
+      },
+      {
+        "path": "index.html",
+        "bytes": 867,
+        "sha256": "c942b22a396306b75a9437a739c20d1f0ea58823f3fa4d8642cf011fb1f9e7b4"
+      },
+      {
+        "path": "deployment-v2.json",
+        "bytes": 1005,
+        "sha256": "52df5ef95e81f906f1063fa7f593be8cab11fd6f4f5dfd4225c10bdc7ce78acf"
+      }
+    ]
+  },
+  "hostedGuestChecks": [
+    {
+      "viewport": "desktop",
+      "publicLettersOnFirstPage": 0,
+      "screens": [
+        {
+          "view": "hall",
+          "horizontalOverflow": false
+        },
+        {
+          "view": "compose",
+          "horizontalOverflow": false
+        },
+        {
+          "view": "postboxes",
+          "horizontalOverflow": false
+        },
+        {
+          "view": "activity",
+          "horizontalOverflow": false
+        }
+      ],
+      "financialRequests": 0,
+      "pageErrors": []
+    },
+    {
+      "viewport": "mobile",
+      "publicLettersOnFirstPage": 0,
+      "screens": [
+        {
+          "view": "hall",
+          "horizontalOverflow": false
+        },
+        {
+          "view": "compose",
+          "horizontalOverflow": false
+        },
+        {
+          "view": "postboxes",
+          "horizontalOverflow": false
+        },
+        {
+          "view": "activity",
+          "horizontalOverflow": false
+        }
+      ],
+      "financialRequests": 0,
+      "pageErrors": []
+    }
+  ],
+  "clientVerification": {
+    "testsPassed": 132,
+    "filesPassed": 15,
+    "browserChecksPassed": 86,
+    "browserScope": "Desktop/mobile isolated fixtures; not new financial verification.",
+    "typeScriptAndProductionBuild": "passed"
+  },
+  "freshUnfundedStockWalletConnection": {
+    "checkedAt": "2026-10-07T17:59:20.624Z",
+    "wallet": "Sapient",
+    "sourceVersion": "0.6.6",
+    "officialStorePackage": true,
+    "loadedUnpackedForAutomation": true,
+    "runtimeAssetsMatchReviewedStorePackage": true,
+    "checks": {
+      "disposableUnfundedWallet": true,
+      "seedEnteredIntoGhostDrop": false,
+      "actualConnectionApproval": true,
+      "publicRegistryReadThroughWallet": true,
+      "draftPreserved": true,
+      "originDisconnected": true,
+      "transactionRequestsCreated": 0,
+      "signaturesRequested": 0,
+      "transactionsBroadcast": 0,
+      "blockedNonReads": 0
+    },
+    "caveat": "Existing official Chrome Store v0.6.6 package loaded unpacked in a fresh isolated automated profile. Store install UI, funded operations and recovery are not retested here."
+  },
+  "restoredWalletInbox": {
+    "checkedAt": "2026-10-07T18:52:29.045Z",
+    "sourceVersion": "0.6.6",
+    "existingIsolatedRestoredProfile": true,
+    "runtimeAssetsMatchReviewedStorePackage": true,
+    "ledgerOrAppOverrides": false,
+    "readOnlyWalletMethodGuard": true,
+    "checks": {
+      "actualSiteConnection": true,
+      "actualAccountWideViewApproval": true,
+      "originalKeyVersionLetterDecrypted": true,
+      "rotatedPostboxSelected": true,
+      "originDisconnected": true,
+      "transactionRequestsCreated": 0,
+      "signaturesRequested": 0,
+      "transactionsBroadcast": 0,
+      "bulkSubstateReads": 2,
+      "blockedHttp": 0,
+      "blockedWalletMethods": []
+    },
+    "walletMethodNames": [
+      "tari_disconnect",
+      "tari_getNetwork",
+      "tari_requestAccounts",
+      "tari_getWalletAddress",
+      "tari_getCapabilities",
+      "tari_getAccounts",
+      "tari_requestViewAccess",
+      "tari_getViewAccess",
+      "tari_getShieldedOutputs"
+    ],
+    "caveat": "Reused the isolated wallet restored during the completed V2 campaign. Existing private-output cache may be present. No new seed restoration, Store install UI or financial operation was performed."
+  },
+  "boundaries": [
+    "Current V2 hall had no public letters. No old-office mail was migrated.",
+    "Two POST /substates/fetch requests are read-only indexer bulk lookups. Transaction submission and financial-wallet methods were denied by the acceptance helper.",
+    "No new gift claim, signature, broadcast, funded test, seed restoration or Store-install UI test was performed. Existing funded and recovery evidence retains its original dates and build.",
+    "Live financial lost-response fault injection remains unverified."
+  ]
+}
