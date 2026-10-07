@@ -598,3 +598,169 @@ test("private-link copying has a manual fallback and never acknowledges saving a
     await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
   ).toBeNull();
 });
+
+for (const denied of ["getter", "writes"] as const) {
+  test(`blocked storage ${denied} preserves guest reading and pauses wallet submissions until rechecked`, async ({
+    page,
+  }) => {
+    await configure(page);
+    await connectFixture(page);
+    await page.route(`${d.indexerUrl}**`, (r) =>
+      r.fulfill({ json: ledger(r.request().url()) }),
+    );
+    const records = [
+      {
+        id: "attempt:storage-fixture",
+        network: d.network,
+        registry: d.registry,
+        operation: "publish",
+        envelopeId: "old-letter",
+        state: "unknown",
+        walletRequest: { provider: "sapient", id: "request_fixture", account },
+      },
+    ];
+    await page.addInitScript(
+      ({ denied, records }) => {
+        const state = window as any;
+        const realStorage = window.localStorage;
+        realStorage.setItem("ghostdrop:pending:v1", JSON.stringify(records));
+        state.originalStorage = realStorage;
+        state.storageAllowed = false;
+        if (denied === "getter")
+          Object.defineProperty(window, "localStorage", {
+            configurable: true,
+            get: () => {
+              if (!state.storageAllowed)
+                throw new DOMException(
+                  "Fixture storage denial",
+                  "SecurityError",
+                );
+              return realStorage;
+            },
+          });
+        else {
+          const originalSetItem = Storage.prototype.setItem;
+          Storage.prototype.setItem = function (key: string, value: string) {
+            if (!state.storageAllowed)
+              throw new DOMException(
+                "Fixture storage full",
+                "QuotaExceededError",
+              );
+            return originalSetItem.call(this, key, value);
+          };
+        }
+      },
+      { denied, records },
+    );
+    await page.goto("./");
+    await expect(
+      page.getByRole("heading", {
+        name: "A little mystery. A little generosity.",
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("status").filter({ hasText: "Mail is up to date" }),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole("alert")
+        .filter({ hasText: "Browser storage needs permission" }),
+    ).toBeVisible();
+    await page
+      .getByRole("button", { name: "Write a letter", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Connect wallet", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Connect Sapient", exact: true })
+      .click();
+    await page.getByRole("button", { name: "Activity", exact: true }).click();
+    const resume = page.getByRole("button", {
+      name: "Resume Sapient approval",
+    });
+    if (denied === "writes") await expect(resume).toBeDisabled();
+    else await expect(resume).toHaveCount(0);
+    await page
+      .getByRole("button", { name: "Write a letter", exact: true })
+      .click();
+    await page.getByLabel("Subject", { exact: true }).fill("A fixture letter");
+    await page.getByLabel("Your letter").fill("Read without writable storage");
+    await page
+      .getByRole("button", { name: "Review letter", exact: false })
+      .click();
+    await page
+      .getByRole("checkbox", { name: "I saved my private link somewhere safe" })
+      .check();
+    const publish = page.getByRole("button", { name: "Fund & publish letter" });
+    await expect(publish).toBeDisabled();
+    await page.evaluate(() => {
+      (window as any).storageAllowed = true;
+    });
+    await page.getByRole("button", { name: "Recheck browser storage" }).click();
+    await expect(
+      page
+        .getByRole("alert")
+        .filter({ hasText: "Browser storage needs permission" }),
+    ).toHaveCount(0);
+    await expect(publish).toBeEnabled();
+    expect(
+      await page.evaluate(() =>
+        (window as any).originalStorage.getItem("ghostdrop:pending:v1"),
+      ),
+    ).toBe(JSON.stringify(records));
+    expect(
+      (await page.evaluate(() => (window as any).walletCalls)).some((c: any) =>
+        c.method.includes("Transaction"),
+      ),
+    ).toBe(false);
+    expect(await page.evaluate(() => localStorage.length)).toBe(1);
+  });
+}
+
+test("Activity notices delivery journal changes from another tab without submitting", async ({
+  page,
+}) => {
+  await configure(page);
+  const records = [
+    {
+      id: transaction,
+      network: d.network,
+      registry: d.registry,
+      operation: "publish",
+      envelopeId: "old-letter",
+      state: "rejected",
+    },
+  ];
+  await page.route(`${d.indexerUrl}**`, (r) =>
+    r.fulfill({ json: ledger(r.request().url()) }),
+  );
+  await page.addInitScript(
+    (records) =>
+      localStorage.setItem("ghostdrop:pending:v1", JSON.stringify(records)),
+    records,
+  );
+  await page.goto("./#/activity");
+  await expect(page.locator(".delivery-card")).toContainText("Not completed");
+  const other = await page.context().newPage();
+  try {
+    await other.route("**/deployment.json", (r) =>
+      r.fulfill({ json: emptyDeployment }),
+    );
+    await other.goto("./");
+    await other.evaluate(
+      (records) =>
+        localStorage.setItem(
+          "ghostdrop:pending:v1",
+          JSON.stringify(records.map((r) => ({ ...r, state: "confirmed" }))),
+        ),
+      records,
+    );
+    await expect(page.locator(".delivery-card")).toContainText("Delivered");
+    await expect(
+      page.getByRole("button", { name: "Resume Sapient approval" }),
+    ).toHaveCount(0);
+  } finally {
+    await other.close();
+  }
+});

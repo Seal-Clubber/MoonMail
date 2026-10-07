@@ -27,6 +27,7 @@ import {
 import { money } from "../core/transactions";
 import { readPending, savePending, inspectPending } from "../core/pending";
 import { readDelivery } from "../core/delivery";
+import { browserStorage, checkBrowserStorage } from "../core/browser-storage";
 import { filterHallMail, type MailFilter } from "../core/mail-search";
 import {
   mailboxKey,
@@ -146,7 +147,20 @@ export function App() {
     connectionSequence = useRef(0),
     retryReader = useRef<PostOfficeClient | undefined>(undefined),
     [indexerStatus, setIndexerStatus] = useState("");
-  const deliveryHistory = inspectPending(localStorage);
+  const [storageError, setStorageError] = useState(() => checkBrowserStorage());
+  const [storageRevision, setStorageRevision] = useState(0);
+  const deliveryHistory = inspectPending(browserStorage);
+  const writeBlocked = !!storageError || !!deliveryHistory.error;
+  useEffect(() => {
+    const changed = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== "ghostdrop:pending:v1") return;
+      setStorageError(checkBrowserStorage());
+      setStorageRevision((value) => value + 1);
+      setDeliveryRevision((value) => value + 1);
+    };
+    window.addEventListener("storage", changed);
+    return () => window.removeEventListener("storage", changed);
+  }, []);
   const deliveries = deliveryHistory.records.filter(
     (p) => p.network === d.network && p.registry === d.registry,
   );
@@ -283,7 +297,7 @@ export function App() {
     };
   }, [d]);
   useEffect(() => {
-    if (view !== "activity" || !chain || busy || deliveryHistory.error) {
+    if (view !== "activity" || !chain || busy || writeBlocked) {
       setAutoChecking(false);
       return;
     }
@@ -292,7 +306,7 @@ export function App() {
     const until = Date.now() + 120_000;
     async function check() {
       if (cancelled) return;
-      const pending = inspectPending(localStorage);
+      const pending = inspectPending(browserStorage);
       const awaiting = pending.records.filter(
         (p) =>
           p.network === d.network &&
@@ -312,12 +326,12 @@ export function App() {
             const next = await readDelivery(chain!, p);
             if (cancelled) return;
             // Don't overwrite a concurrent manual reconciliation or wallet resume.
-            const latest = readPending(localStorage).find(
+            const latest = readPending(browserStorage).find(
               (item) => item.id === p.id,
             );
             if (!latest || latest.state !== p.state || next.state === p.state)
               continue;
-            savePending(localStorage, next);
+            savePending(browserStorage, next);
             setDeliveryRevision((revision) => revision + 1);
             if (next.state === "confirmed") {
               delivered = true;
@@ -341,7 +355,7 @@ export function App() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [view, chain, busy, prepared, deliveryHistory.error]);
+  }, [view, chain, busy, prepared, writeBlocked, storageRevision]);
   useEffect(() => {
     if (!route || !chain) return;
     let cancelled = false;
@@ -1374,7 +1388,7 @@ export function App() {
                     !wallet ||
                     !chain ||
                     !writesReady(d, mode, "sapient") ||
-                    !!deliveryHistory.error ||
+                    writeBlocked ||
                     (!!prepared.capability && !linkSaved) ||
                     busy
                   }
@@ -1386,7 +1400,7 @@ export function App() {
                         current,
                         prepared.envelope,
                         fee,
-                        localStorage,
+                        browserStorage,
                       );
                       navigate("activity");
                       setStatus(
@@ -1431,7 +1445,7 @@ export function App() {
             onStatus={setStatus}
             onConnect={() => setConnect(true)}
             onActivity={() => navigate("activity")}
-            writeBlocked={!!deliveryHistory.error}
+            writeBlocked={writeBlocked}
             onOpen={(e) => void task(() => openPostbox(e))}
             onRefresh={refresh}
             onMore={loadMore}
@@ -1720,7 +1734,7 @@ export function App() {
                         }
                         const e = await chain.readLetter(p.envelopeId);
                         if (p.operation === "publish" || e.claimed) {
-                          savePending(localStorage, {
+                          savePending(browserStorage, {
                             ...p,
                             state: "confirmed",
                           });
@@ -1735,7 +1749,7 @@ export function App() {
                       }
                       const next = await readDelivery(chain, p);
                       const state = next.state;
-                      savePending(localStorage, next);
+                      savePending(browserStorage, next);
                       await refresh();
                       setStatus(`Transaction ${short(p.id)}: ${state}.`);
                       if (state === "confirmed" && p.operation === "publish")
@@ -1749,11 +1763,15 @@ export function App() {
                   p.id.startsWith("attempt:") &&
                   p.state === "unknown" && (
                     <button
-                      disabled={busy || !(wallet instanceof SapientSession)}
+                      disabled={
+                        busy ||
+                        writeBlocked ||
+                        !(wallet instanceof SapientSession)
+                      }
                       onClick={() =>
                         void task(async () => {
                           if (!(wallet instanceof SapientSession)) return;
-                          const id = await wallet.resume(p.id, localStorage);
+                          const id = await wallet.resume(p.id, browserStorage);
                           setStatus(
                             `Sapient submission ${id}. Reconcile chain confirmation next.`,
                           );
@@ -1785,7 +1803,21 @@ export function App() {
             )}
           </section>
         )}
-        {deliveryHistory.error && (
+        {storageError && (
+          <div role="alert" className="message error">
+            <strong>Browser storage needs permission.</strong>
+            <p>{storageError}</p>
+            <button
+              onClick={() => {
+                setStorageError(checkBrowserStorage());
+                setDeliveryRevision((value) => value + 1);
+              }}
+            >
+              Recheck browser storage
+            </button>
+          </div>
+        )}
+        {deliveryHistory.error && !storageError && (
           <div role="alert" className="message error">
             <strong>Your delivery history needs attention.</strong>
             <p>
@@ -2124,7 +2156,7 @@ export function App() {
                           busy ||
                           !chain ||
                           !address ||
-                          !!deliveryHistory.error ||
+                          writeBlocked ||
                           (!createAccount && !destination) ||
                           !(active.mode === "postbox"
                             ? postboxClaimsReady(d, wallet?.kind ?? "sapient")
@@ -2202,10 +2234,7 @@ export function App() {
                           <button
                             className="primary"
                             disabled={
-                              busy ||
-                              !!deliveryHistory.error ||
-                              !chain ||
-                              active.claimed
+                              busy || writeBlocked || !chain || active.claimed
                             }
                             onClick={() =>
                               void task(async () => {
@@ -2224,14 +2253,14 @@ export function App() {
                                         active,
                                         reviewed.address,
                                         reviewed.destination,
-                                        localStorage,
+                                        browserStorage,
                                       )
                                     : await chain.claim(
                                         active,
                                         reviewed.address,
                                         reviewed.destination,
                                         secret.current,
-                                        localStorage,
+                                        browserStorage,
                                         reviewed.createAccount,
                                       );
                                 setClaimReview(undefined);

@@ -8,6 +8,7 @@ import { readPending, savePending, type Pending } from "../core/pending";
 import { SapientSession } from "../core/sapient";
 import { AmountInput, tari } from "./AmountInput";
 import { readDelivery } from "../core/delivery";
+import { browserStorage } from "../core/browser-storage";
 import { CopyField } from "./CopyField";
 
 export function Postboxes({
@@ -103,11 +104,11 @@ export function Postboxes({
         try {
           const next = await readDelivery(chain!, pending);
           if (cancelled) return;
-          const latest = readPending(localStorage).find(
+          const latest = readPending(browserStorage).find(
             (p) => p.id === pending.id,
           );
           if (latest?.state === pending.state && next.state !== pending.state) {
-            savePending(localStorage, next);
+            savePending(browserStorage, next);
             setPrepared((current) =>
               current?.id === pending.id ? next : current,
             );
@@ -124,7 +125,7 @@ export function Postboxes({
       clearTimeout(timer);
     };
   }, [chain, prepared?.id, prepared?.state, wallet, deployment.registry, busy]);
-  const recoverySetups = readPending(localStorage).filter((p) => {
+  const recoverySetups = readPending(browserStorage).filter((p) => {
     const c = p.capsule;
     if (
       p.operation !== "capsule" ||
@@ -182,13 +183,13 @@ export function Postboxes({
     if (prepared.id.startsWith("attempt:") && prepared.walletRequest) {
       if (!(wallet instanceof SapientSession))
         throw new Error("Reconnect the same Sapient account");
-      const id = await wallet.resume(prepared.id, localStorage);
-      current = readPending(localStorage).find((p) => p.id === id)!;
+      const id = await wallet.resume(prepared.id, browserStorage);
+      current = readPending(browserStorage).find((p) => p.id === id)!;
       if (!current)
         throw new Error("Recovery journal missing; reconcile wallet history");
     }
     const next = await readDelivery(chain, current);
-    savePending(localStorage, next);
+    savePending(browserStorage, next);
     setPrepared(next);
     onStatus(
       next.state === "confirmed"
@@ -221,7 +222,7 @@ export function Postboxes({
                 wallet,
                 context,
                 recoveryFee,
-                localStorage,
+                browserStorage,
               )
             : await wallet
                 .nativeMailbox()
@@ -229,10 +230,12 @@ export function Postboxes({
                   account.account.component_address,
                   context,
                   recoveryFee,
-                  localStorage,
+                  browserStorage,
                 );
         setPrepared(
-          readPending(localStorage).find((p) => p.id === result.transactionId),
+          readPending(browserStorage).find(
+            (p) => p.id === result.transactionId,
+          ),
         );
         onStatus(
           `Recovery backup submitted. Waiting for confirmation before opening your postbox. Transaction: ${result.transactionId}.`,
@@ -268,7 +271,7 @@ export function Postboxes({
       },
       operation,
       fee,
-      localStorage,
+      browserStorage,
     );
     onStatus(
       `Postbox change submitted. Check its confirmation in Activity. Transaction: ${tx}.`,
@@ -527,7 +530,7 @@ export function Postboxes({
                           busy ||
                           !chain ||
                           (prepared.id.startsWith("attempt:") &&
-                            !prepared.walletRequest)
+                            (writeBlocked || !prepared.walletRequest))
                         }
                         onClick={() => void task(confirmRecovery)}
                       >
