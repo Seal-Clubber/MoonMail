@@ -1,0 +1,200 @@
+{
+  "checkedAt": "2026-10-07T21:53:39.395Z",
+  "frontendCommit": "0e2dab2abf7b3cb0a8afac1a213cf795ab251bd8",
+  "site": "https://seal-clubber.github.io/GhostDrop/",
+  "pages": {
+    "httpsEnforced": true,
+    "buildType": "workflow",
+    "url": "https://seal-clubber.github.io/GhostDrop/"
+  },
+  "workflowRuns": [
+    {
+      "id": 37691765433,
+      "name": "Publish reviewed GhostDrop to GitHub Pages",
+      "headSha": "0e2dab2abf7b3cb0a8afac1a213cf795ab251bd8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37691765433"
+    },
+    {
+      "id": 37691765420,
+      "name": "Verify GhostDrop",
+      "headSha": "0e2dab2abf7b3cb0a8afac1a213cf795ab251bd8",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37691765420"
+    }
+  ],
+  "publishedArtifact": {
+    "run": 37691765433,
+    "sha": "0e2dab2abf7b3cb0a8afac1a213cf795ab251bd8",
+    "artifactId": 11513632253,
+    "artifactDigest": "sha256:9c14cf380260f369076f17a5f60ef61fec3b7dca2c646a5ea9b1331be8e7e1f0",
+    "bytes": 599173
+  },
+  "publishedAssets": {
+    "frontendCommit": "0e2dab2abf7b3cb0a8afac1a213cf795ab251bd8",
+    "base": "https://seal-clubber.github.io/GhostDrop/",
+    "publishedMatchesExactWorkflowArtifact": true,
+    "assetFiles": [
+      {
+        "path": "favicon.svg",
+        "bytes": 317,
+        "sha256": "11ae2dfa17e407f39b94831d394d644d061126791b7224feb17dc9259eed6f19"
+      },
+      {
+        "path": "deployment.json",
+        "bytes": 1005,
+        "sha256": "52df5ef95e81f906f1063fa7f593be8cab11fd6f4f5dfd4225c10bdc7ce78acf"
+      },
+      {
+        "path": "assets/index-gkBJwDpg.css",
+        "bytes": 26415,
+        "sha256": "b398ba6937bd6afccde52fbfc91ec8d0c5e2fed03e249e46ad19993df3ba7b5b"
+      },
+      {
+        "path": "assets/ootle_wasm-DixGV7PA.js",
+        "bytes": 21319,
+        "sha256": "e0dfe02134916f3202e8e84cc8b522bcbeb210fcffb31c900325288d27335810"
+      },
+      {
+        "path": "assets/index-DsUEQkku.js",
+        "bytes": 355373,
+        "sha256": "0e6aa144a52b8c52de64b7045c64ca5f27a4dd193d5623ad698d079ca7db37d1"
+      },
+      {
+        "path": "assets/ootle_wasm_bg-Dvm5bzZ4.wasm",
+        "bytes": 1288441,
+        "sha256": "d3969f2f738a70cf3199992d52c3e766000b5f31b859427849ed4171395897f1"
+      },
+      {
+        "path": "assets/ootle_wasm-CLPAruJ_.js",
+        "bytes": 209,
+        "sha256": "e490145dfae574781fe74c176955b03a51d16d8170cbcc7d7a021414595baa56"
+      },
+      {
+        "path": "index.html",
+        "bytes": 867,
+        "sha256": "8da1c35d283bd62febaa6fb0ce02a63d570e734bc926c6103f3bdfdf5bf79df0"
+      },
+      {
+        "path": "deployment-v2.json",
+        "bytes": 1005,
+        "sha256": "52df5ef95e81f906f1063fa7f593be8cab11fd6f4f5dfd4225c10bdc7ce78acf"
+      }
+    ]
+  },
+  "linuxVerification": {
+    "runId": 37691765420,
+    "staticJobId": 113033435571,
+    "testsPassed": 157,
+    "testFilesPassed": 17,
+    "browserChecksPassed": 146,
+    "browserWorkers": 1,
+    "browserDuration": "1.6 minutes",
+    "clientTypeScriptAndBuild": "passed",
+    "chromiumInstaller": "passed",
+    "contractRecoveryAndPostboxJobs": "passed"
+  },
+  "guestViews": {
+    "base": "https://seal-clubber.github.io/GhostDrop/",
+    "frontendCommit": "0e2dab2abf7b3cb0a8afac1a213cf795ab251bd8",
+    "checkedAt": "2026-10-07T21:49:12.138Z",
+    "results": [
+      {
+        "viewport": "desktop",
+        "publicLettersOnFirstPage": 0,
+        "screens": [
+          {
+            "view": "hall",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "compose",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "postboxes",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "activity",
+            "horizontalOverflow": false
+          }
+        ],
+        "financialRequests": 0,
+        "pageErrors": []
+      },
+      {
+        "viewport": "mobile",
+        "publicLettersOnFirstPage": 0,
+        "screens": [
+          {
+            "view": "hall",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "compose",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "postboxes",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "activity",
+            "horizontalOverflow": false
+          }
+        ],
+        "financialRequests": 0,
+        "pageErrors": []
+      }
+    ]
+  },
+  "stockWalletUnsentReview": {
+    "checkedAt": "2026-10-07T21:48:24.957Z",
+    "frontendCommit": "0e2dab2abf7b3cb0a8afac1a213cf795ab251bd8",
+    "base": "https://seal-clubber.github.io/GhostDrop/",
+    "sourceVersion": "0.6.6",
+    "existingIsolatedRestoredProfile": true,
+    "runtimeAssetsMatchReviewedStorePackage": true,
+    "ledgerOrAppOverrides": false,
+    "readOnlyWalletMethodGuard": true,
+    "postboxId": "sapient-v2-recovery-inbox",
+    "checks": {
+      "actualSiteConnection": true,
+      "addAndRemoveReplyInvalidatesReview": true,
+      "obsoletePrivateLinkReplaced": true,
+      "savedAcknowledgementCleared": true,
+      "preparedReplyIdReviewed": true,
+      "transactionJournalUnchanged": true,
+      "mobileWithoutOverflow": true,
+      "privateConsentRequests": 0,
+      "originDisconnected": true,
+      "transactionRequestsCreated": 0,
+      "signaturesRequested": 0,
+      "transactionsBroadcast": 0,
+      "bulkSubstateReads": 2,
+      "blockedHttp": 0,
+      "blockedWalletMethods": []
+    },
+    "walletMethodNames": [
+      "tari_disconnect",
+      "tari_getNetwork",
+      "tari_requestAccounts",
+      "tari_getWalletAddress",
+      "tari_getCapabilities",
+      "tari_getAccounts"
+    ],
+    "caveat": "Actual stock wallet and public registered postbox; unsent preparations on actual Pages HTTPS only, with financial and private-view methods blocked. No claim, publication, seed restoration or private-link capability in output/screenshots."
+  },
+  "boundaries": [
+    "Exact Pages artifact and actual HTTPS origin; no app/config/ledger fixtures.",
+    "Official0.6.6 Store package, seven assets verified, loaded unpacked in the existing isolated restored development profile. No personal wallet, new restoration, Store UI or native phone installation.",
+    "Actual public registered postbox, both reply-toggle directions, new private link and acknowledgement reset; journal unchanged. The letter was prepared locally in the browser and NEVER published.",
+    "No private-view grant, transaction request, signature or broadcast; origin disconnected, owned browser closed.",
+    "Private links/capabilities never printed, persisted to evidence or photographed. Only the public receipt was captured and visually reviewed.",
+    "Earlier public-reading, invitation, funds, historical-private-mail and funded campaign evidence retains its original scope. V2 hall had0 public letters at check; no mail invented/migrated.",
+    "Wallet/office-change reply cleanup in the current checkout is a separate pending increment, outside this published verification."
+  ]
+}

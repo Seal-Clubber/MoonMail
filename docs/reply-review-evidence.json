@@ -1,6 +1,6 @@
 {
   "checkedAt": "2026-10-07T21:43:57Z",
-  "publication": "Local reply-review fix; awaits human main push. Published83e3d2d remains recorded separately in public-sharing-published-evidence.json.",
+  "publication": "Original local0e2dab2 acceptance; now published and verified on HTTPS/Linux. See reply-review-published-evidence.json for exact artifact, workflow and stock-wallet scope.",
   "sourceFilesSha256": {
     "src/ui/App.tsx": "c55b3463c203599f111f14c3b803eee16be9e738e612fcc1f65f5a183dce1098",
     "tests/browser/reply-review.spec.ts": "beb1f6919447862ddea26e11b8848d0f163b7b7b6d2694eb7a2d7386f873e794"
@@ -65,7 +65,8 @@
     "Financial/private-view methods were blocked; transaction journal unchanged. No transaction requests, signatures, broadcasts or new private-view grants.",
     "The isolated restored development profile was reused. No personal wallet, seed restoration, native phone wallet installation or Store-install UI was accessed.",
     "The screenshot contains only the public review receipt. No private link, capability or credential was printed, saved to evidence or captured.",
-    "Local Windows one-worker146 verification is distinct from prior83e3d2d142 passing Linux checks. A new exact-head GitHub run awaits the human push.",
+    "Original local Windows146 checks are separate from the subsequent146 passing one-worker Linux checks at0e2dab2. Exact published verification is recorded in reply-review-published-evidence.json.",
     "No contract, financial instruction, fee or reconciliation change. Live financial lost-response injection remains a separate unverified scope."
-  ]
+  ],
+  "publishedVerification": "reply-review-published-evidence.json"
 }

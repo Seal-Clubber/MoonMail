@@ -4,7 +4,7 @@
 
 The current `public/deployment.json` selects the verified Esmeralda Sapient V2 office, including its registry, envelope and recovery capsule identities. `sapientWallet`, `mailboxRecovery` and `postboxClaims` are enabled by the recorded [V2 campaign](postbox-v2-esmeralda-evidence.json). Postbox creation, key rotation, restored-wallet recovery, ownership-proof collection into a zero-TARI account and independent payout spending passed actual public tests. The original office is not selectable and old mail is not migrated.
 
-The consumer GUI at `83e3d2d` is published over HTTPS. All nine production files match its exact Pages artifact. Pages and Verify both passed, including157 client tests,142 one-worker Linux browser checks and all Rust jobs. Guest invitations and sealed-mail rejection, stock Sapient draft preservation, public funds reads and origin disconnect passed against the actual site without app/config/ledger overrides, private consent or financial requests. [Published GUI evidence](public-sharing-published-evidence.json) records exact scope. Earlier [GUI evidence](gui-evidence.json) preserves private historical-letter opening at `fd4d90c`; funded V2 protocol evidence retains its campaign scope.
+The consumer GUI at `0e2dab2` is published over HTTPS. All nine production files match its exact Pages artifact. Pages and Verify both passed, including157 client tests,146 one-worker Linux browser checks and all Rust jobs. Actual stock Sapient passed unsent private-link preparation, reply-toggle review invalidation, fresh link and save acknowledgement reset without private consent, signing, submissions or journal changes. [Published reply-review evidence](reply-review-published-evidence.json) records exact scope; [earlier sharing evidence](public-sharing-published-evidence.json) preserves guest/funds/invitation checks and [GUI evidence](gui-evidence.json) historical private-letter recovery.
 
 ## Public network presets
 
@@ -66,7 +66,7 @@ Historical daemon transport checks found that its OPTIONS response for the Pages
 
 The earlier `fd4d90c` Verify run was cancelled after its Chromium installer stalled. At `4f87f39`, installation and Rust jobs passed but one exact fractional viewport assertion failed. Fix `178d48b` checks near-full visibility, actual bounds, actionability and keyboard focus. The user pushed it with `83e3d2d`; [Verify37688613299](https://github.com/Seal-Clubber/GhostDrop/actions/runs/37688613299) passed all157 client and142 one-worker Linux browser checks plus all Rust jobs. Earlier cancelled/failed runs retain their historical results.
 
-`.github/workflows/pages.yml` builds/deploys every push to `main` after its own client tests and build pass, and supports manual dispatch. It uses the repository base path dynamically. The verified live URL is [GhostDrop](https://seal-clubber.github.io/GhostDrop/), with `83e3d2d` published and HTTPS enforced. Pages and Verify are separate workflows; check both results. See [GUI evidence](gui-evidence.json) and the dated [evidence checklist](EVIDENCE.md).
+`.github/workflows/pages.yml` builds/deploys every push to `main` after its own client tests and build pass, and supports manual dispatch. It uses the repository base path dynamically. The verified live URL is [GhostDrop](https://seal-clubber.github.io/GhostDrop/), with `0e2dab2` published and HTTPS enforced. Pages and Verify are separate workflows; check both results. See [GUI evidence](gui-evidence.json) and the dated [evidence checklist](EVIDENCE.md).
 
 After authorization and confirmed repository access:
 
