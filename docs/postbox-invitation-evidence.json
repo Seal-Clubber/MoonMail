@@ -1,10 +1,10 @@
 {
-  "checkedAt": "2026-10-07T20:33:25.656Z",
+  "checkedAt": "2026-10-07T20:38:33.972Z",
   "publication": "Local production build; awaits the human main push. Prior fd4d90c hosted GUI evidence remains historical.",
   "sourceFilesSha256": {
     "src/core/postbox-links.ts": "e988c6666fb4e437220d18c34da679009f515cdca72c254a78b8b887fac77b96",
-    "src/ui/PostboxInvitation.tsx": "b429e7f4dd8e10f78b84a3ee32b3b5d25b16140672c45166fe25b0e3eebf21c0",
-    "src/ui/App.tsx": "5ac75438b3768fbebee38eddb59525a4250ba8991cf21cb3d86179eb7169ee09",
+    "src/ui/PostboxInvitation.tsx": "c4ba6826de835db08512d9bde82d25dc834f16ffd0972a5bd17c58cb6ae63db6",
+    "src/ui/App.tsx": "880fb657d1a367dca94871f8ac660727da59ff953e8522804a4503368bdcaccf",
     "src/ui/Postboxes.tsx": "685297b559a7c35f51359f968972bf3e7bb37a405d915c9342267b60663d0290",
     "src/ui/styles.css": "b0f4574f8fbdd72baf2f61fa8632def4b7d2e68ad40b3ada51d471dfa502587b"
   },
@@ -14,10 +14,14 @@
     "browserChecksPassed": 108,
     "typeScript": "passed",
     "productionBuild": "passed",
-    "desktopAndMobileLayout": "visually reviewed"
+    "desktopAndMobileLayout": "visually reviewed",
+    "keyboardFocusBrowserChecksPassed": 16,
+    "browserCheckScope": "The full108 suite passed before the final keyboard-focus enhancement; all16 invitation checks passed again after that change. Stock-wallet acceptance and source hashes describe the final build.",
+    "formatOnlyArtifactMatch": true,
+    "productionArtifactFilesMatchedAfterFormatting": 9
   },
   "stockWalletReadOnlyAcceptance": {
-    "checkedAt": "2026-10-07T20:33:25.656Z",
+    "checkedAt": "2026-10-07T20:38:33.972Z",
     "base": "http://127.0.0.1:4173/GhostDrop/",
     "sourceVersion": "0.6.6",
     "existingIsolatedRestoredProfile": true,
@@ -36,6 +40,8 @@
       "actualSiteConnection": true,
       "publicPostboxInvitationRead": true,
       "actualRecipientConfirmed": true,
+      "invitationHeadingFocused": true,
+      "writingDeskHeadingFocused": true,
       "mobileWithoutOverflow": true,
       "privateConsentRequests": 0,
       "originDisconnected": true,
@@ -63,5 +69,19 @@
     "Actual stock wallet check used the existing isolated restored profile and current public Esmeralda registry; no seed restoration, new private-view grant, signing or financial transaction.",
     "Mobile checks are browser viewport/layout checks, not proof of a native phone wallet installation.",
     "No new engine or financial campaign; existing financial transaction and gift rules are unchanged."
-  ]
+  ],
+  "fullBrowserSuiteSourceFilesSha256": {
+    "src/core/postbox-links.ts": "e988c6666fb4e437220d18c34da679009f515cdca72c254a78b8b887fac77b96",
+    "src/ui/PostboxInvitation.tsx": "b429e7f4dd8e10f78b84a3ee32b3b5d25b16140672c45166fe25b0e3eebf21c0",
+    "src/ui/App.tsx": "5ac75438b3768fbebee38eddb59525a4250ba8991cf21cb3d86179eb7169ee09",
+    "src/ui/Postboxes.tsx": "685297b559a7c35f51359f968972bf3e7bb37a405d915c9342267b60663d0290",
+    "src/ui/styles.css": "b0f4574f8fbdd72baf2f61fa8632def4b7d2e68ad40b3ada51d471dfa502587b"
+  },
+  "stockAcceptedSourceFilesSha256": {
+    "src/core/postbox-links.ts": "e988c6666fb4e437220d18c34da679009f515cdca72c254a78b8b887fac77b96",
+    "src/ui/PostboxInvitation.tsx": "eef173bc560caecb367860f8defe1b900b714981a11e52c60fae0c0b023df820",
+    "src/ui/App.tsx": "880fb657d1a367dca94871f8ac660727da59ff953e8522804a4503368bdcaccf",
+    "src/ui/Postboxes.tsx": "685297b559a7c35f51359f968972bf3e7bb37a405d915c9342267b60663d0290",
+    "src/ui/styles.css": "b0f4574f8fbdd72baf2f61fa8632def4b7d2e68ad40b3ada51d471dfa502587b"
+  }
 }

@@ -73,6 +73,7 @@ test("an unlisted invitation verifies its full ID and asks before starting a dra
     invitation.getByRole("heading", { name: "Write to Moonlit Friend" }),
   ).toBeVisible();
   await expect(invitation).toContainText(id);
+  await expect(invitation.getByRole("heading")).toBeFocused();
   await expect(page.getByLabel("Recipient postbox ID")).toHaveCount(0);
   await noWrites(page);
   await page.screenshot({
@@ -99,6 +100,9 @@ test("an unlisted invitation verifies its full ID and asks before starting a dra
     page.getByRole("button", { name: "▥ To a postbox" }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(invitation).toHaveCount(0);
+  await expect(
+    page.getByRole("heading", { name: "Send something unexpected." }),
+  ).toBeFocused();
   await page.reload();
   await expect(
     page.getByRole("region", { name: "Postbox invitation" }),

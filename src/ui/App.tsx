@@ -154,7 +154,16 @@ export function App() {
   const busy = taskBusy || linkState === "opening";
   const modalBusy = useRef(busy);
   const modalReturnFocus = useRef<HTMLElement | null>(null);
+  const focusInvitedDraft = useRef(false);
   modalBusy.current = busy;
+  useEffect(() => {
+    if (!focusInvitedDraft.current || view !== "compose" || postboxInvitation)
+      return;
+    focusInvitedDraft.current = false;
+    document
+      .getElementById("writing-desk-title")
+      ?.focus({ preventScroll: true });
+  }, [view, postboxInvitation]);
   const [claimReview, setClaimReview] = useState<{
     address: string;
     destination: string;
@@ -954,8 +963,9 @@ export function App() {
             boxes={boxes}
             ready={readState === "ready"}
             failed={readState === "failed"}
-            busy={busy}
+            busy={busy || connect || !!active}
             onAccept={(id) => {
+              focusInvitedDraft.current = true;
               draftSequence.current += 1;
               setMode("postbox");
               setRecipient(id);
@@ -1336,7 +1346,7 @@ export function App() {
         {view === "compose" && (
           <section className="page-panel compose">
             <span className="kicker">THE WRITING DESK</span>
-            <h1>
+            <h1 id="writing-desk-title" tabIndex={-1}>
               Send something <em>unexpected.</em>
             </h1>
             <p>Choose who can open it. A few words can make someone’s night.</p>

@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import type { Context, Postbox } from "../core/types";
 import type { PostboxRoute } from "../core/postbox-links";
 import { sameContext } from "../core/links";
@@ -23,6 +24,14 @@ export function PostboxInvitation({
   onDismiss: () => void;
   onRetry: () => void;
 }) {
+  const heading = useRef<HTMLHeadingElement>(null);
+  const focused = useRef<PostboxRoute | undefined>(undefined);
+  useEffect(() => {
+    if (busy || focused.current === invitation) return;
+    focused.current = invitation;
+    window.scrollTo(0, 0);
+    heading.current?.focus({ preventScroll: true });
+  }, [invitation, busy]);
   const matching = sameContext(invitation.context, deployment);
   const box =
     matching && ready ? boxes.find((p) => p.id === invitation.id) : undefined;
@@ -32,10 +41,10 @@ export function PostboxInvitation({
       aria-label="Postbox invitation"
     >
       <p className="eyebrow">An address from the other side</p>
-      <h2>
+      <h2 ref={heading} tabIndex={-1}>
         {box ? `Write to ${box.nickname}` : "A friend left you a postbox."}
       </h2>
-      <p>
+      <p role="status">
         {!deployment.registry
           ? "Loading the selected post office. If this continues, reload the page to retrieve its settings."
           : !matching
