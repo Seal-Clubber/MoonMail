@@ -2,6 +2,7 @@ import { test, expect, type Page } from "@playwright/test";
 import { emptyDeployment } from "../../src/core/config";
 import { sealLetter } from "../../src/core/crypto";
 import { createGiftLink } from "../../src/core/links";
+import { createPublicLetterLink } from "../../src/core/public-letter-links";
 
 // Synthetic read-only state. No network, wallet or spending permissions needed.
 const deployment = {
@@ -232,7 +233,13 @@ test("directory searches names, excludes unlisted postboxes and starts an addres
       },
     }),
   );
-  await page.goto("./#/ledger");
+  await page.goto("./#/compose");
+  await page.getByLabel("Subject", { exact: true }).fill("A directory draft");
+  await page.getByLabel("Your letter").fill("These words stay with the draft.");
+  await page.getByLabel("Gift amount (optional)").fill("1.5");
+  await page.evaluate(() => {
+    location.hash = "#/ledger";
+  });
   await expect(
     page.getByRole("heading", { name: "Moonlit Friend", exact: true }),
   ).toBeVisible();
@@ -257,6 +264,16 @@ test("directory searches names, excludes unlisted postboxes and starts an addres
   await expect(
     page.getByRole("button", { name: "Fund & publish letter" }),
   ).toHaveCount(0);
+  await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(
+    "A directory draft",
+  );
+  await expect(page.getByLabel("Your letter")).toHaveValue(
+    "These words stay with the draft.",
+  );
+  await expect(page.getByLabel("Gift amount (optional)")).toHaveValue("1.5");
+  await expect(
+    page.getByRole("heading", { name: "Send something unexpected." }),
+  ).toBeFocused();
 });
 
 test("guest gift review requires a separate confirmation and forgets abandoned destinations", async ({
@@ -689,4 +706,131 @@ test("optional Sapient connection returns to the same public gift and restores i
   expect(await page.evaluate(() => document.body.style.overflow)).toBe("");
   expect(writes).toBe(0);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
+});
+
+async function configureReply(page: Page, registered = true) {
+  await configure(page);
+  let writes = 0;
+  await page.route(`${deployment.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") writes++;
+    const response = state(r.request().url());
+    const data = response.substate?.Component.body.state as
+      | unknown[]
+      | undefined;
+    if (data && r.request().url().includes(deployment.registry)) {
+      data[2] = registered
+        ? {
+            "reply-spirit": [
+              "reply-spirit",
+              "Reply Spirit",
+              "5".repeat(64),
+              JSON.stringify({
+                version: "gd-postbox-1",
+                keyVersion: 1,
+                publicKey: "6".repeat(64),
+              }),
+              false,
+            ],
+          }
+        : {};
+    }
+    if (data && r.request().url().includes(envelope)) data[9] = "reply-spirit";
+    return r.fulfill({ json: response });
+  });
+  return async () => {
+    expect(writes).toBe(0);
+    expect(await page.evaluate(() => (window as any).tari)).toBeUndefined();
+    expect(
+      await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+    ).toBeNull();
+  };
+}
+
+for (const throughPublicLink of [false, true]) {
+  test(`reply preserves the complete existing draft and focuses it from ${throughPublicLink ? "a public permalink over compose" : "the hall"}`, async ({
+    page,
+  }) => {
+    const noWrites = await configureReply(page);
+    await page.goto("./#/compose");
+    await page.getByLabel("Subject", { exact: true }).fill("My unsent subject");
+    await page
+      .getByLabel("Your letter")
+      .fill("Keep these carefully written words.");
+    await page.getByLabel("Gift amount (optional)").fill("2.5");
+    await page.getByLabel("Set aside for collection fees").fill("0.1");
+    if (throughPublicLink) {
+      const hash = new URL(
+        createPublicLetterLink("https://example.com/GhostDrop/", {
+          id: "recovered",
+          context: deployment,
+        }),
+      ).hash;
+      await page.evaluate((value) => {
+        location.hash = value;
+      }, hash);
+    } else {
+      await page
+        .getByRole("button", { name: "Public mail", exact: true })
+        .click();
+      await page.getByRole("button", { name: subject, exact: false }).click();
+    }
+    await page.getByRole("button", { name: "Reply to this spirit" }).click();
+    await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(
+      "My unsent subject",
+    );
+    await expect(page.getByLabel("Your letter")).toHaveValue(
+      "Keep these carefully written words.",
+    );
+    await expect(page.getByLabel("Gift amount (optional)")).toHaveValue("2.5");
+    await expect(page.getByLabel("Set aside for collection fees")).toHaveValue(
+      "0.1",
+    );
+    await expect(page.getByLabel("Recipient postbox ID")).toHaveValue(
+      "reply-spirit",
+    );
+    await expect(
+      page.getByLabel("Recipient postbox", { exact: true }),
+    ).toHaveValue("reply-spirit");
+    await expect(
+      page.getByRole("heading", { name: "Send something unexpected." }),
+    ).toBeFocused();
+    await expect(
+      page.getByRole("button", { name: "Fund & publish letter" }),
+    ).toHaveCount(0);
+    await noWrites();
+  });
+}
+
+test("an empty writing desk receives a suggested reply subject without a gift or automatic wallet connection", async ({
+  page,
+}) => {
+  const noWrites = await configureReply(page);
+  await page.goto("./");
+  await page.getByRole("button", { name: subject, exact: false }).click();
+  await page.getByRole("button", { name: "Reply to this spirit" }).click();
+  await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(
+    `Re: ${subject}`,
+  );
+  await expect(page.getByLabel("Your letter")).toHaveValue("");
+  await expect(page.getByLabel("Gift amount (optional)")).toHaveValue("0");
+  await expect(page.getByLabel("Recipient postbox ID")).toHaveValue(
+    "reply-spirit",
+  );
+  await expect(
+    page.getByRole("heading", { name: "Send something unexpected." }),
+  ).toBeFocused();
+  await noWrites();
+});
+
+test("an unknown reply postbox offers no recipient shortcut", async ({
+  page,
+}) => {
+  const noWrites = await configureReply(page, false);
+  await page.goto("./");
+  await page.getByRole("button", { name: subject, exact: false }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Reply to this spirit" }),
+  ).toHaveCount(0);
+  await noWrites();
 });

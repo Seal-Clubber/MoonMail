@@ -167,16 +167,16 @@ export function App() {
     taskBusy || linkState === "opening" || publicLetterState === "opening";
   const modalBusy = useRef(busy);
   const modalReturnFocus = useRef<HTMLElement | null>(null);
-  const focusInvitedDraft = useRef(false);
+  const focusAddressedDraft = useRef(false);
   modalBusy.current = busy;
   useEffect(() => {
-    if (!focusInvitedDraft.current || view !== "compose" || postboxInvitation)
+    if (!focusAddressedDraft.current || view !== "compose" || postboxInvitation)
       return;
-    focusInvitedDraft.current = false;
+    focusAddressedDraft.current = false;
     document
       .getElementById("writing-desk-title")
       ?.focus({ preventScroll: true });
-  }, [view, postboxInvitation]);
+  }, [view, postboxInvitation, active?.id]);
   const [claimReview, setClaimReview] = useState<{
     address: string;
     destination: string;
@@ -693,6 +693,24 @@ export function App() {
     history.pushState(null, "", `${location.pathname}#/${v}`);
     window.scrollTo(0, 0);
   }
+  function beginAddressedDraft(id: string, replyTitle?: string) {
+    const postbox = boxes.find((p) => p.id === id);
+    if (!postbox) return;
+    const keptDraft = !!(subject || body || (gift && gift !== "0"));
+    focusAddressedDraft.current = true;
+    draftSequence.current += 1;
+    closeLetter();
+    setMode("postbox");
+    setRecipient(id);
+    if (replyTitle && !subject.trim())
+      setSubject(`Re: ${replyTitle}`.slice(0, 120));
+    setPrepared(undefined);
+    setLinkSaved(false);
+    navigate("compose");
+    setStatus(
+      `Writing to ${postbox.nickname}. ${keptDraft ? "Your existing draft is kept. " : ""}Review the recipient and gift before publishing.`,
+    );
+  }
   function shareConfirmed(id: string) {
     if (prepared?.envelope.id !== id || !prepared.capability) return;
     setPrivateLink(
@@ -1023,16 +1041,7 @@ export function App() {
             ready={readState === "ready"}
             failed={readState === "failed"}
             busy={busy || connect || !!active}
-            onAccept={(id) => {
-              focusInvitedDraft.current = true;
-              draftSequence.current += 1;
-              setMode("postbox");
-              setRecipient(id);
-              setPrepared(undefined);
-              setLinkSaved(false);
-              setPrivateLink("");
-              navigate("compose");
-            }}
+            onAccept={(id) => beginAddressedDraft(id)}
             onDismiss={() => navigate(view)}
             onRetry={() => void task(refresh)}
           />
@@ -1913,12 +1922,8 @@ export function App() {
                       <p className="postbox-address">{p.id}</p>
                     </div>
                     <button
-                      onClick={() => {
-                        setMode("postbox");
-                        setRecipient(p.id);
-                        setPrepared(undefined);
-                        navigate("compose");
-                      }}
+                      disabled={busy}
+                      onClick={() => beginAddressedDraft(p.id)}
                     >
                       Write to {p.nickname} ↗
                     </button>
@@ -2457,19 +2462,12 @@ export function App() {
               boxes.some((p) => p.id === active.replyPostbox) && (
                 <button
                   disabled={busy}
-                  onClick={() => {
-                    const replyTo = active.replyPostbox!;
-                    const title = plain?.subject || "Your letter";
-                    closeLetter();
-                    setMode("postbox");
-                    setRecipient(replyTo);
-                    setSubject(`Re: ${title}`.slice(0, 120));
-                    setBody("");
-                    setGift("0");
-                    setReserve("0");
-                    setPrepared(undefined);
-                    navigate("compose");
-                  }}
+                  onClick={() =>
+                    beginAddressedDraft(
+                      active.replyPostbox!,
+                      plain?.subject || "Your letter",
+                    )
+                  }
                 >
                   Reply to this spirit ↗
                 </button>

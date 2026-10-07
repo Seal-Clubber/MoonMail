@@ -1,0 +1,70 @@
+{
+  "checkedAt": "2026-10-07T21:18:01Z",
+  "publication": "Local production build; awaits the human main push. Actual4f87f39 Pages verification is recorded separately.",
+  "sourceFilesSha256": {
+    "src/ui/App.tsx": "a7ef6bc1ebeebbe5b3afa9916cf00cc4c394c324c444ed386e1a991041f5542e",
+    "tests/browser/reader.spec.ts": "5cb2ce0c26b13e339b1a7c7ead8f945fa77e7f83b8405ab13fd55f0d03dbf995"
+  },
+  "clientChecks": {
+    "browserChecksPassed": 142,
+    "typeScript": "passed",
+    "productionBuild": "passed",
+    "newReplyChecksDesktopAndMobile": 8,
+    "fixtureScope": "Existing drafts opened from the hall and from a public permalink over compose; empty-subject suggestion; unknown reply recipient rejection. Directory preservation/focus and invitations are also covered by the full suite. No financial submission in new cases.",
+    "testsPassed": 157,
+    "testFilesPassed": 17
+  },
+  "regressionReproducedBeforeFix": "An existing subject was replaced with the source-letter subject; the original reply handler also cleared message, gift and collection reserve.",
+  "stockWalletReadOnlyAcceptance": {
+    "checkedAt": "2026-10-07T21:16:43.746Z",
+    "base": "http://127.0.0.1:4173/GhostDrop/",
+    "sourceVersion": "0.6.6",
+    "existingIsolatedRestoredProfile": true,
+    "runtimeAssetsMatchReviewedStorePackage": true,
+    "ledgerOrAppOverrides": false,
+    "readOnlyWalletMethodGuard": true,
+    "invitation": {
+      "postboxId": "sapient-v2-recovery-inbox",
+      "context": {
+        "network": 38,
+        "registry": "component_7f205e42678ea72a6a157e9c588851394fc479b99b6be53df407f327c47492f8",
+        "template": "62d58991af229a1df36accfdbcc410ba9eae7e2096d61e2694d15519d82763ba"
+      }
+    },
+    "checks": {
+      "existingSubjectBodyGiftAndReservePreserved": true,
+      "transactionJournalUnchanged": true,
+      "actualSiteConnection": true,
+      "publicPostboxInvitationRead": true,
+      "actualRecipientConfirmed": true,
+      "invitationHeadingFocused": true,
+      "writingDeskHeadingFocused": true,
+      "mobileWithoutOverflow": true,
+      "privateConsentRequests": 0,
+      "originDisconnected": true,
+      "transactionRequestsCreated": 0,
+      "signaturesRequested": 0,
+      "transactionsBroadcast": 0,
+      "bulkSubstateReads": 2,
+      "blockedHttp": 0,
+      "blockedWalletMethods": []
+    },
+    "walletMethodNames": [
+      "tari_disconnect",
+      "tari_getNetwork",
+      "tari_requestAccounts",
+      "tari_getWalletAddress",
+      "tari_getCapabilities",
+      "tari_getAccounts"
+    ],
+    "caveat": "Reused the isolated wallet restored during the completed V2 campaign. Existing private-output cache may be present. No private view request, new seed restoration, Store install UI or financial operation was performed."
+  },
+  "boundaries": [
+    "Reply, directory and invitation selection preserve existing subject, message, gift and collection reserve. Only an empty reply subject receives a suggestion.",
+    "Selection clears obsolete preparation, returns to review/editing and focuses the writing desk. It never publishes, claims, requests private view or signing.",
+    "Only registered reply postboxes get the shortcut. The on-chain template already verifies that a supplied reply postbox is controlled by the sender; this GUI change alters no contract or financial instruction.",
+    "Actual stock-wallet acceptance tests the shared helper through a real registered postbox invitation, not a new live reply publication. Reply-source cases use isolated fixtures.",
+    "Local Windows browser verification is distinct from the outstanding GitHub Linux Verify and Pages publication. Prior134 one-worker checks retain their05cc65a scope; current142 suite used8 local workers.",
+    "Screenshots were visually reviewed at390px. No native phone wallet installation, seed restoration, engine campaign or new public financial operation was performed."
+  ]
+}
