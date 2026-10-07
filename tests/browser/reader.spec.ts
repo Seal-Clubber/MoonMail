@@ -251,3 +251,105 @@ test("directory searches names, excludes unlisted postboxes and starts an addres
     page.getByRole("button", { name: "Fund & publish letter" }),
   ).toHaveCount(0);
 });
+
+test("guest gift review requires a separate confirmation and forgets abandoned destinations", async ({
+  page,
+}) => {
+  const giftDeployment = {
+    ...deployment,
+    resource: `resource_${"01".repeat(32)}`,
+    evidence: {
+      ...emptyDeployment.evidence,
+      engineClaims: true,
+      guestPayout: true,
+      guestAccountCreation: true,
+    },
+  };
+  await page.route("**/deployment.json", (r) =>
+    r.fulfill({ json: giftDeployment }),
+  );
+  let posts = 0;
+  await page.route(`${deployment.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") posts++;
+    const response = state(r.request().url());
+    if (r.request().url().includes(envelope)) {
+      const data = response.substate!.Component.body.state;
+      data[4] = "2500000";
+      data[5] = "100000";
+    }
+    return r.fulfill({ json: response });
+  });
+  await page.addInitScript(() => {
+    (window as any).walletCalls = 0;
+    (window as any).tari = {
+      isTariWallet: true,
+      info: { name: "Sapient fixture", rdns: "mw.tari.sapient" },
+      request: async () => {
+        (window as any).walletCalls++;
+        throw new Error("No wallet request expected");
+      },
+    };
+  });
+  await page.goto("./");
+  const letter = page.getByRole("button", { name: subject, exact: false });
+  await expect(letter).toHaveCSS("animation-name", "none");
+  if (test.info().project.name === "mobile") {
+    await expect(letter.locator(".envelope-visual")).toHaveCSS(
+      "animation-name",
+      "none",
+    );
+  }
+  await letter.click();
+  const dialog = page.getByRole("dialog");
+  const reviewButton = dialog.getByRole("button", {
+    name: "Review gift collection",
+  });
+  await expect(reviewButton).toBeDisabled();
+  const receiveAddress = "otl_esm_fixture_full_destination";
+  const receiveAccount = `component_${"9".repeat(64)}`;
+  await dialog.getByLabel("Ootle receiving address").fill(receiveAddress);
+  await dialog
+    .getByLabel("Existing built-in account component")
+    .fill(receiveAccount);
+  await reviewButton.click();
+  const review = dialog.getByRole("region", {
+    name: "Send this gift to your wallet?",
+  });
+  await expect(review).toContainText("2.5 test TARI");
+  await expect(review).toContainText("0.1 TARI, from the sender’s reserve");
+  await expect(review).toContainText("Esmeralda testnet");
+  await expect(review).toContainText(receiveAddress);
+  await expect(review).toContainText(receiveAccount);
+  await expect(dialog.getByLabel("Ootle receiving address")).toBeDisabled();
+  await expect(
+    dialog.getByRole("button", { name: "Connect Sapient to receive" }),
+  ).toBeDisabled();
+  await expect(
+    review.getByRole("button", { name: "Confirm & collect gift" }),
+  ).toBeEnabled();
+  await review.getByRole("button", { name: "Change destination" }).click();
+  await dialog.getByLabel("Create a new receiving account").check();
+  await reviewButton.click();
+  await expect(review).toContainText(
+    "Create a new built-in account for this address",
+  );
+  await expect(review).not.toContainText(receiveAccount);
+  await dialog.getByRole("button", { name: "Close letter" }).click();
+  await letter.click();
+  await expect(review).toHaveCount(0);
+  await expect(dialog.getByLabel("Ootle receiving address")).toHaveValue("");
+  await expect(
+    dialog.getByLabel("Create a new receiving account"),
+  ).not.toBeChecked();
+  await expect(reviewButton).toBeDisabled();
+  expect(posts).toBe(0);
+  expect(await page.evaluate(() => (window as any).walletCalls)).toBe(0);
+  expect(
+    await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+  ).toBeNull();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});

@@ -26,7 +26,7 @@ Open **Public mail** and choose a letter. Public reading needs no wallet. If som
 
 Open the letter and choose the receiving account. Connecting Sapient selects it automatically; public/private-link guests can instead provide a compatible Ootle receiving address and existing built-in account component, or select fresh-account creation with a new address. Recipient validation runs before signing/submission.
 
-Review the exact payout and reserve, then explicitly claim. A postbox claim asks Sapient for an ownership proof scoped to this gift, destination and at most 10 network epochs. Its fee comes from the sender’s reserve and needs no recipient coins. Rejection submits nothing. Opening alone never claims. Use **Activity** to confirm delivery, then refresh Sapient.
+Choose **Review gift collection**. Check the complete receiving address/account, testnet, exact payout and sender’s fee reserve. **Change destination** returns to editing without a wallet request or submission; closing the letter discards this review. Only **Confirm & collect gift** starts collection. A postbox claim asks Sapient for an ownership proof scoped to this gift, destination and at most 10 network epochs. Its fee comes from the sender’s reserve and needs no recipient coins. Rejection submits nothing. Opening alone never claims. Use **Activity** to confirm delivery, then refresh Sapient.
 
 ## Developer checks
 

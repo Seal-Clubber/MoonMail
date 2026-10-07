@@ -125,8 +125,15 @@ export function App() {
     [createAccount, setCreateAccount] = useState(false),
     [destMode, setDestMode] = useState("manual"),
     [route, setRoute] = useState<LinkRoute>();
+  const [claimReview, setClaimReview] = useState<{
+    address: string;
+    destination: string;
+    createAccount: boolean;
+  }>();
   const secret = useRef<Uint8Array | undefined>(undefined),
     routeOnce = useRef(false),
+    claimReviewWasOpen = useRef(false),
+    claimReviewTrigger = useRef<HTMLButtonElement>(null),
     [page, setPage] = useState(1),
     openSequence = useRef(0),
     draftSequence = useRef(0),
@@ -368,6 +375,7 @@ export function App() {
   }, [route, chain]);
   useEffect(() => {
     if (!active) return;
+    setClaimReview(undefined);
     setCreateAccount(false);
     if (current) {
       setDestMode("wallet");
@@ -378,7 +386,24 @@ export function App() {
       setAddress("");
       setDestination("");
     }
-  }, [active?.id, wallet, account]);
+  }, [
+    active?.id,
+    active?.gift,
+    active?.reserve,
+    active?.claimed,
+    wallet,
+    account,
+  ]);
+  useEffect(() => {
+    if (claimReview) {
+      const heading = document.getElementById("collection-review-title");
+      heading?.focus();
+      heading?.scrollIntoView({ block: "nearest" });
+    } else if (claimReviewWasOpen.current) {
+      claimReviewTrigger.current?.focus();
+    }
+    claimReviewWasOpen.current = !!claimReview;
+  }, [claimReview]);
   useEffect(
     () => () => {
       secret.current?.fill(0);
@@ -486,6 +511,7 @@ export function App() {
     secret.current?.fill(0);
     secret.current = undefined;
     setActive(undefined);
+    setClaimReview(undefined);
     setPlain(undefined);
     setGhost(false);
     setPrivateLink("");
@@ -581,6 +607,7 @@ export function App() {
     openSequence.current += 1;
     if (revoke) wallet?.disconnect();
     setWallet(undefined);
+    setClaimReview(undefined);
     secret.current?.fill(0);
     secret.current = undefined;
     setPlain(undefined);
@@ -1925,14 +1952,17 @@ export function App() {
                           automatically. You can also collect using a compatible
                           address below.
                         </p>
-                        <button onClick={() => setConnect(true)}>
+                        <button
+                          disabled={busy || !!claimReview}
+                          onClick={() => setConnect(true)}
+                        >
                           Connect Sapient to receive
                         </button>
                       </div>
                     )}
                     <div className="mode-switch">
                       <button
-                        disabled={busy}
+                        disabled={busy || !!claimReview}
                         aria-pressed={destMode === "manual"}
                         onClick={() => {
                           setDestMode("manual");
@@ -1943,7 +1973,7 @@ export function App() {
                         Use another address
                       </button>
                       <button
-                        disabled={busy || !wallet}
+                        disabled={busy || !!claimReview || !wallet}
                         aria-pressed={destMode === "wallet"}
                         onClick={() => {
                           setDestMode("wallet");
@@ -1957,32 +1987,40 @@ export function App() {
                         Choose from connected wallet
                       </button>
                     </div>
-                    {destMode === "wallet" && wallet && (
-                      <label>
-                        Receiving account
-                        <select
-                          disabled={busy}
-                          onChange={(e) => {
-                            const a = wallet.accounts[Number(e.target.value)];
-                            setAddress(a.address);
-                            setDestination(a.account.component_address);
-                          }}
-                          defaultValue={account}
-                        >
-                          {wallet.accounts.map((a, i) => (
-                            <option key={i} value={i}>
-                              {a.account.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
+                    {destMode === "wallet" &&
+                      wallet &&
+                      wallet.accounts.length > 1 && (
+                        <label>
+                          Receiving account
+                          <select
+                            disabled={busy || !!claimReview}
+                            onChange={(e) => {
+                              const a = wallet.accounts[Number(e.target.value)];
+                              setAddress(a.address);
+                              setDestination(a.account.component_address);
+                            }}
+                            defaultValue={account}
+                          >
+                            {wallet.accounts.map((a, i) => (
+                              <option key={i} value={i}>
+                                {a.account.name}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      )}
+                    {destMode === "wallet" && wallet?.accounts.length === 1 && (
+                      <div className="receiving-account">
+                        <p>Receiving in your connected Sapient account</p>
+                        <code>{address}</code>
+                      </div>
                     )}
                     {destMode === "manual" && (
                       <>
                         <label>
                           Ootle receiving address
                           <input
-                            disabled={busy}
+                            disabled={busy || !!claimReview}
                             value={address}
                             onChange={(e) => setAddress(e.target.value)}
                           />
@@ -1992,7 +2030,9 @@ export function App() {
                             <input
                               type="checkbox"
                               checked={createAccount}
-                              disabled={busy || !claimsReady(d, true)}
+                              disabled={
+                                busy || !!claimReview || !claimsReady(d, true)
+                              }
                               onChange={(e) => {
                                 setCreateAccount(e.target.checked);
                                 setDestination("");
@@ -2005,7 +2045,7 @@ export function App() {
                           <label>
                             Existing built-in account component
                             <input
-                              disabled={busy}
+                              disabled={busy || !!claimReview}
                               value={destination}
                               onChange={(e) => setDestination(e.target.value)}
                             />
@@ -2026,59 +2066,136 @@ export function App() {
                             ? "Use an Ootle address whose built-in account does not exist yet. The gift reserve pays account creation and collection fees; your receiving keys stay in your wallet."
                             : "Guests may use an existing compatible account without connecting its wallet. L1 XTM addresses, raw keys and arbitrary components are unsupported."}
                     </p>
-                    <button
-                      className="primary"
-                      disabled={
-                        busy ||
-                        !chain ||
-                        !address ||
-                        !!deliveryHistory.error ||
-                        (!createAccount && !destination) ||
-                        !(active.mode === "postbox"
-                          ? postboxClaimsReady(d, wallet?.kind ?? "sapient")
-                          : claimsReady(d, createAccount)) ||
-                        (active.mode === "postbox" &&
-                          !wallet?.accounts.some(
-                            (a) =>
-                              a.account.owner_public_key ===
-                              active.claimAuthority,
-                          )) ||
-                        (active.mode === "link" && !secret.current)
-                      }
-                      onClick={() =>
-                        void task(async () => {
-                          if (!chain) return;
-                          const owner = wallet?.accounts.find(
-                            (a) =>
-                              a.account.owner_public_key ===
-                              active.claimAuthority,
-                          );
-                          const id =
-                            active.mode === "postbox" && wallet && owner
-                              ? await chain.claimPostbox(
-                                  wallet,
-                                  owner,
-                                  active,
-                                  address,
-                                  destination,
-                                  localStorage,
-                                )
-                              : await chain.claim(
-                                  active,
-                                  address,
-                                  destination,
-                                  secret.current,
-                                  localStorage,
-                                  createAccount,
+                    {!claimReview && (
+                      <button
+                        ref={claimReviewTrigger}
+                        className="primary"
+                        disabled={
+                          busy ||
+                          !chain ||
+                          !address ||
+                          !!deliveryHistory.error ||
+                          (!createAccount && !destination) ||
+                          !(active.mode === "postbox"
+                            ? postboxClaimsReady(d, wallet?.kind ?? "sapient")
+                            : claimsReady(d, createAccount)) ||
+                          (active.mode === "postbox" &&
+                            !wallet?.accounts.some(
+                              (a) =>
+                                a.account.owner_public_key ===
+                                active.claimAuthority,
+                            )) ||
+                          (active.mode === "link" && !secret.current)
+                        }
+                        onClick={() => {
+                          setError("");
+                          setClaimReview({
+                            address: address.trim(),
+                            destination: destination.trim(),
+                            createAccount,
+                          });
+                        }}
+                      >
+                        Review gift collection
+                      </button>
+                    )}
+                    {claimReview && (
+                      <section
+                        className="collection-review"
+                        aria-labelledby="collection-review-title"
+                      >
+                        <span className="kicker">ONE LAST LOOK</span>
+                        <h3 id="collection-review-title" tabIndex={-1}>
+                          Send this gift to your wallet?
+                        </h3>
+                        <dl>
+                          <dt>You receive</dt>
+                          <dd>{tari(active.gift)} test TARI</dd>
+                          <dt>Collection fee limit</dt>
+                          <dd>
+                            {tari(active.reserve)} TARI, from the sender’s
+                            reserve
+                          </dd>
+                          <dt>Network</dt>
+                          <dd>
+                            {d.network === 38
+                              ? "Esmeralda testnet"
+                              : `Test network ${d.network}`}
+                          </dd>
+                          <dt>Receiving address</dt>
+                          <dd>
+                            <code>{claimReview.address}</code>
+                          </dd>
+                          <dt>Receiving account</dt>
+                          <dd>
+                            {claimReview.createAccount ? (
+                              "Create a new built-in account for this address"
+                            ) : (
+                              <code>{claimReview.destination}</code>
+                            )}
+                          </dd>
+                        </dl>
+                        <p className="fine-print">
+                          {active.mode === "postbox"
+                            ? "Confirming asks Sapient to approve a proof for this gift and destination. Only then can GhostDrop submit the collection."
+                            : "Confirming submits the collection using this destination. No wallet connection or extra signature is required."}{" "}
+                          The gift goes to the address shown above. Check it
+                          carefully before confirming.
+                        </p>
+                        <div className="collection-actions">
+                          <button
+                            disabled={busy}
+                            onClick={() => setClaimReview(undefined)}
+                          >
+                            Change destination
+                          </button>
+                          <button
+                            className="primary"
+                            disabled={
+                              busy ||
+                              !!deliveryHistory.error ||
+                              !chain ||
+                              active.claimed
+                            }
+                            onClick={() =>
+                              void task(async () => {
+                                const reviewed = claimReview;
+                                if (!chain || !reviewed) return;
+                                const owner = wallet?.accounts.find(
+                                  (a) =>
+                                    a.account.owner_public_key ===
+                                    active.claimAuthority,
                                 );
-                          setStatus(
-                            `Gift collection submitted. Close this letter and check Activity for confirmation. Transaction: ${id}.`,
-                          );
-                        })
-                      }
-                    >
-                      Review address & explicitly claim
-                    </button>
+                                const id =
+                                  active.mode === "postbox" && wallet && owner
+                                    ? await chain.claimPostbox(
+                                        wallet,
+                                        owner,
+                                        active,
+                                        reviewed.address,
+                                        reviewed.destination,
+                                        localStorage,
+                                      )
+                                    : await chain.claim(
+                                        active,
+                                        reviewed.address,
+                                        reviewed.destination,
+                                        secret.current,
+                                        localStorage,
+                                        reviewed.createAccount,
+                                      );
+                                setClaimReview(undefined);
+                                setStatus(
+                                  `Gift collection submitted. Close this letter and check Activity for confirmation. Transaction: ${id}.`,
+                                );
+                              })
+                            }
+                          >
+                            {busy ? "Collecting…" : "Confirm & collect gift"}
+                          </button>
+                        </div>
+                      </section>
+                    )}
                   </>
                 )}
               </div>

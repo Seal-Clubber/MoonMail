@@ -8,6 +8,8 @@ A spooky place to leave a kind letter, send a gift, or open your private inbox. 
 - **Write a letter:** choose your audience, enter gifts in TARI, review the full gift and separate collection funds, then approve in Sapient. Copy or manually save the complete private link, then acknowledge it before sending.
 - **Activity:** known transaction receipts update automatically for up to two minutes while the page is open. Manual status checks remain available. Resume an uncertain wallet approval only through its original saved request; GhostDrop never automatically resends a financial operation. Damaged local delivery records pause financial actions and explain how to check wallet history.
 
+Collection has a separate destination review: check the full address, receiving account, payout and fee reserve before choosing **Confirm & collect gift**. Opening that review never requests a proof or submits a claim.
+
 **Testnet only:** the current office uses Esmeralda test TARI. Choose Esmeralda in Sapient. Sending and creating a postbox cost wallet fees. Collection uses the sender’s separate fee reserve; an addressed recipient can collect the full gift with zero coins. Gifts have no expiry or refund, and unused collection funds stay locked.
 
 The current source defaults directly to the verified Sapient office in `public/deployment.json`. The original office is no longer selectable and its mail is not carried over. `deployment-v2.json` remains an identical public profile for historical verification references. Immutable older contracts and evidence remain available to developers.

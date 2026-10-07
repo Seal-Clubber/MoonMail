@@ -304,21 +304,16 @@ h3 {
   width: 100%;
   text-align: center;
   justify-self: center;
-  animation: float 6s ease-in-out infinite;
-  transition: transform 0.3s;
 }
 .envelope-1 {
-  animation-delay: -2s;
   margin-top: 33px;
 }
 .envelope-2 {
-  animation-delay: -4s;
   margin-top: 9px;
 }
-.envelope-card:hover,
-.envelope-card:focus {
+.envelope-card:hover .envelope-visual,
+.envelope-card:focus .envelope-visual {
   animation-play-state: paused;
-  transform: translateY(-8px);
 }
 .envelope-visual {
   height: 126px;
@@ -327,15 +322,19 @@ h3 {
   border: 1px solid #e5d4af;
   border-radius: 3px;
   box-shadow: 0 18px 25px #0005;
-  transform: rotate(-6deg);
+  --tilt: -6deg;
+  transform: rotate(var(--tilt));
+  animation: float-envelope 6s ease-in-out infinite;
 }
 .envelope-1 .envelope-visual {
-  transform: rotate(5deg);
+  --tilt: 5deg;
+  animation-delay: -2s;
   background: linear-gradient(160deg, #829182, #566e5d);
   border-color: #98a287;
 }
 .envelope-2 .envelope-visual {
-  transform: rotate(-3deg);
+  --tilt: -3deg;
+  animation-delay: -4s;
 }
 .envelope-visual:before {
   content: "";
@@ -1786,4 +1785,87 @@ footer button {
   font: 11px/1.6 monospace;
   overflow-wrap: anywhere;
   margin-top: 10px;
+}
+
+.receiving-account,
+.collection-review {
+  padding: 18px;
+  margin: 20px 0;
+  border: 1px solid #7c8d6250;
+  border-radius: 9px;
+  background: #13201880;
+}
+.receiving-account p {
+  margin: 0 0 10px;
+  font:
+    13px/1.7 system-ui,
+    sans-serif;
+}
+.receiving-account code,
+.collection-review code {
+  font: 11px/1.7 monospace;
+  overflow-wrap: anywhere;
+}
+.collection-review h3 {
+  margin: 12px 0 20px;
+}
+.collection-review dl {
+  margin: 0;
+}
+.collection-review dt {
+  font:
+    11px/1.7 system-ui,
+    sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  margin-top: 16px;
+}
+.collection-review dd {
+  margin: 5px 0 0;
+  font:
+    14px/1.7 system-ui,
+    sans-serif;
+  overflow-wrap: anywhere;
+}
+.collection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+@media (max-width: 540px) {
+  .collection-actions button {
+    width: 100%;
+  }
+}
+
+/* Keep the artwork still on touch devices; the button itself never moves. */
+@media (hover: none) {
+  .envelope-visual {
+    animation: none;
+  }
+}
+
+.letter-modal .collection-review,
+.letter-modal .receiving-account {
+  background: #fff5dd80;
+  border-color: #9f9e78;
+}
+.letter-modal .collection-review dt {
+  color: #5d6347;
+}
+
+@keyframes float-envelope {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--tilt));
+  }
+  50% {
+    transform: translateY(-10px) rotate(var(--tilt));
+  }
+}
+.letter-modal button:hover:not(:disabled),
+.letter-modal button:focus-visible {
+  color: #2c3826;
+  background: #e7d7ae;
 }

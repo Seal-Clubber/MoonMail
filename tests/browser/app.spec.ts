@@ -128,7 +128,7 @@ test("honest guest hall and reduced-motion visual preview", async ({
     .click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Review address & explicitly claim" }),
+    page.getByRole("button", { name: "Review gift collection" }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Close letter" }).click();
   await page.getByRole("button", { name: "☷ List view" }).click();

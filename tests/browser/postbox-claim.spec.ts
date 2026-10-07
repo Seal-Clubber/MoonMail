@@ -178,7 +178,7 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
       });
       await expect(dialog).toBeVisible();
       const claim = dialog.getByRole("button", {
-        name: "Review address & explicitly claim",
+        name: "Review gift collection",
       });
       if (protocol) {
         await expect(dialog).toContainText("You receive 1 TARI");
@@ -189,13 +189,53 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
           .click();
         await expect(claim).toBeEnabled();
         await claim.click();
+        const review = dialog.getByRole("region", {
+          name: "Send this gift to your wallet?",
+        });
+        await expect(
+          dialog.getByRole("heading", {
+            name: "Send this gift to your wallet?",
+          }),
+        ).toBeFocused();
+        await expect(review).toContainText(address);
+        await expect(review).toContainText(account);
+        await expect(review).toContainText("1 test TARI");
+        await expect(review).toContainText(
+          "0.1 TARI, from the sender’s reserve",
+        );
+        expect(
+          (await page.evaluate(() => (window as any).claimMethods)).some(
+            (c: any) => c.method === "tari_signWalletOwnershipChallenge",
+          ),
+        ).toBe(false);
+        expect(posts).toBe(0);
+        await review
+          .getByRole("button", { name: "Change destination" })
+          .click();
+        await expect(review).toHaveCount(0);
+        await expect(claim).toBeEnabled();
+        await expect(claim).toBeFocused();
+        await claim.click();
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+        await review.screenshot({
+          path: test.info().outputPath("gift-review.png"),
+        });
+        await review
+          .getByRole("button", { name: "Confirm & collect gift" })
+          .click();
         await expect(
           dialog.getByRole("button", { name: "Use another address" }),
         ).toBeDisabled();
         await expect(
           dialog.getByRole("button", { name: "Choose from connected wallet" }),
         ).toBeDisabled();
-        await expect(dialog.getByLabel("Receiving account")).toBeDisabled();
+        await expect(
+          dialog.getByLabel("Receiving account", { exact: true }),
+        ).toHaveCount(0);
         await expect
           .poll(() => page.evaluate(() => typeof (window as any).rejectClaim))
           .toBe("function");
