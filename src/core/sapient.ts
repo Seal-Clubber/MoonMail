@@ -19,6 +19,11 @@ import {
 } from "./sapient-capsule-create";
 import { money, type publishTransaction } from "./transactions";
 import {
+  postboxClaimChallenge,
+  type WalletOwnershipProof,
+} from "./postbox-claim";
+import type { Envelope } from "./types";
+import {
   beginSubmission,
   completeSubmission,
   hasUnresolved,
@@ -200,6 +205,44 @@ export class SapientSession {
     await this.assertCurrent();
     if (result.granted !== true)
       throw new Error("Sapient private view access was declined");
+  }
+  async authorizePostboxClaim(
+    envelope: Envelope,
+    destination: string,
+    validUntil: number,
+  ): Promise<WalletOwnershipProof> {
+    const challenge = postboxClaimChallenge(envelope, destination, validUntil);
+    if (
+      envelope.context.network !== this.network ||
+      envelope.claimAuthority !== this.accounts[0].account.owner_public_key
+    )
+      throw new Error(
+        "Choose the Sapient wallet controlling this postbox gift",
+      );
+    await this.assertCurrent();
+    const result = record(
+      await this.call(
+        "tari_signWalletOwnershipChallenge",
+        { challenge },
+        120000,
+      ),
+    );
+    await this.assertCurrent();
+    if (
+      result.walletAddress !== this.accounts[0].address ||
+      typeof result.publicNonce !== "string" ||
+      typeof result.signature !== "string" ||
+      !/^[a-f0-9]{64}$/.test(result.publicNonce) ||
+      !/^[a-f0-9]{64}$/.test(result.signature)
+    )
+      throw new Error(
+        "Sapient returned an ownership proof for a different account or invalid encoding",
+      );
+    return {
+      walletAddress: result.walletAddress as string,
+      publicNonce: result.publicNonce,
+      signature: result.signature,
+    };
   }
   capsuleMailbox(read: CapsuleSubstateReader) {
     return new SapientCapsuleMailbox(

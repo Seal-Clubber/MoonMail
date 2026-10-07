@@ -48,6 +48,12 @@ Two further guest gifts were collected through the actual published site: deskto
 | Accessible UI             | Desktop/mobile, reduced-motion/list view, focus trap/Escape/restoration, draft survival and fragment scrub                                  | Broader browser/assistive technology review                                   |
 | Independent hosting       | Configurable asset base and deployment-bound links                                                                                          | Two HTTPS hosts; original-host outage test                                    |
 
+## New Sapient proof claims (local, gated)
+
+The separate V2 contracts now implement zero-balance postbox gift collection with a destination-specific stock Sapient ownership approval. Eleven local financial engine tests cover real registry/controller authorization, exact payout and spend, replay/context/expiry/encoding rejection, reserve rollback and fee-checkpoint retention. Fifteen mocked browser-adapter tests cover approval context, simulation and submission journaling. A fresh unfunded unmodified stock Sapient 0.6.6 profile approved and rejected the exact challenge, and its actual approved signature passed the production crypto source in Ootle 0.45 with thirteen tampering cases rejected. The client suite totals 81 passing tests; strict TypeScript, production build and 16 desktop/mobile regressions pass for this local build.
+
+The real wallet proof uses synthetic registry/envelope/expiry fields; financial engine fixtures use synthetic controller keys. Neither proves a funded registered public Sapient postbox claim. No public deployment identity or postbox evidence gate changed. [Claim design and reproduction](POSTBOX-PROOF-CLAIMS.md), [bounded evidence](postbox-proof-claims-evidence.json).
+
 ## Automated checks
 
 GitHub Verify run [37496235886](https://github.com/Seal-Clubber/GhostDrop/actions/runs/37496235886) and Pages run [37496236688](https://github.com/Seal-Clubber/GhostDrop/actions/runs/37496236688) succeeded for `da995ff2d3b4fa867be45c8d50d6cf4118f9a298`. The repository's GitHub API confirms Pages uses workflow deployment and enforces HTTPS. All 14 hosted regressions passed for this published build. New donor-tool/doc checkpoints remain local for the user's push. For future builds use `GHOSTDROP_TEST_BASE_URL=https://seal-clubber.github.io/GhostDrop/ pnpm test:browser` (use the appropriate environment-variable syntax for your shell).

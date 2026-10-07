@@ -1,0 +1,72 @@
+{
+  "checkedAt": "2026-10-07T02:10:36.3329323Z",
+  "network": "local Ootle engine 0.45.0; ownership approval on Esmeralda through Sapient",
+  "implementation": "EnvelopeV2 / PostOfficeV2 / sapient-proof-1",
+  "publicDeploymentEnabled": false,
+  "engineTests": {
+    "passed": 11,
+    "testReserveMicroTari": 100000,
+    "checks": [
+      "exact payout to an empty account and independent owner spend",
+      "one payout and replay rejection",
+      "foreign controller, destination, network and invalid proof/address rejection",
+      "expiry and stale approval rejection",
+      "insufficient reserve rollback",
+      "main failure preserves fee checkpoint payout",
+      "encryption key rotation preserves controller",
+      "factory rejects foreign controller",
+      "unregistered envelope cannot claim",
+      "context binding and non-account destination rejection"
+    ],
+    "giftMicroTari": 1000000,
+    "measuredClaimFeeMicroTari": 4369
+  },
+  "browserAdapterTests": {
+    "passed": 15,
+    "mockedProvider": true,
+    "checks": [
+      "exact canonical challenge",
+      "no financial-wallet signature or view grant",
+      "account/network changes and rejection stop broadcast",
+      "dry-run rejection and excessive fees stop broadcast",
+      "dependencies declared before relay signing",
+      "journal before broadcast and lost-response retry block"
+    ]
+  },
+  "stockOwnershipApproval": {
+    "origin": "https://seal-clubber.github.io",
+    "rejected": true,
+    "officialStorePackage": true,
+    "privateViewGranted": false,
+    "transactionsBroadcast": 0,
+    "productionCryptoEngine": {
+      "passingTests": 1,
+      "negativeCases": 13,
+      "positives": 1
+    },
+    "publicProofVectorSha256": "c2e58c086381ad76e73a35f3e3d4258eb5e53886686a6f45c9eda7372234322e",
+    "productionAdapter": true,
+    "financialWalletSigning": false,
+    "approved": true,
+    "loadedUnpackedForAutomation": true,
+    "version": "0.6.6",
+    "wallet": "Sapient",
+    "sourceCommit": "7ad3c4f117a76c64d472fd371b7d75bbe297abec"
+  },
+  "sources": {
+    "src/core/chain.ts": "4683ec0c1434637b2906a175632f05247946816100149201bfbd681ff71825a0",
+    "contracts/envelope-v2/src/lib.rs": "189bd097152de0dabdb250f3218c1a2ba786ae778dc020db64fa36f16b643bb9",
+    "src/core/sapient.ts": "f48908e8dc792a1549afa39cf9afb9a31816dbde18abb316690da099efd0f9f0",
+    "contracts/postbox-claim-tests/src/lib.rs": "e6b3b4bf0d374f6e7b0aededc7e0a001a5b70513d05f2df6ce94e3174fa92830",
+    "contracts/ghostdrop-v2/src/lib.rs": "5d921806f7da0be62c2c6c5b0c7bb66246d48ac88ce63ea05872d11671dad2df",
+    "contracts/envelope-v2/src/ownership.rs": "b2d710f88650b868d7ea756f4848eccbad93612ccab15ea068e6b6299bb0deca",
+    "src/core/postbox-claim.ts": "ec4621b168c6a3b5a0fdfb5a89ac6f7895c4b749ec2009797873a7de42565129"
+  },
+  "limits": [
+    "Financial engine tests use synthetic fixture keys and local ledger; they do not use the stock wallet account.",
+    "Actual stock approval uses a canonical synthetic registry/envelope/expiry context and verifies production crypto; it is not a registered public postbox claim.",
+    "Local engine fee schedule is not a quote or guarantee of public network fees.",
+    "No public templates, registry or capsule identities changed; public gates stay closed.",
+    "New public deployment/funded tests need fresh bounded authorization. Existing immutable contracts and historical mail remain preserved."
+  ]
+}

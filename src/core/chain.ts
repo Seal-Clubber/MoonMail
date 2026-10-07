@@ -6,6 +6,7 @@ import {
   sealTransaction,
   classifyOutcome,
   getVaultIdsForAccount,
+  sendDryRun,
 } from "@tari-project/ootle";
 import {
   EphemeralKeySigner,
@@ -15,7 +16,13 @@ import { parseOotleAddress } from "@tari-project/ootle-wasm";
 import type { Deployment, Envelope, Postbox, MailboxContext } from "./types";
 import type { ConnectedWallet, WalletAccount } from "./wallet";
 import { SapientSession } from "./sapient";
-import { claimsReady, writesReady, endpoint } from "./config";
+import {
+  claimsReady,
+  writesReady,
+  postboxClaimsReady,
+  endpoint,
+} from "./config";
+import { postboxProofClaimTransaction } from "./postbox-claim";
 import { hex } from "./crypto";
 import {
   claimTransaction,
@@ -83,6 +90,11 @@ export function decodeEnvelope(
   const raw = arr(state);
   if (raw[0] !== d.network) throw new Error("Envelope network mismatch");
   const e = raw.slice(1);
+  if (
+    d.postboxClaimProtocol === "sapient-proof-1" &&
+    taggedAddress(raw[14], "component") !== d.registry
+  )
+    throw new Error("Proof envelope registry mismatch");
   if (text(e[0]) !== id || ![0, 1, 2].includes(Number(e[1])))
     throw new Error("Envelope identity mismatch");
   const mode = (["public", "link", "postbox"] as const)[Number(e[1])];
@@ -112,6 +124,7 @@ export function decodeEnvelope(
     });
   }
   return {
+    claimProtocol: d.postboxClaimProtocol,
     component,
     id,
     mode,
@@ -274,7 +287,8 @@ export class PostOfficeClient {
     if (
       wallet instanceof SapientSession &&
       envelope.mode === "postbox" &&
-      BigInt(envelope.gift) > 0n
+      BigInt(envelope.gift) > 0n &&
+      !postboxClaimsReady(this.deployment, "sapient")
     )
       throw new Error("Addressed gifts await Sapient prepaid signing support");
     if (!writesReady(this.deployment, envelope.mode, wallet.kind ?? "daemon"))
@@ -688,10 +702,20 @@ export class PostOfficeClient {
     component: string,
     storage: Storage,
   ) {
-    if (wallet instanceof SapientSession)
-      throw new Error(
-        "Sapient cannot yet authorize the prepaid addressed gift checkpoint",
+    if (wallet instanceof SapientSession) {
+      if (!postboxClaimsReady(this.deployment, "sapient"))
+        throw new Error(
+          "Sapient cannot yet authorize the prepaid addressed gift checkpoint for this deployment",
+        );
+      return this.claimPostboxProof(
+        wallet,
+        account,
+        envelope,
+        address,
+        component,
+        storage,
       );
+    }
     if (!writesReady(this.deployment, "postbox", wallet.kind ?? "daemon"))
       throw new Error("Postbox claims await deployment and recovery evidence");
     if (
@@ -733,5 +757,136 @@ export class PostOfficeClient {
   async reconcile(id: string) {
     const r = await this.provider.getTransactionResult(id);
     return classifyOutcome(r.result);
+  }
+  private async claimPostboxProof(
+    wallet: SapientSession,
+    account: WalletAccount,
+    envelope: Envelope,
+    address: string,
+    component: string,
+    storage: Storage,
+  ) {
+    if (
+      envelope.context.network !== this.deployment.network ||
+      envelope.context.registry !== this.deployment.registry ||
+      envelope.context.template !== this.deployment.template ||
+      envelope.mode !== "postbox" ||
+      envelope.claimProtocol !== "sapient-proof-1" ||
+      wallet.accounts[0].account.component_address !==
+        account.account.component_address
+    )
+      throw new Error("Wrong proof claim deployment or wallet account");
+    if (
+      hasUnresolved(
+        storage,
+        this.deployment.network,
+        this.deployment.registry,
+        envelope.id,
+      )
+    )
+      throw new Error("Reconcile the existing submission first");
+    const latest = await this.readLetter(envelope.id, envelope.component);
+    if (
+      latest.claimed ||
+      latest.claimProtocol !== "sapient-proof-1" ||
+      latest.claimAuthority !== account.account.owner_public_key ||
+      !latest.component ||
+      BigInt(latest.gift) <= 0n
+    )
+      throw new Error(
+        "Choose the Sapient wallet controlling this available gift",
+      );
+    const destination = await this.validateDestination(address, component);
+    const epoch = await this.provider.getCurrentEpoch();
+    if (
+      !Number.isSafeInteger(epoch) ||
+      epoch < 0 ||
+      epoch > Number.MAX_SAFE_INTEGER - 10
+    )
+      throw new Error("Invalid claim epoch");
+    const expiry = epoch + 10;
+    const proof = await wallet.authorizePostboxClaim(
+      latest,
+      destination,
+      expiry,
+    );
+    const currentEpoch = await this.provider.getCurrentEpoch();
+    const raw = postboxProofClaimTransaction(
+      latest,
+      destination,
+      expiry,
+      currentEpoch,
+      proof,
+    );
+    const ids = [
+      this.deployment.registry,
+      latest.component,
+      destination,
+      this.deployment.resource,
+      `template_${this.deployment.template}`,
+      `template_${this.deployment.envelopeTemplate}`,
+      ...(await getVaultIdsForAccount(this.provider, latest.component)),
+      ...(await getVaultIdsForAccount(this.provider, destination)),
+    ];
+    raw.inputs = Array.from(new Set(ids)).map((substate_id) => ({
+      substate_id,
+      version: null,
+      is_write:
+        substate_id !== this.deployment.registry &&
+        substate_id !== this.deployment.resource &&
+        !substate_id.startsWith("template_"),
+    }));
+    const tx = await resolveTransaction(this.provider, raw);
+    const signer = EphemeralKeySigner.generate(
+      this.deployment.network as Network,
+    );
+    const dry = await sendDryRun(this.provider, signer, tx);
+    const execution =
+      typeof dry.result === "object" && "Finalized" in dry.result
+        ? dry.result.Finalized.execution_result
+        : null;
+    if (
+      classifyOutcome(dry.result)?.outcome !== "Commit" ||
+      !execution ||
+      !("Accept" in execution.finalize.result)
+    )
+      throw new Error(
+        "Proof claim simulation rejected; no claim was broadcast",
+      );
+    if (BigInt(execution.finalize.total_fees_required) > BigInt(latest.reserve))
+      throw new Error(
+        "The gift reserve cannot cover collection fees; no claim was broadcast",
+      );
+    await wallet.assertCurrent();
+    if (
+      hasUnresolved(
+        storage,
+        this.deployment.network,
+        this.deployment.registry,
+        envelope.id,
+      )
+    )
+      throw new Error("Reconcile the existing submission first");
+    const signed = await signTransaction([signer], tx);
+    if (
+      hasUnresolved(
+        storage,
+        this.deployment.network,
+        this.deployment.registry,
+        envelope.id,
+      )
+    )
+      throw new Error("Reconcile the existing submission first");
+    const attempt = beginSubmission(storage, {
+      network: this.deployment.network,
+      registry: this.deployment.registry,
+      operation: "claim",
+      envelopeId: envelope.id,
+    });
+    const result = await this.provider.submitTransaction(
+      sealTransaction(signed),
+    );
+    completeSubmission(storage, attempt, result.transaction_id);
+    return result.transaction_id;
   }
 }

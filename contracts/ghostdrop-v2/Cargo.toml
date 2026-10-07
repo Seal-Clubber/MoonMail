@@ -1,0 +1,15 @@
+[package]
+name = "ghostdrop_template_v2"
+version = "0.2.0"
+edition = "2024"
+license = "MIT"
+[lib]
+crate-type = ["cdylib", "rlib"]
+[dependencies]
+tari_template_lib = "=0.34.0"
+[profile.release]
+opt-level = "s"
+overflow-checks = true
+strip = true
+lto = true
+panic = "abort"

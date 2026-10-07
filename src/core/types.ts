@@ -48,6 +48,7 @@ export interface MailboxPayload {
   capsule?: CapsuleReference;
 }
 export interface Envelope {
+  claimProtocol?: "sapient-proof-1";
   component?: string;
   id: string;
   mode: MailMode;
@@ -70,6 +71,7 @@ export interface Postbox {
   discoverable: boolean;
 }
 export interface Deployment extends Context {
+  postboxClaimProtocol?: "sapient-proof-1";
   capsule?: CapsuleDeployment;
   envelopeTemplate: string;
   indexerUrl: string;
@@ -83,5 +85,6 @@ export interface Deployment extends Context {
     httpsWallet: boolean;
     mailboxRecovery: boolean;
     sapientWallet?: boolean;
+    postboxClaims?: boolean;
   };
 }

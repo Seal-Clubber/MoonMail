@@ -14,6 +14,7 @@ export const emptyDeployment: Deployment = {
     httpsWallet: false,
     sapientWallet: false,
     mailboxRecovery: false,
+    postboxClaims: false,
   },
 };
 function deploymentReady(d: Deployment) {
@@ -57,7 +58,13 @@ export function postboxClaimsReady(
   d: Deployment,
   provider: "daemon" | "sapient",
 ) {
-  return provider === "daemon" && writesReady(d, "postbox", provider);
+  return (
+    writesReady(d, "postbox", provider) &&
+    (provider === "daemon" ||
+      (d.postboxClaimProtocol === "sapient-proof-1" &&
+        d.evidence.postboxClaims === true &&
+        d.resource === `resource_${"01".repeat(32)}`))
+  );
 }
 export function endpoint(value: string, local = false) {
   const u = new URL(value);
