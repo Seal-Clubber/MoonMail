@@ -18,6 +18,8 @@ The current source defaults directly to the verified Sapient office in `public/d
 
 The GUI keeps the moonlit, haunted post office theme, with phone layouts, reduced-motion support, keyboard focus handling and plain-language empty/error states. The directory searches listed postboxes; unlisted recipients share their IDs directly. Advanced connection settings are under **Settings** and invalidate write evidence when edited.
 
+If an individual letter is unavailable or fails verification, browsing keeps the verified letters visible and shows which public IDs need another read. Unverified letters never appear as available gifts. Registry/template/owner checks remain strict; donor tooling retains strict bulk reads by default.
+
 Letters/ciphertext, postboxes and gift rules live on Ootle. The static React app reads an HTTPS indexer directly; there is no central GhostDrop backend. The indexer remains trusted infrastructure and this client does not verify consensus proofs. Encryption hides sealed subjects and bodies, while gift amounts and routing metadata remain public.
 
 [GitHub Pages website](https://seal-clubber.github.io/GhostDrop/). Pushes to `main` automatically run client verification and the HTTPS Pages deployment. The GUI redesign must be pushed and published before it appears there. Prior real stock-Sapient recovery, ownership-proof claims and independent payout spending are recorded in [the public evidence](docs/postbox-v2-esmeralda-evidence.json) and [published wallet verification](docs/postbox-v2-published-wallet-evidence.json). These historical records do not assert that the new GUI is already published.

@@ -10,6 +10,7 @@ import { AmountInput, tari } from "./AmountInput";
 import { readDelivery } from "../core/delivery";
 import { browserStorage } from "../core/browser-storage";
 import { CopyField } from "./CopyField";
+import { MailReadNotice } from "./MailReadNotice";
 
 export function Postboxes({
   wallet,
@@ -25,6 +26,7 @@ export function Postboxes({
   onOpen,
   onRefresh,
   onMore,
+  unavailableLetterIds,
   loadingMore,
   hasMore,
   writeBlocked,
@@ -44,6 +46,7 @@ export function Postboxes({
   onMore: () => Promise<void>;
   hasMore: boolean;
   loadingMore: boolean;
+  unavailableLetterIds: string[];
   writeBlocked: boolean;
 }) {
   const [selected, setSelected] = useState(""),
@@ -659,6 +662,11 @@ export function Postboxes({
           {box && (
             <>
               <h2>Private inbox</h2>
+              <MailReadNotice
+                ids={unavailableLetterIds}
+                busy={busy || loadingMore}
+                onRetry={() => void task(onRefresh)}
+              />
               {inbox.length ? (
                 inbox.map((e) => (
                   <button

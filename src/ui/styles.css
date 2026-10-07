@@ -1926,3 +1926,34 @@ footer button {
     gap: 12px;
   }
 }
+
+.mail-read-notice {
+  margin: 20px;
+  padding: 20px;
+  border: 1px solid #c6a86b80;
+  border-radius: 9px;
+  background: #3b301950;
+  font:
+    12px/1.7 system-ui,
+    sans-serif;
+}
+.mail-read-notice strong {
+  color: var(--gold);
+}
+.mail-read-notice p {
+  color: #d0ccba;
+}
+.mail-read-notice details {
+  margin-top: 14px;
+}
+.mail-read-notice summary {
+  cursor: pointer;
+}
+.mail-read-notice ul {
+  margin: 8px 0;
+  padding-left: 18px;
+}
+.mail-read-notice code {
+  font: 11px/1.7 monospace;
+  overflow-wrap: anywhere;
+}

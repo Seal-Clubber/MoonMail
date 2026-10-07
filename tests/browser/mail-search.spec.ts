@@ -15,7 +15,7 @@ const ids = Array.from(
 const children = ids.map(
   (_, i) => `component_${(i + 1000).toString(16).padStart(64, "0")}`,
 );
-async function setup(page: Page, delayedLast = false) {
+async function setup(page: Page, delayedLast = false, unavailableLast = false) {
   await page.route("**/deployment.json", (r) => r.fulfill({ json: d }));
   let release = () => {},
     started = () => {};
@@ -25,7 +25,8 @@ async function setup(page: Page, delayedLast = false) {
   const requested = new Promise<void>((resolve) => {
     started = resolve;
   });
-  let writes = 0;
+  let writes = 0,
+    failingLast = unavailableLast;
   await page.route(`${d.indexerUrl}**`, async (r) => {
     if (r.request().method() !== "GET") {
       writes++;
@@ -34,6 +35,8 @@ async function setup(page: Page, delayedLast = false) {
     const url = r.request().url();
     const registry = url.includes(d.registry);
     const index = children.findIndex((child) => url.includes(child));
+    if (failingLast && index === 100)
+      return r.fulfill({ status: 503, body: "Fixture last-page outage" });
     if (delayedLast && index === 100) {
       started();
       await held;
@@ -102,7 +105,14 @@ async function setup(page: Page, delayedLast = false) {
       },
     });
   });
-  return { release, requested, writes: () => writes };
+  return {
+    release,
+    requested,
+    writes: () => writes,
+    recoverLast: () => {
+      failingLast = false;
+    },
+  };
 }
 
 test("hall search filters public contents, keeps sealed contents private and resets pages", async ({
@@ -186,5 +196,29 @@ test("a late pagination response cannot import letters after switching networks"
   await page.getByRole("button", { name: "Public mail", exact: true }).click();
   await expect(page.getByText("The post office is unavailable.")).toBeVisible();
   await expect(page.locator(".envelope-card")).toHaveCount(0);
+  expect(fixture.writes()).toBe(0);
+});
+
+test("retry includes unreadable letters on previously loaded later pages", async ({
+  page,
+}) => {
+  const fixture = await setup(page, false, true);
+  await page.goto("./");
+  await expect(
+    page.getByLabel("Find public mail", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Load more chain mail" }).click();
+  await expect(page.locator(".mail-read-notice")).toContainText(
+    "1 letter could not be read",
+  );
+  await page.getByLabel("Find public mail", { exact: true }).fill("letter-100");
+  await expect(page.locator(".envelope-card")).toHaveCount(0);
+  fixture.recoverLast();
+  await page.getByRole("button", { name: "Retry unavailable mail" }).click();
+  await expect(
+    page.getByRole("button", { name: /Moonlit letter 100/ }),
+  ).toBeVisible();
+  await expect(page.locator(".mail-read-notice")).toHaveCount(0);
+  await expect(page.locator(".search-summary")).toContainText("100 loaded");
   expect(fixture.writes()).toBe(0);
 });

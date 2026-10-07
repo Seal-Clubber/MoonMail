@@ -180,8 +180,13 @@ export class PostOfficeClient {
       }),
     );
   }
-  async read(after = "", limit = 100) {
-    if (limit < 1 || limit > 100) throw new Error("Page size 1..100");
+  async read(
+    after = "",
+    limit = 100,
+    options: { allowPartial?: boolean } = {},
+  ) {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100)
+      throw new Error("Page size must be an integer from 1 to 100");
     const r = await this.provider.getSubstate(this.deployment.registry);
     const v = r.substate as unknown as {
       Component?: {
@@ -202,16 +207,22 @@ export class PostOfficeClient {
         .filter((r) => r.id > after)
         .slice(0, limit),
       letters: Envelope[] = [];
-    for (let i = 0; i < refs.length; i += 8)
-      letters.push(
-        ...(await Promise.all(
-          refs
-            .slice(i, i + 8)
-            .map((ref) => this.readLetter(ref.id, ref.component)),
-        )),
+    const unavailableLetterIds: string[] = [];
+    for (let i = 0; i < refs.length; i += 8) {
+      const batch = refs.slice(i, i + 8);
+      const results = await Promise.allSettled(
+        batch.map((ref) => this.readLetter(ref.id, ref.component)),
       );
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") letters.push(result.value);
+        else if (options.allowPartial)
+          unavailableLetterIds.push(batch[index].id);
+        else throw result.reason;
+      });
+    }
     return {
       letters,
+      unavailableLetterIds,
       postboxes: office.postboxes,
       total: office.letterRefs.length,
       nextCursor: refs.length === limit ? refs.at(-1)!.id : "",

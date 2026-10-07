@@ -37,6 +37,7 @@ import {
 import { Postboxes } from "./Postboxes";
 import { AmountInput, tari } from "./AmountInput";
 import { CopyField } from "./CopyField";
+import { MailReadNotice } from "./MailReadNotice";
 import { networkPreset, checkPublicIndexer } from "../core/networks";
 
 const exampleLetters: Envelope[] = [
@@ -95,7 +96,8 @@ export function App() {
     [preview, setPreview] = useState(false),
     [list, setList] = useState(false),
     [cursor, setCursor] = useState(""),
-    [loadingMore, setLoadingMore] = useState(false);
+    [loadingMore, setLoadingMore] = useState(false),
+    [unavailableLetterIds, setUnavailableLetterIds] = useState<string[]>([]);
   const [wallet, setWallet] = useState<ConnectedWallet>(),
     [account, setAccount] = useState(0),
     [connect, setConnect] = useState(false),
@@ -272,13 +274,18 @@ export function App() {
           c.provider.stopWatcher();
           return;
         }
-        const data = await c.read();
+        const data = await c.read("", 100, { allowPartial: true });
         if (!cancelled && sequence === readSequence.current) {
           setChain(c);
           setLetters(data.letters);
+          setUnavailableLetterIds(data.unavailableLetterIds);
           setBoxes(data.postboxes);
           setCursor(data.nextCursor);
-          setStatus("Mail is up to date.");
+          setStatus(
+            data.unavailableLetterIds.length
+              ? "Loaded available mail. Some letters need another read."
+              : "Mail is up to date.",
+          );
         } else c.provider.stopWatcher();
       })
       .catch(() => {
@@ -484,6 +491,7 @@ export function App() {
     setPrepared(undefined);
     setChain(undefined);
     setLetters([]);
+    setUnavailableLetterIds([]);
     setBoxes([]);
     setCursor("");
     setD({
@@ -550,7 +558,26 @@ export function App() {
     const reader = chain || (await PostOfficeClient.connect(d));
     let data;
     try {
-      data = await reader.read();
+      data = await reader.read("", 100, { allowPartial: true });
+      // Refresh every page the visitor already loaded, including failed references.
+      const loadedPages = Math.max(
+        1,
+        Math.ceil((letters.length + unavailableLetterIds.length) / 100),
+      );
+      for (let page = 1; page < loadedPages && data.nextCursor; page++) {
+        if (sequence !== readSequence.current) break;
+        const next = await reader.read(data.nextCursor, 100, {
+          allowPartial: true,
+        });
+        data = {
+          ...next,
+          letters: [...data.letters, ...next.letters],
+          unavailableLetterIds: [
+            ...data.unavailableLetterIds,
+            ...next.unavailableLetterIds,
+          ],
+        };
+      }
     } catch (error) {
       if (!chain) reader.provider.stopWatcher();
       throw error;
@@ -562,11 +589,16 @@ export function App() {
     setChain(reader);
     if (!chain) retryReader.current = reader;
     setLetters(data.letters);
+    setUnavailableLetterIds(data.unavailableLetterIds);
     setBoxes(data.postboxes);
     setCursor(data.nextCursor);
     setPage(1);
     setPreview(false);
-    setStatus("Mail is up to date.");
+    setStatus(
+      data.unavailableLetterIds.length
+        ? "Loaded available mail. Some letters need another read."
+        : "Mail is up to date.",
+    );
     if (active) {
       const updated = await reader.readLetter(active.id, active.component);
       if (
@@ -583,11 +615,14 @@ export function App() {
     setLoadingMore(true);
     setError("");
     try {
-      const data = await reader.read(cursor);
+      const data = await reader.read(cursor, 100, { allowPartial: true });
       if (sequence !== readSequence.current) return;
       setLetters((old) => [
         ...old,
         ...data.letters.filter((e) => !old.some((x) => x.id === e.id)),
+      ]);
+      setUnavailableLetterIds((old) => [
+        ...new Set([...old, ...data.unavailableLetterIds]),
       ]);
       setBoxes(data.postboxes);
       setCursor(data.nextCursor);
@@ -900,6 +935,13 @@ export function App() {
                   </p>
                 </div>
               )}
+              {!preview && (
+                <MailReadNotice
+                  ids={unavailableLetterIds}
+                  busy={busy || loadingMore}
+                  onRetry={() => void task(refresh)}
+                />
+              )}
               <div className="scene">
                 <div className="scene-moon" />
                 <div className="scene-stars" aria-hidden="true">
@@ -974,14 +1016,18 @@ export function App() {
                     <p>
                       {mailQuery.trim() || mailFilter !== "all"
                         ? "No letters match this search."
-                        : chain
-                          ? "The hall is quiet."
-                          : "Listening for letters…"}
+                        : unavailableLetterIds.length
+                          ? "Some mail is waiting for another read."
+                          : chain
+                            ? "The hall is quiet."
+                            : "Listening for letters…"}
                       <br />
                       <small>
                         {mailQuery.trim() || mailFilter !== "all"
                           ? "Try another word or show all hall mail. Sealed contents stay private."
-                          : "Public letters will appear here when someone sends one. You could be the first wandering soul."}
+                          : unavailableLetterIds.length
+                            ? "Use Retry unavailable mail above. Unverified letters are never shown as available gifts."
+                            : "Public letters will appear here when someone sends one. You could be the first wandering soul."}
                       </small>
                     </p>
                     {mailQuery.trim() || mailFilter !== "all" ? (
@@ -995,7 +1041,8 @@ export function App() {
                         Clear search and filters
                       </button>
                     ) : (
-                      chain && (
+                      chain &&
+                      !unavailableLetterIds.length && (
                         <button onClick={() => navigate("compose")}>
                           Write the first letter ↗
                         </button>
@@ -1449,6 +1496,7 @@ export function App() {
             onOpen={(e) => void task(() => openPostbox(e))}
             onRefresh={refresh}
             onMore={loadMore}
+            unavailableLetterIds={unavailableLetterIds}
             loadingMore={loadingMore}
             hasMore={!!cursor}
           />

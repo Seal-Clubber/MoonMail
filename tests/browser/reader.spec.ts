@@ -26,7 +26,7 @@ function state(url: string) {
           body: {
             state: [
               38,
-              { recovered: envelope },
+              { recovered: envelope } as Record<string, string>,
               {},
               `template_${deployment.envelopeTemplate}`,
             ],
@@ -354,4 +354,107 @@ test("guest gift review requires a separate confirmation and forgets abandoned d
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+});
+
+for (const problem of ["unavailable", "malformed"] as const) {
+  test(`one ${problem} letter cannot hide verified hall mail; retry recovers it`, async ({
+    page,
+  }) => {
+    await configure(page);
+    const broken = `component_${"6".repeat(64)}`;
+    let failing = true,
+      writes = 0;
+    await page.route(`${deployment.indexerUrl}**`, (r) => {
+      if (r.request().method() !== "GET") {
+        writes++;
+        return r.abort();
+      }
+      const url = r.request().url();
+      if (url.includes(deployment.registry)) {
+        const response = state(url);
+        response.substate!.Component.body.state[1] = {
+          recovered: envelope,
+          unavailable: broken,
+        };
+        return r.fulfill({ json: response });
+      }
+      if (url.includes(broken)) {
+        if (failing && problem === "unavailable")
+          return r.fulfill({ status: 503, body: "Fixture outage" });
+        const response = state(`/${envelope}`);
+        const data = response.substate!.Component.body.state;
+        data[1] = "unavailable";
+        data[3] = failing
+          ? "invalid encrypted-or-public JSON"
+          : JSON.stringify({
+              subject: "Recovered second letter",
+              body: "The other letter can now be read.",
+            });
+        return r.fulfill({ json: response });
+      }
+      return r.fulfill({ json: state(url) });
+    });
+    await page.goto("./");
+    await expect(
+      page.getByRole("button", { name: subject, exact: false }),
+    ).toBeVisible();
+    const notice = page.locator(".mail-read-notice");
+    await expect(notice).toContainText("1 letter could not be read");
+    await expect(
+      page.getByRole("status").filter({ hasText: "Loaded available mail" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /invalid encrypted-or-public JSON/ }),
+    ).toHaveCount(0);
+    await notice.getByText("Which letters?", { exact: true }).click();
+    await expect(notice).toContainText("unavailable");
+    failing = false;
+    await notice
+      .getByRole("button", { name: "Retry unavailable mail" })
+      .click();
+    await expect(
+      page.getByRole("button", {
+        name: "Recovered second letter",
+        exact: false,
+      }),
+    ).toBeVisible();
+    await expect(notice).toHaveCount(0);
+    await expect(
+      page.getByRole("status").filter({ hasText: "Mail is up to date" }),
+    ).toBeVisible();
+    expect(writes).toBe(0);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  });
+}
+
+test("all unreadable letters show a retry state rather than an empty post office", async ({
+  page,
+}) => {
+  await configure(page);
+  let failing = true;
+  await page.route(`${deployment.indexerUrl}**`, (route) => {
+    const url = route.request().url();
+    return url.includes(envelope) && failing
+      ? route.fulfill({ status: 503, body: "Fixture outage" })
+      : route.fulfill({ json: state(url) });
+  });
+  await page.goto("./");
+  await expect(
+    page.getByText("Some mail is waiting for another read."),
+  ).toBeVisible();
+  await expect(page.getByText("The hall is quiet.")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Write the first letter", exact: false }),
+  ).toHaveCount(0);
+  await expect(page.locator(".envelope-card")).toHaveCount(0);
+  failing = false;
+  await page.getByRole("button", { name: "Retry unavailable mail" }).click();
+  await expect(
+    page.getByRole("button", { name: subject, exact: false }),
+  ).toBeVisible();
+  await expect(page.locator(".mail-read-notice")).toHaveCount(0);
 });
