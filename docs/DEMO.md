@@ -2,6 +2,8 @@
 
 Use Esmeralda in Sapient. All amounts are test TARI. The website needs no separate bridge or daemon. The current source uses the verified Sapient office; older office mail does not carry over.
 
+The mist, fireflies and ghost artwork follow your device’s reduced-motion setting. Text and wallet controls stay still; the parchment writing and reading surfaces use dark ink.
+
 ## Read a letter
 
 Open **Public mail** and choose a letter. Public reading needs no wallet. If someone gives you a private link, open the complete link to decrypt the letter on your device. Opening a letter never collects a gift. Empty and loading states show no invented mail or funded gifts.

@@ -2,6 +2,8 @@
 
 A spooky place to leave a kind letter, send a gift, or open your private inbox. Visitors need the website and their normal [Sapient wallet](https://sapient.tari.mw/). No GhostDrop bridge, daemon, API key or file import is needed.
 
+The moonlit interface uses a centered ghost-and-envelope mark, slow mist and firefly animation, and brighter text on dark surfaces with dark ink on parchment. Motion stops when your device requests reduced motion; decoration never covers controls.
+
 - **Public mail:** read letters without connecting. Search loaded public subjects/messages or public letter IDs, and filter by public letters, sealed invitations or uncollected public gifts. Sealed contents are never searched. Load more includes additional on-chain mail; anyone can collect an available public gift once.
 - **Private links:** encrypted letters for whoever holds the complete secret link. Read and collect without connecting, or connect Sapient to choose a receiving account.
 - **My inbox:** create a wallet-controlled postbox, share its ID, and open mail encrypted for you. Separate, explicit private view consent lets the same Sapient wallet recover your mail after restoration.
@@ -12,7 +14,7 @@ Public letter links, private links and postbox IDs always have a manual-copy fie
 
 Sending review shows the complete included reply postbox ID, or **No reply postbox**. Return IDs are public metadata, including on sealed letters. Changing that choice invalidates the prepared review; re-review creates a fresh private link that must be saved again before sending. [Reply-review verification](docs/reply-review-evidence.json) records local regressions; [published verification](docs/reply-review-published-evidence.json) confirms the unsent flow with stock Sapient on actual Pages HTTPS.
 
-Disconnecting or changing post office clears the optional return postbox and prepared review. Your written subject, message, gift and fee settings remain at the writing desk. Reconnect the wallet and explicitly choose a registered return address again if you want replies. [Reply-session verification](docs/reply-session-evidence.json) records local cleanup checks; this addition awaits your push.
+Disconnecting or changing post office clears the optional return postbox and prepared review. Your written subject, message, gift and fee settings remain at the writing desk. Reconnect the wallet and explicitly choose a registered return address again if you want replies. [Reply-session verification](docs/reply-session-evidence.json) records local cleanup checks; hosted acceptance for this addition remains pending.
 
 Collection has a separate destination review: check the full address, receiving account, payout and fee reserve before choosing **Confirm & collect gift**. Opening that review never requests a proof or submits a claim.
 

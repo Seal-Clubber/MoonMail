@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { GhostMark } from "./GhostMark";
 import type {
   Deployment,
   Envelope,
@@ -982,6 +983,12 @@ export function App() {
   }
   return (
     <div className="app-shell">
+      <div className="haunting" aria-hidden="true">
+        <div className="haunting-mist" />
+        <span className="haunting-mote" />
+        <span className="haunting-mote" />
+        <span className="haunting-mote" />
+      </div>
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -995,7 +1002,7 @@ export function App() {
           }}
         >
           <span className="brand-icon" aria-hidden="true">
-            ✦
+            <GhostMark />
           </span>
           <span>
             GHOSTDROP<small>THE HAUNTED POST OFFICE</small>
@@ -1152,7 +1159,7 @@ export function App() {
           <>
             <section className="hero">
               <div className="hero-sigil" aria-hidden="true">
-                ☾
+                <GhostMark />
               </div>
               <p className="kicker">SOME THINGS ARE BETTER LEFT UNSEALED.</p>
               <h1>
