@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-07T03:21:33.542774+00:00",
+  "checkedAt": "2026-10-07T04:08:36.615997+00:00",
   "network": 38,
   "indexerUrl": "https://ootle-indexer-a.tari.com/",
   "deployment": {
@@ -165,6 +165,13 @@
       "outcome": "Commit",
       "feeMicroTari": "1637",
       "feeCapMicroTari": "100000"
+    },
+    {
+      "operation": "claim-one-additional-burn",
+      "transactionId": "d072d695a4852aad6838c90d9f7f28a966ace5b6d29396d7ba24203e8af69aca",
+      "outcome": "Commit",
+      "feeMicroTari": "100000",
+      "feeCapMicroTari": "100000"
     }
   ],
   "fundedClaim": {
@@ -210,13 +217,13 @@
   "budget": {
     "approvedMicroTari": "14000000",
     "approvedOotleTransactionCount": 17,
-    "confirmedOotleTransactionCount": 16,
-    "actualPaidOotleFeesMicroTari": "7942474",
+    "confirmedOotleTransactionCount": 17,
+    "actualPaidOotleFeesMicroTari": "8042474",
     "source": "existing isolated development funds plus approved 4 TARI return from prior isolated payout",
     "additionalBurnMicroXtm": "10000000",
     "l1FeeMicroXtm": "740",
     "burnMinedEpoch": 11947,
-    "burnClaim": "awaiting indexer current epoch greater than 11947; never repeat burn"
+    "burnClaim": "confirmed at epoch 11948; wallet recovered 9900000 microTARI unspent; never repeat burn or claim"
   },
   "limits": [
     "V2 frontend ad8831a is published and verified; subsequent wording/evidence checkpoint remains local pending user push.",
@@ -225,5 +232,6 @@
     "Indexer responses are trusted; this client does not independently verify consensus proofs.",
     "Original deployment and immutable historical mail remain unchanged."
   ],
-  "publishedFrontendVerification": "postbox-v2-published-wallet-evidence.json"
+  "publishedFrontendVerification": "postbox-v2-published-wallet-evidence.json",
+  "bridgeVerification": "postbox-v2-bridge-evidence.json"
 }

@@ -86,10 +86,7 @@
   },
   "browserUiTests": {
     "passed": 4,
-    "viewports": [
-      "desktop",
-      "mobile"
-    ],
+    "viewports": ["desktop", "mobile"],
     "mockedProviderAndLedger": true,
     "approvalControlsFrozen": true,
     "checks": [
@@ -101,12 +98,13 @@
   "localBrowserRegressionTotal": 22,
   "publicReleaseStatus": {
     "publicationBroadcasts": 3,
-    "confirmedOotleTransactionCount": 16,
+    "confirmedOotleTransactionCount": 17,
     "visitorRequirements": "stock Sapient and site only",
     "publicFinancialProof": "postbox-v2-esmeralda-evidence.json",
     "newFrontendPublished": true,
     "legacyDefaultPreserved": true,
-    "frontendCommit": "ad8831a83e0c0103a5b3c05795555f6b9d5ae3b5"
+    "frontendCommit": "ad8831a83e0c0103a5b3c05795555f6b9d5ae3b5",
+    "bridgeVerification": "postbox-v2-bridge-evidence.json"
   },
   "clientTestTotal": 88,
   "v2GuestEngineRegression": {
@@ -116,10 +114,6 @@
       "private-link wrong-authority rejection",
       "private-link full payout",
       "replay blocked",
-      "gift-funded new guest account creation",
-      "gift-funded new guest account creation",
-      "gift-funded new guest account creation",
-      "gift-funded new guest account creation",
       "gift-funded new guest account creation"
     ]
   },

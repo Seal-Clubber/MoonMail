@@ -1,0 +1,32 @@
+{
+  "checkedAt": "2026-10-07T04:07:52.032Z",
+  "network": 38,
+  "transactionId": "d072d695a4852aad6838c90d9f7f28a966ace5b6d29396d7ba24203e8af69aca",
+  "outcome": "Commit",
+  "claimEpoch": 11948,
+  "burnAmountMicroXtm": "10000000",
+  "burnMinedEpoch": 11947,
+  "l1FeeMicroXtm": "740",
+  "feeCapMicroTari": "100000",
+  "dryRunFeeQuoteMicroTari": "13238",
+  "executionFeeRequiredMicroTari": "13226",
+  "actualFeePaidMicroTari": "100000",
+  "feeOverchargeMicroTari": "86774",
+  "walletRecoveredOutput": {
+    "checkedAt": "2026-10-07T04:07:52.032Z",
+    "address": "utxo_0101010101010101010101010101010101010101010101010101010101010101_507069f9f6725c8f62085d436fbf9ef3317d9f9075f193e43e77a80c5cca494a",
+    "valueMicroTari": "9900000",
+    "status": "Unspent",
+    "isBurnt": false,
+    "isFrozen": false,
+    "isOnChain": true
+  },
+  "verifiedThrough": "Isolated operator wallet read-only stealth UTXO query, scoped to the approved account; temporary API key revoked.",
+  "visitorRequirements": "website and stock Sapient only",
+  "limits": [
+    "This replenishes isolated development funds; it is not another visitor gift claim.",
+    "The claim paid the full fee cap, including the overcharge; the dry-run quote is not the paid fee.",
+    "No additional burn, reveal, or duplicate claim was submitted.",
+    "Private proof payloads, wallet secrets and operational tools remain outside the repository."
+  ]
+}
