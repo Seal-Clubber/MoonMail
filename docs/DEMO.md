@@ -6,6 +6,8 @@ Use Esmeralda in Sapient. All amounts are test TARI. The website needs no separa
 
 Open **Public mail** and choose a letter. Public reading needs no wallet. If someone gives you a private link, open the complete link to decrypt the letter on your device. Opening a letter never collects a gift. Empty and loading states show no invented mail or funded gifts.
 
+For a public letter, choose **Copy public letter link** and share the complete address. Your friend can open that exact letter without connecting Sapient. Public links give everyone access to the letter and any available public gift; opening alone never collects it. Keep sealed mail on its private link or controlling postbox wallet. If a public link belongs to another office, check it with the sender. The site keeps your current office settings.
+
 ## Prepare your Sapient funds
 
 GhostDrop sending and postbox setup use public TARI. Open **Wallet details → Check public funds** to read that balance without requesting private-view permission or signing. This is a snapshot, not a guarantee that a future transaction will succeed; Sapient still checks funds and fees. An unavailable read stays unknown and can retry.

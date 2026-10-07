@@ -45,6 +45,11 @@ import { AmountInput, tari } from "./AmountInput";
 import { CopyField } from "./CopyField";
 import { WalletFunds } from "./WalletFunds";
 import { PostboxInvitation } from "./PostboxInvitation";
+import {
+  createPublicLetterLink,
+  parsePublicLetterLink,
+  type PublicLetterRoute,
+} from "../core/public-letter-links";
 import { parsePostboxLink, type PostboxRoute } from "../core/postbox-links";
 import { MailReadNotice } from "./MailReadNotice";
 import { networkPreset, checkPublicIndexer } from "../core/networks";
@@ -146,12 +151,20 @@ export function App() {
     [destMode, setDestMode] = useState("manual"),
     [route, setRoute] = useState<LinkRoute>();
   const [postboxInvitation, setPostboxInvitation] = useState<PostboxRoute>();
+  const [publicLetterRoute, setPublicLetterRoute] =
+    useState<PublicLetterRoute>();
+  const [publicLetterState, setPublicLetterState] = useState<
+    "idle" | "opening" | "failed"
+  >("idle");
+  const [publicLetterError, setPublicLetterError] = useState("");
+  const [publicLetterRevision, setPublicLetterRevision] = useState(0);
   const [linkState, setLinkState] = useState<"idle" | "opening" | "failed">(
       "idle",
     ),
     [linkError, setLinkError] = useState(""),
     [linkRevision, setLinkRevision] = useState(0);
-  const busy = taskBusy || linkState === "opening";
+  const busy =
+    taskBusy || linkState === "opening" || publicLetterState === "opening";
   const modalBusy = useRef(busy);
   const modalReturnFocus = useRef<HTMLElement | null>(null);
   const focusInvitedDraft = useRef(false);
@@ -266,6 +279,11 @@ export function App() {
           const invitation = parsePostboxLink(location.hash);
           if (invitation) {
             setPostboxInvitation(invitation);
+            return;
+          }
+          const publicLink = parsePublicLetterLink(location.hash);
+          if (publicLink) {
+            setPublicLetterRoute(publicLink);
             return;
           }
           const initialView = location.hash.slice(2);
@@ -463,6 +481,42 @@ export function App() {
     };
   }, [route, chain, linkRevision]);
   useEffect(() => {
+    if (!publicLetterRoute || !chain || taskBusy || active) {
+      setPublicLetterState("idle");
+      return;
+    }
+    let cancelled = false;
+    const link = publicLetterRoute,
+      reader = chain;
+    setPublicLetterState("opening");
+    setPublicLetterError("");
+    async function openPublicLink() {
+      try {
+        if (!sameContext(link.context, reader.deployment))
+          throw new Error("Different post office");
+        const envelope = await reader.readLetter(link.id);
+        if (cancelled) return;
+        if (envelope.mode !== "public")
+          throw new Error("Only public letters can open through this route");
+        setActive(envelope);
+        setPlain(envelope.payload as Letter);
+        setPublicLetterState("idle");
+      } catch {
+        if (cancelled) return;
+        setPublicLetterState("failed");
+        setPublicLetterError(
+          sameContext(link.context, reader.deployment)
+            ? "This public letter could not be read. Retry if the post office is unavailable, or check its complete link with the sender. Sealed letters require their private link or controlling postbox wallet."
+            : "This public link belongs to a different post office or network. Check it with the sender; your settings have not been switched.",
+        );
+      }
+    }
+    void openPublicLink();
+    return () => {
+      cancelled = true;
+    };
+  }, [publicLetterRoute, chain, publicLetterRevision, taskBusy, active?.id]);
+  useEffect(() => {
     if (!active) return;
     setClaimReview(undefined);
     setCreateAccount(false);
@@ -630,6 +684,8 @@ export function App() {
     setStatus("Sapient post office settings restored.");
   }
   function navigate(v: string) {
+    setPublicLetterRoute(undefined);
+    setPublicLetterState("idle");
     setPostboxInvitation(undefined);
     setView(v);
     setError("");
@@ -648,6 +704,9 @@ export function App() {
     );
   }
   function closeLetter() {
+    setPublicLetterRoute(undefined);
+    setPublicLetterState("idle");
+    setPublicLetterError("");
     openSequence.current += 1;
     secret.current?.fill(0);
     secret.current = undefined;
@@ -977,6 +1036,52 @@ export function App() {
             onDismiss={() => navigate(view)}
             onRetry={() => void task(refresh)}
           />
+        )}
+        {publicLetterRoute && !active && (
+          <section
+            className="deployment-note private-link-status"
+            aria-label="Public letter status"
+            role="status"
+          >
+            <div>
+              <strong>
+                {publicLetterState === "opening"
+                  ? "Opening the public letter…"
+                  : publicLetterState === "failed"
+                    ? "This public letter could not open."
+                    : "Your public letter is waiting."}
+              </strong>
+              <p>
+                {publicLetterError ||
+                  (readState === "failed"
+                    ? "The post office could not be reached. Refresh to try this letter again."
+                    : "Reading the selected post office. Opening a public letter needs no wallet and never collects its gift.")}
+              </p>
+            </div>
+            <div className="actions">
+              {(publicLetterState === "failed" || readState === "failed") && (
+                <button
+                  disabled={taskBusy}
+                  onClick={() =>
+                    chain
+                      ? setPublicLetterRevision((v) => v + 1)
+                      : void task(refresh)
+                  }
+                >
+                  Retry public letter
+                </button>
+              )}
+              <button
+                disabled={taskBusy}
+                onClick={() => {
+                  closeLetter();
+                  navigate("hall");
+                }}
+              >
+                Dismiss public letter
+              </button>
+            </div>
+          </section>
         )}
         {route && !active && (
           <section
@@ -2384,6 +2489,9 @@ export function App() {
                 </p>
               </div>
             )}
+            {!preview && active.mode === "public" && (
+              <PublicLetterShare envelope={active} />
+            )}
             {privateLink && (
               <CopyField
                 label="Private link for this letter"
@@ -2683,5 +2791,26 @@ export function App() {
         </div>
       )}
     </div>
+  );
+}
+
+function PublicLetterShare({ envelope }: { envelope: Envelope }) {
+  let link = "";
+  try {
+    link = createPublicLetterLink(
+      new URL(import.meta.env.BASE_URL, location.href).href,
+      { id: envelope.id, context: envelope.context },
+    );
+  } catch {
+    return null;
+  }
+  return (
+    <CopyField
+      label="Public link for this letter"
+      buttonLabel="Copy public letter link"
+      copiedMessage="Public letter link copied. Anyone can read it and collect an available public gift once."
+      multiline
+      value={link}
+    />
   );
 }

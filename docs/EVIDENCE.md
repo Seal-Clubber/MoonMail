@@ -20,6 +20,8 @@ The records below retain their original build, dates and boundaries. Former disa
 
 Evidence applies to the stated build and isolated network. GitHub Pages HTTPS hosting is verified separately from wallet connectivity and public-chain deployment.
 
+**Public-letter sharing:** the local source adds a context-bound link to an exact public letter, clipboard fallback, retry and dismissal. All157 client tests and134 desktop/mobile browser checks pass, including sealed-mode, wrong-office and delayed-read rejection. The actual Esmeralda V2 office currently has no public letters: its existing sealed letter was rejected through this route on desktop/mobile, while positive public reading uses isolated fixtures. No new letter, private-view grant, claim or financial transaction was created. [Public-letter link evidence](public-letter-link-evidence.json) records source/build hashes and the publication boundary.
+
 ## Current Sapient migration
 
 **Postbox capsule lab:** a new ownerless custom Stealth-resource contract passed the Ootle 0.45 engine and official-SDK crypto fixture. Six unsafe store cases and both native spending paths were rejected without removing the carrier. Unmodified official Sapient 0.6.6 recovered its bound memo and decrypted an addressed example in an original wallet and an independent backup-restored profile; a foreign wallet failed. Separate view permission and revocation were checked. Only the custom substates were supplied from engine fixtures, and zero public transactions were broadcast. No public deployment or product UI integration is claimed. `mailboxRecovery` remains false; prepaid addressed claims have a separate wallet fee-instruction limitation. [Candidate and remaining boundaries](SAPIENT-POSTBOX-RECOVERY.md).

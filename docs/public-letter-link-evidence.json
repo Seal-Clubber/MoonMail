@@ -1,0 +1,107 @@
+{
+  "checkedAt": "2026-10-07T21:02:16.565Z",
+  "publication": "Local production build; awaits the human main push. Published funds/invitations at4f87f39 retain their separate evidence.",
+  "sourceFilesSha256": {
+    "src/core/public-letter-links.ts": "45f097c50469e61a01d34710b27d035c666650c6613e060d3183a4f160dcff55",
+    "src/ui/App.tsx": "c7a2cbda24603ebe0263bd514d7b1445d42b4f4e0fc3cb8dd3e741a748d8a9ec",
+    "tests/public-letter-links.test.ts": "f01881cd2828b82f2581d163d66a60a3755ecdfe7df2df690398d8aa0303fa9f",
+    "tests/browser/public-letter-link.spec.ts": "4ab0be8b92e0e36b5c3a5db55f1480e368b3dd76bb26d4c66551887619f48e10",
+    "tests/browser/delivery.spec.ts": "43df5bc15521b500fb8182159fc327231009842f52cb5a87076f561d6bb52c21"
+  },
+  "productionAssets": [
+    {
+      "path": "assets/index-BbIEx53R.js",
+      "bytes": 354853,
+      "sha256": "4cd250b3aed32559d38173f9197770536bfec3147036ccb6dc4ff205fa2b6f11"
+    },
+    {
+      "path": "assets/index-gkBJwDpg.css",
+      "bytes": 26415,
+      "sha256": "b398ba6937bd6afccde52fbfc91ec8d0c5e2fed03e249e46ad19993df3ba7b5b"
+    },
+    {
+      "path": "assets/ootle_wasm-CLPAruJ_.js",
+      "bytes": 209,
+      "sha256": "e490145dfae574781fe74c176955b03a51d16d8170cbcc7d7a021414595baa56"
+    },
+    {
+      "path": "assets/ootle_wasm-DixGV7PA.js",
+      "bytes": 21319,
+      "sha256": "e0dfe02134916f3202e8e84cc8b522bcbeb210fcffb31c900325288d27335810"
+    },
+    {
+      "path": "assets/ootle_wasm_bg-Dvm5bzZ4.wasm",
+      "bytes": 1288441,
+      "sha256": "d3969f2f738a70cf3199992d52c3e766000b5f31b859427849ed4171395897f1"
+    },
+    {
+      "path": "deployment-v2.json",
+      "bytes": 1005,
+      "sha256": "52df5ef95e81f906f1063fa7f593be8cab11fd6f4f5dfd4225c10bdc7ce78acf"
+    },
+    {
+      "path": "deployment.json",
+      "bytes": 1005,
+      "sha256": "52df5ef95e81f906f1063fa7f593be8cab11fd6f4f5dfd4225c10bdc7ce78acf"
+    },
+    {
+      "path": "favicon.svg",
+      "bytes": 317,
+      "sha256": "11ae2dfa17e407f39b94831d394d644d061126791b7224feb17dc9259eed6f19"
+    },
+    {
+      "path": "index.html",
+      "bytes": 867,
+      "sha256": "973522ce2aeeafd349a7f5817544ce214f8bff4ebfbc201ae1f0b934f02bc0aa"
+    }
+  ],
+  "clientChecks": {
+    "testsPassed": 157,
+    "testFilesPassed": 17,
+    "browserChecksPassed": 134,
+    "singleCiWorkerBrowserChecksPassed": 134,
+    "singleWorkerDuration": "1.6 minutes",
+    "typeScript": "passed",
+    "productionBuild": "passed",
+    "mobileModalLayout": "visually reviewed",
+    "platform": "Windows local Chromium; GitHub Linux Verify still awaits the human push"
+  },
+  "realChainReadOnlyPrivacyCheck": {
+    "checkedAt": "2026-10-07T21:02:16.565Z",
+    "base": "http://127.0.0.1:4173/GhostDrop/",
+    "network": 38,
+    "registry": "component_7f205e42678ea72a6a157e9c588851394fc479b99b6be53df407f327c47492f8",
+    "mode": "postbox",
+    "ledgerOrAppOverrides": false,
+    "results": [
+      {
+        "viewport": "desktop",
+        "actualSealedLetterRejected": true,
+        "walletProviderPresent": false,
+        "transactionJournalCreated": false,
+        "blockedNonReadRequests": 0,
+        "pageErrors": []
+      },
+      {
+        "viewport": "mobile",
+        "actualSealedLetterRejected": true,
+        "walletProviderPresent": false,
+        "transactionJournalCreated": false,
+        "blockedNonReadRequests": 0,
+        "pageErrors": []
+      }
+    ],
+    "caveat": "Actual V2 registry currently has no public letters. This checks sealed-letter rejection on the real chain; positive public reading is covered by isolated browser fixtures. No new publication, private view or financial operation.",
+    "existingSealedLetterId": "sapient-v2-funded-gift-20261007"
+  },
+  "boundaries": [
+    "Opening reads only the registered public letter in the selected verified office. No wallet, private-view consent, ownership proof, signature, claim or transaction journal is required.",
+    "Only public letter ID and network/registry/template context are in the fragment. No plaintext, capability, indexer URL, credential or wallet key is included.",
+    "Private-link and postbox letters are rejected. Different deployment links never switch settings. Registry/envelope owner and template checks remain enforced.",
+    "Positive exact-letter opening, copying, gift display and reload use isolated ledger fixtures. The actual V2 office has no public letters; actual-chain acceptance covers sealed-mail rejection only.",
+    "Opening never collects a gift. Collection keeps the existing destination review, fee rules and separate explicit confirmation.",
+    "Unavailable reads retry; dismissal cancels late results. Desktop/mobile browser viewports are not a native phone wallet installation.",
+    "No new public letter, publication, financial operation, contract change or engine campaign. Financial lost-response testing remains separately unverified.",
+    "134 checks also pass with one CI worker locally. This does not claim that the outstanding GitHub Verify run or unpublished feature has passed on Linux/Pages."
+  ]
+}
