@@ -4,6 +4,8 @@ Use Esmeralda in Sapient. All amounts are test TARI. The website needs no separa
 
 The mist, fireflies and ghost artwork follow your device’s reduced-motion setting. Text and wallet controls stay still; the parchment writing and reading surfaces use dark ink.
 
+Postbox setup shows **1 of 2 · Save recovery backup**, then **2 of 2 · Open my postbox** after confirmation. Approve each transaction in Sapient. Private-view access is a separate permission; each transaction has its own network fee.
+
 ## Read a letter
 
 Open **Public mail** and choose a letter. Public reading needs no wallet. If someone gives you a private link, open the complete link to decrypt the letter on your device. Opening a letter never collects a gift. Empty and loading states show no invented mail or funded gifts.

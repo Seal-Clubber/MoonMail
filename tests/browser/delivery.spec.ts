@@ -486,8 +486,11 @@ test("saved postbox backup confirms read-only; opening needs separate view conse
   await expect(
     page.getByText("Your recovery backup is ready.", { exact: true }),
   ).toBeVisible();
+  await expect(page.locator(".setup-steps li")).toHaveCount(2);
+  await expect(page.locator(".setup-steps")).toContainText("Approval 1 of 2");
+  await expect(page.locator(".setup-steps")).toContainText("Approval 2 of 2");
   await expect(
-    page.getByRole("button", { name: "Open my postbox", exact: true }),
+    page.getByRole("button", { name: "2 of 2 · Open my postbox", exact: true }),
   ).toBeDisabled();
   expect(receipts).toBe(1);
   const approval = page.getByRole("button", {
@@ -501,7 +504,7 @@ test("saved postbox backup confirms read-only; opening needs separate view conse
     .check();
   await approval.click();
   await expect(
-    page.getByRole("button", { name: "Open my postbox", exact: true }),
+    page.getByRole("button", { name: "2 of 2 · Open my postbox", exact: true }),
   ).toBeEnabled();
   await page
     .getByLabel("Postbox name", { exact: true })

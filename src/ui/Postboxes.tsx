@@ -347,8 +347,8 @@ export function Postboxes({
               <h2>Your first postbox awaits.</h2>
               <p>
                 Give it a name and let friends send you private mail. Setup
-                takes two wallet transactions: a recovery backup, then your
-                postbox. You’ll approve each one.
+                includes a private-view permission and two transaction approvals
+                in Sapient: first your encrypted backup, then your postbox.
               </p>
             </div>
           )}
@@ -380,7 +380,8 @@ export function Postboxes({
                   Postbox recovery needs your permission. This lets GhostDrop
                   read the connected account's private output summaries,
                   including amounts and memos for other resources. It does not
-                  reveal your wallet seed or signing keys.
+                  reveal your wallet seed or signing keys. This permission comes
+                  before the two transaction approvals.
                 </p>
                 <label className="checkbox">
                   <input
@@ -448,9 +449,6 @@ export function Postboxes({
             >
               {(!box || rotating) && (
                 <ol className="setup-steps" aria-label="Postbox setup progress">
-                  <li className={viewApproved ? "complete" : "current"}>
-                    1. Allow private recovery
-                  </li>
                   <li
                     className={
                       prepared?.state === "confirmed"
@@ -460,7 +458,7 @@ export function Postboxes({
                           : ""
                     }
                   >
-                    2. Save recovery backup
+                    Approval 1 of 2 · Save encrypted backup
                   </li>
                   <li
                     className={
@@ -469,7 +467,9 @@ export function Postboxes({
                         : ""
                     }
                   >
-                    3. Open your postbox
+                    {rotating
+                      ? "Approval 2 of 2 · Update encryption key"
+                      : "Approval 2 of 2 · Open your postbox"}
                   </li>
                 </ol>
               )}
@@ -583,13 +583,13 @@ export function Postboxes({
                 <div className="setup-summary">
                   <h3>
                     {prepared?.state === "confirmed"
-                      ? "Ready for your second approval"
-                      : "Two approvals, one private home."}
+                      ? "Ready for your second approval · 2 of 2"
+                      : "Two transaction approvals in Sapient"}
                   </h3>
                   <p>
                     {prepared?.state === "confirmed"
-                      ? "Your backup is confirmed. Review your postbox name, listing and fee limit before opening it."
-                      : "First save your encrypted recovery backup. Once it confirms, approve opening your postbox. Each step has its own Sapient fee estimate."}
+                      ? "Approval 1 of 2 is confirmed. Review your details below, then approve the second transaction in Sapient to finish setup."
+                      : "First approve Save recovery backup in Sapient. Wait for confirmation, then return here for approval 2 of 2 to finish setup. Each transaction has its own network fee."}
                   </p>
                   <dl className="receipt">
                     <div>
@@ -628,10 +628,12 @@ export function Postboxes({
                 {box && !rotating
                   ? "Save postbox changes"
                   : !prepared
-                    ? "Save recovery backup"
-                    : rotating
-                      ? "Use the new encryption key"
-                      : "Open my postbox"}
+                    ? "1 of 2 · Save recovery backup"
+                    : prepared.state !== "confirmed"
+                      ? "Finish backup step · 1 of 2"
+                      : rotating
+                        ? "2 of 2 · Use the new encryption key"
+                        : "2 of 2 · Open my postbox"}
               </button>
               {box && !rotating && (
                 <button
