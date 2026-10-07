@@ -2053,3 +2053,10 @@ footer button {
 .wallet-funds h3 {
   margin: 0 0 0.5rem;
 }
+
+.postbox-invitation code {
+  overflow-wrap: anywhere;
+}
+.postbox-invitation {
+  margin-bottom: 1.5rem;
+}

@@ -11,6 +11,7 @@ import { readDelivery } from "../core/delivery";
 import { browserStorage } from "../core/browser-storage";
 import { CopyField } from "./CopyField";
 import { MailReadNotice } from "./MailReadNotice";
+import { createPostboxLink } from "../core/postbox-links";
 
 export function Postboxes({
   wallet,
@@ -79,6 +80,17 @@ export function Postboxes({
     if (!editing && !owned.some((p) => p.id === selected) && owned.length)
       choose(owned[0].id);
   }, [owned.map((p) => p.id).join(","), editing]);
+  let invitationLink = "";
+  if (box) {
+    try {
+      invitationLink = createPostboxLink(
+        new URL(import.meta.env.BASE_URL, location.href).href,
+        { id: box.id, context: deployment },
+      );
+    } catch {
+      /* An unusual historical ID can still be shared manually. */
+    }
+  }
   const inbox = letters.filter(
     (e) => e.mode === "postbox" && e.recipientPostbox === box?.id,
   );
@@ -644,6 +656,20 @@ export function Postboxes({
                 copiedMessage="Postbox ID copied. Share it with a friend so they can write to you."
                 value={box.id}
               />
+              {invitationLink && (
+                <CopyField
+                  label="My postbox invitation"
+                  buttonLabel="Copy postbox invitation"
+                  copiedMessage="Postbox invitation copied. Send it to a friend so they can choose you as their recipient."
+                  value={invitationLink}
+                  multiline
+                />
+              )}
+              <p className="fine-print">
+                Share this public address with a friend. It lets them write to
+                you, including when your postbox is unlisted; it gives no access
+                to your wallet or inbox.
+              </p>
               <p>
                 {box.discoverable ? "Visible in the directory" : "Unlisted"} ·
                 Controlling account {account?.account.name}
@@ -688,8 +714,8 @@ export function Postboxes({
                 ))
               ) : (
                 <p className="quiet-state">
-                  No private letters on this page yet. Copy your postbox ID and
-                  invite a friend to write.
+                  No private letters on this page yet. Copy your postbox
+                  invitation and invite a friend to write.
                 </p>
               )}
               {hasMore && (

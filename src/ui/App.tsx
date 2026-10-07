@@ -44,6 +44,8 @@ import { Postboxes } from "./Postboxes";
 import { AmountInput, tari } from "./AmountInput";
 import { CopyField } from "./CopyField";
 import { WalletFunds } from "./WalletFunds";
+import { PostboxInvitation } from "./PostboxInvitation";
+import { parsePostboxLink, type PostboxRoute } from "../core/postbox-links";
 import { MailReadNotice } from "./MailReadNotice";
 import { networkPreset, checkPublicIndexer } from "../core/networks";
 
@@ -143,6 +145,7 @@ export function App() {
     [createAccount, setCreateAccount] = useState(false),
     [destMode, setDestMode] = useState("manual"),
     [route, setRoute] = useState<LinkRoute>();
+  const [postboxInvitation, setPostboxInvitation] = useState<PostboxRoute>();
   const [linkState, setLinkState] = useState<"idle" | "opening" | "failed">(
       "idle",
     ),
@@ -240,6 +243,7 @@ export function App() {
     const readHash = () => {
       closeLetter();
       setError("");
+      setPostboxInvitation(undefined);
       try {
         const parsed = parseGiftLink(location.hash);
         if (parsed) {
@@ -250,6 +254,11 @@ export function App() {
             `${location.pathname}${location.search}#/letter/${encodeURIComponent(parsed.id)}`,
           );
         } else {
+          const invitation = parsePostboxLink(location.hash);
+          if (invitation) {
+            setPostboxInvitation(invitation);
+            return;
+          }
           const initialView = location.hash.slice(2);
           if (
             [
@@ -612,6 +621,7 @@ export function App() {
     setStatus("Sapient post office settings restored.");
   }
   function navigate(v: string) {
+    setPostboxInvitation(undefined);
     setView(v);
     setError("");
     setReview(false);
@@ -937,6 +947,27 @@ export function App() {
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
+        {postboxInvitation && (
+          <PostboxInvitation
+            invitation={postboxInvitation}
+            deployment={d}
+            boxes={boxes}
+            ready={readState === "ready"}
+            failed={readState === "failed"}
+            busy={busy}
+            onAccept={(id) => {
+              draftSequence.current += 1;
+              setMode("postbox");
+              setRecipient(id);
+              setPrepared(undefined);
+              setLinkSaved(false);
+              setPrivateLink("");
+              navigate("compose");
+            }}
+            onDismiss={() => navigate(view)}
+            onRetry={() => void task(refresh)}
+          />
+        )}
         {route && !active && (
           <section
             className="deployment-note private-link-status"
@@ -1439,10 +1470,11 @@ export function App() {
                   >
                     <option value="">Choose a registered postbox</option>
                     {boxes
-                      .filter((p) => p.discoverable)
+                      .filter((p) => p.discoverable || p.id === recipient)
                       .map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.nickname} · {short(p.id)}
+                          {p.nickname}
+                          {!p.discoverable ? " · Unlisted" : ""} · {short(p.id)}
                         </option>
                       ))}
                   </select>

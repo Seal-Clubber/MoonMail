@@ -20,6 +20,10 @@ If you received private TARI, it appears under Sapient’s **Private balance**, 
 4. For a private link, use **Copy secret link**, or copy the complete value from **Private link to save**, before publishing. Tick **I saved my private link somewhere safe** only once you have saved it; sending remains disabled until then. Keep the complete link safely: it is not stored in browser history or the transaction journal, and cannot be recovered after closing or refreshing the session.
 5. Choose **Fund & publish letter** and approve in Sapient. The app takes you to **Activity**. Known transaction IDs are checked automatically for up to two minutes while that page is open, without signing or resubmitting. Manual **Check status** stays available afterward. Once delivery confirms, copy the same confirmed private link or refresh the public hall. An uncertain request stays blocked; resume the original Sapient approval rather than sending a replacement. A fee-only commit remains uncertain and is not shown as delivered. If saved records cannot be read, financial actions are paused; inspect wallet history before recovering storage rather than deleting uncertain attempts.
 
+## Invite a friend to write
+
+Once your postbox is registered, open **My inbox** and copy **My postbox invitation**. Send that public address to your friend. It works for an unlisted postbox too. They can open it without connecting a wallet, check its full ID with you, and choose **Use this postbox for my letter**. Their current subject, message and gift stay in the draft; nothing is published until they review and approve through Sapient. This invitation gives no access to your inbox. A different office or an unavailable/unknown postbox cannot be selected until verified.
+
 ## Make a postbox
 
 1. Open **My inbox** and connect Sapient. Existing owned postboxes appear automatically. Otherwise choose **Create my postbox**.
