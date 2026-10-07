@@ -24,6 +24,7 @@ export function Postboxes({
   onOpen,
   onRefresh,
   onMore,
+  loadingMore,
   hasMore,
   writeBlocked,
 }: {
@@ -41,6 +42,7 @@ export function Postboxes({
   onRefresh: () => Promise<void>;
   onMore: () => Promise<void>;
   hasMore: boolean;
+  loadingMore: boolean;
   writeBlocked: boolean;
 }) {
   const [selected, setSelected] = useState(""),
@@ -680,8 +682,11 @@ export function Postboxes({
                 </p>
               )}
               {hasMore && (
-                <button disabled={busy} onClick={() => void task(onMore)}>
-                  Load more letters
+                <button
+                  disabled={busy || loadingMore}
+                  onClick={() => void onMore()}
+                >
+                  {loadingMore ? "Loading more letters…" : "Load more letters"}
                 </button>
               )}
             </>

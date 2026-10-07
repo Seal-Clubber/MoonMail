@@ -2,7 +2,7 @@
 
 A spooky place to leave a kind letter, send a gift, or open your private inbox. Visitors need the website and their normal [Sapient wallet](https://sapient.tari.mw/). No GhostDrop bridge, daemon, API key or file import is needed.
 
-- **Public mail:** read letters without connecting. Anyone can collect an available public gift once.
+- **Public mail:** read letters without connecting. Search loaded public subjects/messages or public letter IDs, and filter by public letters, sealed invitations or uncollected public gifts. Sealed contents are never searched. Load more includes additional on-chain mail; anyone can collect an available public gift once.
 - **Private links:** encrypted letters for whoever holds the complete secret link. Read and collect without connecting, or connect Sapient to choose a receiving account.
 - **My inbox:** create a wallet-controlled postbox, share its ID, and open mail encrypted for you. Separate, explicit private view consent lets the same Sapient wallet recover your mail after restoration.
 - **Write a letter:** choose your audience, enter gifts in TARI, review the full gift and separate collection funds, then approve in Sapient. Copy or manually save the complete private link, then acknowledge it before sending.

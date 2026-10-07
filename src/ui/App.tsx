@@ -27,6 +27,7 @@ import {
 import { money } from "../core/transactions";
 import { readPending, savePending, inspectPending } from "../core/pending";
 import { readDelivery } from "../core/delivery";
+import { filterHallMail, type MailFilter } from "../core/mail-search";
 import {
   mailboxKey,
   sealMailbox,
@@ -92,7 +93,8 @@ export function App() {
     [boxes, setBoxes] = useState<Postbox[]>([]),
     [preview, setPreview] = useState(false),
     [list, setList] = useState(false),
-    [cursor, setCursor] = useState("");
+    [cursor, setCursor] = useState(""),
+    [loadingMore, setLoadingMore] = useState(false);
   const [wallet, setWallet] = useState<ConnectedWallet>(),
     [account, setAccount] = useState(0),
     [connect, setConnect] = useState(false),
@@ -112,6 +114,8 @@ export function App() {
     [reply, setReply] = useState(""),
     [recipient, setRecipient] = useState(""),
     [directoryQuery, setDirectoryQuery] = useState("");
+  const [mailQuery, setMailQuery] = useState(""),
+    [mailFilter, setMailFilter] = useState<MailFilter>("all");
   const [review, setReview] = useState(false),
     [prepared, setPrepared] = useState<{
       envelope: Envelope;
@@ -250,22 +254,22 @@ export function App() {
     PostOfficeClient.connect(d)
       .then(async (c) => {
         connected = c;
-        if (cancelled) {
+        if (cancelled || sequence !== readSequence.current) {
           c.provider.stopWatcher();
           return;
         }
         const data = await c.read();
-        if (!cancelled) {
+        if (!cancelled && sequence === readSequence.current) {
           setChain(c);
           setLetters(data.letters);
           setBoxes(data.postboxes);
           setCursor(data.nextCursor);
           setStatus("Mail is up to date.");
-        }
+        } else c.provider.stopWatcher();
       })
       .catch(() => {
         connected?.provider.stopWatcher();
-        if (!cancelled)
+        if (!cancelled && sequence === readSequence.current)
           setError(
             "Could not read the post office right now. Try Refresh in a moment.",
           );
@@ -454,6 +458,11 @@ export function App() {
     reviewedProfile = false,
   ) {
     draftSequence.current += 1;
+    readSequence.current += 1;
+    setLoadingMore(false);
+    setPage(1);
+    setMailQuery("");
+    setMailFilter("all");
     if (change.network !== undefined && change.network !== d.network)
       disconnect();
     setIndexerStatus("");
@@ -521,7 +530,8 @@ export function App() {
   }
   async function refresh() {
     if (!d.registry || !d.indexerUrl) return;
-    const sequence = readSequence.current;
+    const sequence = ++readSequence.current;
+    setLoadingMore(false);
     const letterSequence = openSequence.current;
     const reader = chain || (await PostOfficeClient.connect(d));
     let data;
@@ -553,14 +563,28 @@ export function App() {
     }
   }
   async function loadMore() {
-    if (!chain || !cursor) return;
-    const data = await chain.read(cursor);
-    setLetters((old) => [
-      ...old,
-      ...data.letters.filter((e) => !old.some((x) => x.id === e.id)),
-    ]);
-    setBoxes(data.postboxes);
-    setCursor(data.nextCursor);
+    if (!chain || !cursor || loadingMore) return;
+    const sequence = readSequence.current;
+    const reader = chain;
+    setLoadingMore(true);
+    setError("");
+    try {
+      const data = await reader.read(cursor);
+      if (sequence !== readSequence.current) return;
+      setLetters((old) => [
+        ...old,
+        ...data.letters.filter((e) => !old.some((x) => x.id === e.id)),
+      ]);
+      setBoxes(data.postboxes);
+      setCursor(data.nextCursor);
+    } catch {
+      if (sequence === readSequence.current)
+        setError(
+          "More letters could not load. Your loaded mail is still here; try Load more again.",
+        );
+    } finally {
+      if (sequence === readSequence.current) setLoadingMore(false);
+    }
   }
   async function openPostbox(envelope: Envelope) {
     closeLetter();
@@ -598,9 +622,11 @@ export function App() {
           );
     if (openSequence.current === sequence) setPlain(letter);
   }
-  const shown = (preview ? exampleLetters : letters).filter(
+  const hallLetters = (preview ? exampleLetters : letters).filter(
     (e) => e.mode !== "postbox",
   );
+  const shown = filterHallMail(hallLetters, mailFilter, mailQuery);
+  const visiblePage = Math.min(page, Math.max(1, Math.ceil(shown.length / 12)));
   const current = wallet?.accounts[account];
   function clearWallet(revoke: boolean) {
     connectionSequence.current += 1;
@@ -818,6 +844,48 @@ export function App() {
                   and contain no funded gifts.
                 </p>
               )}
+              {(chain || preview) && (
+                <div className="mail-search">
+                  <div className="mail-search-fields">
+                    <label>
+                      Find public mail
+                      <input
+                        type="search"
+                        maxLength={160}
+                        value={mailQuery}
+                        placeholder="Public subject, message or letter ID"
+                        onChange={(event) => {
+                          setMailQuery(event.target.value);
+                          setPage(1);
+                        }}
+                      />
+                    </label>
+                    <div>
+                      <label htmlFor="hall-mail-filter">Show mail</label>
+                      <select
+                        id="hall-mail-filter"
+                        value={mailFilter}
+                        onChange={(event) => {
+                          setMailFilter(event.target.value as MailFilter);
+                          setPage(1);
+                        }}
+                      >
+                        <option value="all">All hall mail</option>
+                        <option value="public">Public letters</option>
+                        <option value="link">Sealed invitations</option>
+                        <option value="gifts">Uncollected public gifts</option>
+                      </select>
+                    </div>
+                  </div>
+                  <p className="search-summary" role="status">
+                    {shown.length} {shown.length === 1 ? "letter" : "letters"}{" "}
+                    shown from {hallLetters.length} loaded.
+                    {cursor &&
+                      !preview &&
+                      " Search covers loaded mail; load more to include more letters."}
+                  </p>
+                </div>
+              )}
               <div className="scene">
                 <div className="scene-moon" />
                 <div className="scene-stars" aria-hidden="true">
@@ -832,73 +900,92 @@ export function App() {
                   <small>“Kindness travels further than you think.”</small>
                 </div>
                 <div className="envelope-grid">
-                  {shown.slice((page - 1) * 12, page * 12).map((e, i) => (
-                    <button
-                      className={`envelope-card envelope-${i % 3} ${e.mode === "link" ? "sealed" : ""}`}
-                      key={e.id}
-                      onClick={() => {
-                        setCreateAccount(false);
-                        setActive(e);
-                        setPlain(
-                          e.mode === "public"
-                            ? (e.payload as Letter)
-                            : undefined,
-                        );
-                      }}
-                    >
-                      <div className="envelope-visual" aria-hidden="true">
-                        <span className="wax">
-                          {e.mode === "public" ? "✧" : "⌘"}
-                        </span>
-                        <span className="stamp">
-                          GD
-                          <br />✦
-                        </span>
-                      </div>
-                      <div className="envelope-caption">
-                        <span className="letter-kind">
-                          {e.mode === "public"
-                            ? "OPEN LETTER"
-                            : "PRIVATE INVITATION"}
-                        </span>
-                        <h3>
-                          {e.mode === "public"
-                            ? (e.payload as Letter).subject
-                            : "A sealed little secret"}
-                        </h3>
-                        <p>
-                          {e.mode === "public"
-                            ? "Anyone may read"
-                            : "Requires its private link"}
-                        </p>
-                        {!preview && BigInt(e.gift) > 0n && (
-                          <small>
-                            {e.claimed
-                              ? "Collected"
-                              : e.mode === "public"
-                                ? `${tari(e.gift)} TARI gift`
-                                : "Gift availability recorded on chain"}
-                          </small>
-                        )}
-                      </div>
-                    </button>
-                  ))}
+                  {shown
+                    .slice((visiblePage - 1) * 12, visiblePage * 12)
+                    .map((e, i) => (
+                      <button
+                        className={`envelope-card envelope-${i % 3} ${e.mode === "link" ? "sealed" : ""}`}
+                        key={e.id}
+                        onClick={() => {
+                          setCreateAccount(false);
+                          setActive(e);
+                          setPlain(
+                            e.mode === "public"
+                              ? (e.payload as Letter)
+                              : undefined,
+                          );
+                        }}
+                      >
+                        <div className="envelope-visual" aria-hidden="true">
+                          <span className="wax">
+                            {e.mode === "public" ? "✧" : "⌘"}
+                          </span>
+                          <span className="stamp">
+                            GD
+                            <br />✦
+                          </span>
+                        </div>
+                        <div className="envelope-caption">
+                          <span className="letter-kind">
+                            {e.mode === "public"
+                              ? "OPEN LETTER"
+                              : "PRIVATE INVITATION"}
+                          </span>
+                          <h3>
+                            {e.mode === "public"
+                              ? (e.payload as Letter).subject
+                              : "A sealed little secret"}
+                          </h3>
+                          <p>
+                            {e.mode === "public"
+                              ? "Anyone may read"
+                              : "Requires its private link"}
+                          </p>
+                          {!preview && BigInt(e.gift) > 0n && (
+                            <small>
+                              {e.claimed
+                                ? "Collected"
+                                : e.mode === "public"
+                                  ? `${tari(e.gift)} TARI gift`
+                                  : "Gift availability recorded on chain"}
+                            </small>
+                          )}
+                        </div>
+                      </button>
+                    ))}
                 </div>
                 {!shown.length && (
                   <div className="empty-hall">
                     <span>✉</span>
                     <p>
-                      {chain ? "The hall is quiet." : "Listening for letters…"}
+                      {mailQuery.trim() || mailFilter !== "all"
+                        ? "No letters match this search."
+                        : chain
+                          ? "The hall is quiet."
+                          : "Listening for letters…"}
                       <br />
                       <small>
-                        Public letters will appear here when someone sends one.
-                        You could be the first wandering soul.
+                        {mailQuery.trim() || mailFilter !== "all"
+                          ? "Try another word or show all hall mail. Sealed contents stay private."
+                          : "Public letters will appear here when someone sends one. You could be the first wandering soul."}
                       </small>
                     </p>
-                    {chain && (
-                      <button onClick={() => navigate("compose")}>
-                        Write the first letter ↗
+                    {mailQuery.trim() || mailFilter !== "all" ? (
+                      <button
+                        onClick={() => {
+                          setMailQuery("");
+                          setMailFilter("all");
+                          setPage(1);
+                        }}
+                      >
+                        Clear search and filters
                       </button>
+                    ) : (
+                      chain && (
+                        <button onClick={() => navigate("compose")}>
+                          Write the first letter ↗
+                        </button>
+                      )
                     )}
                   </div>
                 )}
@@ -906,15 +993,17 @@ export function App() {
               {shown.length > 12 && (
                 <div className="pagination">
                   <button
-                    disabled={page === 1}
-                    onClick={() => setPage(page - 1)}
+                    disabled={visiblePage === 1}
+                    onClick={() => setPage(visiblePage - 1)}
                   >
                     Previous
                   </button>
-                  <span>Page {page}</span>
+                  <span>
+                    Page {visiblePage} of {Math.ceil(shown.length / 12)}
+                  </span>
                   <button
-                    disabled={page * 12 >= shown.length}
-                    onClick={() => setPage(page + 1)}
+                    disabled={visiblePage * 12 >= shown.length}
+                    onClick={() => setPage(visiblePage + 1)}
                   >
                     Next
                   </button>
@@ -922,22 +1011,12 @@ export function App() {
               )}
               {!preview && cursor && (
                 <button
-                  disabled={busy}
-                  onClick={() =>
-                    void task(async () => {
-                      if (!chain) return;
-                      const data = await chain.read(cursor);
-                      setLetters((existing) => [
-                        ...existing,
-                        ...data.letters.filter(
-                          (e) => !existing.some((x) => x.id === e.id),
-                        ),
-                      ]);
-                      setCursor(data.nextCursor);
-                    })
-                  }
+                  disabled={busy || loadingMore}
+                  onClick={() => void loadMore()}
                 >
-                  Load more chain mail
+                  {loadingMore
+                    ? "Loading more letters…"
+                    : "Load more chain mail"}
                 </button>
               )}
               <div className="mode-legend">
@@ -1356,6 +1435,7 @@ export function App() {
             onOpen={(e) => void task(() => openPostbox(e))}
             onRefresh={refresh}
             onMore={loadMore}
+            loadingMore={loadingMore}
             hasMore={!!cursor}
           />
         )}

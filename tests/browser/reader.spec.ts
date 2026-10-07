@@ -94,7 +94,9 @@ test("configured public reader retries an initial outage without a page reload",
     page.getByRole("button", { name: subject, exact: false }),
   ).toBeVisible();
   await expect(page.getByRole("alert")).toHaveCount(0);
-  await expect(page.getByRole("status")).toContainText("Mail is up to date");
+  await expect(
+    page.getByRole("status").filter({ hasText: "Mail is up to date" }),
+  ).toBeVisible();
 });
 
 test("a delayed initial read cannot load letters after the selected network changes", async ({

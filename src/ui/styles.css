@@ -1897,3 +1897,32 @@ footer button {
 .letter-modal .copy-notice {
   color: #455332;
 }
+
+.mail-search {
+  padding: 0 32px 20px;
+  border-bottom: 1px solid #a8b68720;
+}
+.mail-search-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.55fr);
+  gap: 18px;
+}
+.mail-search-fields label {
+  margin: 0;
+}
+.search-summary {
+  font:
+    11px/1.7 system-ui,
+    sans-serif;
+  color: var(--muted);
+  margin: 12px 0 0;
+}
+@media (max-width: 540px) {
+  .mail-search {
+    padding: 0 20px 20px;
+  }
+  .mail-search-fields {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
