@@ -107,7 +107,7 @@ export function App() {
     [sapientAvailable, setSapientAvailable] = useState(!!sapientProvider());
   const [error, setError] = useState(""),
     [status, setStatus] = useState(""),
-    [busy, setBusy] = useState(false),
+    [taskBusy, setBusy] = useState(false),
     [active, setActive] = useState<Envelope>(),
     [plain, setPlain] = useState<Letter>(),
     [ghost, setGhost] = useState(false);
@@ -136,6 +136,12 @@ export function App() {
     [createAccount, setCreateAccount] = useState(false),
     [destMode, setDestMode] = useState("manual"),
     [route, setRoute] = useState<LinkRoute>();
+  const [linkState, setLinkState] = useState<"idle" | "opening" | "failed">(
+      "idle",
+    ),
+    [linkError, setLinkError] = useState(""),
+    [linkRevision, setLinkRevision] = useState(0);
+  const busy = taskBusy || linkState === "opening";
   const [claimReview, setClaimReview] = useState<{
     address: string;
     destination: string;
@@ -374,41 +380,60 @@ export function App() {
     };
   }, [view, chain, busy, prepared, writeBlocked, storageRevision]);
   useEffect(() => {
-    if (!route || !chain) return;
+    if (!route || !chain) {
+      setLinkState("idle");
+      return;
+    }
+    const link = route,
+      reader = chain;
     let cancelled = false;
-    void task(async () => {
-      if (!sameContext(route.context, d))
-        throw new Error(
-          "This private link belongs to another deployment. Choose its matching trusted configuration before opening.",
+    setLinkState("opening");
+    setLinkError("");
+    async function openPrivateLink() {
+      try {
+        if (!sameContext(link.context, d))
+          throw new Error(
+            "This private link belongs to another post office. Open the sender’s complete link after choosing its matching trusted settings.",
+          );
+        const e = await reader.readLetter(link.id);
+        if (cancelled) return;
+        if (!e || e.mode !== "link") throw new Error("Sealed letter not found");
+        const result = await openLetter(
+          e.payload as SealedPayload,
+          link.capability,
+          d,
+          e.id,
         );
-      const e = await chain.readLetter(route.id);
-      if (!e || e.mode !== "link")
-        throw new Error("Sealed letter not found in this deployment");
-      const result = await openLetter(
-        e.payload as SealedPayload,
-        route.capability,
-        d,
-        e.id,
-      );
-      if (cancelled) {
-        result.claimSecret.fill(0);
-        return;
+        if (cancelled) {
+          result.claimSecret.fill(0);
+          return;
+        }
+        secret.current?.fill(0);
+        secret.current = result.claimSecret;
+        setActive(e);
+        setPlain(result.letter);
+        setPrivateLink(
+          createGiftLink(
+            new URL(import.meta.env.BASE_URL, location.href).href,
+            link,
+          ),
+        );
+        setLinkState("idle");
+      } catch {
+        if (cancelled) return;
+        setLinkState("failed");
+        setLinkError(
+          sameContext(link.context, d)
+            ? "The post office may be unavailable, or this link may not match the letter. Retry here, or ask the sender for the complete private link."
+            : "This private link belongs to another post office. Open the sender’s complete link after choosing its matching trusted settings.",
+        );
       }
-      secret.current?.fill(0);
-      secret.current = result.claimSecret;
-      setActive(e);
-      setPlain(result.letter);
-      setPrivateLink(
-        createGiftLink(
-          new URL(import.meta.env.BASE_URL, location.href).href,
-          route,
-        ),
-      );
-    });
+    }
+    void openPrivateLink();
     return () => {
       cancelled = true;
     };
-  }, [route, chain]);
+  }, [route, chain, linkRevision]);
   useEffect(() => {
     if (!active) return;
     setClaimReview(undefined);
@@ -561,6 +586,8 @@ export function App() {
     setGhost(false);
     setPrivateLink("");
     setRoute(undefined);
+    setLinkState("idle");
+    setLinkError("");
     setCreateAccount(false);
   }
   async function refresh() {
@@ -826,6 +853,47 @@ export function App() {
         </button>
       </header>
       <main id="main-content">
+        {route && !active && (
+          <section
+            className="deployment-note private-link-status"
+            aria-label="Private letter status"
+            role="status"
+          >
+            <div>
+              <strong>
+                {linkState === "opening"
+                  ? "Opening your private letter…"
+                  : linkState === "failed"
+                    ? "Your private letter could not open."
+                    : "Your private letter is waiting."}
+              </strong>
+              <p>
+                {linkError ||
+                  "The secret stays in this tab. Keep the sender’s complete link to reopen this letter later."}
+              </p>
+            </div>
+            <div className="actions">
+              <button
+                disabled={busy || readState === "loading"}
+                onClick={() => {
+                  if (!chain) void task(refresh);
+                  else setLinkRevision((value) => value + 1);
+                }}
+              >
+                Retry private letter
+              </button>
+              <button
+                disabled={taskBusy}
+                onClick={() => {
+                  closeLetter();
+                  navigate("hall");
+                }}
+              >
+                Dismiss private letter
+              </button>
+            </div>
+          </section>
+        )}
         <div className="eyebrow">
           <span /> SAPIENT ·{" "}
           {d.network === 16

@@ -180,13 +180,7 @@ export class PostOfficeClient {
       }),
     );
   }
-  async read(
-    after = "",
-    limit = 100,
-    options: { allowPartial?: boolean } = {},
-  ) {
-    if (!Number.isInteger(limit) || limit < 1 || limit > 100)
-      throw new Error("Page size must be an integer from 1 to 100");
+  private async readOffice() {
     const r = await this.provider.getSubstate(this.deployment.registry);
     const v = r.substate as unknown as {
       Component?: {
@@ -201,7 +195,16 @@ export class PostOfficeClient {
       v.Component.header.owner_rule !== "None"
     )
       throw new Error("Untrusted registry template or owner rule");
-    const office = decodeOffice(v.Component.body.state, this.deployment);
+    return decodeOffice(v.Component.body.state, this.deployment);
+  }
+  async read(
+    after = "",
+    limit = 100,
+    options: { allowPartial?: boolean } = {},
+  ) {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 100)
+      throw new Error("Page size must be an integer from 1 to 100");
+    const office = await this.readOffice();
     const refs = office.letterRefs
         .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
         .filter((r) => r.id > after)
@@ -230,13 +233,8 @@ export class PostOfficeClient {
   }
   async readLetter(id: string, component?: string): Promise<Envelope> {
     if (!component) {
-      const r = await this.provider.getSubstate(this.deployment.registry);
-      const c = (
-        r.substate as unknown as { Component: { body: { state: unknown } } }
-      ).Component;
-      component = decodeOffice(c.body.state, this.deployment).letterRefs.find(
-        (r) => r.id === id,
-      )?.component;
+      const office = await this.readOffice();
+      component = office.letterRefs.find((r) => r.id === id)?.component;
       if (!component) throw new Error("Unknown envelope");
     }
     const r = await this.provider.getSubstate(component);

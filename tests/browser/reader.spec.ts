@@ -1,5 +1,7 @@
 import { test, expect, type Page } from "@playwright/test";
 import { emptyDeployment } from "../../src/core/config";
+import { sealLetter } from "../../src/core/crypto";
+import { createGiftLink } from "../../src/core/links";
 
 // Synthetic read-only state. No network, wallet or spending permissions needed.
 const deployment = {
@@ -500,4 +502,146 @@ test("a failed refresh keeps loaded mail visible with an honest retry notice", a
     page.getByRole("status").filter({ hasText: "Mail is up to date" }),
   ).toBeVisible();
   expect(writes).toBe(0);
+});
+
+for (const failure of ["outage", "ciphertext"] as const) {
+  test(`private-link ${failure} can retry in-tab without leaking its capability`, async ({
+    page,
+  }) => {
+    await configure(page);
+    const sealed = await sealLetter(
+      {
+        subject: "A secret rescued in this tab",
+        body: "Only the private link can open this note.",
+      },
+      deployment,
+      "recovered",
+    );
+    let reads = 0,
+      failing = true,
+      writes = 0;
+    const requests: string[] = [];
+    page.on("request", (request) => requests.push(request.url()));
+    await page.route(`${deployment.indexerUrl}**`, (route) => {
+      if (route.request().method() !== "GET") {
+        writes++;
+        return route.abort();
+      }
+      const url = route.request().url(),
+        response = state(url);
+      if (url.includes(envelope)) {
+        reads++;
+        if (reads > 1 && failing && failure === "outage")
+          return route.fulfill({
+            status: 503,
+            body: "Fixture private-link outage",
+          });
+        const payload = { ...sealed.payload };
+        if (reads > 1 && failing && failure === "ciphertext")
+          payload.ciphertext = `${payload.ciphertext[0] === "A" ? "B" : "A"}${payload.ciphertext.slice(1)}`;
+        const data = response.substate!.Component.body.state;
+        data[2] = 1;
+        data[3] = JSON.stringify(payload);
+        data[7] = payload.claimPublicKey;
+      }
+      return route.fulfill({ json: response });
+    });
+    const base = String(test.info().project.use.baseURL);
+    await page.goto(
+      createGiftLink(base, {
+        id: "recovered",
+        capability: sealed.capability,
+        context: deployment,
+      }),
+    );
+    const pane = page.getByRole("status", { name: "Private letter status" });
+    await expect(pane).toContainText("Your private letter could not open.");
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    expect(page.url()).not.toContain(sealed.capability);
+    expect(requests.every((url) => !url.includes(sealed.capability))).toBe(
+      true,
+    );
+    expect(await page.evaluate(() => localStorage.length)).toBe(0);
+    failing = false;
+    await pane.getByRole("button", { name: "Retry private letter" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toContainText("A secret rescued in this tab");
+    await expect(dialog).toContainText(
+      "Only the private link can open this note.",
+    );
+    await expect(pane).toHaveCount(0);
+    expect(page.url()).not.toContain(sealed.capability);
+    expect(requests.every((url) => !url.includes(sealed.capability))).toBe(
+      true,
+    );
+    expect(await page.evaluate(() => localStorage.length)).toBe(0);
+    expect(writes).toBe(0);
+    await dialog.getByRole("button", { name: "Close letter" }).click();
+    await expect(dialog).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  });
+}
+
+test("dismissing an opening private link cancels late decryption results", async ({
+  page,
+}) => {
+  await configure(page);
+  const sealed = await sealLetter(
+    { subject: "Dismissed secret", body: "Must never reopen after dismissal" },
+    deployment,
+    "recovered",
+  );
+  let reads = 0;
+  let release!: () => void, started!: () => void;
+  const held = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const requested = new Promise<void>((resolve) => {
+    started = resolve;
+  });
+  await page.route(`${deployment.indexerUrl}**`, async (route) => {
+    const url = route.request().url(),
+      response = state(url);
+    if (url.includes(envelope)) {
+      reads++;
+      if (reads > 1) {
+        started();
+        await held;
+      }
+      const data = response.substate!.Component.body.state;
+      data[2] = 1;
+      data[3] = JSON.stringify(sealed.payload);
+      data[7] = sealed.payload.claimPublicKey;
+    }
+    return route.fulfill({ json: response });
+  });
+  await page.goto(
+    createGiftLink(String(test.info().project.use.baseURL), {
+      id: "recovered",
+      capability: sealed.capability,
+      context: deployment,
+    }),
+  );
+  await requested;
+  await page.getByRole("button", { name: "Dismiss private letter" }).click();
+  const completed = page.waitForResponse((response) =>
+    response.url().includes(envelope),
+  );
+  release();
+  await completed;
+  await expect(
+    page.getByRole("status", { name: "Private letter status" }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByText("Dismissed secret", { exact: true })).toHaveCount(
+    0,
+  );
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  expect(page.url()).toContain("#/hall");
+  expect(page.url()).not.toContain(sealed.capability);
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
 });

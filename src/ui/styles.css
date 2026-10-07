@@ -1957,3 +1957,10 @@ footer button {
   font: 11px/1.7 monospace;
   overflow-wrap: anywhere;
 }
+
+.private-link-status {
+  margin: 20px 0;
+}
+.private-link-status .actions {
+  flex-wrap: wrap;
+}

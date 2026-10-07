@@ -127,3 +127,30 @@ it.each([0, 101, 1.5, NaN, Infinity])(
     expect(f.provider.getSubstate).not.toHaveBeenCalled();
   },
 );
+
+it.each(["template", "owner"])(
+  "direct letter lookup also rejects an untrusted registry %s",
+  async (bad) => {
+    const f = fixture();
+    f.read.mockRestore();
+    if (bad === "template")
+      f.response.substate.Component.header.template_address = "4".repeat(64);
+    else
+      f.response.substate.Component.header.owner_rule = {
+        ByPublicKey: "5".repeat(64),
+      };
+    await expect(f.client.readLetter(f.ids[0])).rejects.toThrow(
+      "Untrusted registry",
+    );
+    expect(f.provider.getSubstate).toHaveBeenCalledTimes(1);
+    expect(f.provider.getSubstate).toHaveBeenCalledWith(d.registry);
+  },
+);
+it("direct lookup of an unknown ID cannot request an unrelated envelope", async () => {
+  const f = fixture();
+  f.read.mockRestore();
+  await expect(f.client.readLetter("unknown")).rejects.toThrow(
+    "Unknown envelope",
+  );
+  expect(f.provider.getSubstate).toHaveBeenCalledTimes(1);
+});
