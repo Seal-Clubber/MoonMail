@@ -73,7 +73,9 @@ for (const mode of ["public", "link", "postbox"] as const) {
       .click();
     if (mode === "postbox") {
       await expect(page.getByLabel("Recipient postbox ID")).toBeVisible();
-      await page.getByLabel("Recipient postbox ID").fill("friendly");
+      await page
+        .getByRole("combobox", { name: "Recipient postbox", exact: true })
+        .selectOption("friendly");
     }
     const body = page.getByLabel("Your letter", { exact: true });
     const full = "👻".repeat(1200);

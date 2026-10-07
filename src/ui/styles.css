@@ -2003,3 +2003,15 @@ footer button {
 .compose #letter-body {
   margin-bottom: 18px;
 }
+
+.recipient-choice {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 24px;
+}
+.recipient-choice label {
+  margin: 0;
+}
+.recipient-choice .text-button {
+  justify-self: start;
+}

@@ -645,3 +645,48 @@ test("dismissing an opening private link cancels late decryption results", async
   expect(page.url()).not.toContain(sealed.capability);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
 });
+
+test("optional Sapient connection returns to the same public gift and restores its original trigger", async ({
+  page,
+}) => {
+  await configure(page);
+  let writes = 0;
+  await page.route(`${deployment.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") {
+      writes++;
+      return r.abort();
+    }
+    const response = state(r.request().url());
+    if (r.request().url().includes(envelope)) {
+      const data = response.substate!.Component.body.state;
+      data[4] = "1000000";
+      data[5] = "100000";
+    }
+    return r.fulfill({ json: response });
+  });
+  await page.goto("./");
+  const trigger = page.getByRole("button", { name: subject, exact: false });
+  await trigger.click();
+  const letter = page.getByRole("dialog", { name: subject, exact: true });
+  await expect(letter).toContainText("The selected post office is back.");
+  await letter
+    .getByRole("button", { name: "Connect Sapient to receive" })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(1);
+  await expect(
+    page.getByRole("dialog", { name: "Connect Sapient", exact: true }),
+  ).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(letter).toBeVisible();
+  await expect(letter).toContainText("The selected post office is back.");
+  await expect(letter.getByLabel("Ootle receiving address")).toHaveValue("");
+  await letter.getByRole("button", { name: "Close letter" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  expect(
+    await page.locator("main").evaluate((el) => (el as HTMLElement).inert),
+  ).toBe(false);
+  expect(await page.evaluate(() => document.body.style.overflow)).toBe("");
+  expect(writes).toBe(0);
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+});

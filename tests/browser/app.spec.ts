@@ -154,6 +154,18 @@ test("wallet dialog traps keyboard focus, closes on Escape and restores focus", 
   await trigger.click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toBeVisible();
+  expect(
+    await page.locator("main").evaluate((el) => (el as HTMLElement).inert),
+  ).toBe(true);
+  expect(await page.evaluate(() => document.body.style.overflow)).toBe(
+    "hidden",
+  );
+  await page
+    .locator(".compose textarea")
+    .evaluate((el) => (el as HTMLElement).focus());
+  expect(
+    await dialog.evaluate((el) => el.contains(document.activeElement)),
+  ).toBe(true);
   for (let i = 0; i < 12; i++) {
     await page.keyboard.press("Tab");
     expect(
@@ -163,6 +175,10 @@ test("wallet dialog traps keyboard focus, closes on Escape and restores focus", 
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
   await expect(trigger).toBeFocused();
+  expect(
+    await page.locator("main").evaluate((el) => (el as HTMLElement).inert),
+  ).toBe(false);
+  expect(await page.evaluate(() => document.body.style.overflow)).toBe("");
 });
 test("real browser WASM encrypts subject locally; send stays disabled; drafts survive connect", async ({
   page,

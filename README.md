@@ -18,7 +18,7 @@ The current source defaults directly to the verified Sapient office in `public/d
 
 The writing desk shows remaining letter space before review, including Unicode, encryption and addressing overhead. Oversized drafts stay editable and cannot proceed to review until shortened. The complete envelope limit remains enforced after encryption.
 
-The GUI keeps the moonlit, haunted post office theme, with phone layouts, reduced-motion support, keyboard focus handling and plain-language empty/error states. The directory searches listed postboxes; unlisted recipients share their IDs directly. Advanced connection settings are under **Settings** and invalidate write evidence when edited.
+The GUI keeps the moonlit, haunted post office theme, with phone layouts, reduced-motion support, keyboard focus handling, dialog scroll/focus isolation and plain-language empty/error states. The directory searches listed postboxes; unlisted recipients share their IDs directly. Advanced connection settings are under **Settings** and invalidate write evidence when edited.
 
 Private-link opening failures can retry in the same tab, keeping the URL secret scrubbed and never storing it. Dismiss cancels late opening results. Read failures show a retry instruction. A failed refresh preserves already loaded mail and clearly labels it as previously loaded. If an individual letter is unavailable or fails verification, browsing keeps the verified letters visible and shows which public IDs need another read. Unverified letters never appear as available gifts. Registry/template/owner checks remain strict; donor tooling retains strict bulk reads by default.
 

@@ -148,6 +148,9 @@ export function App() {
     [linkError, setLinkError] = useState(""),
     [linkRevision, setLinkRevision] = useState(0);
   const busy = taskBusy || linkState === "opening";
+  const modalBusy = useRef(busy);
+  const modalReturnFocus = useRef<HTMLElement | null>(null);
+  modalBusy.current = busy;
   const [claimReview, setClaimReview] = useState<{
     address: string;
     destination: string;
@@ -478,43 +481,85 @@ export function App() {
     [],
   );
   useEffect(() => {
-    if (!connect && !active) return;
-    const previous = document.activeElement as HTMLElement | null;
+    if (!connect && !active) {
+      modalReturnFocus.current = null;
+      return;
+    }
+    if (!modalReturnFocus.current)
+      modalReturnFocus.current = document.activeElement as HTMLElement | null;
     const modal = document.querySelector<HTMLElement>(".modal");
+    if (!modal) return;
+    const background = Array.from(
+      document.querySelector<HTMLElement>(".app-shell")?.children || [],
+    )
+      .filter(
+        (el): el is HTMLElement =>
+          el instanceof HTMLElement && !el.classList.contains("modal-backdrop"),
+      )
+      .map((el) => ({ el, inert: el.inert }));
+    background.forEach(({ el }) => {
+      el.inert = true;
+    });
+    const overflow = document.body.style.overflow;
+    const padding = document.body.style.paddingRight;
+    const scrollbar = Math.max(
+      0,
+      window.innerWidth - document.documentElement.clientWidth,
+    );
+    document.body.style.overflow = "hidden";
+    if (scrollbar)
+      document.body.style.paddingRight = `${parseFloat(getComputedStyle(document.body).paddingRight) + scrollbar}px`;
     const controls = () =>
       Array.from(
-        modal?.querySelectorAll<HTMLElement>(
-          "button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),a[href]",
-        ) || [],
-      );
-    controls()[0]?.focus();
-    const keydown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
+        modal.querySelectorAll<HTMLElement>(
+          "button:not(:disabled),input:not(:disabled),textarea:not(:disabled),select:not(:disabled),a[href],summary,[tabindex]",
+        ),
+      ).filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0);
+    (controls()[0] || modal).focus();
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
         if (connect) {
           connectionSequence.current += 1;
           setConnect(false);
-        } else closeLetter();
+        } else if (!modalBusy.current) closeLetter();
       }
-      if (e.key === "Tab") {
+      if (event.key === "Tab") {
         const all = controls(),
           first = all[0],
           last = all.at(-1);
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
+        if (!first) {
+          event.preventDefault();
+          modal.focus();
+        } else if (!modal.contains(document.activeElement)) {
+          event.preventDefault();
+          (event.shiftKey ? last : first)?.focus();
+        } else if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
           last?.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
         }
       }
     };
     document.addEventListener("keydown", keydown);
     return () => {
       document.removeEventListener("keydown", keydown);
-      previous?.focus();
+      background.forEach(({ el, inert }) => {
+        el.inert = inert;
+      });
+      document.body.style.overflow = overflow;
+      document.body.style.paddingRight = padding;
+      const previous = modalReturnFocus.current;
+      if (
+        previous?.isConnected &&
+        !(previous instanceof HTMLButtonElement && previous.disabled)
+      )
+        previous.focus();
+      else document.getElementById("main-content")?.focus();
     };
-  }, [connect, active]);
+  }, [connect, active?.id]);
   function changeDeployment(
     change: Partial<Deployment>,
     reviewedProfile = false,
@@ -879,7 +924,7 @@ export function App() {
           {wallet ? "Disconnect wallet" : "Connect wallet"}
         </button>
       </header>
-      <main id="main-content">
+      <main id="main-content" tabIndex={-1}>
         {route && !active && (
           <section
             className="deployment-note private-link-status"
@@ -1362,8 +1407,8 @@ export function App() {
                 )}
               </div>
               {mode === "postbox" && (
-                <label>
-                  Recipient postbox
+                <div className="recipient-choice">
+                  <label htmlFor="recipient-postbox">Recipient postbox</label>
                   <button
                     type="button"
                     className="text-button"
@@ -1372,6 +1417,7 @@ export function App() {
                     Browse the spirit directory ↗
                   </button>
                   <select
+                    id="recipient-postbox"
                     value={recipient}
                     disabled={busy}
                     onChange={(e) => {
@@ -1398,7 +1444,7 @@ export function App() {
                     placeholder="Or paste a registered ID, including an unlisted postbox"
                     disabled={busy}
                   />
-                </label>
+                </div>
               )}
               <div className="form-row">
                 <AmountInput
@@ -2070,6 +2116,7 @@ export function App() {
             className="modal"
             role="dialog"
             aria-modal="true"
+            tabIndex={-1}
             aria-labelledby="wallet-title"
           >
             <button
@@ -2159,11 +2206,13 @@ export function App() {
             className="modal letter-modal"
             role="dialog"
             aria-modal="true"
+            tabIndex={-1}
             aria-labelledby="letter-title"
           >
             <button
               className="close"
               aria-label="Close letter"
+              disabled={busy}
               onClick={closeLetter}
             >
               ×
@@ -2237,6 +2286,12 @@ export function App() {
             )}
             {!preview && BigInt(active.gift) > 0n && (
               <div className="claim-panel">
+                {busy && claimReview && (
+                  <p role="status">
+                    Check Sapient for an approval request. Keep this letter open
+                    until the outcome is clear.
+                  </p>
+                )}
                 <h3>
                   {active.claimed ? "Gift delivered" : "Collect the gift"}
                 </h3>

@@ -239,6 +239,15 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
         await expect
           .poll(() => page.evaluate(() => typeof (window as any).rejectClaim))
           .toBe("function");
+        await page.keyboard.press("Escape");
+        await expect(dialog).toBeVisible();
+        await expect(
+          dialog.getByRole("button", { name: "Close letter" }),
+        ).toBeDisabled();
+        await page.keyboard.press("Tab");
+        expect(
+          await dialog.evaluate((el) => el.contains(document.activeElement)),
+        ).toBe(true);
         await page.evaluate(() => (window as any).rejectClaim());
         await expect(page.getByRole("alert").first()).toContainText(
           "User declined",
