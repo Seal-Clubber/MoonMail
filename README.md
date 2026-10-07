@@ -10,6 +10,8 @@ A spooky place to leave a kind letter, send a gift, or open your private inbox. 
 
 Public letter links, private links and postbox IDs always have a manual-copy field. If clipboard access is denied, the app keeps the complete value visible and explains how to copy it yourself. Copying does not automatically confirm that you saved a private link.
 
+Sending review shows the complete included reply postbox ID, or **No reply postbox**. Return IDs are public metadata, including on sealed letters. Changing that choice invalidates the prepared review; re-review creates a fresh private link that must be saved again before sending. [Reply-review verification](docs/reply-review-evidence.json) records local regressions and an unsent stock-wallet check; this fix awaits the human push.
+
 Collection has a separate destination review: check the full address, receiving account, payout and fee reserve before choosing **Confirm & collect gift**. Opening that review never requests a proof or submits a claim.
 
 **Testnet only:** the current office uses Esmeralda test TARI. Choose Esmeralda in Sapient. Sending and creating a postbox cost wallet fees. Collection uses the sender’s separate fee reserve; an addressed recipient can collect the full gift with zero coins. Gifts have no expiry or refund, and unused collection funds stay locked.

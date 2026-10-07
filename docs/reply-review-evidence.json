@@ -1,0 +1,71 @@
+{
+  "checkedAt": "2026-10-07T21:43:57Z",
+  "publication": "Local reply-review fix; awaits human main push. Published83e3d2d remains recorded separately in public-sharing-published-evidence.json.",
+  "sourceFilesSha256": {
+    "src/ui/App.tsx": "c55b3463c203599f111f14c3b803eee16be9e738e612fcc1f65f5a183dce1098",
+    "tests/browser/reply-review.spec.ts": "beb1f6919447862ddea26e11b8848d0f163b7b7b6d2694eb7a2d7386f873e794"
+  },
+  "clientChecks": {
+    "testsPassed": 157,
+    "testFilesPassed": 17,
+    "browserChecksPassed": 146,
+    "browserWorkers": 1,
+    "browserDuration": "1.2 minutes",
+    "typeScript": "passed",
+    "productionBuild": "passed",
+    "prettier": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "regression": {
+    "unchangedBuild": "83e3d2d",
+    "baselineFailures": 4,
+    "fixedFocusedChecksPassed": 4,
+    "cases": "Add and remove optional reply postbox after reviewing a private link, on desktop and mobile. Former review remained active despite different visible choice; fixed review clears and re-prepares actual routing with fresh ID/capability and unchecked saved-link acknowledgement."
+  },
+  "stockWalletReadOnlyAcceptance": {
+    "checkedAt": "2026-10-07T21:43:53.432Z",
+    "base": "http://127.0.0.1:4173/GhostDrop/",
+    "sourceVersion": "0.6.6",
+    "existingIsolatedRestoredProfile": true,
+    "runtimeAssetsMatchReviewedStorePackage": true,
+    "ledgerOrAppOverrides": false,
+    "readOnlyWalletMethodGuard": true,
+    "postboxId": "sapient-v2-recovery-inbox",
+    "checks": {
+      "actualSiteConnection": true,
+      "addAndRemoveReplyInvalidatesReview": true,
+      "obsoletePrivateLinkReplaced": true,
+      "savedAcknowledgementCleared": true,
+      "preparedReplyIdReviewed": true,
+      "transactionJournalUnchanged": true,
+      "mobileWithoutOverflow": true,
+      "privateConsentRequests": 0,
+      "originDisconnected": true,
+      "transactionRequestsCreated": 0,
+      "signaturesRequested": 0,
+      "transactionsBroadcast": 0,
+      "bulkSubstateReads": 2,
+      "blockedHttp": 0,
+      "blockedWalletMethods": []
+    },
+    "walletMethodNames": [
+      "tari_disconnect",
+      "tari_getNetwork",
+      "tari_requestAccounts",
+      "tari_getWalletAddress",
+      "tari_getCapabilities",
+      "tari_getAccounts"
+    ],
+    "caveat": "Actual stock wallet and public registered postbox; unsent local preparations only, with financial and private-view methods blocked. No claim, publication, seed restoration or private-link capability in output/screenshots."
+  },
+  "boundaries": [
+    "Actual standard Sapient package and Esmeralda registered postbox, with unsent local private-link preparations. No letter or claim was published.",
+    "Prepared review shows the complete actual reply postbox ID or No reply postbox. Included return IDs remain public metadata on sealed mail.",
+    "Changing reply inclusion clears obsolete preparation and save acknowledgement. A new private link must be saved before sending. Subject/body/gift/fee settings are retained.",
+    "Financial/private-view methods were blocked; transaction journal unchanged. No transaction requests, signatures, broadcasts or new private-view grants.",
+    "The isolated restored development profile was reused. No personal wallet, seed restoration, native phone wallet installation or Store-install UI was accessed.",
+    "The screenshot contains only the public review receipt. No private link, capability or credential was printed, saved to evidence or captured.",
+    "Local Windows one-worker146 verification is distinct from prior83e3d2d142 passing Linux checks. A new exact-head GitHub run awaits the human push.",
+    "No contract, financial instruction, fee or reconciliation change. Live financial lost-response injection remains a separate unverified scope."
+  ]
+}

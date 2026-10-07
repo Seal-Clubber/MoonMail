@@ -1653,9 +1653,12 @@ export function App() {
                   type="checkbox"
                   checked={!!reply}
                   disabled={busy || !owned.length}
-                  onChange={(e) =>
-                    setReply(e.target.checked ? owned[0]?.id || "" : "")
-                  }
+                  onChange={(e) => {
+                    setReply(e.target.checked ? owned[0]?.id || "" : "");
+                    setReview(false);
+                    setPrepared(undefined);
+                    setLinkSaved(false);
+                  }}
                 />{" "}
                 Include my postbox for replies (optional)
               </label>
@@ -1766,7 +1769,25 @@ export function App() {
                       {tari((BigInt(gift) + BigInt(reserve)).toString())} TARI
                     </dd>
                   </div>
+                  <div>
+                    <dt>Replies</dt>
+                    <dd>
+                      {prepared.envelope.replyPostbox ? (
+                        <code className="postbox-address">
+                          {prepared.envelope.replyPostbox}
+                        </code>
+                      ) : (
+                        "No reply postbox"
+                      )}
+                    </dd>
+                  </div>
                 </dl>
+                {prepared.envelope.replyPostbox && (
+                  <p className="fine-print">
+                    Your included reply postbox ID is public, including on
+                    sealed letters.
+                  </p>
+                )}
                 <p>
                   Sapient will show the sending fee before you approve.
                   Collection works only if the funds you set aside cover it.

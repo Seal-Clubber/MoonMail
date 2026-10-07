@@ -1,0 +1,190 @@
+import { test, expect, type Page } from "@playwright/test";
+import {
+  generateKeypair,
+  generateOotleAddress,
+} from "@tari-project/ootle-wasm";
+import { emptyDeployment } from "../../src/core/config";
+import { parseGiftLink } from "../../src/core/links";
+
+// Public ledger and connection-only provider fixtures. No signing or submission.
+const d = {
+  ...emptyDeployment,
+  network: 38,
+  registry: `component_${"a".repeat(64)}`,
+  template: "b".repeat(64),
+  envelopeTemplate: "c".repeat(64),
+  resource: `resource_${"01".repeat(32)}`,
+  indexerUrl: "https://fixture-indexer.invalid/",
+  evidence: {
+    ...emptyDeployment.evidence,
+    engineClaims: true,
+    guestPayout: true,
+    sapientWallet: true,
+  },
+};
+const replyId = `reply-${"x".repeat(58)}`;
+async function connectFixture(page: Page) {
+  const owner = generateKeypair(),
+    view = generateKeypair();
+  const controller = Buffer.from(owner.public_key).toString("hex"),
+    address = generateOotleAddress(owner.public_key, view.public_key, 38),
+    account = `component_${"f".repeat(64)}`;
+  owner.free();
+  view.free();
+  let writes = 0;
+  await page.route("**/deployment.json", (r) => r.fulfill({ json: d }));
+  await page.route(`${d.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") {
+      writes++;
+      return r.abort();
+    }
+    return r.fulfill({
+      json: {
+        substate: {
+          Component: {
+            header: { template_address: d.template, owner_rule: "None" },
+            body: {
+              state: [
+                38,
+                {},
+                {
+                  [replyId]: [
+                    replyId,
+                    "My Reply Home",
+                    controller,
+                    JSON.stringify({
+                      version: "gd-postbox-1",
+                      keyVersion: 1,
+                      publicKey: "6".repeat(64),
+                    }),
+                    false,
+                  ],
+                },
+                `template_${d.envelopeTemplate}`,
+              ],
+            },
+          },
+        },
+      },
+    });
+  });
+  await page.addInitScript(
+    ({ address, account }) => {
+      const w = window as any;
+      w.walletCalls = [];
+      w.tari = {
+        isTariWallet: true,
+        info: {
+          name: "Sapient fixture",
+          rdns: "mw.tari.sapient",
+          embedded: false,
+        },
+        request: async ({ method }: any) => {
+          w.walletCalls.push(method);
+          if (method === "tari_getNetwork") return "esmeralda";
+          if (
+            method === "tari_requestAccounts" ||
+            method === "tari_getAccounts"
+          )
+            return [account];
+          if (method === "tari_getWalletAddress") return address;
+          if (method === "tari_getCapabilities")
+            return { transactionRequests: true, walletAddress: true };
+          if (method === "tari_disconnect") return null;
+          throw new Error("Fixture forbids wallet method " + method);
+        },
+      };
+    },
+    { address, account },
+  );
+  await page.goto("./#/compose");
+  await page
+    .getByRole("button", { name: "Connect wallet", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Connect Sapient", exact: true })
+    .click();
+  const toggle = page.getByRole("checkbox", {
+    name: "Include my postbox for replies (optional)",
+  });
+  await expect(toggle).toBeEnabled();
+  await page
+    .getByLabel("Subject", { exact: true })
+    .fill("Keep my reply choice");
+  await page
+    .getByLabel("Your letter")
+    .fill("This letter has no gift and is never submitted.");
+  return { toggle, writes: () => writes };
+}
+
+for (const initialReply of [false, true]) {
+  test(`${initialReply ? "removing" : "adding"} a reply postbox invalidates the reviewed private link and saved acknowledgement`, async ({
+    page,
+  }) => {
+    const fixture = await connectFixture(page);
+    if (initialReply) await fixture.toggle.check();
+    const review = page.locator(".review"),
+      reviewButton = page.getByRole("button", {
+        name: "Review letter",
+        exact: false,
+      }),
+      saved = page.getByRole("checkbox", {
+        name: "I saved my private link somewhere safe",
+      }),
+      publish = page.getByRole("button", { name: "Fund & publish letter" });
+    await reviewButton.click();
+    await expect(review).toBeVisible();
+    const originalLink = await page
+      .getByLabel("Private link to save", { exact: true })
+      .inputValue();
+    await saved.check();
+    await expect(publish).toBeEnabled();
+    await fixture.toggle.setChecked(!initialReply);
+    await expect(review).toHaveCount(0);
+    await expect(publish).toHaveCount(0);
+    await expect(saved).toHaveCount(0);
+    await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(
+      "Keep my reply choice",
+    );
+    if (!initialReply)
+      await expect(page.getByLabel("Verified owned reply postbox")).toHaveValue(
+        replyId,
+      );
+    else
+      await expect(page.getByLabel("Verified owned reply postbox")).toHaveCount(
+        0,
+      );
+    await reviewButton.click();
+    await expect(review).toBeVisible();
+    const currentLink = await page
+      .getByLabel("Private link to save", { exact: true })
+      .inputValue();
+    const original = parseGiftLink(new URL(originalLink).hash)!,
+      current = parseGiftLink(new URL(currentLink).hash)!;
+    expect(current.id).not.toBe(original.id);
+    expect(current.capability).not.toBe(original.capability);
+    await expect(saved).not.toBeChecked();
+    await expect(publish).toBeDisabled();
+    const replies = review
+      .locator(".receipt > div")
+      .filter({ has: page.getByText("Replies", { exact: true }) });
+    await expect(replies).toContainText(
+      initialReply ? "No reply postbox" : replyId,
+    );
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    expect(fixture.writes()).toBe(0);
+    expect(
+      await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+    ).toBeNull();
+    expect(
+      (await page.evaluate(() => (window as any).walletCalls)).some(
+        (method: string) =>
+          /View|Transaction|Ownership|PrivatePayment/.test(method),
+      ),
+    ).toBe(false);
+  });
+}
