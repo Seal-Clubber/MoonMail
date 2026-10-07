@@ -214,7 +214,7 @@ test("theme keeps utility, parchment and nested dark text readable", async ({
   expect(writes).toBe(0);
 });
 
-test("GhostDrop masthead stays centered without narrow-screen overflow", async ({
+test("GhostDrop brand stays left with a centered icon and no overflow", async ({
   page,
 }) => {
   await page.goto("./");
@@ -222,11 +222,25 @@ test("GhostDrop masthead stays centered without narrow-screen overflow", async (
     await page.setViewportSize({ width, height: 900 });
     const brand = page.locator(".topbar .brand");
     await expect(brand).toBeVisible();
+    const leftEdge = await page
+      .locator(".topbar")
+      .evaluate(
+        (header) =>
+          header.getBoundingClientRect().left +
+          parseFloat(getComputedStyle(header).paddingLeft),
+      );
     const position = await brand.boundingBox();
     expect(position).not.toBeNull();
-    expect(
-      Math.abs(position!.x + position!.width / 2 - width / 2),
-    ).toBeLessThanOrEqual(1);
+    const centered = await page.locator(".brand-icon").evaluate((icon) => {
+      const circle = icon.getBoundingClientRect();
+      const mark = icon.querySelector("svg")!.getBoundingClientRect();
+      return [
+        Math.abs(mark.x + mark.width / 2 - circle.x - circle.width / 2),
+        Math.abs(mark.y + mark.height / 2 - circle.y - circle.height / 2),
+      ];
+    });
+    expect(centered.every((offset) => offset <= 1)).toBe(true);
+    expect(Math.abs(position!.x - leftEdge)).toBeLessThanOrEqual(1);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -246,9 +260,7 @@ test("GhostDrop masthead stays centered without narrow-screen overflow", async (
       connect.lastChild!.textContent = "Disconnect wallet";
     });
     const connectedPosition = await brand.boundingBox();
-    expect(
-      Math.abs(connectedPosition!.x + connectedPosition!.width / 2 - width / 2),
-    ).toBeLessThanOrEqual(1);
+    expect(Math.abs(connectedPosition!.x - leftEdge)).toBeLessThanOrEqual(1);
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,

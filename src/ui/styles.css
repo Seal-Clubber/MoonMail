@@ -2117,17 +2117,17 @@ body {
 }
 .topbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 16px 24px;
   padding: 24px 4% 18px;
   background: #0c1415;
   border-bottom: 1px solid #53675b;
 }
 .topbar .brand {
-  grid-column: 2;
+  grid-column: 1;
   grid-row: 1;
-  justify-self: center;
-  text-align: center;
+  justify-self: start;
+  text-align: left;
   gap: 12px;
   font-size: 21px;
   letter-spacing: 0.16em;
@@ -2142,9 +2142,9 @@ body {
   width: 58px;
   height: 58px;
   flex-shrink: 0;
-  background: #1b3028;
-  border-color: #9ba976;
-  box-shadow: 0 0 24px #bbd69718;
+  background: #12253b;
+  border-color: #779bc4;
+  box-shadow: 0 0 24px #91bde52b;
 }
 .ghost-mark {
   display: block;
@@ -2152,10 +2152,13 @@ body {
   height: 100%;
 }
 .ghost-mark-body {
-  fill: #d9ebd4;
+  fill: #234e7e;
+  stroke: #9ac6e6;
+  stroke-width: 1.2;
+  stroke-linejoin: round;
 }
 .ghost-mark-eye {
-  fill: #19362d;
+  fill: #e7f3ff;
 }
 .ghost-mark-letter {
   fill: #e9c88e;
@@ -2170,8 +2173,8 @@ body {
   stroke-linecap: round;
 }
 .topbar nav {
-  grid-column: 1 / -1;
-  grid-row: 2;
+  grid-column: 2;
+  grid-row: 1;
   justify-content: center;
   flex-wrap: wrap;
   width: auto;
@@ -2293,8 +2296,14 @@ p,
   opacity: 0.55;
 }
 .ghost-clerk {
-  background: linear-gradient(#eef4dd, #b7d2ad);
-  opacity: 0.9;
+  background: linear-gradient(#3865a0, #234670);
+  opacity: 1;
+}
+.ghost-eyes {
+  color: #e7f3ff;
+}
+.ghost-cheek {
+  color: #9fc8e6;
 }
 .how-it-works > div,
 .compose form,
@@ -2412,9 +2421,9 @@ select:focus-visible {
     transform: translateY(-7px) rotate(3deg);
   }
 }
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .topbar {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
     padding: 22px 18px 16px;
     gap: 16px;
   }
@@ -2424,15 +2433,15 @@ select:focus-visible {
     font-size: 20px;
   }
   .topbar > .wallet-actions {
-    grid-column: 1;
-    grid-row: 2;
-    justify-self: center;
-    justify-content: center;
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    justify-content: flex-end;
     align-items: center;
   }
   .topbar nav {
-    grid-column: 1;
-    grid-row: 3;
+    grid-column: 1 / -1;
+    grid-row: 2;
     gap: 4px;
   }
   .topbar nav button {
@@ -2442,6 +2451,17 @@ select:focus-visible {
   }
 }
 @media (max-width: 540px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .topbar > .wallet-actions {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .topbar nav {
+    grid-column: 1;
+    grid-row: 3;
+  }
   .hero-sigil {
     width: 100px;
     height: 100px;

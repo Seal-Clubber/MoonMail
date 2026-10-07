@@ -2,7 +2,7 @@
 
 A spooky place to leave a kind letter, send a gift, or open your private inbox. Visitors need the website and their normal [Sapient wallet](https://sapient.tari.mw/). No GhostDrop bridge, daemon, API key or file import is needed.
 
-The moonlit interface uses a centered ghost-and-envelope mark, slow mist and firefly animation, and brighter text on dark surfaces with dark ink on parchment. Motion stops when your device requests reduced motion; decoration never covers controls.
+The moonlit interface uses a left-aligned brand with a centered dark-blue ghost-and-envelope icon, slow mist and firefly animation, and brighter text on dark surfaces with dark ink on parchment. Motion stops when your device requests reduced motion; decoration never covers controls.
 
 - **Public mail:** read letters without connecting. Search loaded public subjects/messages or public letter IDs, and filter by public letters, sealed invitations or uncollected public gifts. Sealed contents are never searched. Load more includes additional on-chain mail; anyone can collect an available public gift once.
 - **Private links:** encrypted letters for whoever holds the complete secret link. Read and collect without connecting, or connect Sapient to choose a receiving account.

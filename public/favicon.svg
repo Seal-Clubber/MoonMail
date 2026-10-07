@@ -2,10 +2,12 @@
   <rect width="64" height="64" rx="16" fill="#0c1415" />
   <path
     d="M14 49V27a18 18 0 0 1 36 0v22l-7-5-6 6-6-5-8 5-5-5Z"
-    fill="#d9ebd4"
+    fill="#234e7e"
+    stroke="#9ac6e6"
+    stroke-width="1.2"
   />
-  <ellipse cx="26" cy="27" rx="2.3" ry="3.4" fill="#19362d" />
-  <ellipse cx="39" cy="27" rx="2.3" ry="3.4" fill="#19362d" />
+  <ellipse cx="26" cy="27" rx="2.3" ry="3.4" fill="#e7f3ff" />
+  <ellipse cx="39" cy="27" rx="2.3" ry="3.4" fill="#e7f3ff" />
   <path
     d="M23 35h21v13H23zM23 35l10.5 8L44 35"
     fill="#e9c88e"
