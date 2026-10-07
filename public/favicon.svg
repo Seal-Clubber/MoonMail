@@ -8,11 +8,27 @@
   />
   <ellipse cx="26" cy="27" rx="2.3" ry="3.4" fill="#e7f3ff" />
   <ellipse cx="39" cy="27" rx="2.3" ry="3.4" fill="#e7f3ff" />
-  <path
-    d="M23 35h21v13H23zM23 35l10.5 8L44 35"
-    fill="#e9c88e"
-    stroke="#624b2b"
-    stroke-width="1.5"
-    stroke-linejoin="round"
-  />
+  <g fill="#e9c88e" stroke="#624b2b" stroke-width="1.5" stroke-linejoin="round">
+    <rect x="23" y="35" width="21" height="13" rx="1" />
+    <path
+      d="M23 48 33.5 39 44 48"
+      fill="none"
+      stroke="#9d8154"
+      stroke-width="0.75"
+    />
+    <path
+      d="M23 35H44L33.5 42.5Z"
+      fill="#f1e3c1"
+      stroke="#b39a6c"
+      stroke-width="0.8"
+    />
+    <circle
+      cx="33.5"
+      cy="42.5"
+      r="2"
+      fill="#7c3429"
+      stroke="#d39c77"
+      stroke-width="0.5"
+    />
+  </g>
 </svg>

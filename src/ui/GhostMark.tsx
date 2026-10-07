@@ -13,10 +13,12 @@ export function GhostMark() {
       />
       <ellipse className="ghost-mark-eye" cx="26" cy="27" rx="2.3" ry="3.4" />
       <ellipse className="ghost-mark-eye" cx="39" cy="27" rx="2.3" ry="3.4" />
-      <path
-        className="ghost-mark-letter"
-        d="M23 35h21v13H23zM23 35l10.5 8L44 35"
-      />
+      <g className="ghost-mark-letter">
+        <rect x="23" y="35" width="21" height="13" rx="1" />
+        <path className="ghost-mark-fold" d="M23 48 33.5 39 44 48" />
+        <path className="ghost-mark-flap" d="M23 35H44L33.5 42.5Z" />
+        <circle className="ghost-mark-seal" cx="33.5" cy="42.5" r="2" />
+      </g>
       <path className="ghost-mark-spark" d="M9 10v8M5 14h8M55 22v6M52 25h6" />
     </svg>
   );

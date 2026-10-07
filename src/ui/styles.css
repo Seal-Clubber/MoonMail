@@ -2166,6 +2166,21 @@ body {
   stroke-width: 1.5;
   stroke-linejoin: round;
 }
+.ghost-mark-fold {
+  fill: none;
+  stroke: #9d8154;
+  stroke-width: 0.75;
+}
+.ghost-mark-flap {
+  fill: #f1e3c1;
+  stroke: #b39a6c;
+  stroke-width: 0.8;
+}
+.ghost-mark-seal {
+  fill: #7c3429;
+  stroke: #d39c77;
+  stroke-width: 0.5;
+}
 .ghost-mark-spark {
   fill: none;
   stroke: #f0cd91;
