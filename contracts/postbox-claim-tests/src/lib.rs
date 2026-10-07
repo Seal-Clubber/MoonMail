@@ -481,4 +481,65 @@ mod tests {
         assert!(result.finalize.total_fees_required <= 100_000);
         assert_eq!(balance(&f, d), Amount::from(1_000_000u64));
     }
+    #[test]
+    #[ignore = "requires Node/tsx; production JS builder and WASM sealing bridge"]
+    fn javascript_proof_claim_executes_with_exact_context_bor_and_ephemeral_seal() {
+        use std::{
+            io::Write,
+            process::{Command, Stdio},
+        };
+        let mut f = fixture(100_000);
+        let d = f.destination;
+        let p = proof(&mut f, d, 5, false, "otl_loc_", false);
+        let expected: String =
+            f.t.call_method(f.envelope, "claim_challenge", args![d, 5u64], vec![]);
+        let input = serde_json::json!({
+            "envelope":{"claimProtocol":"sapient-proof-1","component":f.envelope.to_string(),"id":"gift","mode":"postbox","context":{"network":16,"registry":f.office.to_string(),"template":f.t.get_template_address("PostOfficeV2").to_string()},"payload":{"subject":"fixture","body":"unused"},"gift":"1000000","reserve":"100000","claimed":false,"sender":"","claimAuthority":f.t.to_public_key_bytes().to_string()},
+            "destination":d.to_string(),"expiry":5,"expectedChallenge":expected,
+            "proof":{"walletAddress":p.0,"publicNonce":p.1,"signature":p.2},"inputs":[]
+        });
+        let node = std::env::var("GHOSTDROP_TEST_NODE").unwrap_or("node".into());
+        let loader = std::env::var("GHOSTDROP_TEST_LOADER").unwrap_or("tsx".into());
+        let script = std::env::var("GHOSTDROP_TEST_POSTBOX_SIGNER").unwrap_or_else(|_| {
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("../../tools/sign-postbox-engine-claim.ts")
+                .to_string_lossy()
+                .into_owned()
+        });
+        let mut process = Command::new(node)
+            .args(["--experimental-wasm-modules", "--import", &loader, &script])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+        process
+            .stdin
+            .take()
+            .unwrap()
+            .write_all(serde_json::to_string(&input).unwrap().as_bytes())
+            .unwrap();
+        let result = process.wait_with_output().unwrap();
+        assert!(
+            result.status.success(),
+            "SDK bridge failed: {}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        let output: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
+        assert_eq!(output["challenge"], input["expectedChallenge"]);
+        let tx: Transaction = serde_json::from_value(output["json"].clone()).unwrap();
+        let hex = output["bor"].as_str().unwrap();
+        let bytes: Vec<u8> = (0..hex.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).unwrap())
+            .collect();
+        let decoded: Transaction = tari_bor::decode(&bytes).unwrap();
+        assert_eq!(decoded.calculate_id(), tx.calculate_id());
+        assert!(tx.verify_all_signatures());
+        assert_ne!(tx.main_signer(), Some(f.t.to_public_key_bytes()));
+        f.t.enable_fees();
+        f.t.execute_expect_success(decoded, vec![]);
+        assert!(state(&mut f).claimed);
+        assert_eq!(balance(&f, d), Amount::from(1_000_000u64));
+    }
 }

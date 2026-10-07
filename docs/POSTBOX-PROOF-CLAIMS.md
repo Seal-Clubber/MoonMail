@@ -23,13 +23,17 @@ Run `pnpm test`, `pnpm build`, `pnpm test:browser`, and:
 
 ```sh
 cargo test --manifest-path contracts/envelope-v2/Cargo.toml --locked
-cargo test --manifest-path contracts/postbox-claim-tests/Cargo.toml --locked
+cargo test --manifest-path contracts/postbox-claim-tests/Cargo.toml --locked -- --include-ignored
 cargo build --manifest-path contracts/envelope-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
 cargo build --manifest-path contracts/ghostdrop-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
 ```
 
 The [evidence record](postbox-proof-claims-evidence.json) distinguishes eleven local financial engine tests, fifteen mocked browser-adapter tests, and an actual ownership approval/rejection in a fresh unfunded stock Sapient 0.6.6 profile. The real approved signature passes the production crypto source in Ootle 0.45, with thirteen tampering cases rejected. That crypto probe uses a synthetic registry/envelope/expiry context; it is not a registered public postbox claim. The local measured claim fee was 4,369 µTARI, with a 100,000 µTARI reserve. Public fees must still be simulated and measured independently.
 
-CI runs the contract checks separately from the preserved original tests. Enable `postboxClaimProtocol: "sapient-proof-1"` and `evidence.postboxClaims: true` only for the reviewed new registry/envelope identities after actual deployment and gift collection evidence. Sapient postbox writes also require the separately verified recovery capsule identity and `mailboxRecovery` evidence. Never enable these flags on an original envelope deployment.
+An additional JavaScript-to-engine bridge compares the production builder's challenge with the contract's exact tuple, decodes its JSON and submission BOR as the same Rust transaction, verifies every WASM signature and the seal, and executes an exact payout with an unrelated temporary relay signer. Run this twelfth engine test with `--include-ignored`; Node and installed JS dependencies are required. Windows/WSL can supply `GHOSTDROP_TEST_NODE`, `GHOSTDROP_TEST_LOADER` and `GHOSTDROP_TEST_POSTBOX_SIGNER` pointing to `tools/sign-postbox-engine-claim.ts`. The bridge accepts public proof fields only, with no wallet or controller private key and no RPC.
 
-Remaining release work: registered capsule creation, rotation and restoration on the public testnet; supported operator template publication; a bounded funded claim with a zero-balance Sapient recipient; and published HTTPS validation. Public deployment and funding need fresh bounded authorization. Preserve historical mail/deployment selection when introducing a new registry.
+CI runs the contract checks, including that bridge, separately from the preserved original tests. Enable `postboxClaimProtocol: "sapient-proof-1"` and `evidence.postboxClaims: true` only for the reviewed new registry/envelope identities after actual deployment and gift collection evidence. Sapient postbox writes also require the separately verified recovery capsule identity and `mailboxRecovery` evidence. Never enable these flags on an original envelope deployment.
+
+Remaining release work: registered capsule creation, rotation and restoration on the public testnet; supported operator template publication; a bounded funded claim with a zero-balance Sapient recipient; and published HTTPS validation. The user authorized a revised bounded test after the public template fee quotes exceeded the initial caps; public transactions and restoration/claim evidence remain to be confirmed. Preserve historical mail/deployment selection when introducing a new registry.
+
+Four additional desktop/mobile UI cases verify the exact review, rejection without broadcast, frozen receiving controls during approval, and disabled historical-deployment claims. All twenty local browser cases and the strict production build pass. Current template publication simulations quoted 1,890,925 / 980,028 / 5,017,967 µTARI; these are publication costs, not gift collection fees.

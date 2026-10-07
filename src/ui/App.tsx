@@ -1561,6 +1561,7 @@ export function App() {
                   <>
                     <div className="mode-switch">
                       <button
+                        disabled={busy}
                         aria-pressed={destMode === "manual"}
                         onClick={() => {
                           setDestMode("manual");
@@ -1571,7 +1572,7 @@ export function App() {
                         Use another address
                       </button>
                       <button
-                        disabled={!wallet}
+                        disabled={busy || !wallet}
                         aria-pressed={destMode === "wallet"}
                         onClick={() => {
                           setDestMode("wallet");
@@ -1589,6 +1590,7 @@ export function App() {
                       <label>
                         Receiving account
                         <select
+                          disabled={busy}
                           onChange={(e) => {
                             const a = wallet.accounts[Number(e.target.value)];
                             setAddress(a.address);
@@ -1609,6 +1611,7 @@ export function App() {
                         <label>
                           Ootle receiving address
                           <input
+                            disabled={busy}
                             value={address}
                             onChange={(e) => setAddress(e.target.value)}
                           />
@@ -1631,6 +1634,7 @@ export function App() {
                           <label>
                             Existing built-in account component
                             <input
+                              disabled={busy}
                               value={destination}
                               onChange={(e) => setDestination(e.target.value)}
                             />
@@ -1644,9 +1648,12 @@ export function App() {
                       active.claimProtocol === "sapient-proof-1" &&
                       postboxClaimsReady(d, "sapient")
                         ? `Sapient will ask you to approve a proof for this gift and destination. GhostDrop then submits the claim. You receive ${active.gift} µTARI; collection fees come from the funded reserve of up to ${active.reserve} µTARI. Your wallet needs no coins for this claim. The approval expires after at most 10 network epochs.`
-                        : createAccount
-                          ? "Use an Ootle address whose built-in account does not exist yet. The gift reserve pays account creation and collection fees; your receiving keys stay in your wallet."
-                          : "Guests may use an existing compatible account without connecting its wallet. L1 XTM addresses, raw keys and arbitrary components are unsupported."}
+                        : active.mode === "postbox" &&
+                            wallet?.kind === "sapient"
+                          ? "Postbox collection is not enabled for this deployment. Your connected wallet must control this postbox."
+                          : createAccount
+                            ? "Use an Ootle address whose built-in account does not exist yet. The gift reserve pays account creation and collection fees; your receiving keys stay in your wallet."
+                            : "Guests may use an existing compatible account without connecting its wallet. L1 XTM addresses, raw keys and arbitrary components are unsupported."}
                     </p>
                     <button
                       className="primary"

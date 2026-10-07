@@ -42,6 +42,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: "11.19.0" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "24", cache: pnpm }
+      - run: pnpm install --frozen-lockfile
       - uses: dtolnay/rust-toolchain@master
         with: { toolchain: "1.97.1", targets: wasm32-unknown-unknown }
       - uses: Swatinem/rust-cache@v2
@@ -53,7 +58,7 @@ jobs:
       - run: cargo test --manifest-path contracts/envelope-v2/Cargo.toml --locked
       - run: cargo build --manifest-path contracts/envelope-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
       - run: cargo build --manifest-path contracts/ghostdrop-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
-      - run: cargo test --manifest-path contracts/postbox-claim-tests/Cargo.toml --locked
+      - run: cargo test --manifest-path contracts/postbox-claim-tests/Cargo.toml --locked -- --include-ignored
   recovery-capsule:
     runs-on: ubuntu-latest
     steps:
