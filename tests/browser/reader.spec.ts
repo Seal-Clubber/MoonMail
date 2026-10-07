@@ -80,8 +80,11 @@ test("configured public reader retries an initial outage without a page reload",
   await page.goto("./");
   await expect(page.getByRole("alert")).toContainText("Could not read");
   await expect(
-    page.getByText("The spirits are fetching your mail."),
+    page.getByText("The spirits could not reach the post office."),
   ).toBeVisible();
+  await expect(
+    page.getByText("The spirits are fetching your mail."),
+  ).toHaveCount(0);
   await expect(page.getByText("The post office is unavailable.")).toHaveCount(
     0,
   );
@@ -457,4 +460,44 @@ test("all unreadable letters show a retry state rather than an empty post office
     page.getByRole("button", { name: subject, exact: false }),
   ).toBeVisible();
   await expect(page.locator(".mail-read-notice")).toHaveCount(0);
+});
+
+test("a failed refresh keeps loaded mail visible with an honest retry notice", async ({
+  page,
+}) => {
+  await configure(page);
+  let failing = false,
+    writes = 0;
+  await page.route(`${deployment.indexerUrl}**`, (route) => {
+    if (route.request().method() !== "GET") {
+      writes++;
+      return route.abort();
+    }
+    return failing
+      ? route.fulfill({ status: 503, body: "Fixture outage" })
+      : route.fulfill({ json: state(route.request().url()) });
+  });
+  await page.goto("./");
+  const letter = page.getByRole("button", { name: subject, exact: false });
+  await expect(letter).toBeVisible();
+  failing = true;
+  await page.getByRole("button", { name: "↻ Refresh", exact: true }).click();
+  await expect(page.getByText("Mail could not be refreshed.")).toBeVisible();
+  await expect(
+    page.getByText(
+      "Previously loaded mail is still here. Use Refresh to try again.",
+    ),
+  ).toBeVisible();
+  await expect(letter).toBeVisible();
+  await expect(
+    page.getByRole("status").filter({ hasText: "Mail is up to date" }),
+  ).toHaveCount(0);
+  failing = false;
+  await page.getByRole("button", { name: "↻ Refresh", exact: true }).click();
+  await expect(page.getByText("Mail could not be refreshed.")).toHaveCount(0);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  await expect(
+    page.getByRole("status").filter({ hasText: "Mail is up to date" }),
+  ).toBeVisible();
+  expect(writes).toBe(0);
 });

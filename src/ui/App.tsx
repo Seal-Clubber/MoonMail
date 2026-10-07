@@ -97,6 +97,9 @@ export function App() {
     [list, setList] = useState(false),
     [cursor, setCursor] = useState(""),
     [loadingMore, setLoadingMore] = useState(false),
+    [readState, setReadState] = useState<
+      "idle" | "loading" | "ready" | "failed"
+    >("idle"),
     [unavailableLetterIds, setUnavailableLetterIds] = useState<string[]>([]);
   const [wallet, setWallet] = useState<ConnectedWallet>(),
     [account, setAccount] = useState(0),
@@ -264,7 +267,11 @@ export function App() {
     const sequence = ++readSequence.current;
     retryReader.current?.provider.stopWatcher();
     retryReader.current = undefined;
-    if (!d.registry || !d.indexerUrl) return;
+    if (!d.registry || !d.indexerUrl) {
+      setReadState("idle");
+      return;
+    }
+    setReadState("loading");
     let cancelled = false;
     let connected: PostOfficeClient | undefined;
     PostOfficeClient.connect(d)
@@ -277,6 +284,7 @@ export function App() {
         const data = await c.read("", 100, { allowPartial: true });
         if (!cancelled && sequence === readSequence.current) {
           setChain(c);
+          setReadState("ready");
           setLetters(data.letters);
           setUnavailableLetterIds(data.unavailableLetterIds);
           setBoxes(data.postboxes);
@@ -290,10 +298,12 @@ export function App() {
       })
       .catch(() => {
         connected?.provider.stopWatcher();
-        if (!cancelled && sequence === readSequence.current)
+        if (!cancelled && sequence === readSequence.current) {
+          setReadState("failed");
           setError(
             "Could not read the post office right now. Try Refresh in a moment.",
           );
+        }
       });
     return () => {
       cancelled = true;
@@ -487,9 +497,12 @@ export function App() {
     if (change.network !== undefined && change.network !== d.network)
       disconnect();
     setIndexerStatus("");
+    setError("");
+    setStatus("");
     closeLetter();
     setPrepared(undefined);
     setChain(undefined);
+    setReadState("idle");
     setLetters([]);
     setUnavailableLetterIds([]);
     setBoxes([]);
@@ -555,9 +568,11 @@ export function App() {
     const sequence = ++readSequence.current;
     setLoadingMore(false);
     const letterSequence = openSequence.current;
-    const reader = chain || (await PostOfficeClient.connect(d));
+    setReadState("loading");
+    let reader: PostOfficeClient | undefined;
     let data;
     try {
+      reader = chain || (await PostOfficeClient.connect(d));
       data = await reader.read("", 100, { allowPartial: true });
       // Refresh every page the visitor already loaded, including failed references.
       const loadedPages = Math.max(
@@ -578,15 +593,23 @@ export function App() {
           ],
         };
       }
-    } catch (error) {
-      if (!chain) reader.provider.stopWatcher();
-      throw error;
+    } catch {
+      if (!chain) reader?.provider.stopWatcher();
+      if (sequence !== readSequence.current) return;
+      setReadState("failed");
+      setStatus("");
+      throw new Error(
+        chain
+          ? "Could not refresh the post office. Your loaded mail is still here; try Refresh again."
+          : "Could not read the post office right now. Try Refresh in a moment.",
+      );
     }
     if (sequence !== readSequence.current) {
       if (!chain) reader.provider.stopWatcher();
       return;
     }
     setChain(reader);
+    setReadState("ready");
     if (!chain) retryReader.current = reader;
     setLetters(data.letters);
     setUnavailableLetterIds(data.unavailableLetterIds);
@@ -860,19 +883,27 @@ export function App() {
                   </button>
                 </div>
               </div>
-              {!chain && (
-                <div className="deployment-note">
+              {(!chain || readState === "failed") && (
+                <div className="deployment-note" role="status">
                   <span className="dot" />
                   <div>
                     <strong>
-                      {d.registry
-                        ? "The spirits are fetching your mail."
-                        : "The post office is unavailable."}
+                      {!d.registry
+                        ? "The post office is unavailable."
+                        : readState === "failed"
+                          ? chain
+                            ? "Mail could not be refreshed."
+                            : "The spirits could not reach the post office."
+                          : "The spirits are fetching your mail."}
                     </strong>
                     <p>
-                      {d.registry
-                        ? "Taking a little longer? Use Refresh to try again."
-                        : "No live gifts are shown. You can explore a clearly labelled preview."}
+                      {!d.registry
+                        ? "No live gifts are shown. You can explore a clearly labelled preview."
+                        : readState === "failed"
+                          ? chain
+                            ? "Previously loaded mail is still here. Use Refresh to try again."
+                            : "No live mail has loaded yet. Use Refresh to try again."
+                          : "Taking a little longer? Use Refresh to try again."}
                     </p>
                   </div>
                   {!d.registry && (
@@ -1018,16 +1049,20 @@ export function App() {
                         ? "No letters match this search."
                         : unavailableLetterIds.length
                           ? "Some mail is waiting for another read."
-                          : chain
-                            ? "The hall is quiet."
-                            : "Listening for letters…"}
+                          : readState === "failed"
+                            ? "The hall could not load."
+                            : chain
+                              ? "The hall is quiet."
+                              : "Listening for letters…"}
                       <br />
                       <small>
                         {mailQuery.trim() || mailFilter !== "all"
                           ? "Try another word or show all hall mail. Sealed contents stay private."
                           : unavailableLetterIds.length
                             ? "Use Retry unavailable mail above. Unverified letters are never shown as available gifts."
-                            : "Public letters will appear here when someone sends one. You could be the first wandering soul."}
+                            : readState === "failed"
+                              ? "Try Refresh above to reach the post office again."
+                              : "Public letters will appear here when someone sends one. You could be the first wandering soul."}
                       </small>
                     </p>
                     {mailQuery.trim() || mailFilter !== "all" ? (
@@ -1042,6 +1077,7 @@ export function App() {
                       </button>
                     ) : (
                       chain &&
+                      readState !== "failed" &&
                       !unavailableLetterIds.length && (
                         <button onClick={() => navigate("compose")}>
                           Write the first letter ↗
@@ -1465,8 +1501,9 @@ export function App() {
                 )}
                 {!chain && (
                   <p className="review-note">
-                    Waiting for the post office connection. Try Refresh on
-                    Public mail if this takes a while.
+                    {readState === "failed"
+                      ? "The post office connection failed. Try Refresh on Public mail."
+                      : "Waiting for the post office connection. Try Refresh on Public mail if this takes a while."}
                   </p>
                 )}
                 {error && <p className="review-note">{error}</p>}
