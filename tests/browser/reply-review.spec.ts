@@ -188,3 +188,100 @@ for (const initialReply of [false, true]) {
     ).toBe(false);
   });
 }
+
+async function expectNoSpending(page: Page, writes: () => number) {
+  expect(writes()).toBe(0);
+  expect(
+    await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+  ).toBeNull();
+  expect(
+    (await page.evaluate(() => (window as any).walletCalls)).some(
+      (method: string) =>
+        /View|Transaction|Ownership|PrivatePayment/.test(method),
+    ),
+  ).toBe(false);
+}
+
+test("disconnect clears the wallet-bound reply choice and keeps the written draft", async ({
+  page,
+}) => {
+  const fixture = await connectFixture(page);
+  await fixture.toggle.check();
+  await page.getByLabel("Gift amount (optional)").fill("2.5");
+  await page.getByLabel("Set aside for collection fees").fill("0.1");
+  await page
+    .getByRole("button", { name: "Review letter", exact: false })
+    .click();
+  await page
+    .getByRole("checkbox", { name: "I saved my private link somewhere safe" })
+    .check();
+  await page
+    .getByRole("button", { name: "Disconnect wallet", exact: true })
+    .click();
+  await expect(fixture.toggle).not.toBeChecked();
+  await expect(fixture.toggle).toBeDisabled();
+  await expect(page.locator(".review")).toHaveCount(0);
+  await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(
+    "Keep my reply choice",
+  );
+  await expect(page.getByLabel("Your letter")).toHaveValue(
+    "This letter has no gift and is never submitted.",
+  );
+  await expect(page.getByLabel("Gift amount (optional)")).toHaveValue("2.5");
+  await expect(page.getByLabel("Set aside for collection fees")).toHaveValue(
+    "0.1",
+  );
+  await page
+    .getByRole("button", { name: "Review letter", exact: false })
+    .click();
+  await expect(page.locator(".review .receipt")).toContainText(
+    "No reply postbox",
+  );
+  await expect(
+    page.getByRole("checkbox", {
+      name: "I saved my private link somewhere safe",
+    }),
+  ).not.toBeChecked();
+  await expect(
+    page.getByRole("button", { name: "Fund & publish letter" }),
+  ).toBeDisabled();
+  await expectNoSpending(page, fixture.writes);
+});
+
+test("changing offices clears old reply routing even when the new office has the same public ID", async ({
+  page,
+}) => {
+  const fixture = await connectFixture(page);
+  await fixture.toggle.check();
+  await page.getByLabel("Gift amount (optional)").fill("2.5");
+  await page.getByLabel("Set aside for collection fees").fill("0.1");
+  await page.getByRole("button", { name: "Settings", exact: false }).click();
+  await page.getByText("Advanced connection settings", { exact: true }).click();
+  const registry = `component_${"e".repeat(64)}`;
+  await page.getByLabel("Registry component", { exact: true }).fill(registry);
+  await page
+    .getByRole("button", { name: "Write a letter", exact: true })
+    .click();
+  await expect(fixture.toggle).toBeEnabled();
+  await expect(fixture.toggle).not.toBeChecked();
+  await expect(
+    page.getByRole("button", { name: "Wallet details", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Gift amount (optional)")).toHaveValue("2.5");
+  await expect(page.getByLabel("Set aside for collection fees")).toHaveValue(
+    "0.1",
+  );
+  await page
+    .getByRole("button", { name: "Review letter", exact: false })
+    .click();
+  await expect(page.locator(".review .receipt")).toContainText(
+    "No reply postbox",
+  );
+  const privateLink = await page
+    .getByLabel("Private link to save", { exact: true })
+    .inputValue();
+  expect(parseGiftLink(new URL(privateLink).hash)?.context.registry).toBe(
+    registry,
+  );
+  await expectNoSpending(page, fixture.writes);
+});

@@ -650,6 +650,9 @@ export function App() {
     setStatus("");
     closeLetter();
     setPrepared(undefined);
+    setReview(false);
+    setLinkSaved(false);
+    setReply("");
     setChain(undefined);
     setReadState("idle");
     setLetters([]);
@@ -915,6 +918,9 @@ export function App() {
     setPrivateLink("");
     setRoute(undefined);
     setPrepared(undefined);
+    setReview(false);
+    setLinkSaved(false);
+    setReply("");
     setCreateAccount(false);
     setStatus(
       "Disconnected from Sapient. Private session state was cleared; manage site permissions in your wallet.",

@@ -1,0 +1,73 @@
+{
+  "checkedAt": "2026-10-07T22:02:06Z",
+  "publication": "Local wallet/office reply cleanup; awaits human main push. Published0e2dab2 reply-toggle verification is separate.",
+  "sourceFilesSha256": {
+    "src/ui/App.tsx": "33b286cc41925a7edc62f73b20b1a5fb2fca79e4061cf93156335c11bee20c96",
+    "tests/browser/reply-review.spec.ts": "5ebf8c623540b79247655cb1b8062428e19bb388ea2d3db7b101eddb2b883958"
+  },
+  "clientChecks": {
+    "testsPassed": 157,
+    "testFilesPassed": 17,
+    "browserChecksPassed": 150,
+    "browserWorkers": 1,
+    "browserDuration": "1.2 minutes",
+    "focusedReplyChecksPassed": 8,
+    "typeScript": "passed",
+    "productionBuild": "passed",
+    "prettier": "passed",
+    "gitDiffCheck": "passed"
+  },
+  "regression": {
+    "unchangedBuild": "0e2dab2",
+    "desktopBaselineFailures": 2,
+    "cases": "Disconnect left an old reply ID checked/disabled. Changing registry kept old return routing even when an identical ID appeared in the new namespace. Both actions now clear reply/review/save acknowledgement while retaining subject/body/gift/reserve/fee fields."
+  },
+  "stockWalletReadOnlyAcceptance": {
+    "checkedAt": "2026-10-07T22:02:06.016Z",
+    "base": "http://127.0.0.1:4173/GhostDrop/",
+    "sourceVersion": "0.6.6",
+    "existingIsolatedRestoredProfile": true,
+    "runtimeAssetsMatchReviewedStorePackage": true,
+    "ledgerOrAppOverrides": false,
+    "readOnlyWalletMethodGuard": true,
+    "postboxId": "sapient-v2-recovery-inbox",
+    "checks": {
+      "disconnectClearsBoundReply": true,
+      "draftKeptAfterDisconnect": true,
+      "newGuestReviewHasNoReply": true,
+      "actualSiteConnection": true,
+      "addAndRemoveReplyInvalidatesReview": true,
+      "obsoletePrivateLinkReplaced": true,
+      "savedAcknowledgementCleared": true,
+      "preparedReplyIdReviewed": true,
+      "transactionJournalUnchanged": true,
+      "mobileWithoutOverflow": true,
+      "privateConsentRequests": 0,
+      "originDisconnected": true,
+      "transactionRequestsCreated": 0,
+      "signaturesRequested": 0,
+      "transactionsBroadcast": 0,
+      "bulkSubstateReads": 2,
+      "blockedHttp": 0,
+      "blockedWalletMethods": []
+    },
+    "walletMethodNames": [
+      "tari_disconnect",
+      "tari_getNetwork",
+      "tari_requestAccounts",
+      "tari_getWalletAddress",
+      "tari_getCapabilities",
+      "tari_getAccounts"
+    ],
+    "caveat": "Actual stock wallet and public registered postbox; unsent local preparations only, with financial and private-view methods blocked. No claim, publication, seed restoration or private-link capability in output/screenshots."
+  },
+  "boundaries": [
+    "Actual stock Sapient and real public registered postbox on the latest local production build; unsent preparation and actual origin disconnect only. No letter or claim published.",
+    "The actual disconnect removes the wallet-bound reply choice; a subsequent guest preparation reviews No reply postbox, with saved-link acknowledgement reset and publishing disabled.",
+    "Different-office same-ID behavior is covered by isolated registry/provider fixtures; no new real registry or template was deployed.",
+    "Zero private-view grants, transaction requests, signatures and broadcasts. Journal unchanged; financial/private-view methods blocked. Existing isolated restored profile only.",
+    "Earlier0e2dab2 full146 Linux and published reply-toggle acceptance retains its original scope; the new150 one-worker suite is local Windows acceptance, not yet GitHub/Linux/Pages.",
+    "No public mail invented/migrated, engine/financial campaign or personal wallet access. Source changes affect UI cleanup only, with no contract/fee/reconciliation change.",
+    "No private links/capabilities printed or saved to evidence/screenshots. Only a public receipt was visually reviewed."
+  ]
+}

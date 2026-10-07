@@ -26,6 +26,8 @@ If a letter includes a registered return postbox, choose **Reply to this spirit*
 
 Sending review shows **Replies** with your complete included postbox ID, or **No reply postbox**. An included return ID is public even when the contents are sealed. Changing the optional reply checkbox closes the old review; review again and save the new private link before publishing.
 
+Disconnecting or changing offices removes the included return address and old preparation, while keeping your written draft, gift and fee settings. Reconnect and choose a return postbox again if needed; IDs belong to their selected post office.
+
 ## Invite a friend to write
 
 Once your postbox is registered, open **My inbox** and copy **My postbox invitation**. Send that public address to your friend. It works for an unlisted postbox too. They can open it without connecting a wallet, check its full ID with you, and choose **Use this postbox for my letter**. Their current subject, message and gift stay in the draft; nothing is published until they review and approve through Sapient. This invitation gives no access to your inbox. A different office or an unavailable/unknown postbox cannot be selected until verified.

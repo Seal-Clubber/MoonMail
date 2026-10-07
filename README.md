@@ -12,6 +12,8 @@ Public letter links, private links and postbox IDs always have a manual-copy fie
 
 Sending review shows the complete included reply postbox ID, or **No reply postbox**. Return IDs are public metadata, including on sealed letters. Changing that choice invalidates the prepared review; re-review creates a fresh private link that must be saved again before sending. [Reply-review verification](docs/reply-review-evidence.json) records local regressions; [published verification](docs/reply-review-published-evidence.json) confirms the unsent flow with stock Sapient on actual Pages HTTPS.
 
+Disconnecting or changing post office clears the optional return postbox and prepared review. Your written subject, message, gift and fee settings remain at the writing desk. Reconnect the wallet and explicitly choose a registered return address again if you want replies. [Reply-session verification](docs/reply-session-evidence.json) records local cleanup checks; this addition awaits your push.
+
 Collection has a separate destination review: check the full address, receiving account, payout and fee reserve before choosing **Confirm & collect gift**. Opening that review never requests a proof or submits a claim.
 
 **Testnet only:** the current office uses Esmeralda test TARI. Choose Esmeralda in Sapient. Sending and creating a postbox cost wallet fees. Collection uses the sender’s separate fee reserve; an addressed recipient can collect the full gift with zero coins. Gifts have no expiry or refund, and unused collection funds stay locked.
