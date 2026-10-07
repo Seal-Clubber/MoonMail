@@ -389,8 +389,8 @@ export function Postboxes({
                     Recovery stores an encrypted application key on Ootle.
                     Confirm its transaction and wallet recovery before
                     publishing the postbox. Existing native-memo setups keep
-                    their original route. New setup remains disabled until
-                    public deployment evidence is recorded.
+                    their original route. Choose the verified Sapient postbox
+                    office in Network & verification for new setup.
                   </p>
                   {prepared && (
                     <p className="info">
@@ -477,10 +477,9 @@ export function Postboxes({
               </p>
               <p className="fine-print">
                 Rotation affects new mail. Historical key versions remain
-                recoverable through their original recovery route. Sapient
-                recovery is being validated before new keys can be published.
-                Rotation changes only the encryption key; save nickname and
-                listing changes separately.
+                recoverable through their original recovery route. Rotation
+                changes only the encryption key; save nickname and listing
+                changes separately.
               </p>
             </article>
           )}

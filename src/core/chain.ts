@@ -6,7 +6,6 @@ import {
   sealTransaction,
   classifyOutcome,
   getVaultIdsForAccount,
-  sendDryRun,
 } from "@tari-project/ootle";
 import {
   EphemeralKeySigner,
@@ -339,6 +338,7 @@ export class PostOfficeClient {
           ]),
         ).values(),
       );
+      tx.inputs = await this.provider.resolveInputs(tx.inputs);
       return wallet.submitOperation(tx, fee, storage, {
         network: this.deployment.network,
         registry: this.deployment.registry,
@@ -526,6 +526,7 @@ export class PostOfficeClient {
           ].map((input) => [input.substate_id, input]),
         ).values(),
       );
+      tx.inputs = await this.provider.resolveInputs(tx.inputs);
       return wallet.submitOperation(tx, feeCap, storage, {
         network: this.deployment.network,
         registry: this.deployment.registry,
@@ -691,6 +692,7 @@ export class PostOfficeClient {
         readSubstate: (id) => this.provider.getSubstate(id),
         vaults: (account) => getVaultIdsForAccount(this.provider, account),
         epoch: () => this.provider.getCurrentEpoch(),
+        resolveInputs: (inputs) => this.provider.resolveInputs(inputs),
       },
     );
   }
@@ -840,20 +842,32 @@ export class PostOfficeClient {
     const signer = EphemeralKeySigner.generate(
       this.deployment.network as Network,
     );
-    const dry = await sendDryRun(this.provider, signer, tx);
-    const execution =
-      typeof dry.result === "object" && "Finalized" in dry.result
-        ? dry.result.Finalized.execution_result
-        : null;
-    if (
-      classifyOutcome(dry.result)?.outcome !== "Commit" ||
-      !execution ||
-      !("Accept" in execution.finalize.result)
-    )
+    // Ootle 0.45 separates simulation from consensus submission. SDK 0.7's
+    // sendDryRun still uses /transactions and is rejected by that endpoint.
+    const dryEnvelope = sealTransaction(
+      await signTransaction([signer], { ...tx, dry_run: true }),
+    );
+    const dry = await this.provider.getClient().getTransport().sendPost<{
+      transaction_id: string;
+      result: {
+        finalize: {
+          result: Record<string, unknown>;
+          total_fees_required: string | number;
+        };
+      };
+    }>("transactions/dry-run", { transaction: dryEnvelope });
+    const execution = dry.result;
+    if (!execution || !("Accept" in execution.finalize.result))
       throw new Error(
         "Proof claim simulation rejected; no claim was broadcast",
       );
-    if (BigInt(execution.finalize.total_fees_required) > BigInt(latest.reserve))
+    const required = execution.finalize.total_fees_required;
+    if (
+      (typeof required === "number" && !Number.isSafeInteger(required)) ||
+      !/^(0|[1-9][0-9]*)$/.test(String(required))
+    )
+      throw new Error("Invalid simulation fee; no claim was broadcast");
+    if (BigInt(required) > BigInt(latest.reserve))
       throw new Error(
         "The gift reserve cannot cover collection fees; no claim was broadcast",
       );

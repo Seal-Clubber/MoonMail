@@ -17,7 +17,6 @@ import type { Envelope } from "../src/core/types";
 const simulation = vi.hoisted(() => vi.fn());
 vi.mock("@tari-project/ootle", async (original) => ({
   ...(await original<typeof import("@tari-project/ootle")>()),
-  sendDryRun: simulation,
   getVaultIdsForAccount: vi.fn(async (_provider, account: string) => [
     `vault_${account.slice(-64)}`,
   ]),
@@ -124,18 +123,12 @@ async function connected() {
 }
 async function chainFixture() {
   const f = await connected();
-  simulation
-    .mockReset()
-    .mockResolvedValue({
-      result: {
-        Finalized: {
-          final_decision: "Commit",
-          execution_result: {
-            finalize: { result: { Accept: {} }, total_fees_required: "1000" },
-          },
-        },
-      },
-    });
+  simulation.mockReset().mockResolvedValue({
+    transaction_id: "8".repeat(64),
+    result: {
+      finalize: { result: { Accept: {} }, total_fees_required: "1000" },
+    },
+  });
   const resolveInputs = vi.fn(async (inputs) =>
     inputs.map((i: any) => ({ ...i, version: 0 })),
   );
@@ -146,6 +139,7 @@ async function chainFixture() {
     return { transaction_id: "4".repeat(64) };
   });
   const provider = {
+    getClient: () => ({ getTransport: () => ({ sendPost: simulation }) }),
     getCurrentEpoch: vi.fn(async () => 100),
     resolveInputs,
     submitTransaction,
@@ -288,28 +282,80 @@ test.each([
   expect(f.provider.submitTransaction).not.toHaveBeenCalled();
   expect(readPending(f.storage)).toEqual([]);
 });
-test.each(["rejected", "too expensive"])(
-  "%s simulation prevents financial broadcast",
-  async (caseName) => {
-    const f = await chainFixture();
-    simulation.mockResolvedValue({
-      result: {
-        Finalized: {
-          final_decision:
-            caseName === "rejected" ? { Abort: "bad proof" } : "Commit",
-          execution_result: {
-            finalize: {
-              result:
-                caseName === "rejected"
-                  ? { Reject: "bad proof" }
-                  : { Accept: {} },
-              total_fees_required: "100001",
-            },
-          },
-        },
+test.each([
+  "rejected",
+  "too expensive",
+  "negative fee",
+  "fractional fee",
+  "unsafe fee",
+])("%s simulation prevents financial broadcast", async (caseName) => {
+  const f = await chainFixture();
+  simulation.mockResolvedValue({
+    result: {
+      finalize: {
+        result:
+          caseName === "rejected" ? { Reject: "bad proof" } : { Accept: {} },
+        total_fees_required:
+          caseName === "negative fee"
+            ? "-1"
+            : caseName === "fractional fee"
+              ? 0.5
+              : caseName === "unsafe fee"
+                ? Number.MAX_SAFE_INTEGER + 1
+                : "100001",
       },
+    },
+  });
+  await expect(f.claim()).rejects.toThrow();
+  expect(f.provider.submitTransaction).not.toHaveBeenCalled();
+  expect(readPending(f.storage)).toEqual([]);
+});
+
+test.each(["account", "network"])(
+  "a %s change while proof approval is pending prevents submission",
+  async (changed) => {
+    const f = await chainFixture();
+    let finish!: (value: unknown) => void;
+    f.setProof(
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+    );
+    const result = f.claim();
+    result.catch(() => {});
+    await vi.waitFor(() =>
+      expect(
+        f.request.mock.calls.some(
+          ([a]) => a.method === "tari_signWalletOwnershipChallenge",
+        ),
+      ).toBe(true),
+    );
+    if (changed === "account") f.setSelected(`component_${"7".repeat(64)}`);
+    else f.setNetwork("igor");
+    finish({
+      walletAddress: f.address,
+      publicNonce: "12".repeat(32),
+      signature: "23".repeat(32),
+    });
+    await expect(result).rejects.toThrow();
+    expect(simulation).not.toHaveBeenCalled();
+    expect(f.provider.submitTransaction).not.toHaveBeenCalled();
+    expect(readPending(f.storage)).toEqual([]);
+  },
+);
+
+test.each(["account", "network"])(
+  "a %s change during simulation invalidates the approved claim",
+  async (changed) => {
+    const f = await chainFixture();
+    const successfulSimulation = simulation.getMockImplementation()!;
+    simulation.mockImplementationOnce(async (...args: unknown[]) => {
+      if (changed === "account") f.setSelected(`component_${"7".repeat(64)}`);
+      else f.setNetwork("igor");
+      return successfulSimulation(...args);
     });
     await expect(f.claim()).rejects.toThrow();
+    expect(simulation).toHaveBeenCalledTimes(1);
     expect(f.provider.submitTransaction).not.toHaveBeenCalled();
     expect(readPending(f.storage)).toEqual([]);
   },
@@ -318,6 +364,9 @@ test("one proof approval submits a fee-only claim with declared dependencies and
   const f = await chainFixture();
   expect(await f.claim()).toBe("4".repeat(64));
   expect(simulation).toHaveBeenCalledTimes(1);
+  expect(simulation).toHaveBeenCalledWith("transactions/dry-run", {
+    transaction: expect.any(String),
+  });
   const inputs = f.provider.resolveInputs.mock.calls[0][0];
   expect(inputs).toEqual(
     expect.arrayContaining([

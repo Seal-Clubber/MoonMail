@@ -1,8 +1,8 @@
 {
-  "checkedAt": "2026-10-07T02:46:46.760Z",
+  "checkedAt": "2026-10-07T03:21:33.542774+00:00",
   "network": "local Ootle engine 0.45.0; ownership approval on Esmeralda through Sapient",
   "implementation": "EnvelopeV2 / PostOfficeV2 / sapient-proof-1",
-  "publicDeploymentEnabled": false,
+  "publicDeploymentEnabled": true,
   "engineTests": {
     "passed": 11,
     "testReserveMicroTari": 100000,
@@ -22,7 +22,7 @@
     "measuredClaimFeeMicroTari": 4369
   },
   "browserAdapterTests": {
-    "passed": 15,
+    "passed": 22,
     "mockedProvider": true,
     "checks": [
       "exact canonical challenge",
@@ -54,10 +54,10 @@
     "sourceCommit": "7ad3c4f117a76c64d472fd371b7d75bbe297abec"
   },
   "sources": {
-    "src/core/chain.ts": "4683ec0c1434637b2906a175632f05247946816100149201bfbd681ff71825a0",
+    "src/core/chain.ts": "0454389d018ef9cd9ce083ba3b05e6f35a7b5b4964fe083e9c0addd2139ba547",
     "contracts/envelope-v2/src/lib.rs": "189bd097152de0dabdb250f3218c1a2ba786ae778dc020db64fa36f16b643bb9",
-    "src/core/sapient.ts": "f48908e8dc792a1549afa39cf9afb9a31816dbde18abb316690da099efd0f9f0",
-    "contracts/postbox-claim-tests/src/lib.rs": "d642957d66b3e5120a9ac6c100aae1782c116256353ad2bfe8c3ddb5d2f994e8",
+    "src/core/sapient.ts": "4a4a648f9212b63a9e2af61f58325c66d5eecd85eb6b9af8e1542e21cb2e5b90",
+    "contracts/postbox-claim-tests/src/lib.rs": "f3c8f63270534b360d35155d5ab87ab1e255bd3e7b41754a111462282c7b2326",
     "contracts/ghostdrop-v2/src/lib.rs": "5d921806f7da0be62c2c6c5b0c7bb66246d48ac88ce63ea05872d11671dad2df",
     "contracts/envelope-v2/src/ownership.rs": "b2d710f88650b868d7ea756f4848eccbad93612ccab15ea068e6b6299bb0deca",
     "src/core/postbox-claim.ts": "ec4621b168c6a3b5a0fdfb5a89ac6f7895c4b749ec2009797873a7de42565129",
@@ -67,8 +67,9 @@
     "Financial engine tests use synthetic fixture keys and local ledger; they do not use the stock wallet account.",
     "Actual stock approval uses a canonical synthetic registry/envelope/expiry context and verifies production crypto; it is not a registered public postbox claim.",
     "Local engine fee schedule is not a quote or guarantee of public network fees.",
-    "No public templates, registry or capsule identities changed; public gates stay closed.",
-    "Revised public test authorization exists; public financial proof is still incomplete. Immutable historical contracts/mail remain preserved."
+    "The earlier unfunded stock crypto probe used synthetic context; the separately recorded public financial campaign now verifies a real registered claim.",
+    "V2 gates apply only to the new reviewed profile; original immutable contracts remain unchanged.",
+    "User must push main to publish the new frontend; staged HTTPS assets are not a published build."
   ],
   "javascriptEngineBridge": {
     "controllerPrivateKeyRequested": false,
@@ -94,12 +95,27 @@
       "historical deployment cannot collect using new proof path"
     ]
   },
-  "localBrowserRegressionTotal": 20,
+  "localBrowserRegressionTotal": 22,
   "publicReleaseStatus": {
-    "approval": "revised bounded test authorized by user",
-    "publicationBroadcasts": 0,
-    "templateFeeQuotesMicroTari": ["1890925", "980028", "5017967"],
-    "publicationBlockedByOriginalCap": true,
-    "visitorRequirements": "stock Sapient and site only"
-  }
+    "publicationBroadcasts": 3,
+    "confirmedOotleTransactionCount": 16,
+    "visitorRequirements": "stock Sapient and site only",
+    "publicFinancialProof": "postbox-v2-esmeralda-evidence.json",
+    "newFrontendPublished": false,
+    "legacyDefaultPreserved": true
+  },
+  "clientTestTotal": 88,
+  "v2GuestEngineRegression": {
+    "passed": 2,
+    "checks": [
+      "public full guest payout",
+      "private-link wrong-authority rejection",
+      "private-link full payout",
+      "replay blocked",
+      "gift-funded new guest account creation",
+      "gift-funded new guest account creation",
+      "gift-funded new guest account creation"
+    ]
+  },
+  "financialEngineTotal": 14
 }

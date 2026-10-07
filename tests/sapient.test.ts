@@ -50,6 +50,9 @@ async function capsuleFixture() {
     }),
     vaults: vi.fn(async () => [`vault_${"e".repeat(64)}`]),
     epoch: vi.fn(async () => 123),
+    resolveInputs: vi.fn(async (inputs: any[]) =>
+      inputs.map((input) => ({ ...input, version: 7 })),
+    ),
   };
   return { ...f, wallet, deployment, capsuleContext: context, funding };
 }
@@ -402,6 +405,8 @@ test("Sapient publication declares the registry and funding dependencies before 
     deployment: f.d,
     provider: {
       getCurrentEpoch: async () => 123,
+      resolveInputs: async (inputs: any[]) =>
+        inputs.map((input) => ({ ...input, version: 7 })),
       getSubstate: async () => ({
         substate: {
           Component: {
@@ -448,6 +453,7 @@ test("Sapient publication declares the registry and funding dependencies before 
       }),
     ]),
   );
+  expect(dry.inputs.every((input: any) => input.version === 7)).toBe(true);
 });
 test("capsule creation journals only public recovery data before approval and declares funding inputs", async () => {
   const f = await capsuleFixture(),
@@ -490,6 +496,8 @@ test("capsule creation journals only public recovery data before approval and de
     ([a]) => a.method === "tari_createTransactionRequest",
   )![0].params as any;
   expect(tx.instructions).toHaveLength(1);
+  expect(f.funding.resolveInputs).toHaveBeenCalledTimes(1);
+  expect(tx.inputs.every((input: any) => input.version === 7)).toBe(true);
   expect(tx.instructions[0].CallMethod.method).toBe("store");
   expect(tx.inputs).toEqual(
     expect.arrayContaining([
@@ -720,6 +728,8 @@ test("postbox registration declares account and fee vault dependencies before Sa
     deployment,
     provider: {
       getCurrentEpoch: async () => 123,
+      resolveInputs: async (inputs: any[]) =>
+        inputs.map((input) => ({ ...input, version: 7 })),
       getSubstate: async () => ({
         substate: {
           Component: {

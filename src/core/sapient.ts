@@ -302,6 +302,9 @@ export class SapientSession {
       readSubstate: CapsuleSubstateReader;
       vaults(account: string): Promise<string[]>;
       epoch(): Promise<number>;
+      resolveInputs(
+        inputs: ReturnType<typeof capsuleStoreTransaction>["inputs"],
+      ): Promise<ReturnType<typeof capsuleStoreTransaction>["inputs"]>;
     },
   ) {
     if (
@@ -326,6 +329,7 @@ export class SapientSession {
     );
     this.unusedCapsule(storage, context);
     const tx = capsuleStoreTransaction(prepared, feeCap, epoch, vaults);
+    tx.inputs = await funding.resolveInputs(tx.inputs);
     const transactionId = await this.submitInstructions(tx, feeCap, storage, {
       network: context.network,
       registry: context.registry,

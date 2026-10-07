@@ -11,6 +11,65 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
+test("reviewed office selection preserves historical access and resets edited evidence", async ({
+  page,
+}) => {
+  const original = {
+    ...emptyDeployment,
+    network: 38,
+    registry: `component_${"1".repeat(64)}`,
+  };
+  const next = {
+    ...original,
+    registry: `component_${"2".repeat(64)}`,
+    postboxClaimProtocol: "sapient-proof-1",
+    capsule: {
+      template: "3".repeat(64),
+      component: `component_${"4".repeat(64)}`,
+      resource: `resource_${"5".repeat(64)}`,
+    },
+    evidence: {
+      ...original.evidence,
+      mailboxRecovery: true,
+      postboxClaims: true,
+    },
+  };
+  await page.route("**/deployment.json", (r) => r.fulfill({ json: original }));
+  await page.route("**/deployment-v2.json", (r) => r.fulfill({ json: next }));
+  await page.goto("./#/network");
+  await expect(
+    page.getByRole("textbox", { name: "Registry component", exact: true }),
+  ).toHaveValue(original.registry);
+  await page
+    .getByRole("button", { name: "Use Sapient postbox office" })
+    .click();
+  await expect(
+    page.getByRole("textbox", { name: "Registry component", exact: true }),
+  ).toHaveValue(next.registry);
+  await expect(
+    page.getByText("postboxClaims: recorded by deployer", { exact: false }),
+  ).toBeVisible();
+  await page
+    .getByRole("textbox", { name: "Registry component", exact: true })
+    .fill(original.registry);
+  await expect(
+    page.getByText("postboxClaims: unverified", { exact: false }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Use original public office" })
+    .click();
+  await expect(
+    page.getByRole("textbox", { name: "Registry component", exact: true }),
+  ).toHaveValue(original.registry);
+  await expect(
+    page.getByText("mailboxRecovery: unverified", { exact: false }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("textbox", { name: "Registry component", exact: true }),
+  ).toHaveValue(original.registry);
+});
+
 test("honest guest hall and reduced-motion visual preview", async ({
   page,
 }) => {

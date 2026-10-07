@@ -326,7 +326,10 @@ export function App() {
       previous?.focus();
     };
   }, [connect, active]);
-  function changeDeployment(change: Partial<Deployment>) {
+  function changeDeployment(
+    change: Partial<Deployment>,
+    reviewedProfile = false,
+  ) {
     draftSequence.current += 1;
     if (change.network !== undefined && change.network !== d.network)
       disconnect();
@@ -341,15 +344,35 @@ export function App() {
       ...d,
       ...change,
       capsule:
-        change.network !== undefined && change.network !== d.network
-          ? undefined
+        reviewedProfile ||
+        (change.network !== undefined && change.network !== d.network)
+          ? change.capsule
           : (change.capsule ?? d.capsule),
       postboxClaimProtocol:
-        change.network !== undefined && change.network !== d.network
-          ? undefined
+        reviewedProfile ||
+        (change.network !== undefined && change.network !== d.network)
+          ? change.postboxClaimProtocol
           : (change.postboxClaimProtocol ?? d.postboxClaimProtocol),
-      evidence: { ...emptyDeployment.evidence },
+      evidence: reviewedProfile
+        ? change.evidence!
+        : { ...emptyDeployment.evidence },
     });
+  }
+  async function selectOffice(file: "deployment.json" | "deployment-v2.json") {
+    const response = await fetch(`${import.meta.env.BASE_URL}${file}`, {
+      cache: "no-store",
+    });
+    if (!response.ok)
+      throw new Error("Reviewed post office configuration unavailable");
+    const profile: Deployment = await response.json();
+    if (profile.network !== 38 || !profile.registry || !profile.evidence)
+      throw new Error("Unsupported post office configuration");
+    changeDeployment(profile, true);
+    setStatus(
+      file === "deployment.json"
+        ? "Original public office selected. Historical letters are preserved."
+        : "Sapient postbox office selected. Use Postboxes to create or recover your inbox.",
+    );
   }
   function navigate(v: string) {
     setView(v);
@@ -1166,6 +1189,29 @@ export function App() {
               Static hosting, a replaceable Ootle indexer, and your Sapient
               wallet. No GhostDrop server.
             </p>
+            <h2>Esmeralda post offices</h2>
+            <p>
+              The original office keeps its public letters and private links.
+              The new office supports Sapient postboxes, restored-wallet
+              recovery and gift-funded collection. Choose the office containing
+              your mail; reloading returns to the original office.
+            </p>
+            <div className="actions">
+              <button
+                disabled={busy}
+                onClick={() => void task(() => selectOffice("deployment.json"))}
+              >
+                Use original public office
+              </button>
+              <button
+                disabled={busy}
+                onClick={() =>
+                  void task(() => selectOffice("deployment-v2.json"))
+                }
+              >
+                Use Sapient postbox office
+              </button>
+            </div>
             <label>
               Ootle test network
               <select

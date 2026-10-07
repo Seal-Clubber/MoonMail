@@ -1,0 +1,24 @@
+{
+  "network": 38,
+  "indexerUrl": "https://ootle-indexer-a.tari.com/",
+  "registry": "component_7f205e42678ea72a6a157e9c588851394fc479b99b6be53df407f327c47492f8",
+  "template": "62d58991af229a1df36accfdbcc410ba9eae7e2096d61e2694d15519d82763ba",
+  "envelopeTemplate": "525974b799e25562f4a9260015bedbbb7b71c675aaf890a4dccaaee4586aeff6",
+  "resource": "resource_0101010101010101010101010101010101010101010101010101010101010101",
+  "postboxClaimProtocol": "sapient-proof-1",
+  "capsule": {
+    "template": "0bea0690fd6ee54204f2d8f71846a91f9920c20e6726cdb22b24d85672f066e0",
+    "component": "component_6c946bce61031141aa400ab01f7368c0590374c3a67e4bae17dd62547111527e",
+    "resource": "resource_6c410b20e68415ee22c31a70d0161c15178a1b7a218bc78932f36bb924976205"
+  },
+  "evidence": {
+    "engineClaims": true,
+    "guestPayout": true,
+    "guestAccountCreation": true,
+    "daemonScopes": false,
+    "httpsWallet": false,
+    "sapientWallet": true,
+    "mailboxRecovery": true,
+    "postboxClaims": true
+  }
+}

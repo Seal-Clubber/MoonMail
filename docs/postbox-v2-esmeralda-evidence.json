@@ -1,0 +1,228 @@
+{
+  "checkedAt": "2026-10-07T03:21:33.542774+00:00",
+  "network": 38,
+  "indexerUrl": "https://ootle-indexer-a.tari.com/",
+  "deployment": {
+    "network": 38,
+    "indexerUrl": "https://ootle-indexer-a.tari.com/",
+    "registry": "component_7f205e42678ea72a6a157e9c588851394fc479b99b6be53df407f327c47492f8",
+    "template": "62d58991af229a1df36accfdbcc410ba9eae7e2096d61e2694d15519d82763ba",
+    "envelopeTemplate": "525974b799e25562f4a9260015bedbbb7b71c675aaf890a4dccaaee4586aeff6",
+    "resource": "resource_0101010101010101010101010101010101010101010101010101010101010101",
+    "postboxClaimProtocol": "sapient-proof-1",
+    "capsule": {
+      "template": "0bea0690fd6ee54204f2d8f71846a91f9920c20e6726cdb22b24d85672f066e0",
+      "component": "component_6c946bce61031141aa400ab01f7368c0590374c3a67e4bae17dd62547111527e",
+      "resource": "resource_6c410b20e68415ee22c31a70d0161c15178a1b7a218bc78932f36bb924976205"
+    },
+    "evidence": {
+      "engineClaims": true,
+      "guestPayout": true,
+      "guestAccountCreation": true,
+      "daemonScopes": false,
+      "httpsWallet": false,
+      "sapientWallet": true,
+      "mailboxRecovery": true,
+      "postboxClaims": true
+    }
+  },
+  "stockWallet": {
+    "name": "Sapient",
+    "version": "0.6.6",
+    "unmodifiedOfficialStorePackage": true,
+    "loadedUnpackedForAutomation": true,
+    "sourceCommit": "7ad3c4f117a76c64d472fd371b7d75bbe297abec"
+  },
+  "artifacts": [
+    {
+      "name": "EnvelopeV2",
+      "file": "ghostdrop_envelope_v2.wasm",
+      "size": 234966,
+      "sha256": "98bdff50cb0f32f634282005d223bcde088b295ea931b3f37c41c766284fdea8"
+    },
+    {
+      "name": "PostOfficeV2",
+      "file": "ghostdrop_template_v2.wasm",
+      "size": 165654,
+      "sha256": "099725a4ccda128090797a8b7c1e3673f266bce9175597b386a4e94572eb5afb"
+    },
+    {
+      "name": "RecoveryCapsules",
+      "file": "ghostdrop_recovery_capsule.wasm",
+      "size": 348488,
+      "sha256": "aaec4da4284607e392212a0f30d32c0361225abe5cdcea506a819d4fb2a7f06e"
+    }
+  ],
+  "transactions": [
+    {
+      "operation": "publish-EnvelopeV2",
+      "transactionId": "d477013a0f707d5eb376fc98a41d7803a33bad5d3fa3a0176c0fa6963a12e8b0",
+      "outcome": "Commit",
+      "feeMicroTari": "1890913",
+      "feeCapMicroTari": "2250000"
+    },
+    {
+      "operation": "publish-PostOfficeV2",
+      "transactionId": "3f2324e5b5900a88a4e119c55887cf15ec2f9fa45faa098a69db468e10bef113",
+      "outcome": "Commit",
+      "feeMicroTari": "980016",
+      "feeCapMicroTari": "1250000"
+    },
+    {
+      "operation": "initialize-registry",
+      "transactionId": "18271e3f1ff65e17c7c1e4f94028d5bd77a7f9b230830154f657fa3d7b24a2d1",
+      "outcome": "Commit",
+      "feeMicroTari": "1761",
+      "feeCapMicroTari": "100000"
+    },
+    {
+      "operation": "fund-fresh-recipient",
+      "transactionId": "e44dceff75fbd5154392b9be83d333aa97addbe38120c27bffc2897d22600031",
+      "outcome": "Commit",
+      "feeMicroTari": "2111",
+      "feeCapMicroTari": "100000"
+    },
+    {
+      "operation": "fund-fresh-sender",
+      "transactionId": "7f5b05b9eea940b627db0f8f5294dfac387122d8bfd530c8e10ebded2d2812a4",
+      "outcome": "Commit",
+      "feeMicroTari": "2111",
+      "feeCapMicroTari": "100000"
+    },
+    {
+      "operation": "reuse-prior-test-payouts",
+      "transactionId": "16e67e52611377396e5f8dab1d8492bdd18180fae6cc5bc3d9a007c5ab8b2bfc",
+      "outcome": "Commit",
+      "feeMicroTari": "1647",
+      "feeCapMicroTari": "100000"
+    },
+    {
+      "operation": "publish-RecoveryCapsules",
+      "transactionId": "3401a8099586bc0f4e4ea8f19bbc0fb7cb2f752e58f67c837673142fc0b195d8",
+      "outcome": "Commit",
+      "feeMicroTari": "5017955",
+      "feeCapMicroTari": "5500000"
+    },
+    {
+      "operation": "initialize-capsule",
+      "transactionId": "8581e3e07542f2d90f591c02ffee333d8007e4052db43d61103479419348b84d",
+      "outcome": "Commit",
+      "feeMicroTari": "2775",
+      "feeCapMicroTari": "100000"
+    },
+    {
+      "operation": "store-recipient-capsule-v1",
+      "transactionId": "2361eebe085564f5c2dbd2e69690e6dce5019e436b860853912be279662dac22",
+      "outcome": "Commit",
+      "feeMicroTari": "12083",
+      "feeCapMicroTari": "100000"
+    },
+    {
+      "operation": "register-recipient-postbox",
+      "transactionId": "dabaf9552ec261a567a9e156c8c0406db018a6dc165b91bd967380c11bd7556f",
+      "outcome": "Commit",
+      "feeMicroTari": "2304",
+      "feeCapMicroTari": "100000"
+    },
+    {
+      "operation": "publish-one-addressed-gift",
+      "transactionId": "4c1dc038db87df145a89b3d28eddcd843561b729b59ecba7119b489f7ffb6ce4",
+      "outcome": "Commit",
+      "feeMicroTari": "5328",
+      "feeCapMicroTari": "100000"
+    },
+    {
+      "operation": "store-recipient-capsule-v2",
+      "transactionId": "88077784e5bb2b0229505929ef7f20742dde7cc5f6e7ae8f4a60374e203b10db",
+      "outcome": "Commit",
+      "feeMicroTari": "12084",
+      "feeCapMicroTari": "100000"
+    },
+    {
+      "operation": "rotate-recipient-postbox",
+      "transactionId": "806f7161526cc1250d909150ae0d708f6954b6f395909ff6be6ad82595a840db",
+      "outcome": "Commit",
+      "feeMicroTari": "2386",
+      "feeCapMicroTari": "100000"
+    },
+    {
+      "operation": "empty-recipient-account",
+      "transactionId": "b2ca82bce5ae87cd57dfc50592f5a3a57da4168b3b528b2054241b9743076cb5",
+      "outcome": "Commit",
+      "feeMicroTari": "1633",
+      "feeCapMicroTari": "100000"
+    },
+    {
+      "operation": "collect-one-addressed-gift",
+      "transactionId": "56df326f8e8fbd7111284dc1350f0724cd5b6325306666ff7566ddcc9b19d275",
+      "outcome": "Commit",
+      "feeMicroTari": "5730",
+      "feeCapMicroTari": "100000"
+    },
+    {
+      "operation": "spend-recipient-payout",
+      "transactionId": "b3a650c5a79a26f21448bd5a68d1e05cfffe10f7f021c5537561b6065bc78e4b",
+      "outcome": "Commit",
+      "feeMicroTari": "1637",
+      "feeCapMicroTari": "100000"
+    }
+  ],
+  "fundedClaim": {
+    "transactionId": "56df326f8e8fbd7111284dc1350f0724cd5b6325306666ff7566ddcc9b19d275",
+    "recipientAccount": "component_24c8f37fc03fcac92f5ab0f9b3e0d57290dfb669757aabd6f9faa2f11d0ceca2",
+    "recipientBeforeMicroTari": "0",
+    "recipientAfterMicroTari": "1000000",
+    "giftMicroTari": "1000000",
+    "reserveMicroTari": "100000",
+    "feePaidMicroTari": "5730",
+    "walletFinancialSigning": false,
+    "walletOwnershipApproval": true,
+    "claimedFlagVerified": true
+  },
+  "restoration": {
+    "checkedAt": "2026-10-07T03:08:22.255Z",
+    "independentProfile": true,
+    "currentKeyVersion": 2,
+    "historicalMailKeyVersion": 1,
+    "realPermanentLedgerCarriers": true,
+    "originalWalletCacheUsed": false,
+    "noSeedToGhostDrop": true
+  },
+  "independentPayoutSpend": {
+    "transactionId": "b3a650c5a79a26f21448bd5a68d1e05cfffe10f7f021c5537561b6065bc78e4b",
+    "transferMicroTari": "100000",
+    "feeMicroTari": "1637",
+    "recipientAfterMicroTari": "898363",
+    "targetBeforeMicroTari": "394672",
+    "targetAfterMicroTari": "494672",
+    "signedByRestoredStockWallet": true
+  },
+  "stagedHttpsUi": {
+    "checkedAt": "2026-10-07T03:19:17.990Z",
+    "origin": "https://seal-clubber.github.io",
+    "build": "local dist assets supplied at HTTPS origin for operator verification; not published",
+    "realIndexer": true,
+    "realStockSapient": true,
+    "restoredWalletHistoricalMailOpened": true,
+    "originalOfficeSelectable": true,
+    "financialTransactions": 0
+  },
+  "budget": {
+    "approvedMicroTari": "14000000",
+    "approvedOotleTransactionCount": 17,
+    "confirmedOotleTransactionCount": 16,
+    "actualPaidOotleFeesMicroTari": "7942474",
+    "source": "existing isolated development funds plus approved 4 TARI return from prior isolated payout",
+    "additionalBurnMicroXtm": "10000000",
+    "l1FeeMicroXtm": "740",
+    "burnMinedEpoch": 11947,
+    "burnClaim": "awaiting indexer current epoch greater than 11947; never repeat burn"
+  },
+  "limits": [
+    "New source and V2 office selection are local; GitHub Pages publication remains controlled by the user.",
+    "The staged HTTPS UI uses local build assets with actual Sapient and actual public indexer; it is not a check of a published V2 frontend.",
+    "Public unknown-response/approval recovery is covered by client fixtures, not fault injection against these funded transactions.",
+    "Indexer responses are trusted; this client does not independently verify consensus proofs.",
+    "Original deployment and immutable historical mail remain unchanged."
+  ]
+}

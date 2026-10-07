@@ -1,5 +1,15 @@
 # Sapient postbox recovery candidate
 
+**Current V2 result (2026-10-07):** three reviewed templates and the registry/capsule components are confirmed on Esmeralda. Stock Sapient registered a postbox, funded an addressed gift and rotated its key. An independently restored wallet recovered current and historical keys from actual permanent ledger carriers, collected the full 1 TARI into a zero-TARI account through an ownership proof, and independently spent the payout. The claim charged 5,730 µTARI to the sender's separate100,000 µTARI reserve. [Actual public evidence](postbox-v2-esmeralda-evidence.json) records exact IDs, artifacts, fees and limits.
+
+Select **Network & verification → Use Sapient postbox office** for new inboxes. **Use original public office** preserves historical public mail and private links; reloading selects the original office. New flags apply only to `public/deployment-v2.json`. The original default and immutable contracts are unchanged. Visitors need the website and stock Sapient only. Recovery still requires separate explicit account-wide private view consent; creation and sending require wallet funds, while addressed gift collection requires no recipient coins or financial-wallet signature.
+
+The staged HTTPS interface opened real historical encrypted mail using the restored stock wallet, actual indexer and local build assets. This source/profile remains unpublished until the user pushes main and verifies Pages/Verify and the resulting hosted build. The client88, browser22 and strict production build checks pass. The earlier12 proof/JS engine tests plus two new V2 guest regressions pass, covering public/private-link payout and gift-funded account creation. The mined10-test-XTM replenishment awaits Ootle epoch greater than11947; never repeat the burn. Live financial lost-response fault injection remains unverified.
+
+## Earlier evidence and milestones
+
+The records below retain their original build, dates and boundaries. Former disabled-gate and absent-public-identity statements describe earlier stages; the new evidence applies only to the separate V2 profile.
+
 A normal Ootle contract call can create a permanent encrypted key capsule that the stock Sapient wallet can read after backup restoration. The visitor would use the website and Sapient only. This candidate has local engine and wallet evidence; it is not deployed or enabled for public postboxes.
 
 ## Contract and recovery

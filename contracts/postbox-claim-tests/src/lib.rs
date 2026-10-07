@@ -19,6 +19,9 @@ mod tests {
         destination_proof: NonFungibleAddress,
     }
     fn fixture(reserve: u64) -> Fixture {
+        fixture_mode(reserve, 2)
+    }
+    fn fixture_mode(reserve: u64, mode: u8) -> Fixture {
         let mut t = TemplateTest::new(
             env!("CARGO_MANIFEST_DIR"),
             ["../ghostdrop-v2", "../envelope-v2"],
@@ -52,12 +55,16 @@ mod tests {
                     "publish",
                     args![
                         "gift".to_string(),
-                        2u8,
+                        mode,
                         "sealed ciphertext".to_string(),
                         1_000_000u64,
                         reserve,
-                        controller,
-                        "box".to_string(),
+                        if mode == 0 { String::new() } else { controller },
+                        if mode == 2 {
+                            "box".to_string()
+                        } else {
+                            String::new()
+                        },
                         String::new(),
                         String::new(),
                         Workspace("funding")
@@ -176,6 +183,69 @@ mod tests {
     fn funds(f: &mut Fixture) -> Amount {
         f.t.disable_fees();
         f.t.call_method(f.envelope, "gift_balance", args![], vec![])
+    }
+    #[test]
+    fn v2_guest_account_creation_is_paid_entirely_from_the_gift_reserve() {
+        let mut f = fixture_mode(100_000, 0);
+        let (_, owner) = f.t.new_key_pair(95);
+        let relay = f.t.new_key_pair(96).0;
+        f.t.enable_fees();
+        let tx =
+            f.t.transaction()
+                .with_fee_instructions_builder(|b| {
+                    b.create_account(owner.to_byte_type())
+                        .put_last_instruction_output_on_workspace("receiving_account")
+                        .call_method(
+                            f.envelope,
+                            "claim_and_pay_fee",
+                            args![Workspace("receiving_account"), 16u8],
+                        )
+                })
+                .build_and_seal(&relay);
+        let result = f.t.execute_expect_success(tx, vec![]);
+        assert!(result.finalize.total_fees_required <= 100_000);
+        let claimed = state(&mut f);
+        assert!(claimed.claimed);
+        assert_eq!(
+            balance(&f, claimed.destination.unwrap()),
+            Amount::from(1_000_000u64)
+        );
+    }
+    #[test]
+    fn v2_public_and_private_link_guests_preserve_full_payout_and_authority() {
+        for mode in [0u8, 1u8] {
+            let mut f = fixture_mode(100_000, mode);
+            let d = f.destination;
+            f.t.enable_fees();
+            let relay = f.t.new_key_pair(97).0;
+            if mode == 1 {
+                let wrong =
+                    f.t.transaction()
+                        .with_fee_instructions_builder(|b| {
+                            b.call_method(f.envelope, "claim_and_pay_fee", args![d, 16u8])
+                        })
+                        .build_and_seal(&relay);
+                f.t.execute_expect_failure(wrong, vec![]);
+                assert!(!state(&mut f).claimed);
+                assert_eq!(balance(&f, d), Amount::zero());
+                f.t.enable_fees();
+            }
+            let key = if mode == 0 { &relay } else { f.t.secret_key() };
+            let tx =
+                f.t.transaction()
+                    .with_fee_instructions_builder(|b| {
+                        b.call_method(f.envelope, "claim_and_pay_fee", args![d, 16u8])
+                    })
+                    .build_and_seal(key);
+            let replay = tx.clone();
+            let result = f.t.execute_expect_success(tx, vec![]);
+            assert!(result.finalize.total_fees_required <= 100_000);
+            assert_eq!(balance(&f, d), Amount::from(1_000_000u64));
+            assert!(state(&mut f).claimed);
+            f.t.enable_fees();
+            f.t.execute_expect_failure(replay, vec![]);
+            assert_eq!(balance(&f, d), Amount::from(1_000_000u64));
+        }
     }
     #[test]
     fn proof_delivers_to_empty_account_once_and_is_independently_spendable() {
