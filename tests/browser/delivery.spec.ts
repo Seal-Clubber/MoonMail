@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page, type Locator } from "@playwright/test";
 import {
   generateKeypair,
   generateOotleAddress,
@@ -884,6 +884,22 @@ async function assertReadOnlyFunds(page: Page) {
   ).toEqual([]);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
 }
+async function expectReachableWalletControl(page: Page, control: Locator) {
+  await control.scrollIntoViewIfNeeded();
+  await control.click({ trial: true });
+  await control.focus();
+  await expect(control).toBeFocused();
+  // Font/scroll metrics can round a fractional edge differently across Chromium platforms.
+  await expect(control).toBeInViewport({ ratio: 0.99 });
+  const bounds = await control.boundingBox();
+  expect(bounds).not.toBeNull();
+  const viewport = page.viewportSize()!;
+  expect(bounds!.x).toBeGreaterThanOrEqual(-1);
+  expect(bounds!.y).toBeGreaterThanOrEqual(-1);
+  expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(viewport.width + 1);
+  expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(viewport.height + 1);
+}
+
 test("public funds distinguish zero public balance from private holdings and recheck without signing", async ({
   page,
 }) => {
@@ -924,8 +940,7 @@ test("public funds distinguish zero public balance from private holdings and rec
     name: "Disconnect wallet",
     exact: true,
   });
-  await disconnect.scrollIntoViewIfNeeded();
-  await expect(disconnect).toBeInViewport({ ratio: 1 });
+  await expectReachableWalletControl(page, disconnect);
   await page.screenshot({
     path: test.info().outputPath("wallet-public-funds-bottom.png"),
   });
@@ -933,8 +948,7 @@ test("public funds distinguish zero public balance from private holdings and rec
     name: "Close wallet details",
     exact: true,
   });
-  await close.scrollIntoViewIfNeeded();
-  await expect(close).toBeInViewport({ ratio: 1 });
+  await expectReachableWalletControl(page, close);
 
   expect(
     await page.evaluate(
