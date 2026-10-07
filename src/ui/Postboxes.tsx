@@ -8,6 +8,7 @@ import { readPending, savePending, type Pending } from "../core/pending";
 import { SapientSession } from "../core/sapient";
 import { AmountInput, tari } from "./AmountInput";
 import { readDelivery } from "../core/delivery";
+import { CopyField } from "./CopyField";
 
 export function Postboxes({
   wallet,
@@ -629,19 +630,12 @@ export function Postboxes({
           {box && (
             <article className="postbox">
               <h2>{box.nickname}</h2>
-              <p className="postbox-address">{box.id}</p>
-              <button
-                onClick={() =>
-                  void task(async () => {
-                    await navigator.clipboard.writeText(box.id);
-                    onStatus(
-                      "Postbox ID copied. Share it with a friend so they can write to you.",
-                    );
-                  })
-                }
-              >
-                Copy my postbox ID
-              </button>
+              <CopyField
+                label="My postbox ID"
+                buttonLabel="Copy my postbox ID"
+                copiedMessage="Postbox ID copied. Share it with a friend so they can write to you."
+                value={box.id}
+              />
               <p>
                 {box.discoverable ? "Visible in the directory" : "Unlisted"} ·
                 Controlling account {account?.account.name}

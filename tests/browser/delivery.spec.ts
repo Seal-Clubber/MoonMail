@@ -520,3 +520,81 @@ test("saved postbox backup confirms read-only; opening needs separate view conse
     fullPage: true,
   });
 });
+
+test("private-link copying has a manual fallback and never acknowledges saving automatically", async ({
+  page,
+}) => {
+  await configure(page);
+  await connectFixture(page);
+  await page.route(`${d.indexerUrl}**`, (r) =>
+    r.fulfill({ json: ledger(r.request().url()) }),
+  );
+  await page.addInitScript(() => {
+    const state = window as any;
+    state.allowCopy = false;
+    state.copiedValues = [];
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: {
+        writeText: async (value: string) => {
+          if (!state.allowCopy)
+            throw new DOMException(
+              "Fixture permission denial",
+              "NotAllowedError",
+            );
+          state.copiedValues.push(value);
+        },
+      },
+    });
+  });
+  await page.goto("./#/compose");
+  await page
+    .getByRole("button", { name: "Connect wallet", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Connect Sapient", exact: true })
+    .click();
+  await page.getByLabel("Subject", { exact: true }).fill("A private fixture");
+  await page.getByLabel("Your letter").fill("Keep this note safe");
+  await page
+    .getByRole("button", { name: "Review letter", exact: false })
+    .click();
+  const field = page.getByLabel("Private link to save", { exact: true });
+  const link = await field.inputValue();
+  const save = page.getByRole("checkbox", {
+    name: "I saved my private link somewhere safe",
+  });
+  const publish = page.getByRole("button", { name: "Fund & publish letter" });
+  await page.getByRole("button", { name: "Copy secret link" }).click();
+  await expect(page.locator(".copy-field")).toContainText("copy it manually");
+  await expect(field).toBeFocused();
+  expect(
+    await field.evaluate(
+      (element: HTMLTextAreaElement) =>
+        element.selectionEnd! - element.selectionStart!,
+    ),
+  ).toBe(link.length);
+  await expect(field).toHaveValue(link);
+  await expect(save).not.toBeChecked();
+  await expect(publish).toBeDisabled();
+  await page.evaluate(() => {
+    (window as any).allowCopy = true;
+  });
+  await page.getByRole("button", { name: "Copy secret link" }).click();
+  await expect(page.locator(".copy-field")).toContainText(
+    "Private link copied",
+  );
+  expect(await page.evaluate(() => (window as any).copiedValues)).toEqual([
+    link,
+  ]);
+  await expect(save).not.toBeChecked();
+  await expect(publish).toBeDisabled();
+  expect(
+    (await page.evaluate(() => (window as any).walletCalls)).some((c: any) =>
+      c.method.includes("Transaction"),
+    ),
+  ).toBe(false);
+  expect(
+    await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+  ).toBeNull();
+});

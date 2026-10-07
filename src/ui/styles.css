@@ -1869,3 +1869,31 @@ footer button {
   color: #2c3826;
   background: #e7d7ae;
 }
+
+.copy-field {
+  margin: 20px 0;
+  text-align: left;
+}
+.copy-field input,
+.copy-field textarea {
+  width: 100%;
+  font: 12px/1.7 monospace;
+}
+.copy-field textarea {
+  overflow-wrap: anywhere;
+  min-height: 100px;
+}
+.copy-notice {
+  margin: 10px 0 0;
+  font:
+    12px/1.7 system-ui,
+    sans-serif;
+  color: var(--gold);
+}
+.letter-modal .copy-field textarea {
+  background: #f7efd4;
+  color: #3c4934;
+}
+.letter-modal .copy-notice {
+  color: #455332;
+}

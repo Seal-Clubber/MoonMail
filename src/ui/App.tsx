@@ -34,6 +34,7 @@ import {
 } from "../core/mailbox";
 import { Postboxes } from "./Postboxes";
 import { AmountInput, tari } from "./AmountInput";
+import { CopyField } from "./CopyField";
 import { networkPreset, checkPublicIndexer } from "../core/networks";
 
 const exampleLetters: Envelope[] = [
@@ -1262,12 +1263,12 @@ export function App() {
                       delivery confirms. Anyone with it can open the letter and
                       collect its gift; GhostDrop cannot recover it for you.
                     </p>
-                    <label htmlFor="pending-private-link">
-                      Private link to save
-                    </label>
-                    <textarea
-                      id="pending-private-link"
-                      readOnly
+                    <CopyField
+                      label="Private link to save"
+                      buttonLabel="Copy secret link"
+                      copiedMessage="Private link copied. Save it somewhere safe before sending."
+                      disabled={busy}
+                      multiline
                       value={createGiftLink(
                         new URL(import.meta.env.BASE_URL, location.href).href,
                         {
@@ -1276,31 +1277,7 @@ export function App() {
                           context: d,
                         },
                       )}
-                      onFocus={(e) => e.target.select()}
                     />
-                    <button
-                      disabled={busy}
-                      onClick={() =>
-                        void task(async () => {
-                          await navigator.clipboard.writeText(
-                            createGiftLink(
-                              new URL(import.meta.env.BASE_URL, location.href)
-                                .href,
-                              {
-                                id: prepared.envelope.id,
-                                capability: prepared.capability!,
-                                context: d,
-                              },
-                            ),
-                          );
-                          setStatus(
-                            "Private link copied. Save it somewhere safe before sending.",
-                          );
-                        })
-                      }
-                    >
-                      Copy secret link
-                    </button>
                     <label className="checkbox">
                       <input
                         type="checkbox"
@@ -1717,22 +1694,13 @@ export function App() {
             ))}
             {privateLink && (
               <div className="confirmed-link">
-                <label htmlFor="confirmed-private-link">
-                  Confirmed private link
-                </label>
-                <textarea
-                  id="confirmed-private-link"
-                  readOnly
+                <CopyField
+                  label="Confirmed private link"
+                  buttonLabel="Copy private link"
+                  copiedMessage="Private link copied. Share it only with the intended recipient."
+                  multiline
                   value={privateLink}
-                  onFocus={(e) => e.target.select()}
                 />
-                <button
-                  onClick={() =>
-                    void navigator.clipboard.writeText(privateLink)
-                  }
-                >
-                  Copy private link
-                </button>
               </div>
             )}
           </section>
@@ -1928,11 +1896,13 @@ export function App() {
               </div>
             )}
             {privateLink && (
-              <button
-                onClick={() => void navigator.clipboard.writeText(privateLink)}
-              >
-                Copy private link
-              </button>
+              <CopyField
+                label="Private link for this letter"
+                buttonLabel="Copy private link"
+                copiedMessage="Private link copied. Anyone with it can open this letter and collect an available gift."
+                multiline
+                value={privateLink}
+              />
             )}
             {!preview && BigInt(active.gift) > 0n && (
               <div className="claim-panel">
