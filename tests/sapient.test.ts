@@ -68,7 +68,8 @@ function fixture() {
     selected = component,
     status = "approved",
     submitError = false,
-    createError = false;
+    createError = false,
+    balances: unknown = [];
   const request = vi.fn(
     async ({
       method,
@@ -85,6 +86,8 @@ function fixture() {
           return [selected];
         case "tari_getWalletAddress":
           return address;
+        case "tari_getBalances":
+          return balances;
         case "tari_getCapabilities":
           return { transactionRequests: true, walletAddress: true };
         case "tari_disconnect":
@@ -179,6 +182,9 @@ function fixture() {
     envelope,
     context,
     id,
+    setBalances: (value: unknown) => {
+      balances = value;
+    },
     setNetwork: (v: string) => {
       network = v;
     },
@@ -782,4 +788,85 @@ test("postbox registration declares account and fee vault dependencies before Sa
       }),
     ]),
   );
+});
+
+function publicTariRow(amount: unknown) {
+  return {
+    resourceAddress: `resource_${"01".repeat(32)}`,
+    kind: "Stealth",
+    divisibility: 6,
+    amount,
+    confidentialAmount: "999999999999999999",
+    privateVisible: false,
+  };
+}
+test("public funds read ignores private values and never requests view or signing access", async () => {
+  const f = fixture();
+  f.setBalances([publicTariRow("001500001")]);
+  const wallet = await SapientSession.connect(38, f.provider);
+  expect(await wallet.publicTariBalance()).toBe("1500001");
+  expect(
+    f.request.mock.calls.some(([call]) =>
+      /ViewAccess|signAndSubmit|TransactionRequest/.test(call.method),
+    ),
+  ).toBe(false);
+  expect(readPending(f.storage)).toEqual([]);
+});
+test("an absent native public balance is zero, even when another resource exists", async () => {
+  const f = fixture();
+  f.setBalances([
+    {
+      ...publicTariRow("1000000"),
+      resourceAddress: `resource_${"02".repeat(32)}`,
+    },
+  ]);
+  const wallet = await SapientSession.connect(38, f.provider);
+  expect(await wallet.publicTariBalance()).toBe("0");
+});
+for (const value of [
+  "1.5",
+  "-1",
+  1500000,
+  "18446744073709551616",
+  "not-money",
+]) {
+  test(`public funds reject invalid monetary value ${value}`, async () => {
+    const f = fixture();
+    f.setBalances([publicTariRow(value)]);
+    const wallet = await SapientSession.connect(38, f.provider);
+    await expect(wallet.publicTariBalance()).rejects.toThrow();
+    expect(readPending(f.storage)).toEqual([]);
+  });
+}
+for (const value of [
+  null,
+  {},
+  [null],
+  [{}],
+  [{ resourceAddress: "not-a-resource" }],
+  [publicTariRow("1"), publicTariRow("2")],
+  [{ ...publicTariRow("1"), divisibility: 8 }],
+  [{ ...publicTariRow("1"), kind: "Fungible" }],
+]) {
+  test(`public funds reject malformed or ambiguous balances ${JSON.stringify(value)}`, async () => {
+    const f = fixture();
+    f.setBalances(value);
+    const wallet = await SapientSession.connect(38, f.provider);
+    await expect(wallet.publicTariBalance()).rejects.toThrow();
+  });
+}
+test("public funds discard a response when the selected wallet changes during the read", async () => {
+  const f = fixture();
+  f.setBalances([publicTariRow("1000000")]);
+  const wallet = await SapientSession.connect(38, f.provider);
+  const original = f.request.getMockImplementation()!;
+  f.request.mockImplementation(async (call) => {
+    if (call.method === "tari_getBalances")
+      f.setAccount(`component_${"f".repeat(64)}`);
+    return original(call);
+  });
+  await expect(wallet.publicTariBalance()).rejects.toThrow(
+    "account or network changed",
+  );
+  expect(readPending(f.storage)).toEqual([]);
 });

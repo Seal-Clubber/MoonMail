@@ -2044,3 +2044,12 @@ footer button {
     justify-content: center;
   }
 }
+
+.wallet-funds {
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+  margin-top: 1rem;
+}
+.wallet-funds h3 {
+  margin: 0 0 0.5rem;
+}

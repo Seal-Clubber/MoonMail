@@ -6,6 +6,12 @@ Use Esmeralda in Sapient. All amounts are test TARI. The website needs no separa
 
 Open **Public mail** and choose a letter. Public reading needs no wallet. If someone gives you a private link, open the complete link to decrypt the letter on your device. Opening a letter never collects a gift. Empty and loading states show no invented mail or funded gifts.
 
+## Prepare your Sapient funds
+
+GhostDrop sending and postbox setup use public TARI. Open **Wallet details → Check public funds** to read that balance without requesting private-view permission or signing. This is a snapshot, not a guarantee that a future transaction will succeed; Sapient still checks funds and fees. An unavailable read stays unknown and can retry.
+
+If you received private TARI, it appears under Sapient’s **Private balance**, while **Public balance** can remain zero. Rescan beside **Assets**, or use **Receive → Claim a private payment** with the sender’s commitment for a missing output. Each payment has its own commitment. Then use **Unshield** in Sapient for the amount you want available to GhostDrop, including gifts, collection reserves and transaction fees; review the wallet’s amount and fee before approving. Gift collection itself still needs no recipient coins. Never enter your seed or private keys into GhostDrop.
+
 ## Send a little kindness
 
 1. Open **Write a letter** and choose public mail, a private link, or a postbox. For a postbox, browse the spirit directory or paste your friend’s registered ID. Check the ID with your friend because names can repeat.

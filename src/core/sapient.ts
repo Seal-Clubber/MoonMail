@@ -183,6 +183,35 @@ export class SapientSession {
       );
     }
   }
+  // Public-only read: never request private view access or infer a hidden private balance.
+  async publicTariBalance() {
+    await this.assertCurrent();
+    const balances = await this.call("tari_getBalances");
+    await this.assertCurrent();
+    if (!Array.isArray(balances)) throw new Error("Invalid Sapient balances");
+    const rows = balances.map(record);
+    if (
+      rows.some(
+        (row) =>
+          typeof row.resourceAddress !== "string" ||
+          !/^resource_[a-f0-9]{64}$/.test(row.resourceAddress),
+      )
+    )
+      throw new Error("Invalid Sapient resource balance");
+    const native = rows.filter(
+      (balance) => balance.resourceAddress === `resource_${"01".repeat(32)}`,
+    );
+    if (native.length > 1) throw new Error("Duplicate Sapient TARI balance");
+    if (!native.length) return "0";
+    const balance = native[0];
+    if (
+      balance.divisibility !== 6 ||
+      balance.kind !== "Stealth" ||
+      typeof balance.amount !== "string"
+    )
+      throw new Error("Invalid Sapient TARI balance");
+    return money(balance.amount).toString();
+  }
   invalidate() {
     this.active = false;
   }

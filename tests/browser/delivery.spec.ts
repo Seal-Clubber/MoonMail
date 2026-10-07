@@ -79,6 +79,16 @@ async function connectFixture(page: Page) {
           }
           if (method === "tari_getAccounts") return connected ? [account] : [];
           if (method === "tari_getWalletAddress") return address;
+          if (method === "tari_getBalances") {
+            if (state.walletBalanceError)
+              throw new Error("Provider detail must not be displayed");
+            const result = state.walletBalanceResponse ?? [];
+            if (state.holdWalletBalance)
+              return new Promise((resolve) => {
+                state.releaseWalletBalance = () => resolve(result);
+              });
+            return result;
+          }
           if (method === "tari_getCapabilities")
             return { transactionRequests: true, walletAddress: true };
           if (method === "tari_signAndSubmitTransaction") {
@@ -843,4 +853,155 @@ test("wallet details expose only public receiving information without requesting
   ).toHaveLength(1);
   expect(writes).toBe(0);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
+});
+
+async function openWalletFunds(page: Page) {
+  await configure(page);
+  await connectFixture(page);
+  await page.route(`${d.indexerUrl}**`, (route) =>
+    route.request().method() === "GET"
+      ? route.fulfill({ json: ledger(route.request().url()) })
+      : route.abort(),
+  );
+  await page.goto("./#/compose");
+  await page
+    .getByRole("button", { name: "Connect wallet", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Connect Sapient", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Wallet details", exact: true })
+    .click();
+  return page.getByRole("dialog", { name: "Your Sapient wallet", exact: true });
+}
+async function assertReadOnlyFunds(page: Page) {
+  const calls = await page.evaluate(() => (window as any).walletCalls);
+  expect(
+    calls.filter((call: any) =>
+      /ViewAccess|sign|TransactionRequest/.test(call.method),
+    ),
+  ).toEqual([]);
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+}
+test("public funds distinguish zero public balance from private holdings and recheck without signing", async ({
+  page,
+}) => {
+  const dialog = await openWalletFunds(page);
+  await dialog
+    .getByRole("button", { name: "Check public funds", exact: true })
+    .click();
+  await expect(dialog).toContainText("Public funds: 0 TARI.");
+  await expect(dialog).toContainText(
+    "If your funds are private, use Unshield in Sapient",
+  );
+  await dialog
+    .getByText("My Sapient balance shows zero", { exact: true })
+    .click();
+  await expect(dialog).toContainText("Receive → Claim a private payment");
+  await page.evaluate(() => {
+    (window as any).walletBalanceResponse = [
+      {
+        resourceAddress: `resource_${"01".repeat(32)}`,
+        kind: "Stealth",
+        divisibility: 6,
+        amount: "1500001",
+        confidentialAmount: "5010000000",
+        privateVisible: false,
+      },
+    ];
+  });
+  await dialog
+    .getByRole("button", { name: "Recheck public funds", exact: true })
+    .click();
+  await expect(dialog).toContainText("Public funds: 1.500001 TARI.");
+  await expect(dialog).not.toContainText("No public TARI is available");
+  await expect(dialog).not.toContainText("5010 TARI");
+  await page.screenshot({
+    path: test.info().outputPath("wallet-public-funds-viewport.png"),
+  });
+  const disconnect = dialog.getByRole("button", {
+    name: "Disconnect wallet",
+    exact: true,
+  });
+  await disconnect.scrollIntoViewIfNeeded();
+  await expect(disconnect).toBeInViewport({ ratio: 1 });
+  await page.screenshot({
+    path: test.info().outputPath("wallet-public-funds-bottom.png"),
+  });
+  const close = dialog.getByRole("button", {
+    name: "Close wallet details",
+    exact: true,
+  });
+  await close.scrollIntoViewIfNeeded();
+  await expect(close).toBeInViewport({ ratio: 1 });
+
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await assertReadOnlyFunds(page);
+});
+test("a public funds read failure stays unknown and can retry without leaking provider detail", async ({
+  page,
+}) => {
+  const dialog = await openWalletFunds(page);
+  await page.evaluate(() => {
+    (window as any).walletBalanceError = true;
+  });
+  await dialog
+    .getByRole("button", { name: "Check public funds", exact: true })
+    .click();
+  await expect(dialog).toContainText("Public funds could not be checked.");
+  await expect(dialog).not.toContainText("Public funds: 0 TARI");
+  await expect(dialog).not.toContainText("Provider detail");
+  await page.evaluate(() => {
+    (window as any).walletBalanceError = false;
+  });
+  await dialog
+    .getByRole("button", { name: "Recheck public funds", exact: true })
+    .click();
+  await expect(dialog).toContainText("Public funds: 0 TARI.");
+  await assertReadOnlyFunds(page);
+});
+test("closing wallet details discards a late public funds read", async ({
+  page,
+}) => {
+  const dialog = await openWalletFunds(page);
+  await page.evaluate(() => {
+    (window as any).holdWalletBalance = true;
+  });
+  await dialog
+    .getByRole("button", { name: "Check public funds", exact: true })
+    .click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => typeof (window as any).releaseWalletBalance),
+    )
+    .toBe("function");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await page.evaluate(() => {
+    const state = window as any;
+    state.holdWalletBalance = false;
+    state.walletBalanceResponse = [
+      {
+        resourceAddress: `resource_${"01".repeat(32)}`,
+        kind: "Stealth",
+        divisibility: 6,
+        amount: "2000000",
+      },
+    ];
+  });
+  await page
+    .getByRole("button", { name: "Wallet details", exact: true })
+    .click();
+  await dialog
+    .getByRole("button", { name: "Check public funds", exact: true })
+    .click();
+  await expect(dialog).toContainText("Public funds: 2 TARI.");
+  await page.evaluate(() => (window as any).releaseWalletBalance());
+  await expect(dialog).toContainText("Public funds: 2 TARI.");
+  await assertReadOnlyFunds(page);
 });

@@ -43,6 +43,7 @@ import {
 import { Postboxes } from "./Postboxes";
 import { AmountInput, tari } from "./AmountInput";
 import { CopyField } from "./CopyField";
+import { WalletFunds } from "./WalletFunds";
 import { MailReadNotice } from "./MailReadNotice";
 import { networkPreset, checkPublicIndexer } from "../core/networks";
 
@@ -2162,6 +2163,9 @@ export function App() {
                   copiedMessage="Receiving address copied."
                   multiline
                 />
+                {wallet instanceof SapientSession && (
+                  <WalletFunds wallet={wallet} disabled={busy} />
+                )}
                 <details>
                   <summary>Receiving account details</summary>
                   <p className="fine-print">
@@ -2203,9 +2207,10 @@ export function App() {
                   </p>
                   <p className="fine-print">
                     Public mail and private links open without a wallet. Sending
-                    needs a little test TARI for fees. Your postbox needs a
-                    separate privacy permission, which GhostDrop explains before
-                    asking.
+                    needs public test TARI for fees and gift funding. If your
+                    TARI is private, use Unshield in Sapient first. Your postbox
+                    needs a separate privacy permission, which GhostDrop
+                    explains before asking.
                   </p>
                 </details>
                 <form

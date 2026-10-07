@@ -1,0 +1,73 @@
+{
+  "checkedAt": "2026-10-07T19:51:06.550Z",
+  "publication": "Local production build; this feature awaits the human main push. Published GUI evidence for fd4d90c retains its original scope.",
+  "sourceFilesSha256": {
+    "src/core/sapient.ts": "1aa341dc0956029bcd4fbe8ffdce5be898cf9d6f10dc24d8f4f65b689e1c28c2",
+    "src/ui/WalletFunds.tsx": "42134db045bb38649795625a5ca6f8e9c50006fedd894e3a6a8c63263d69caf0",
+    "src/ui/App.tsx": "f0fe668f49203451c30d8657e7cdfd8f5ac5930f9556f541c6e9b4e016baa55d",
+    "src/ui/styles.css": "42d29e1fa79bc097487164d41af9a69f4da9467f0576c5341704c1aa5980531d"
+  },
+  "clientChecks": {
+    "testsPassed": 148,
+    "testFilesPassed": 15,
+    "browserChecksPassed": 92,
+    "ciModeBrowserWorkers": 1,
+    "ciModeBrowserSuite": "passed",
+    "typeScript": "passed",
+    "productionBuild": "passed",
+    "mobileWalletPanelControlsReachable": true
+  },
+  "stockWalletReadOnlyAcceptance": {
+    "checkedAt": "2026-10-07T19:51:06.550Z",
+    "base": "http://127.0.0.1:4173/GhostDrop/",
+    "sourceVersion": "0.6.6",
+    "existingIsolatedRestoredProfile": true,
+    "runtimeAssetsMatchReviewedStorePackage": true,
+    "ledgerOrAppOverrides": false,
+    "readOnlyWalletMethodGuard": true,
+    "publicFundsText": "Public funds: 0.898363 TARI.",
+    "checks": {
+      "actualSiteConnection": true,
+      "publicFundsRead": true,
+      "privateConsentRequests": 0,
+      "originDisconnected": true,
+      "transactionRequestsCreated": 0,
+      "signaturesRequested": 0,
+      "transactionsBroadcast": 0,
+      "bulkSubstateReads": 4,
+      "blockedHttp": 0,
+      "blockedWalletMethods": []
+    },
+    "walletMethodNames": [
+      "tari_disconnect",
+      "tari_getNetwork",
+      "tari_requestAccounts",
+      "tari_getWalletAddress",
+      "tari_getCapabilities",
+      "tari_getAccounts",
+      "tari_getBalances"
+    ],
+    "caveat": "Reused the isolated wallet restored during the completed V2 campaign. Existing private-output cache may be present. No private view request, new seed restoration, Store install UI or financial operation was performed."
+  },
+  "ciInstallerFix": {
+    "staticJobTimeoutMinutes": 20,
+    "installerStepTimeoutMinutes": 8,
+    "browserDownloadConnectionTimeoutMs": 60000,
+    "workflowParsedAndFormatted": true,
+    "modifiedGitHubExecution": "awaits human push",
+    "priorRunCleanup": {
+      "runId": 37666638555,
+      "headSha": "fd4d90c353699dc8c848951a2af60857d4d2c6d6",
+      "conclusion": "cancelled",
+      "reason": "Only the static browser installer remained in progress for over 20 minutes; contract, capsule and postbox checks had completed successfully.",
+      "publicationsTriggered": 0
+    },
+    "legacyManualWalletJobRemoved": true
+  },
+  "boundaries": [
+    "No private balance is requested or inferred from the wallet masked confidential amount.",
+    "Public funds check is explicit, informational and not a funding guarantee. Transaction construction/fee modes/journals are unchanged.",
+    "No new public financial operation, signing request or private-view grant was made.",
+    "Stock package0.6.6 loaded unpacked in the existing isolated development profile; Store installation UI and personal wallets were not accessed."
+  ]
+}
