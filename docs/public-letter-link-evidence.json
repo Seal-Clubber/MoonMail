@@ -1,6 +1,6 @@
 {
   "checkedAt": "2026-10-07T21:02:16.565Z",
-  "publication": "Local production build; awaits the human main push. Published funds/invitations at4f87f39 retain their separate evidence.",
+  "publication": "Original local acceptance at05cc65a; subsequently published with83e3d2d. See public-sharing-published-evidence.json for exact Pages/Linux and actual HTTPS scope.",
   "sourceFilesSha256": {
     "src/core/public-letter-links.ts": "45f097c50469e61a01d34710b27d035c666650c6613e060d3183a4f160dcff55",
     "src/ui/App.tsx": "c7a2cbda24603ebe0263bd514d7b1445d42b4f4e0fc3cb8dd3e741a748d8a9ec",
@@ -64,7 +64,7 @@
     "typeScript": "passed",
     "productionBuild": "passed",
     "mobileModalLayout": "visually reviewed",
-    "platform": "Windows local Chromium; GitHub Linux Verify still awaits the human push"
+    "platform": "Original local Windows Chromium checks; subsequent83e3d2d Linux/Pages acceptance is recorded separately in public-sharing-published-evidence.json."
   },
   "realChainReadOnlyPrivacyCheck": {
     "checkedAt": "2026-10-07T21:02:16.565Z",
@@ -102,6 +102,7 @@
     "Opening never collects a gift. Collection keeps the existing destination review, fee rules and separate explicit confirmation.",
     "Unavailable reads retry; dismissal cancels late results. Desktop/mobile browser viewports are not a native phone wallet installation.",
     "No new public letter, publication, financial operation, contract change or engine campaign. Financial lost-response testing remains separately unverified.",
-    "134 checks also pass with one CI worker locally. This does not claim that the outstanding GitHub Verify run or unpublished feature has passed on Linux/Pages."
-  ]
+    "These original local134 checks did not establish Linux/Pages success. Subsequent83e3d2d verification records the full142 passing Linux checks and actual HTTPS scope separately."
+  ],
+  "publishedVerification": "public-sharing-published-evidence.json"
 }

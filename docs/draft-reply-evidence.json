@@ -1,6 +1,6 @@
 {
   "checkedAt": "2026-10-07T21:18:01Z",
-  "publication": "Local production build; awaits the human main push. Actual4f87f39 Pages verification is recorded separately.",
+  "publication": "Original local acceptance at83e3d2d; subsequently published with83e3d2d. See public-sharing-published-evidence.json for exact Pages/Linux and actual HTTPS scope.",
   "sourceFilesSha256": {
     "src/ui/App.tsx": "a7ef6bc1ebeebbe5b3afa9916cf00cc4c394c324c444ed386e1a991041f5542e",
     "tests/browser/reader.spec.ts": "5cb2ce0c26b13e339b1a7c7ead8f945fa77e7f83b8405ab13fd55f0d03dbf995"
@@ -64,7 +64,8 @@
     "Selection clears obsolete preparation, returns to review/editing and focuses the writing desk. It never publishes, claims, requests private view or signing.",
     "Only registered reply postboxes get the shortcut. The on-chain template already verifies that a supplied reply postbox is controlled by the sender; this GUI change alters no contract or financial instruction.",
     "Actual stock-wallet acceptance tests the shared helper through a real registered postbox invitation, not a new live reply publication. Reply-source cases use isolated fixtures.",
-    "Local Windows browser verification is distinct from the outstanding GitHub Linux Verify and Pages publication. Prior134 one-worker checks retain their05cc65a scope; current142 suite used8 local workers.",
+    "Original local142 suite used8 workers; prior134 one-worker checks retained their05cc65a scope. Subsequent83e3d2d passed all142 checks with one Linux worker; see public-sharing-published-evidence.json.",
     "Screenshots were visually reviewed at390px. No native phone wallet installation, seed restoration, engine campaign or new public financial operation was performed."
-  ]
+  ],
+  "publishedVerification": "public-sharing-published-evidence.json"
 }
