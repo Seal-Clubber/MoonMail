@@ -1702,3 +1702,88 @@ footer button {
     width: 100%;
   }
 }
+.secret-link-save {
+  margin: 24px 0;
+  padding: 22px;
+  background: #101a14a0;
+  border: 1px solid #b09a5a60;
+  border-radius: 9px;
+}
+.secret-link-save h3 {
+  font-size: 25px;
+  margin: 0 0 12px;
+  color: #e1d2ad;
+}
+.secret-link-save p {
+  font:
+    13px/1.8 system-ui,
+    sans-serif;
+}
+.secret-link-save textarea {
+  font: 12px/1.7 monospace;
+  overflow-wrap: anywhere;
+  min-height: 100px;
+}
+.secret-link-save label {
+  margin-top: 16px;
+}
+.review-note {
+  font:
+    13px/1.7 system-ui,
+    sans-serif;
+  color: var(--gold);
+}
+@media (max-width: 540px) {
+  .secret-link-save {
+    padding: 18px;
+  }
+}
+.delivery-help {
+  flex-basis: 100%;
+  margin: 0;
+  font:
+    12px/1.7 system-ui,
+    sans-serif;
+  color: #c8b68a;
+}
+
+.receipt-address {
+  display: block;
+  overflow-wrap: anywhere;
+  margin-top: 5px;
+  color: #abb79d;
+  font: 11px/1.7 monospace;
+}
+.receipt dd {
+  min-width: 0;
+  max-width: 58%;
+}
+.confirmed-link {
+  margin-top: 25px;
+}
+.confirmed-link textarea {
+  font: 12px/1.7 monospace;
+  min-height: 110px;
+}
+.setup-summary {
+  margin: 24px 0;
+  padding: 20px;
+  border: 1px solid #7c8d6250;
+  border-radius: 9px;
+  background: #13201880;
+}
+.setup-summary h3 {
+  font-size: 24px;
+  margin: 0 0 12px;
+}
+.setup-summary p {
+  font:
+    13px/1.8 system-ui,
+    sans-serif;
+}
+.backup-status code {
+  display: block;
+  font: 11px/1.6 monospace;
+  overflow-wrap: anywhere;
+  margin-top: 10px;
+}

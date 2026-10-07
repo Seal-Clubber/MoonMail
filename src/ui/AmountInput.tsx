@@ -49,10 +49,12 @@ export function AmountInput({
           onChange={(e) => {
             const next = e.target.value;
             setDraft(next);
+            e.target.setCustomValidity("");
             try {
               emitted.current = toMicroTari(next);
-            } catch {
+            } catch (error) {
               emitted.current = "";
+              e.target.setCustomValidity((error as Error).message);
             }
             onChange(emitted.current);
           }}

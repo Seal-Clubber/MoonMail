@@ -7,6 +7,7 @@ import { writesReady } from "../core/config";
 import { readPending, savePending, type Pending } from "../core/pending";
 import { SapientSession } from "../core/sapient";
 import { AmountInput, tari } from "./AmountInput";
+import { readDelivery } from "../core/delivery";
 
 export function Postboxes({
   wallet,
@@ -23,6 +24,7 @@ export function Postboxes({
   onRefresh,
   onMore,
   hasMore,
+  writeBlocked,
 }: {
   wallet?: ConnectedWallet;
   chain?: PostOfficeClient;
@@ -38,6 +40,7 @@ export function Postboxes({
   onRefresh: () => Promise<void>;
   onMore: () => Promise<void>;
   hasMore: boolean;
+  writeBlocked: boolean;
 }) {
   const [selected, setSelected] = useState(""),
     [controller, setController] = useState(0),
@@ -76,7 +79,48 @@ export function Postboxes({
     !!wallet &&
     !!chain &&
     writesReady(deployment, "postbox", "sapient") &&
-    !busy;
+    !busy &&
+    !writeBlocked;
+  useEffect(() => {
+    if (
+      !chain ||
+      !prepared ||
+      !/^[a-f0-9]{64}$/.test(prepared.id) ||
+      prepared.state !== "submitted" ||
+      busy
+    )
+      return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const pending = prepared;
+    const until = Date.now() + 120_000;
+    async function check() {
+      if (cancelled || Date.now() >= until) return;
+      if (!document.hidden)
+        try {
+          const next = await readDelivery(chain!, pending);
+          if (cancelled) return;
+          const latest = readPending(localStorage).find(
+            (p) => p.id === pending.id,
+          );
+          if (latest?.state === pending.state && next.state !== pending.state) {
+            savePending(localStorage, next);
+            setPrepared((current) =>
+              current?.id === pending.id ? next : current,
+            );
+            return;
+          }
+        } catch {
+          /* Keep an uncertain backup and allow a manual status check. */
+        }
+      if (!cancelled) timer = setTimeout(check, 6_000);
+    }
+    void check();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [chain, prepared?.id, prepared?.state, wallet, deployment.registry, busy]);
   const recoverySetups = readPending(localStorage).filter((p) => {
     const c = p.capsule;
     if (
@@ -140,18 +184,13 @@ export function Postboxes({
       if (!current)
         throw new Error("Recovery journal missing; reconcile wallet history");
     }
-    const result = await chain.reconcile(current.id);
-    const state =
-      !result || result.outcome === "FeeIntentCommit"
-        ? "unknown"
-        : result.outcome === "Commit"
-          ? "confirmed"
-          : "rejected";
-    const next: Pending = { ...current, state };
+    const next = await readDelivery(chain, current);
     savePending(localStorage, next);
     setPrepared(next);
     onStatus(
-      `Recovery transaction: ${state}. Publication requires a confirmed, readable memo.`,
+      next.state === "confirmed"
+        ? "Recovery backup confirmed. Approve opening your postbox when you’re ready."
+        : "Backup is not confirmed yet. Keep this setup and check its original transaction in Sapient.",
     );
   }
   async function save(operation: "create" | "edit" | "rotate") {
@@ -193,7 +232,7 @@ export function Postboxes({
           readPending(localStorage).find((p) => p.id === result.transactionId),
         );
         onStatus(
-          `Recovery memo submitted ${result.transactionId}. Confirm it before publishing the key.`,
+          `Recovery backup submitted. Waiting for confirmation before opening your postbox. Transaction: ${result.transactionId}.`,
         );
         return;
       }
@@ -361,7 +400,7 @@ export function Postboxes({
                 </button>
               </div>
             )}
-          {recoverySetups.length > 0 && (
+          {!editing && recoverySetups.length > 0 && (
             <div>
               <h2>Resume recovery setup</h2>
               <p className="fine-print">
@@ -403,13 +442,17 @@ export function Postboxes({
                     2. Save recovery backup
                   </li>
                   <li
-                    className={prepared?.state === "confirmed" ? "current" : ""}
+                    className={
+                      prepared?.state === "confirmed" && viewApproved
+                        ? "current"
+                        : ""
+                    }
                   >
                     3. Open your postbox
                   </li>
                 </ol>
               )}
-              {!box && (
+              {!box && wallet.accounts.length > 1 && (
                 <label>
                   Controlling account
                   <select
@@ -454,10 +497,27 @@ export function Postboxes({
                     opening the postbox.
                   </p>
                   {prepared && (
-                    <p className="info">
-                      Recovery setup {prepared.state} · key{" "}
-                      {prepared.capsule?.context.keyVersion}
-                      <code>{prepared.id}</code>
+                    <div className="info backup-status">
+                      <strong>
+                        {prepared.state === "confirmed"
+                          ? "Your recovery backup is ready."
+                          : prepared.state === "rejected"
+                            ? "Your backup was not completed."
+                            : prepared.state === "unknown"
+                              ? "Your backup needs a status check."
+                              : "Waiting for your recovery backup…"}
+                      </strong>
+                      <p>
+                        {prepared.state === "confirmed"
+                          ? "The next approval opens your postbox. Your encrypted backup stays on Ootle."
+                          : prepared.state === "submitted"
+                            ? "Keep this setup until its outcome is clear. Known transactions are checked automatically for up to two minutes; no wallet approval is resumed automatically."
+                            : "Keep the original setup and inspect Sapient history before trying again. Use the status or approval button below to check this same request."}
+                      </p>
+                      <details>
+                        <summary>Backup transaction details</summary>
+                        <code>{prepared.id}</code>
+                      </details>
                       <button
                         type="button"
                         disabled={
@@ -468,9 +528,11 @@ export function Postboxes({
                         }
                         onClick={() => void task(confirmRecovery)}
                       >
-                        Check recovery transaction
+                        {prepared.id.startsWith("attempt:")
+                          ? "Resume Sapient approval"
+                          : "Check backup status"}
                       </button>
-                    </p>
+                    </div>
                   )}
                 </>
               )}
@@ -496,6 +558,42 @@ export function Postboxes({
                 Sapient shows its fee estimate before approval. Your connected
                 account pays the fee for each attempt.
               </p>
+              {(!box || rotating) && (
+                <div className="setup-summary">
+                  <h3>
+                    {prepared?.state === "confirmed"
+                      ? "Ready for your second approval"
+                      : "Two approvals, one private home."}
+                  </h3>
+                  <p>
+                    {prepared?.state === "confirmed"
+                      ? "Your backup is confirmed. Review your postbox name, listing and fee limit before opening it."
+                      : "First save your encrypted recovery backup. Once it confirms, approve opening your postbox. Each step has its own Sapient fee estimate."}
+                  </p>
+                  <dl className="receipt">
+                    <div>
+                      <dt>Postbox name</dt>
+                      <dd>{nickname || "Choose a name above"}</dd>
+                    </div>
+                    <div>
+                      <dt>Directory</dt>
+                      <dd>
+                        {discoverable
+                          ? "People can find me"
+                          : "Unlisted · share my ID"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Backup fee limit</dt>
+                      <dd>{tari(recoveryFee)} TARI per attempt</dd>
+                    </div>
+                    <div>
+                      <dt>Postbox fee limit</dt>
+                      <dd>{tari(fee)} TARI per attempt</dd>
+                    </div>
+                  </dl>
+                </div>
+              )}
               <button
                 className="primary"
                 disabled={
@@ -509,10 +607,10 @@ export function Postboxes({
                 {box && !rotating
                   ? "Save postbox changes"
                   : !prepared
-                    ? "Store recovery memo"
+                    ? "Save recovery backup"
                     : rotating
-                      ? "Publish rotated key"
-                      : "Publish postbox"}
+                      ? "Use the new encryption key"
+                      : "Open my postbox"}
               </button>
               {box && !rotating && (
                 <button

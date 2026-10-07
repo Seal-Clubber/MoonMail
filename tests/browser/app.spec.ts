@@ -382,7 +382,7 @@ test("postbox private view access requires explicit account-wide consent and nev
     "private view access approved",
   );
   await expect(
-    page.getByRole("button", { name: "Publish postbox", exact: true }),
+    page.getByRole("button", { name: "Open my postbox", exact: true }),
   ).toBeDisabled();
   expect(
     await page.evaluate(() =>

@@ -87,6 +87,18 @@ export function readPending(storage: Pick<Storage, "getItem">): Pending[] {
     return [];
   }
 }
+// UI callers must distinguish a damaged journal from an empty delivery book.
+// This never clears or repairs the underlying records.
+export function inspectPending(storage: Pick<Storage, "getItem">): {
+  records: Pending[];
+  error?: string;
+} {
+  try {
+    return { records: strictPending(storage) };
+  } catch (error) {
+    return { records: [], error: (error as Error).message };
+  }
+}
 export function savePending(
   storage: Pick<Storage, "getItem" | "setItem">,
   p: Pending,

@@ -25,7 +25,8 @@ import {
   type LinkRoute,
 } from "../core/links";
 import { money } from "../core/transactions";
-import { readPending, savePending } from "../core/pending";
+import { readPending, savePending, inspectPending } from "../core/pending";
+import { readDelivery } from "../core/delivery";
 import {
   mailboxKey,
   sealMailbox,
@@ -115,7 +116,10 @@ export function App() {
       envelope: Envelope;
       capability?: string;
     }>(),
-    [privateLink, setPrivateLink] = useState("");
+    [privateLink, setPrivateLink] = useState(""),
+    [linkSaved, setLinkSaved] = useState(false),
+    [, setDeliveryRevision] = useState(0),
+    [autoChecking, setAutoChecking] = useState(false);
   const [address, setAddress] = useState(""),
     [destination, setDestination] = useState(""),
     [createAccount, setCreateAccount] = useState(false),
@@ -130,6 +134,10 @@ export function App() {
     connectionSequence = useRef(0),
     retryReader = useRef<PostOfficeClient | undefined>(undefined),
     [indexerStatus, setIndexerStatus] = useState("");
+  const deliveryHistory = inspectPending(localStorage);
+  const deliveries = deliveryHistory.records.filter(
+    (p) => p.network === d.network && p.registry === d.registry,
+  );
   const owned = boxes.filter(
     (p) => p.controller === wallet?.accounts[account]?.account.owner_public_key,
   );
@@ -262,6 +270,66 @@ export function App() {
       connected?.provider.stopWatcher();
     };
   }, [d]);
+  useEffect(() => {
+    if (view !== "activity" || !chain || busy || deliveryHistory.error) {
+      setAutoChecking(false);
+      return;
+    }
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    const until = Date.now() + 120_000;
+    async function check() {
+      if (cancelled) return;
+      const pending = inspectPending(localStorage);
+      const awaiting = pending.records.filter(
+        (p) =>
+          p.network === d.network &&
+          p.registry === d.registry &&
+          /^[a-f0-9]{64}$/.test(p.id) &&
+          (p.state === "submitted" || p.state === "unknown"),
+      );
+      if (pending.error || !awaiting.length || Date.now() >= until) {
+        setAutoChecking(false);
+        return;
+      }
+      setAutoChecking(true);
+      let delivered = false;
+      if (!document.hidden)
+        for (const p of awaiting) {
+          try {
+            const next = await readDelivery(chain!, p);
+            if (cancelled) return;
+            // Don't overwrite a concurrent manual reconciliation or wallet resume.
+            const latest = readPending(localStorage).find(
+              (item) => item.id === p.id,
+            );
+            if (!latest || latest.state !== p.state || next.state === p.state)
+              continue;
+            savePending(localStorage, next);
+            setDeliveryRevision((revision) => revision + 1);
+            if (next.state === "confirmed") {
+              delivered = true;
+              if (next.operation === "publish") shareConfirmed(next.envelopeId);
+            }
+          } catch {
+            // Not yet indexed or temporarily offline. Keep the original attempt.
+          }
+        }
+      if (delivered && !cancelled) {
+        try {
+          await refresh();
+        } catch {
+          /* The receipt remains confirmed. */
+        }
+      }
+      if (!cancelled) timer = setTimeout(check, 6_000);
+    }
+    void check();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [view, chain, busy, prepared, deliveryHistory.error]);
   useEffect(() => {
     if (!route || !chain) return;
     let cancelled = false;
@@ -530,9 +598,17 @@ export function App() {
   }
   async function prepare() {
     const sequence = draftSequence.current;
-    money(gift);
-    money(reserve);
-    money(fee);
+    const giftAmount = money(gift),
+      collection = money(reserve);
+    if (money(fee) <= 0n) throw new Error("Set a positive sending fee limit.");
+    if (giftAmount > 0n && collection === 0n)
+      throw new Error(
+        "Set aside collection funds so the recipient can receive the full gift.",
+      );
+    if (giftAmount === 0n && collection > 0n)
+      throw new Error("A letter without a gift needs no collection funds.");
+    if (giftAmount + collection > 18_446_744_073_709_551_615n)
+      throw new Error("Gift and collection funds together are too large.");
     if (!subject.trim() || !body.trim())
       throw new Error("Write a subject and a message");
     const postbox =
@@ -572,6 +648,7 @@ export function App() {
     };
     assertEnvelopeSize(envelope);
     if (draftSequence.current !== sequence) return;
+    setLinkSaved(false);
     setPrepared({ envelope, capability: sealed?.capability });
     setReview(true);
   }
@@ -1051,7 +1128,7 @@ export function App() {
                   </select>
                 </label>
               )}
-              {wallet && (
+              {wallet && wallet.accounts.length > 1 && (
                 <label>
                   Funding account
                   <select
@@ -1148,26 +1225,65 @@ export function App() {
                   visible on chain.
                 </p>
                 {prepared.capability && d.registry && (
-                  <button
-                    onClick={() =>
-                      void task(async () => {
-                        const link = createGiftLink(
-                          new URL(import.meta.env.BASE_URL, location.href).href,
-                          {
-                            id: prepared.envelope.id,
-                            capability: prepared.capability!,
-                            context: d,
-                          },
-                        );
-                        await navigator.clipboard.writeText(link);
-                        setStatus(
-                          "Copied a pending private link. It will open only after publication confirms. Keep it: refreshing can lose the in-memory capability.",
-                        );
-                      })
-                    }
+                  <section
+                    className="secret-link-save"
+                    aria-labelledby="save-link-title"
                   >
-                    Save pending private link
-                  </button>
+                    <h3 id="save-link-title">Keep your secret safe.</h3>
+                    <p>
+                      Save this complete link before sending. It opens after
+                      delivery confirms. Anyone with it can open the letter and
+                      collect its gift; GhostDrop cannot recover it for you.
+                    </p>
+                    <label htmlFor="pending-private-link">
+                      Private link to save
+                    </label>
+                    <textarea
+                      id="pending-private-link"
+                      readOnly
+                      value={createGiftLink(
+                        new URL(import.meta.env.BASE_URL, location.href).href,
+                        {
+                          id: prepared.envelope.id,
+                          capability: prepared.capability,
+                          context: d,
+                        },
+                      )}
+                      onFocus={(e) => e.target.select()}
+                    />
+                    <button
+                      disabled={busy}
+                      onClick={() =>
+                        void task(async () => {
+                          await navigator.clipboard.writeText(
+                            createGiftLink(
+                              new URL(import.meta.env.BASE_URL, location.href)
+                                .href,
+                              {
+                                id: prepared.envelope.id,
+                                capability: prepared.capability!,
+                                context: d,
+                              },
+                            ),
+                          );
+                          setStatus(
+                            "Private link copied. Save it somewhere safe before sending.",
+                          );
+                        })
+                      }
+                    >
+                      Copy secret link
+                    </button>
+                    <label className="checkbox">
+                      <input
+                        type="checkbox"
+                        checked={linkSaved}
+                        disabled={busy}
+                        onChange={(e) => setLinkSaved(e.target.checked)}
+                      />
+                      I saved my private link somewhere safe
+                    </label>
+                  </section>
                 )}
                 <button
                   className="primary"
@@ -1175,6 +1291,8 @@ export function App() {
                     !wallet ||
                     !chain ||
                     !writesReady(d, mode, "sapient") ||
+                    !!deliveryHistory.error ||
+                    (!!prepared.capability && !linkSaved) ||
                     busy
                   }
                   onClick={() =>
@@ -1196,6 +1314,18 @@ export function App() {
                 >
                   Fund & publish letter
                 </button>
+                {!wallet && (
+                  <button onClick={() => setConnect(true)} disabled={busy}>
+                    Connect Sapient to send
+                  </button>
+                )}
+                {!chain && (
+                  <p className="review-note">
+                    Waiting for the post office connection. Try Refresh on
+                    Public mail if this takes a while.
+                  </p>
+                )}
+                {error && <p className="review-note">{error}</p>}
                 {!writesReady(d, mode, "sapient") && (
                   <p className="info">
                     Sending is currently unavailable for these post office
@@ -1218,6 +1348,7 @@ export function App() {
             onStatus={setStatus}
             onConnect={() => setConnect(true)}
             onActivity={() => navigate("activity")}
+            writeBlocked={!!deliveryHistory.error}
             onOpen={(e) => void task(() => openPostbox(e))}
             onRefresh={refresh}
             onMore={loadMore}
@@ -1452,9 +1583,13 @@ export function App() {
               This history is saved in this browser; your wallet keeps the
               transaction records.
             </p>
-            {!readPending(localStorage).some(
-              (p) => p.network === d.network && p.registry === d.registry,
-            ) && (
+            {autoChecking && (
+              <p className="info">
+                Checking delivery automatically. You can leave this page; your
+                submitted transaction keeps going.
+              </p>
+            )}
+            {!deliveryHistory.error && !deliveries.length && (
               <div className="quiet-state">
                 <span aria-hidden="true">✧</span>
                 <h2>No deliveries yet.</h2>
@@ -1466,77 +1601,69 @@ export function App() {
                 </button>
               </div>
             )}
-            {readPending(localStorage)
-              .filter(
-                (p) => p.network === d.network && p.registry === d.registry,
-              )
-              .map((p) => (
-                <div className="pending delivery-card" key={p.id}>
-                  <code>{short(p.id)}</code>
-                  <span>
-                    {p.operation === "publish"
-                      ? "Letter"
-                      : p.operation === "claim"
-                        ? "Gift collection"
-                        : p.operation === "capsule"
-                          ? "Postbox backup"
-                          : "Postbox"}{" "}
-                    ·{" "}
-                    {p.state === "confirmed"
-                      ? "Delivered"
-                      : p.state === "rejected"
-                        ? "Not completed"
-                        : "Awaiting confirmation"}
-                  </span>
-                  <button
-                    disabled={!chain || busy}
-                    onClick={() =>
-                      void task(async () => {
-                        if (!chain) return;
-                        if (p.id.startsWith("attempt:")) {
-                          if (
-                            p.operation === "postbox" ||
-                            p.operation === "capsule"
-                          ) {
-                            setStatus(
-                              "This wallet submission has no transaction ID. Inspect the controlling wallet's transaction history before resolving it; matching postbox state alone cannot identify the submitted transaction. Retrying remains blocked.",
-                            );
-                            return;
-                          }
-                          const e = await chain.readLetter(p.envelopeId);
-                          if (p.operation === "publish" || e.claimed) {
-                            savePending(localStorage, {
-                              ...p,
-                              state: "confirmed",
-                            });
-                            await refresh();
-                            if (p.operation === "publish")
-                              shareConfirmed(p.envelopeId);
-                            setStatus(
-                              "Envelope state confirms delivery/publication. For missing or ambiguous attempts inspect donor/account history before retrying.",
-                            );
-                          }
+            {deliveries.map((p) => (
+              <div className="pending delivery-card" key={p.id}>
+                <code>{short(p.id)}</code>
+                <span>
+                  {p.operation === "publish"
+                    ? "Letter"
+                    : p.operation === "claim"
+                      ? "Gift collection"
+                      : p.operation === "capsule"
+                        ? "Postbox backup"
+                        : "Postbox"}{" "}
+                  ·{" "}
+                  {p.state === "confirmed"
+                    ? "Delivered"
+                    : p.state === "rejected"
+                      ? "Not completed"
+                      : "Awaiting confirmation"}
+                </span>
+                <button
+                  disabled={!chain || busy}
+                  onClick={() =>
+                    void task(async () => {
+                      if (!chain) return;
+                      if (p.id.startsWith("attempt:")) {
+                        if (
+                          p.operation === "postbox" ||
+                          p.operation === "capsule"
+                        ) {
+                          setStatus(
+                            "This wallet submission has no transaction ID. Inspect the controlling wallet's transaction history before resolving it; matching postbox state alone cannot identify the submitted transaction. Retrying remains blocked.",
+                          );
                           return;
                         }
-                        const outcome = await chain.reconcile(p.id);
-                        const state = !outcome
-                          ? "unknown"
-                          : outcome.outcome === "Commit"
-                            ? "confirmed"
-                            : outcome.outcome === "FeeIntentCommit"
-                              ? "unknown"
-                              : "rejected";
-                        savePending(localStorage, { ...p, state });
-                        await refresh();
-                        setStatus(`Transaction ${short(p.id)}: ${state}.`);
-                        if (state === "confirmed" && p.operation === "publish")
-                          shareConfirmed(p.envelopeId);
-                      })
-                    }
-                  >
-                    Check status
-                  </button>
-                  {p.walletRequest && p.state === "unknown" && (
+                        const e = await chain.readLetter(p.envelopeId);
+                        if (p.operation === "publish" || e.claimed) {
+                          savePending(localStorage, {
+                            ...p,
+                            state: "confirmed",
+                          });
+                          await refresh();
+                          if (p.operation === "publish")
+                            shareConfirmed(p.envelopeId);
+                          setStatus(
+                            "Envelope state confirms delivery/publication. For missing or ambiguous attempts inspect donor/account history before retrying.",
+                          );
+                        }
+                        return;
+                      }
+                      const next = await readDelivery(chain, p);
+                      const state = next.state;
+                      savePending(localStorage, next);
+                      await refresh();
+                      setStatus(`Transaction ${short(p.id)}: ${state}.`);
+                      if (state === "confirmed" && p.operation === "publish")
+                        shareConfirmed(p.envelopeId);
+                    })
+                  }
+                >
+                  Check status
+                </button>
+                {p.walletRequest &&
+                  p.id.startsWith("attempt:") &&
+                  p.state === "unknown" && (
                     <button
                       disabled={busy || !(wallet instanceof SapientSession)}
                       onClick={() =>
@@ -1552,12 +1679,26 @@ export function App() {
                       Resume Sapient approval
                     </button>
                   )}
-                </div>
-              ))}
+                {p.state === "unknown" && (
+                  <p className="delivery-help">
+                    {p.id.startsWith("attempt:")
+                      ? "No confirmed transaction ID yet. Resume the saved Sapient request if available, or check your wallet’s history. Don’t send a replacement."
+                      : "This outcome needs review and fees may have been paid. Check Sapient history before trying again; GhostDrop keeps the original transaction blocked."}
+                  </p>
+                )}
+              </div>
+            ))}
             {privateLink && (
-              <label>
-                Confirmed private link
-                <textarea readOnly value={privateLink} />
+              <div className="confirmed-link">
+                <label htmlFor="confirmed-private-link">
+                  Confirmed private link
+                </label>
+                <textarea
+                  id="confirmed-private-link"
+                  readOnly
+                  value={privateLink}
+                  onFocus={(e) => e.target.select()}
+                />
                 <button
                   onClick={() =>
                     void navigator.clipboard.writeText(privateLink)
@@ -1565,9 +1706,20 @@ export function App() {
                 >
                   Copy private link
                 </button>
-              </label>
+              </div>
             )}
           </section>
+        )}
+        {deliveryHistory.error && (
+          <div role="alert" className="message error">
+            <strong>Your delivery history needs attention.</strong>
+            <p>
+              Sending and collection are paused because this browser’s saved
+              records cannot be read. Check Sapient transaction history before
+              recovering local storage. Don’t send a replacement or clear the
+              records while an outcome is uncertain.
+            </p>
+          </div>
         )}
         {error && (
           <div role="alert" className="message error">
@@ -1880,6 +2032,7 @@ export function App() {
                         busy ||
                         !chain ||
                         !address ||
+                        !!deliveryHistory.error ||
                         (!createAccount && !destination) ||
                         !(active.mode === "postbox"
                           ? postboxClaimsReady(d, wallet?.kind ?? "sapient")
