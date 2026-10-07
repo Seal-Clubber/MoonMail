@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-10-07T03:53:13.226Z",
+  "frontendCommit": "ad8831a83e0c0103a5b3c05795555f6b9d5ae3b5",
+  "base": "https://seal-clubber.github.io/GhostDrop/",
+  "checks": [
+    {
+      "viewport": "desktop",
+      "actualPublishedAssets": true,
+      "realIndexerReadInterrupted": true,
+      "blockedRegistryRequests": 1,
+      "noFakeRpcResponse": true,
+      "refreshedSameOfficeWithoutReload": true,
+      "realLetterRecovered": true,
+      "financialTransactions": 0
+    },
+    {
+      "viewport": "mobile",
+      "actualPublishedAssets": true,
+      "realIndexerReadInterrupted": true,
+      "blockedRegistryRequests": 1,
+      "noFakeRpcResponse": true,
+      "refreshedSameOfficeWithoutReload": true,
+      "realLetterRecovered": true,
+      "financialTransactions": 0
+    }
+  ],
+  "limit": "Read-only indexer outage, not financial submission response loss"
+}

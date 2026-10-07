@@ -192,10 +192,10 @@ export class SapientSession {
   }
   nativeMailbox(): NativeMailboxAdapter {
     throw new Error(
-      "Sapient postbox key recovery has not been verified. No daemon or bridge is required for public/private-link sending.",
+      "Sapient uses recovery capsules; native daemon memo recovery is unsupported. Choose the verified Sapient postbox office.",
     );
   }
-  // UI integration remains gated until public deployment/recovery evidence exists.
+  // Each deployment must record recovery evidence before enabling new setup.
   // The wallet popup explains the grant; the website must also explain its account-wide scope.
   async requestPostboxViewAccess() {
     await this.assertCurrent();

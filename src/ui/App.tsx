@@ -861,9 +861,10 @@ export function App() {
             {mode === "postbox" && (
               <p className="info">
                 Addressed mail requires a registered postbox and its controlling
-                wallet. Sapient signing for public and private-link mail and
-                postbox key recovery are still being verified, so this mode
-                remains disabled.
+                wallet.{" "}
+                {writesReady(d, "postbox", "sapient")
+                  ? "The letter is encrypted for the selected postbox. Its controller can recover historical mail and collect gifts through Sapient."
+                  : "Choose the verified Sapient postbox office in Network & verification. This office has no verified postbox recovery configuration, so addressed sending remains disabled."}
               </p>
             )}
             <form
@@ -1060,8 +1061,8 @@ export function App() {
                 </p>
                 <p>
                   Recipient payout: {gift} µTARI, if the independently funded
-                  reserve covers execution. Fees have not been estimated against
-                  a live deployment.
+                  reserve covers execution. Sapient estimates this draft's
+                  publication fees before requesting approval.
                 </p>
                 <p className="fine-print">
                   Nothing has been published or funded yet. Encryption includes

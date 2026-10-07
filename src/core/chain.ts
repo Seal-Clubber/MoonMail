@@ -393,7 +393,7 @@ export class PostOfficeClient {
       throw new Error("Guest claiming awaits engine and delivery evidence");
     if (envelope.mode === "postbox")
       throw new Error(
-        "Addressed claims require the controlling wallet; Sapient postbox claims remain unverified",
+        "Addressed claims require the controlling wallet and the postbox claim route",
       );
     if (envelope.claimed || BigInt(envelope.gift) === 0n)
       throw new Error("Gift is unavailable");

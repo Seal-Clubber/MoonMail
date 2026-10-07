@@ -354,7 +354,7 @@ test("Sapient cannot silently replace gift-paid fee instructions or native recov
     }),
   ).rejects.toThrow("prepaid fee");
   expect(() => wallet.nativeMailbox()).toThrow(
-    "recovery has not been verified",
+    "native daemon memo recovery is unsupported",
   );
 });
 

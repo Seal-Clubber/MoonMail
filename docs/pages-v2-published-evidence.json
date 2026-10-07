@@ -1,0 +1,73 @@
+{
+  "base": "https://seal-clubber.github.io/GhostDrop/",
+  "checkedAt": "2026-10-07T03:42:15.509Z",
+  "frontendCommit": "ad8831a83e0c0103a5b3c05795555f6b9d5ae3b5",
+  "publishedAssetsMatchReviewedBuild": true,
+  "assets": [
+    {
+      "path": "index.html",
+      "sha256": "c86f7cda22f92c303d64eb621554b4f035a0521c8711bb1724c19be6bf20bcd0",
+      "bytes": 689
+    },
+    {
+      "path": "deployment.json",
+      "sha256": "5f5dd3aba4b2fd7b2e0402d5ee9ad66c4dee882232b85d35785d4d9b2a2def91",
+      "bytes": 643
+    },
+    {
+      "path": "deployment-v2.json",
+      "sha256": "52df5ef95e81f906f1063fa7f593be8cab11fd6f4f5dfd4225c10bdc7ce78acf",
+      "bytes": 1005
+    },
+    {
+      "path": "assets/index-D91ptLiL.js",
+      "sha256": "cbdca954bc99997a076d818c342612b59eee25aec3585eb3d311b98695056ee5",
+      "bytes": 317195
+    },
+    {
+      "path": "assets/index-DOgn5dYb.css",
+      "sha256": "9ab2226aa85be536bc5381f8bae24f56bf63257271415e9f962f78079b3556fa",
+      "bytes": 14336
+    },
+    {
+      "path": "assets/ootle_wasm-CLPAruJ_.js",
+      "sha256": "e490145dfae574781fe74c176955b03a51d16d8170cbcc7d7a021414595baa56",
+      "bytes": 209
+    },
+    {
+      "path": "assets/ootle_wasm-DixGV7PA.js",
+      "sha256": "e0dfe02134916f3202e8e84cc8b522bcbeb210fcffb31c900325288d27335810",
+      "bytes": 21319
+    },
+    {
+      "path": "assets/ootle_wasm_bg-Dvm5bzZ4.wasm",
+      "sha256": "d3969f2f738a70cf3199992d52c3e766000b5f31b859427849ed4171395897f1",
+      "bytes": 1288441
+    }
+  ],
+  "pages": {
+    "httpsEnforced": true,
+    "buildType": "workflow",
+    "url": "https://seal-clubber.github.io/GhostDrop/"
+  },
+  "workflowRuns": [
+    {
+      "name": "Publish reviewed GhostDrop to GitHub Pages",
+      "headSha": "ad8831a83e0c0103a5b3c05795555f6b9d5ae3b5",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37567599439"
+    },
+    {
+      "name": "Verify GhostDrop",
+      "headSha": "ad8831a83e0c0103a5b3c05795555f6b9d5ae3b5",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37567599506"
+    }
+  ],
+  "githubRunMetadataVerified": true,
+  "githubRunMetadataLimitation": "Existing connector/helper could not verify private repository workflow status",
+  "requiredWorkflowsPassed": true,
+  "workflowMetadataCheckedAt": "2026-10-07T03:47:38.722Z"
+}

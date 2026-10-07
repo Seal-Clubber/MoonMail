@@ -219,10 +219,11 @@
     "burnClaim": "awaiting indexer current epoch greater than 11947; never repeat burn"
   },
   "limits": [
-    "New source and V2 office selection are local; GitHub Pages publication remains controlled by the user.",
-    "The staged HTTPS UI uses local build assets with actual Sapient and actual public indexer; it is not a check of a published V2 frontend.",
+    "V2 frontend ad8831a is published and verified; subsequent wording/evidence checkpoint remains local pending user push.",
+    "The earlier staged HTTPS probe used local build assets; a separate published probe now verifies actual Pages assets and stock restored-wallet historical recovery.",
     "Public unknown-response/approval recovery is covered by client fixtures, not fault injection against these funded transactions.",
     "Indexer responses are trusted; this client does not independently verify consensus proofs.",
     "Original deployment and immutable historical mail remain unchanged."
-  ]
+  ],
+  "publishedFrontendVerification": "postbox-v2-published-wallet-evidence.json"
 }

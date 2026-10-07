@@ -1,0 +1,58 @@
+{
+  "confirmed": true,
+  "base": "https://seal-clubber.github.io/GhostDrop/",
+  "verifiedAt": "2026-10-07T03:44:59.686Z",
+  "hostedConfigInterceptedForReadOnlyProbe": false,
+  "checks": [
+    {
+      "viewport": "desktop",
+      "visibleUnclaimedGiftCount": 4,
+      "giftMicroTari": "1000000"
+    },
+    {
+      "viewport": "desktop",
+      "subjectsAndBodiesMatch": true,
+      "readThreeRealChainLetters": true,
+      "previewNotAdvertised": true,
+      "textOnlyOriginalLettersHaveNoClaimControl": true,
+      "noWalletCredential": true,
+      "noPageErrors": true
+    },
+    {
+      "viewport": "desktop",
+      "confirmedRegistryPrefilled": true
+    },
+    {
+      "viewport": "desktop",
+      "actualV2RegistryRead": true,
+      "registeredPostboxVisibleWithoutWallet": true,
+      "originalOfficeStillSelectable": true,
+      "financialTransactions": 0
+    },
+    {
+      "viewport": "mobile",
+      "visibleUnclaimedGiftCount": 4,
+      "giftMicroTari": "1000000"
+    },
+    {
+      "viewport": "mobile",
+      "subjectsAndBodiesMatch": true,
+      "readThreeRealChainLetters": true,
+      "previewNotAdvertised": true,
+      "textOnlyOriginalLettersHaveNoClaimControl": true,
+      "noWalletCredential": true,
+      "noPageErrors": true
+    },
+    {
+      "viewport": "mobile",
+      "confirmedRegistryPrefilled": true
+    },
+    {
+      "viewport": "mobile",
+      "actualV2RegistryRead": true,
+      "registeredPostboxVisibleWithoutWallet": true,
+      "originalOfficeStillSelectable": true,
+      "financialTransactions": 0
+    }
+  ]
+}

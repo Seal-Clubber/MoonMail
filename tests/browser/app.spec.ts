@@ -22,6 +22,10 @@ test("reviewed office selection preserves historical access and resets edited ev
   const next = {
     ...original,
     registry: `component_${"2".repeat(64)}`,
+    template: "6".repeat(64),
+    envelopeTemplate: "7".repeat(64),
+    resource: `resource_${"01".repeat(32)}`,
+    indexerUrl: "https://fixture-indexer.invalid/",
     postboxClaimProtocol: "sapient-proof-1",
     capsule: {
       template: "3".repeat(64),
@@ -30,12 +34,18 @@ test("reviewed office selection preserves historical access and resets edited ev
     },
     evidence: {
       ...original.evidence,
+      engineClaims: true,
+      guestPayout: true,
+      sapientWallet: true,
       mailboxRecovery: true,
       postboxClaims: true,
     },
   };
   await page.route("**/deployment.json", (r) => r.fulfill({ json: original }));
   await page.route("**/deployment-v2.json", (r) => r.fulfill({ json: next }));
+  await page.route(`${next.indexerUrl}**`, (r) =>
+    r.fulfill({ status: 503, body: "Fixture outage" }),
+  );
   await page.goto("./#/network");
   await expect(
     page.getByRole("textbox", { name: "Registry component", exact: true }),
@@ -49,6 +59,16 @@ test("reviewed office selection preserves historical access and resets edited ev
   await expect(
     page.getByText("postboxClaims: recorded by deployer", { exact: false }),
   ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Write a letter", exact: true })
+    .click();
+  await page.getByRole("button", { name: "▥ To a postbox" }).click();
+  await expect(
+    page.getByText("Its controller can recover historical mail", {
+      exact: false,
+    }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: /Network & verification/ }).click();
   await page
     .getByRole("textbox", { name: "Registry component", exact: true })
     .fill(original.registry);
@@ -195,7 +215,10 @@ test("addressed mail explains Sapient recovery and remains gated", async ({
     }),
   ).toBeVisible();
   await expect(
-    page.getByText("postbox key recovery are still", { exact: false }),
+    page.getByText(
+      "This office has no verified postbox recovery configuration",
+      { exact: false },
+    ),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Review letter" }),

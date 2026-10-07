@@ -1,0 +1,51 @@
+{
+  "checkedAt": "2026-10-07T03:48:27.251772+00:00",
+  "frontendCommit": "ad8831a83e0c0103a5b3c05795555f6b9d5ae3b5",
+  "origin": "https://seal-clubber.github.io",
+  "stockWallet": {
+    "name": "Sapient",
+    "version": "0.6.6",
+    "unmodifiedOfficialStorePackage": true,
+    "loadedUnpackedForAutomation": true
+  },
+  "historicalMailRecovery": {
+    "checkedAt": "2026-10-07T03:42:42.954Z",
+    "origin": "https://seal-clubber.github.io",
+    "build": "actual published assets without app/config/ledger overrides",
+    "realIndexer": true,
+    "realStockSapient": true,
+    "restoredWalletHistoricalMailOpened": true,
+    "originalOfficeSelectable": true,
+    "financialTransactions": 0
+  },
+  "approvalRecovery": {
+    "checkedAt": "2026-10-07T03:46:06.721Z",
+    "actualPublishedAssets": true,
+    "realStockSapient": true,
+    "realPublicIndexerDryRun": true,
+    "actualClientCreatedJournal": true,
+    "journalFixtureSeeded": false,
+    "requestId": "84082447-6e68-4e15-be74-20e0a03b011c",
+    "sameRequestAfterReload": true,
+    "actualWalletRejection": true,
+    "reconciledRejected": true,
+    "recipientBalanceUnchanged": true,
+    "financialTransactions": 0,
+    "limit": "Interrupted approval/polling before broadcast, not a dropped consensus submission response"
+  },
+  "browserRegression": {
+    "passed": 22,
+    "viewports": ["desktop", "mobile"],
+    "actualPublishedAssets": true,
+    "mockedWalletAndLedger": true
+  },
+  "publicReadersEvidence": "pages-v2-reader-evidence.json",
+  "assetAndWorkflowEvidence": "pages-v2-published-evidence.json",
+  "limits": [
+    "Published stock-wallet recovery uses actual ledger/provider reads and zero financial broadcasts.",
+    "Reload interrupts a real client-created approval before signing/submission. This does not prove recovery from a dropped consensus submission response.",
+    "The Chrome Store installation UI is not automated; the unchanged official package is loaded unpacked for the isolated browser.",
+    "The following local checkpoint changes status wording only and is not yet published."
+  ],
+  "realReadInterruptionEvidence": "pages-v2-outage-evidence.json"
+}

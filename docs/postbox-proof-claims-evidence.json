@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-07T03:21:33.542774+00:00",
+  "checkedAt": "2026-10-07T03:48:27.251772+00:00",
   "network": "local Ootle engine 0.45.0; ownership approval on Esmeralda through Sapient",
   "implementation": "EnvelopeV2 / PostOfficeV2 / sapient-proof-1",
   "publicDeploymentEnabled": true,
@@ -54,9 +54,9 @@
     "sourceCommit": "7ad3c4f117a76c64d472fd371b7d75bbe297abec"
   },
   "sources": {
-    "src/core/chain.ts": "0454389d018ef9cd9ce083ba3b05e6f35a7b5b4964fe083e9c0addd2139ba547",
+    "src/core/chain.ts": "6816999cd870d8e4b650f4031e944c10006f731d8d7ce516daef303edef3a741",
     "contracts/envelope-v2/src/lib.rs": "189bd097152de0dabdb250f3218c1a2ba786ae778dc020db64fa36f16b643bb9",
-    "src/core/sapient.ts": "4a4a648f9212b63a9e2af61f58325c66d5eecd85eb6b9af8e1542e21cb2e5b90",
+    "src/core/sapient.ts": "e05f1f0dbf6729db3b23f414d48e1158b89c96c173c1439b0c3d78a046cadd17",
     "contracts/postbox-claim-tests/src/lib.rs": "f3c8f63270534b360d35155d5ab87ab1e255bd3e7b41754a111462282c7b2326",
     "contracts/ghostdrop-v2/src/lib.rs": "5d921806f7da0be62c2c6c5b0c7bb66246d48ac88ce63ea05872d11671dad2df",
     "contracts/envelope-v2/src/ownership.rs": "b2d710f88650b868d7ea756f4848eccbad93612ccab15ea068e6b6299bb0deca",
@@ -69,7 +69,7 @@
     "Local engine fee schedule is not a quote or guarantee of public network fees.",
     "The earlier unfunded stock crypto probe used synthetic context; the separately recorded public financial campaign now verifies a real registered claim.",
     "V2 gates apply only to the new reviewed profile; original immutable contracts remain unchanged.",
-    "User must push main to publish the new frontend; staged HTTPS assets are not a published build."
+    "Frontend ad8831a is published and verified; subsequent local wording/evidence changes await the user push."
   ],
   "javascriptEngineBridge": {
     "controllerPrivateKeyRequested": false,
@@ -86,7 +86,10 @@
   },
   "browserUiTests": {
     "passed": 4,
-    "viewports": ["desktop", "mobile"],
+    "viewports": [
+      "desktop",
+      "mobile"
+    ],
     "mockedProviderAndLedger": true,
     "approvalControlsFrozen": true,
     "checks": [
@@ -101,8 +104,9 @@
     "confirmedOotleTransactionCount": 16,
     "visitorRequirements": "stock Sapient and site only",
     "publicFinancialProof": "postbox-v2-esmeralda-evidence.json",
-    "newFrontendPublished": false,
-    "legacyDefaultPreserved": true
+    "newFrontendPublished": true,
+    "legacyDefaultPreserved": true,
+    "frontendCommit": "ad8831a83e0c0103a5b3c05795555f6b9d5ae3b5"
   },
   "clientTestTotal": 88,
   "v2GuestEngineRegression": {
@@ -114,8 +118,11 @@
       "replay blocked",
       "gift-funded new guest account creation",
       "gift-funded new guest account creation",
+      "gift-funded new guest account creation",
+      "gift-funded new guest account creation",
       "gift-funded new guest account creation"
     ]
   },
-  "financialEngineTotal": 14
+  "financialEngineTotal": 14,
+  "publishedVerification": "postbox-v2-published-wallet-evidence.json"
 }
