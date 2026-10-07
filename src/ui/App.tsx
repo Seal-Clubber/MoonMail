@@ -915,14 +915,25 @@ export function App() {
             </button>
           ))}
         </nav>
-        <button
-          className="wallet-button"
-          disabled={busy}
-          onClick={() => (wallet ? disconnect() : setConnect(true))}
-        >
-          <span className={wallet ? "dot live" : "dot"} />
-          {wallet ? "Disconnect wallet" : "Connect wallet"}
-        </button>
+        <div className="wallet-actions">
+          {wallet && current && (
+            <button
+              className="wallet-details-button"
+              disabled={busy}
+              onClick={() => setConnect(true)}
+            >
+              Wallet details
+            </button>
+          )}
+          <button
+            className="wallet-button"
+            disabled={busy}
+            onClick={() => (wallet ? disconnect() : setConnect(true))}
+          >
+            <span className={wallet ? "dot live" : "dot"} />
+            {wallet ? "Disconnect wallet" : "Connect wallet"}
+          </button>
+        </div>
       </header>
       <main id="main-content" tabIndex={-1}>
         {route && !active && (
@@ -2121,7 +2132,11 @@ export function App() {
           >
             <button
               className="close"
-              aria-label="Close wallet connection"
+              aria-label={
+                wallet && current
+                  ? "Close wallet details"
+                  : "Close wallet connection"
+              }
               onClick={() => {
                 connectionSequence.current += 1;
                 setConnect(false);
@@ -2130,68 +2145,115 @@ export function App() {
               ×
             </button>
             <span className="kicker">YOUR SAPIENT WALLET</span>
-            <h2 id="wallet-title">Connect Sapient</h2>
-            <p>
-              Unlock Sapient, choose Esmeralda, then approve this site’s
-              connection. Your wallet keeps your keys and asks before every
-              transaction.
-            </p>
-            <details>
-              <summary>What do I need?</summary>
-              <p className="fine-print">
-                Sapient is the wallet itself. Open GhostDrop in the browser
-                where you use Sapient, unlock it, and choose your Ootle account.
-                There is no separate GhostDrop bridge or background program.
-              </p>
-              <p className="fine-print">
-                Public mail and private links open without a wallet. Sending
-                needs a little test TARI for fees. Your postbox needs a separate
-                privacy permission, which GhostDrop explains before asking.
-              </p>
-            </details>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                void task(async () => {
-                  const sequence = ++connectionSequence.current;
-                  const w = await SapientSession.connect(d.network);
-                  if (sequence !== connectionSequence.current) {
-                    w.invalidate();
-                    return;
-                  }
-                  if (wallet instanceof SapientSession) wallet.invalidate();
-                  else wallet?.disconnect();
-                  setWallet(w);
-                  setAccount(0);
-                  setConnect(false);
-                  setStatus(
-                    "Connected to Sapient. Transactions require your wallet approval.",
-                  );
-                });
-              }}
-            >
-              <p role="status">
-                {sapientAvailable
-                  ? "Sapient detected in this browser."
-                  : "Sapient has not been detected in this browser."}
-              </p>
-              {!sapientAvailable && (
-                <a
-                  href="https://sapient.tari.mw/"
-                  target="_blank"
-                  rel="noopener noreferrer"
+            <h2 id="wallet-title">
+              {wallet && current ? "Your Sapient wallet" : "Connect Sapient"}
+            </h2>
+            {wallet && current ? (
+              <div className="wallet-summary">
+                <p>
+                  Connected on {d.network === 38 ? "Esmeralda" : "Igor"}{" "}
+                  testnet. Use this address to receive test TARI, or select this
+                  account when collecting a gift.
+                </p>
+                <CopyField
+                  label="Your receiving address"
+                  value={current.address}
+                  buttonLabel="Copy receiving address"
+                  copiedMessage="Receiving address copied."
+                  multiline
+                />
+                <details>
+                  <summary>Receiving account details</summary>
+                  <p className="fine-print">
+                    Some applications also ask for your account component when
+                    sending to an existing account.
+                  </p>
+                  <CopyField
+                    label="Your receiving account"
+                    value={current.account.component_address}
+                    buttonLabel="Copy receiving account"
+                    copiedMessage="Receiving account copied."
+                    multiline
+                  />
+                </details>
+                <button
+                  disabled={busy}
+                  onClick={() => {
+                    disconnect();
+                    setConnect(false);
+                  }}
                 >
-                  Get Sapient wallet ↗
-                </a>
-              )}
-              <p className="fine-print">
-                Switch accounts in Sapient. If you change its account or
-                network, reconnect here. Disconnect clears private page state.
-              </p>
-              <button className="primary" disabled={busy}>
-                {busy ? "Connecting…" : "Connect Sapient"}
-              </button>
-            </form>
+                  Disconnect wallet
+                </button>
+              </div>
+            ) : (
+              <>
+                <p>
+                  Unlock Sapient, choose Esmeralda, then approve this site’s
+                  connection. Your wallet keeps your keys and asks before every
+                  transaction.
+                </p>
+                <details>
+                  <summary>What do I need?</summary>
+                  <p className="fine-print">
+                    Sapient is the wallet itself. Open GhostDrop in the browser
+                    where you use Sapient, unlock it, and choose your Ootle
+                    account. There is no separate GhostDrop bridge or background
+                    program.
+                  </p>
+                  <p className="fine-print">
+                    Public mail and private links open without a wallet. Sending
+                    needs a little test TARI for fees. Your postbox needs a
+                    separate privacy permission, which GhostDrop explains before
+                    asking.
+                  </p>
+                </details>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void task(async () => {
+                      const sequence = ++connectionSequence.current;
+                      const w = await SapientSession.connect(d.network);
+                      if (sequence !== connectionSequence.current) {
+                        w.invalidate();
+                        return;
+                      }
+                      if (wallet instanceof SapientSession) wallet.invalidate();
+                      else wallet?.disconnect();
+                      setWallet(w);
+                      setAccount(0);
+                      setConnect(false);
+                      setStatus(
+                        "Connected to Sapient. Transactions require your wallet approval.",
+                      );
+                    });
+                  }}
+                >
+                  <p role="status">
+                    {sapientAvailable
+                      ? "Sapient detected in this browser."
+                      : "Sapient has not been detected in this browser."}
+                  </p>
+                  {!sapientAvailable && (
+                    <a
+                      href="https://sapient.tari.mw/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Get Sapient wallet ↗
+                    </a>
+                  )}
+                  <p className="fine-print">
+                    Switch accounts in Sapient. If you change its account or
+                    network, reconnect here. Disconnect clears private page
+                    state.
+                  </p>
+                  <button className="primary" disabled={busy}>
+                    {busy ? "Connecting…" : "Connect Sapient"}
+                  </button>
+                </form>
+              </>
+            )}
             {error && (
               <p role="alert" className="error">
                 {error}

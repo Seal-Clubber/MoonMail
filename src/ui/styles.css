@@ -2015,3 +2015,32 @@ footer button {
 .recipient-choice .text-button {
   justify-self: start;
 }
+
+.wallet-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.wallet-summary .copy-field textarea {
+  color: #ede7d3;
+  background: #18231b;
+  border-color: #58624c;
+}
+.wallet-summary .copy-field label {
+  color: #cbcdbb;
+}
+@media (max-width: 760px) {
+  .topbar > .wallet-actions {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    flex-direction: column;
+    align-items: stretch;
+    max-width: 100%;
+  }
+  .wallet-actions button {
+    min-height: 44px;
+    padding: 8px 10px;
+    justify-content: center;
+  }
+}

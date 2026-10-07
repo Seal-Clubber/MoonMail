@@ -111,7 +111,7 @@ async function connectFixture(page: Page) {
     },
     { address, account, transaction },
   );
-  return { controller };
+  return { controller, address };
 }
 test("private link must be saved before one approved publication; confirmation reveals the same link", async ({
   page,
@@ -763,4 +763,84 @@ test("Activity notices delivery journal changes from another tab without submitt
   } finally {
     await other.close();
   }
+});
+
+test("wallet details expose only public receiving information without requesting signatures", async ({
+  page,
+}) => {
+  await configure(page);
+  const fixture = await connectFixture(page);
+  let writes = 0;
+  await page.route(`${d.indexerUrl}**`, (route) => {
+    if (route.request().method() !== "GET") {
+      writes++;
+      return route.abort();
+    }
+    return route.fulfill({ json: ledger(route.request().url()) });
+  });
+  await page.goto("./#/compose");
+  await page
+    .getByLabel("Subject", { exact: true })
+    .fill("A draft stays at the writing desk");
+  await page
+    .getByRole("button", { name: "Connect wallet", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Connect Sapient", exact: true })
+    .click();
+  const methods = await page.evaluate(() =>
+    (window as any).walletCalls.map((c: any) => c.method),
+  );
+  const trigger = page.getByRole("button", {
+    name: "Wallet details",
+    exact: true,
+  });
+  await trigger.click();
+  const dialog = page.getByRole("dialog", {
+    name: "Your Sapient wallet",
+    exact: true,
+  });
+  await expect(
+    dialog.getByLabel("Your receiving address", { exact: true }),
+  ).toHaveValue(fixture.address);
+  await expect(dialog).toContainText("Esmeralda testnet");
+  await dialog.getByText("Receiving account details", { exact: true }).click();
+  await expect(
+    dialog.getByLabel("Your receiving account", { exact: true }),
+  ).toHaveValue(account);
+  expect(
+    await page.evaluate(() =>
+      (window as any).walletCalls.map((c: any) => c.method),
+    ),
+  ).toEqual(methods);
+  await dialog.screenshot({
+    path: test.info().outputPath("wallet-details.png"),
+  });
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(
+    "A draft stays at the writing desk",
+  );
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await trigger.click();
+  await dialog
+    .getByRole("button", { name: "Disconnect wallet", exact: true })
+    .click();
+  await expect(dialog).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Connect wallet", exact: true }),
+  ).toBeVisible();
+  await expect(trigger).toHaveCount(0);
+  expect(
+    (await page.evaluate(() => (window as any).walletCalls)).filter(
+      (c: any) => c.method === "tari_disconnect",
+    ),
+  ).toHaveLength(1);
+  expect(writes).toBe(0);
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
 });

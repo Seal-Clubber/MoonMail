@@ -16,6 +16,8 @@ Collection has a separate destination review: check the full address, receiving 
 
 The current source defaults directly to the verified Sapient office in `public/deployment.json`. The original office is no longer selectable and its mail is not carried over. `deployment-v2.json` remains an identical public profile for historical verification references. Immutable older contracts and evidence remain available to developers.
 
+Connected visitors can open **Wallet details** to copy their public receiving address and account component. Opening it makes no additional wallet request.
+
 The writing desk shows remaining letter space before review, including Unicode, encryption and addressing overhead. Oversized drafts stay editable and cannot proceed to review until shortened. The complete envelope limit remains enforced after encryption.
 
 The GUI keeps the moonlit, haunted post office theme, with phone layouts, reduced-motion support, keyboard focus handling, dialog scroll/focus isolation and plain-language empty/error states. The directory searches listed postboxes; unlisted recipients share their IDs directly. Advanced connection settings are under **Settings** and invalidate write evidence when edited.
