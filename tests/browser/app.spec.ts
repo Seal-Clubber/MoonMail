@@ -5,22 +5,40 @@ import {
   generateOotleAddress,
 } from "@tari-project/ootle-wasm";
 
+test("hash links and browser Back keep the selected page in sync", async ({
+  page,
+}) => {
+  await page.route("**/deployment.json", (r) =>
+    r.fulfill({ json: emptyDeployment }),
+  );
+  await page.goto("./");
+  await page
+    .getByRole("button", { name: "Write a letter", exact: true })
+    .click();
+  await expect(page.locator(".compose")).toBeVisible();
+  await page.getByRole("button", { name: "Activity", exact: true }).click();
+  await page.goBack();
+  await expect(page.locator(".compose")).toBeVisible();
+  await page.evaluate(() => {
+    location.hash = "#/postboxes";
+  });
+  await expect(
+    page.getByRole("heading", { name: "Your haunted inbox." }),
+  ).toBeVisible();
+});
+
 test.beforeEach(async ({ page }) => {
   await page.route("**/deployment.json", (route) =>
     route.fulfill({ json: emptyDeployment }),
   );
 });
 
-test("reviewed office selection preserves historical access and resets edited evidence", async ({
+test("Sapient office is the default; advanced edits clear evidence and reset restores it", async ({
   page,
 }) => {
-  const original = {
+  const next = {
     ...emptyDeployment,
     network: 38,
-    registry: `component_${"1".repeat(64)}`,
-  };
-  const next = {
-    ...original,
     registry: `component_${"2".repeat(64)}`,
     template: "6".repeat(64),
     envelopeTemplate: "7".repeat(64),
@@ -33,7 +51,7 @@ test("reviewed office selection preserves historical access and resets edited ev
       resource: `resource_${"5".repeat(64)}`,
     },
     evidence: {
-      ...original.evidence,
+      ...emptyDeployment.evidence,
       engineClaims: true,
       guestPayout: true,
       sapientWallet: true,
@@ -41,53 +59,41 @@ test("reviewed office selection preserves historical access and resets edited ev
       postboxClaims: true,
     },
   };
-  await page.route("**/deployment.json", (r) => r.fulfill({ json: original }));
-  await page.route("**/deployment-v2.json", (r) => r.fulfill({ json: next }));
+  await page.route("**/deployment.json", (r) => r.fulfill({ json: next }));
   await page.route(`${next.indexerUrl}**`, (r) =>
     r.fulfill({ status: 503, body: "Fixture outage" }),
   );
   await page.goto("./#/network");
   await expect(
-    page.getByRole("textbox", { name: "Registry component", exact: true }),
-  ).toHaveValue(original.registry);
-  await page
-    .getByRole("button", { name: "Use Sapient postbox office" })
-    .click();
+    page.getByRole("button", {
+      name: /Use original|Use Sapient postbox office/,
+    }),
+  ).toHaveCount(0);
+  await page.getByText("Advanced connection settings", { exact: true }).click();
   await expect(
-    page.getByRole("textbox", { name: "Registry component", exact: true }),
+    page.getByLabel("Registry component", { exact: true }),
   ).toHaveValue(next.registry);
   await expect(
     page.getByText("postboxClaims: recorded by deployer", { exact: false }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Write a letter", exact: true })
-    .click();
-  await page.getByRole("button", { name: "▥ To a postbox" }).click();
-  await expect(
-    page.getByText("Its controller can recover historical mail", {
-      exact: false,
-    }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: /Network & verification/ }).click();
-  await page
-    .getByRole("textbox", { name: "Registry component", exact: true })
-    .fill(original.registry);
+    .getByLabel("Registry component", { exact: true })
+    .fill(`component_${"1".repeat(64)}`);
   await expect(
     page.getByText("postboxClaims: unverified", { exact: false }),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "Use original public office" })
-    .click();
+  await page.getByRole("button", { name: "Restore default settings" }).click();
   await expect(
-    page.getByRole("textbox", { name: "Registry component", exact: true }),
-  ).toHaveValue(original.registry);
+    page.getByLabel("Registry component", { exact: true }),
+  ).toHaveValue(next.registry);
   await expect(
-    page.getByText("mailboxRecovery: unverified", { exact: false }),
+    page.getByText("postboxClaims: recorded by deployer", { exact: false }),
   ).toBeVisible();
   await page.reload();
+  await page.getByText("Advanced connection settings", { exact: true }).click();
   await expect(
-    page.getByRole("textbox", { name: "Registry component", exact: true }),
-  ).toHaveValue(original.registry);
+    page.getByLabel("Registry component", { exact: true }),
+  ).toHaveValue(next.registry);
 });
 
 test("honest guest hall and reduced-motion visual preview", async ({
@@ -101,7 +107,7 @@ test("honest guest hall and reduced-motion visual preview", async ({
     }),
   ).toBeVisible();
   await expect(
-    page.getByText("No funded gifts are being advertised.", { exact: false }),
+    page.getByText("No live gifts are shown.", { exact: false }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Explore preview" }).click();
   await page.screenshot({
@@ -210,15 +216,14 @@ test("addressed mail explains Sapient recovery and remains gated", async ({
   await page.goto("./#/compose");
   await page.getByRole("button", { name: "▥ To a postbox" }).click();
   await expect(
-    page.getByText("Addressed mail requires a registered postbox", {
+    page.getByText("A private letter for a Sapient postbox.", {
       exact: false,
     }),
   ).toBeVisible();
   await expect(
-    page.getByText(
-      "This office has no verified postbox recovery configuration",
-      { exact: false },
-    ),
+    page.getByText("Private postbox sending is currently unavailable.", {
+      exact: false,
+    }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Review letter" }),
@@ -386,4 +391,65 @@ test("postbox private view access requires explicit account-wide consent and nev
       ),
     ),
   ).toEqual([]);
+});
+
+test("everyday Sapient inbox and Activity have honest empty states", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await page
+    .getByRole("button", { name: "Open my inbox", exact: false })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Your haunted inbox." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Connect Sapient for my inbox" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Activity", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "No deliveries yet." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Activity", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+
+test("TARI gift input reviews exact micro amounts and resets collection funds for a giftless note", async ({
+  page,
+}) => {
+  await page.goto("./#/compose");
+  await page.getByLabel("Subject", { exact: true }).fill("A little kindness");
+  await page.getByLabel("Your letter").fill("Keep the exact tiny amount.");
+  await page.getByLabel("Gift amount (optional)").fill("1.234567");
+  await expect(page.getByLabel("Set aside for collection fees")).toHaveValue(
+    "0.1",
+  );
+  await page
+    .getByRole("button", { name: "Review letter", exact: false })
+    .click();
+  await expect(page.locator(".receipt")).toContainText("1.234567 TARI");
+  await expect(page.locator(".receipt")).toContainText("1.334567 TARI");
+  await page.getByLabel("Gift amount (optional)").fill("0");
+  await expect(page.locator(".review")).toHaveCount(0);
+  await expect(page.getByLabel("Set aside for collection fees")).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Review letter", exact: false })
+    .click();
+  await expect(page.locator(".receipt")).toContainText("0 TARI");
+  await page.getByLabel("Gift amount (optional)").fill("1.1234567");
+  await page
+    .getByRole("button", { name: "Review letter", exact: false })
+    .click();
+  await expect(page.locator(".review")).toHaveCount(0);
+  expect(
+    await page
+      .getByLabel("Gift amount (optional)")
+      .evaluate((el: HTMLInputElement) => el.validity.valid),
+  ).toBe(false);
 });

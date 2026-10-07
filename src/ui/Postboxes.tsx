@@ -6,6 +6,7 @@ import { mailboxKey } from "../core/mailbox";
 import { writesReady } from "../core/config";
 import { readPending, savePending, type Pending } from "../core/pending";
 import { SapientSession } from "../core/sapient";
+import { AmountInput, tari } from "./AmountInput";
 
 export function Postboxes({
   wallet,
@@ -17,6 +18,7 @@ export function Postboxes({
   task,
   onStatus,
   onConnect,
+  onActivity,
   onOpen,
   onRefresh,
   onMore,
@@ -31,6 +33,7 @@ export function Postboxes({
   task: (fn: () => Promise<void>) => Promise<void>;
   onStatus: (text: string) => void;
   onConnect: () => void;
+  onActivity: () => void;
   onOpen: (letter: Envelope) => void;
   onRefresh: () => Promise<void>;
   onMore: () => Promise<void>;
@@ -48,10 +51,7 @@ export function Postboxes({
     [prepared, setPrepared] = useState<Pending>(),
     [viewAcknowledged, setViewAcknowledged] = useState(false),
     [viewApproved, setViewApproved] = useState(false);
-  useEffect(() => {
-    setViewAcknowledged(false);
-    setViewApproved(false);
-  }, [wallet]);
+
   const owned = boxes.filter((p) =>
     wallet?.accounts.some((a) => a.account.owner_public_key === p.controller),
   );
@@ -61,6 +61,14 @@ export function Postboxes({
           (a) => a.account.owner_public_key === box.controller,
         )
       : wallet?.accounts[controller];
+  useEffect(() => {
+    setViewAcknowledged(false);
+    setViewApproved(false);
+  }, [wallet, account?.account.component_address]);
+  useEffect(() => {
+    if (!editing && !owned.some((p) => p.id === selected) && owned.length)
+      choose(owned[0].id);
+  }, [owned.map((p) => p.id).join(","), editing]);
   const inbox = letters.filter(
     (e) => e.mode === "postbox" && e.recipientPostbox === box?.id,
   );
@@ -221,43 +229,69 @@ export function Postboxes({
       localStorage,
     );
     onStatus(
-      `Postbox ${operation} submitted ${tx}. Reconcile it in Network & verification, then refresh the inbox.`,
+      `Postbox change submitted. Check its confirmation in Activity. Transaction: ${tx}.`,
     );
     setEditing(false);
     setPrepared(undefined);
     setRotating(false);
+    onActivity();
   }
   return (
-    <section className="page-panel">
-      <span className="kicker">BRASS & SECRETS</span>
+    <section className="page-panel inbox-page">
+      <span className="kicker">YOUR PRIVATE CORNER</span>
       <h1>
-        My <em>postboxes.</em>
+        Your <em>haunted inbox.</em>
       </h1>
       <p>
-        One controlling wallet can own several postboxes. Names may repeat; IDs
-        stay distinct. Reconnecting the same wallet preserves their identity.
+        A quiet place for letters meant just for you. Your Sapient wallet
+        unlocks your postboxes, even when you reconnect on another device.
       </p>
       {!wallet ? (
-        <button className="primary" onClick={onConnect}>
-          Connect controlling wallet
-        </button>
+        <div className="inbox-welcome">
+          <div className="welcome-ghost" aria-hidden="true">
+            ✉
+          </div>
+          <h2>A home for your little secrets.</h2>
+          <p>
+            Connect Sapient to open your mail or create your first postbox. Your
+            letters are encrypted for you.
+          </p>
+          <button className="primary" onClick={onConnect}>
+            Connect Sapient for my inbox
+          </button>
+          <p className="fine-print">
+            Public mail and private links still open without connecting.
+          </p>
+        </div>
       ) : (
         <>
-          <label>
-            My postboxes
-            <select
-              disabled={busy}
-              value={selected}
-              onChange={(e) => choose(e.target.value)}
-            >
-              <option value="">Select a postbox</option>
-              {owned.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nickname} · {p.id}
-                </option>
-              ))}
-            </select>
-          </label>
+          {owned.length > 0 && (
+            <label>
+              My postboxes
+              <select
+                disabled={busy}
+                value={selected}
+                onChange={(e) => choose(e.target.value)}
+              >
+                <option value="">Select a postbox</option>
+                {owned.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.nickname} · {p.id}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {!owned.length && !editing && (
+            <div className="info">
+              <h2>Your first postbox awaits.</h2>
+              <p>
+                Give it a name and let friends send you private mail. Setup
+                takes two wallet transactions: a recovery backup, then your
+                postbox. You’ll approve each one.
+              </p>
+            </div>
+          )}
           <div className="actions">
             <button
               onClick={() => {
@@ -266,7 +300,7 @@ export function Postboxes({
               }}
               disabled={busy}
             >
-              Create another postbox
+              {owned.length ? "Create another postbox" : "Create my postbox"}
             </button>
             <button onClick={() => void task(onRefresh)} disabled={busy}>
               Refresh postboxes & inbox
@@ -277,53 +311,56 @@ export function Postboxes({
               </button>
             )}
           </div>
-          {wallet instanceof SapientSession && (
-            <div className="info">
-              <p>
-                Sapient postbox recovery needs separate private view access.
-                This lets GhostDrop read the connected account's private output
-                summaries, including amounts and memos for other resources. It
-                does not reveal your wallet seed or signing keys.
-              </p>
-              <label className="checkbox">
-                <input
-                  type="checkbox"
-                  checked={viewAcknowledged}
-                  disabled={busy}
-                  onChange={(e) => setViewAcknowledged(e.target.checked)}
-                />
-                I understand the account-wide private view permission
-              </label>
-              <button
-                disabled={
-                  busy ||
-                  !viewAcknowledged ||
-                  !(
-                    enabled ||
-                    prepared?.capsule?.descriptor.recovery ===
-                      "sapient-capsule-1" ||
-                    (box &&
-                      inbox.some(
-                        (e) =>
-                          "recovery" in e.payload &&
-                          e.payload.recovery === "sapient-capsule-1",
-                      ))
-                  )
-                }
-                onClick={() =>
-                  void task(async () => {
-                    await wallet.requestPostboxViewAccess();
-                    setViewApproved(true);
-                    onStatus(
-                      "Sapient private view access approved. Disconnect to revoke this site's wallet access.",
-                    );
-                  })
-                }
-              >
-                Approve postbox view access
-              </button>
-            </div>
-          )}
+          {wallet instanceof SapientSession &&
+            (editing || box || prepared) &&
+            !viewApproved && (
+              <div className="info">
+                <h3>Let Sapient unlock your letters</h3>
+                <p>
+                  Postbox recovery needs your permission. This lets GhostDrop
+                  read the connected account's private output summaries,
+                  including amounts and memos for other resources. It does not
+                  reveal your wallet seed or signing keys.
+                </p>
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={viewAcknowledged}
+                    disabled={busy}
+                    onChange={(e) => setViewAcknowledged(e.target.checked)}
+                  />
+                  I understand the account-wide private view permission
+                </label>
+                <button
+                  disabled={
+                    busy ||
+                    !viewAcknowledged ||
+                    !(
+                      enabled ||
+                      prepared?.capsule?.descriptor.recovery ===
+                        "sapient-capsule-1" ||
+                      (box &&
+                        inbox.some(
+                          (e) =>
+                            "recovery" in e.payload &&
+                            e.payload.recovery === "sapient-capsule-1",
+                        ))
+                    )
+                  }
+                  onClick={() =>
+                    void task(async () => {
+                      await wallet.requestPostboxViewAccess();
+                      setViewApproved(true);
+                      onStatus(
+                        "Sapient private view access approved. Disconnect to revoke this site's wallet access.",
+                      );
+                    })
+                  }
+                >
+                  Approve postbox view access
+                </button>
+              </div>
+            )}
           {recoverySetups.length > 0 && (
             <div>
               <h2>Resume recovery setup</h2>
@@ -341,6 +378,7 @@ export function Postboxes({
           )}
           {editing && (
             <form
+              className="postbox-setup"
               onSubmit={(e) => {
                 e.preventDefault();
                 void task(() =>
@@ -348,6 +386,29 @@ export function Postboxes({
                 );
               }}
             >
+              {(!box || rotating) && (
+                <ol className="setup-steps" aria-label="Postbox setup progress">
+                  <li className={viewApproved ? "complete" : "current"}>
+                    1. Allow private recovery
+                  </li>
+                  <li
+                    className={
+                      prepared?.state === "confirmed"
+                        ? "complete"
+                        : viewApproved
+                          ? "current"
+                          : ""
+                    }
+                  >
+                    2. Save recovery backup
+                  </li>
+                  <li
+                    className={prepared?.state === "confirmed" ? "current" : ""}
+                  >
+                    3. Open your postbox
+                  </li>
+                </ol>
+              )}
               {!box && (
                 <label>
                   Controlling account
@@ -365,7 +426,7 @@ export function Postboxes({
                 </label>
               )}
               <label>
-                Nickname
+                Postbox name
                 <input
                   value={nickname}
                   disabled={busy}
@@ -376,21 +437,21 @@ export function Postboxes({
               </label>
               {(!box || rotating) && (
                 <>
-                  <label>
-                    Recovery transaction-fee cap · µTARI
-                    <input
+                  <details className="advanced">
+                    <summary>
+                      Backup fee limit · {tari(recoveryFee)} TARI
+                    </summary>
+                    <AmountInput
+                      label="Maximum backup fee per attempt"
                       value={recoveryFee}
                       disabled={busy || !!prepared}
-                      inputMode="numeric"
-                      onChange={(e) => setRecoveryFee(e.target.value)}
+                      onChange={setRecoveryFee}
                     />
-                  </label>
+                  </details>
                   <p className="fine-print">
-                    Recovery stores an encrypted application key on Ootle.
-                    Confirm its transaction and wallet recovery before
-                    publishing the postbox. Existing native-memo setups keep
-                    their original route. Choose the verified Sapient postbox
-                    office in Network & verification for new setup.
+                    Your backup is encrypted on Ootle so the same Sapient wallet
+                    can restore your mail later. Confirm the backup below before
+                    opening the postbox.
                   </p>
                   {prepared && (
                     <p className="info">
@@ -420,20 +481,20 @@ export function Postboxes({
                   disabled={busy}
                   onChange={(e) => setDiscoverable(e.target.checked)}
                 />
-                List in the address ledger
+                Let people find this postbox in the directory
               </label>
-              <label>
-                Postbox transaction-fee cap · µTARI
-                <input
+              <details className="advanced">
+                <summary>Postbox fee limit · {tari(fee)} TARI</summary>
+                <AmountInput
+                  label="Maximum postbox fee per attempt"
                   value={fee}
                   disabled={busy}
-                  inputMode="numeric"
-                  onChange={(e) => setFee(e.target.value)}
+                  onChange={setFee}
                 />
-              </label>
+              </details>
               <p className="fine-print">
-                Your controlling account pays this fee. Review the nickname,
-                listing choice and cap before submitting.
+                Sapient shows its fee estimate before approval. Your connected
+                account pays the fee for each attempt.
               </p>
               <button
                 className="primary"
@@ -470,17 +531,32 @@ export function Postboxes({
           {box && (
             <article className="postbox">
               <h2>{box.nickname}</h2>
-              <code>{box.id}</code>
+              <p className="postbox-address">{box.id}</p>
+              <button
+                onClick={() =>
+                  void task(async () => {
+                    await navigator.clipboard.writeText(box.id);
+                    onStatus(
+                      "Postbox ID copied. Share it with a friend so they can write to you.",
+                    );
+                  })
+                }
+              >
+                Copy my postbox ID
+              </button>
               <p>
-                {box.discoverable ? "Listed in ledger" : "Unlisted"} ·
+                {box.discoverable ? "Visible in the directory" : "Unlisted"} ·
                 Controlling account {account?.account.name}
               </p>
-              <p className="fine-print">
-                Rotation affects new mail. Historical key versions remain
-                recoverable through their original recovery route. Rotation
-                changes only the encryption key; save nickname and listing
-                changes separately.
-              </p>
+              <details className="advanced">
+                <summary>About key rotation</summary>
+                <p className="fine-print">
+                  Rotation affects new mail. Historical key versions remain
+                  recoverable through their original recovery route. Rotation
+                  changes only the encryption key; save nickname and listing
+                  changes separately.
+                </p>
+              </details>
             </article>
           )}
           {box && (
@@ -494,18 +570,26 @@ export function Postboxes({
                     onClick={() => onOpen(e)}
                     disabled={busy}
                   >
-                    <span>✉</span> Sealed letter · {e.id}
-                    {e.claimed ? " · Gift collected" : ""}
+                    <span aria-hidden="true">✉</span> Sealed letter ·{" "}
+                    {e.id.length > 18 ? e.id.slice(0, 8) + "…" : e.id}
+                    <small>
+                      {e.claimed
+                        ? "Gift collected"
+                        : BigInt(e.gift) > 0n
+                          ? `${tari(e.gift)} TARI gift inside`
+                          : "A private note"}
+                    </small>
                   </button>
                 ))
               ) : (
                 <p className="quiet-state">
-                  No addressed letters on this loaded page.
+                  No private letters on this page yet. Copy your postbox ID and
+                  invite a friend to write.
                 </p>
               )}
               {hasMore && (
                 <button disabled={busy} onClick={() => void task(onMore)}>
-                  Load more chain mail
+                  Load more letters
                 </button>
               )}
             </>

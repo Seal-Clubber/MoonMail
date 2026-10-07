@@ -181,8 +181,8 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
         name: "Review address & explicitly claim",
       });
       if (protocol) {
-        await expect(dialog).toContainText("You receive 1000000 µTARI");
-        await expect(dialog).toContainText("up to 100000 µTARI");
+        await expect(dialog).toContainText("You receive 1 TARI");
+        await expect(dialog).toContainText("up to 0.1 TARI");
         await expect(dialog).toContainText("at most 10 network epochs");
         await dialog
           .getByRole("button", { name: "Choose from connected wallet" })

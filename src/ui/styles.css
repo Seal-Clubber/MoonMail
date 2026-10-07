@@ -1090,3 +1090,615 @@ table code {
     font-size: 11px;
   }
 }
+/* Sapient-first writing desk. All decoration is local CSS. */
+:root {
+  color-scheme: dark;
+  --gold: #dfbc7c;
+  --muted: #acb8ac;
+}
+body {
+  background:
+    radial-gradient(ellipse at 15% 8%, #45574130, transparent 40%),
+    radial-gradient(ellipse at 90% 50%, #354b3725, transparent 45%), #101816;
+}
+button {
+  font-size: 13px;
+  min-height: 42px;
+}
+.topbar {
+  padding: 23px 4%;
+  background: #101816e6;
+}
+.brand {
+  font-size: 19px;
+}
+.brand-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #b99b5845;
+  border-radius: 50%;
+  font-size: 30px;
+}
+.brand small {
+  font-size: 9px;
+}
+nav button {
+  font-size: 13px;
+  padding: 12px 16px;
+}
+nav .nav-active {
+  background: #dfbc7c12;
+  border-radius: 30px;
+}
+.eyebrow {
+  margin-top: 30px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+.hero {
+  position: relative;
+  padding: 28px 0 48px;
+}
+.hero-sigil {
+  color: var(--gold);
+  font-size: 60px;
+  line-height: 1.1;
+  text-shadow: 0 0 45px #d0bc7350;
+}
+.hero h1 {
+  font-size: clamp(44px, 5vw, 70px);
+}
+.kicker {
+  font-size: 10px;
+}
+.hero p {
+  font-size: 17px;
+}
+.hero-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 26px;
+}
+.hero-actions .primary {
+  margin: 0;
+}
+.hero-actions button {
+  padding: 15px 24px;
+}
+.hero-rule {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  margin-top: 28px;
+}
+.hall {
+  border-color: #7a896148;
+  background:
+    radial-gradient(ellipse at 70% 30%, #56744718, transparent 60%), #1a261f;
+}
+.hall-heading {
+  padding-top: 30px;
+}
+.hall-heading h2 {
+  font-size: 29px;
+}
+.hall-tools button {
+  font-size: 12px;
+}
+.envelope-caption h3 {
+  font-size: 18px;
+}
+.envelope-caption p,
+.envelope-caption small {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.letter-kind {
+  font-size: 10px;
+}
+.mode-legend {
+  font-size: 11px;
+}
+.how-it-works {
+  gap: 32px;
+}
+.how-it-works > div {
+  padding: 22px 24px;
+  border: 1px solid #70826130;
+  border-radius: 12px;
+  background: #24302940;
+}
+.how-it-works h3 {
+  font-size: 21px;
+}
+.how-it-works p {
+  font-size: 13px;
+  color: #a6b3a6;
+}
+.number {
+  font-size: 12px;
+}
+.page-panel {
+  max-width: 800px;
+  margin: 42px auto 65px;
+}
+.page-panel h1 {
+  font-size: clamp(36px, 4vw, 52px);
+}
+.page-panel > p {
+  font-size: 16px;
+}
+.compose form,
+.postbox-setup {
+  padding: 12px 28px 28px;
+  border: 1px solid #70826140;
+  border-radius: 12px;
+  background: linear-gradient(140deg, #26352980, #19271d90);
+}
+.compose textarea {
+  background: linear-gradient(135deg, #e9dfc3, #d9cbab);
+  color: #343e2f;
+  border-color: #baaa83;
+  font:
+    18px/1.8 Georgia,
+    serif;
+}
+.compose textarea::placeholder {
+  color: #7a7c62;
+}
+label {
+  font-size: 13px;
+}
+input,
+select {
+  min-height: 48px;
+}
+.mode-switch {
+  gap: 10px;
+}
+.mode-switch button {
+  padding: 15px 12px;
+  font-size: 13px;
+}
+.fine-print {
+  font-size: 12px;
+}
+.info {
+  border-radius: 0 8px 8px 0;
+  font-size: 13px !important;
+}
+.info p {
+  font: inherit;
+  color: inherit;
+  margin: 8px 0;
+}
+.info h3 {
+  margin: 0 0 12px;
+  font-size: 21px;
+}
+.actions {
+  flex-wrap: wrap;
+}
+.advanced {
+  margin: 20px 0;
+  padding: 16px 0;
+  border-top: 1px solid #73836735;
+  border-bottom: 1px solid #73836735;
+}
+summary {
+  cursor: pointer;
+  font:
+    13px/1.6 system-ui,
+    sans-serif;
+  color: #c7d0bd;
+  padding: 4px 0;
+}
+summary:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+.amount-field {
+  display: block;
+  position: relative;
+}
+.amount-field input {
+  padding-right: 70px;
+  font-variant-numeric: tabular-nums;
+}
+.amount-field > span {
+  position: absolute;
+  right: 16px;
+  top: 14px;
+  font:
+    12px/20px system-ui,
+    sans-serif;
+  color: var(--gold);
+  pointer-events: none;
+}
+.text-button {
+  display: block;
+  padding: 0;
+  border: 0;
+  color: var(--gold);
+  font-size: 12px;
+}
+.receipt {
+  font:
+    14px/1.6 system-ui,
+    sans-serif;
+  margin: 20px 0;
+}
+.receipt > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 13px 0;
+  border-bottom: 1px solid #72856938;
+}
+.receipt dt {
+  color: #b3c0ad;
+}
+.receipt dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #eee4ca;
+}
+.review {
+  border-color: #a290584f;
+}
+.review > button {
+  margin: 5px 10px 5px 0;
+}
+.inbox-welcome {
+  padding: 36px;
+  text-align: center;
+  border: 1px solid #75845d50;
+  background:
+    radial-gradient(ellipse at 50% 0, #638c4930, transparent 70%), #1b271f;
+  border-radius: 15px;
+  margin: 28px 0;
+}
+.inbox-welcome p {
+  max-width: 490px;
+  margin: 18px auto;
+}
+.welcome-ghost {
+  font-size: 65px;
+  color: #d2c598;
+  text-shadow: 0 0 40px #dddaaa35;
+}
+.setup-steps {
+  display: flex;
+  padding: 0;
+  margin: 20px 0;
+  list-style: none;
+  gap: 10px;
+  font:
+    12px/1.6 system-ui,
+    sans-serif;
+}
+.setup-steps li {
+  flex: 1;
+  border-bottom: 2px solid #465a43;
+  padding-bottom: 14px;
+  color: #869681;
+}
+.setup-steps .current {
+  color: var(--gold);
+  border-color: var(--gold);
+}
+.setup-steps .complete {
+  color: #baceaa;
+  border-color: #baceaa;
+}
+.postbox {
+  margin: 20px 0;
+  background: linear-gradient(145deg, #49442b60, #22372870);
+  border-color: #b99b5850;
+  border-radius: 10px;
+}
+.postbox-address {
+  font: 12px/1.8 monospace !important;
+  overflow-wrap: anywhere;
+  color: #c9d5bc;
+}
+button.postbox {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+  padding: 22px;
+}
+button.postbox > span {
+  font-size: 30px;
+}
+button.postbox small {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--gold);
+}
+.quiet-state {
+  border: 1px dashed #6b7d544f;
+  border-radius: 12px;
+  padding: 35px;
+  margin: 25px 0;
+}
+.quiet-state > span {
+  font-size: 45px;
+  color: var(--gold);
+}
+.delivery-card {
+  background: #24322960;
+  border: 1px solid #74876545;
+  border-radius: 9px;
+  margin: 14px 0;
+  padding: 20px;
+  flex-wrap: wrap;
+  font-size: 13px;
+}
+.delivery-card code {
+  color: #b9c5ac;
+  font-size: 11px;
+}
+.delivery-card > span {
+  flex: 1;
+  min-width: 160px;
+}
+.delivery-card button {
+  margin-left: 0;
+}
+table {
+  font-size: 14px;
+}
+td code {
+  word-break: break-all;
+}
+footer {
+  max-width: 1328px;
+  margin: 0 auto;
+}
+footer button {
+  font-size: 12px;
+}
+.footer-note {
+  font-size: 9px;
+}
+.modal p {
+  font-size: 14px;
+}
+.modal details {
+  margin: 18px 0;
+}
+.modal-backdrop {
+  z-index: 20;
+}
+.letter-modal .fine-print {
+  font-size: 12px;
+  color: #4e5941;
+}
+.letter-modal .info {
+  background: #30452a10;
+  border-color: #5e7047;
+  color: #3e5033 !important;
+}
+.letter-modal .amount-field > span {
+  color: #5d623d;
+}
+.letter-modal .error {
+  color: #783222;
+  background: #a3463320;
+}
+.message {
+  font-size: 13px;
+}
+.sr-only,
+.skip-link:not(:focus) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.skip-link:focus {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 30;
+  padding: 15px;
+  background: #d8bd87;
+  color: #172117;
+}
+@media (max-width: 850px) {
+  .topbar {
+    padding: 20px 24px;
+  }
+  .brand {
+    font-size: 17px;
+  }
+  nav button {
+    flex: 1;
+  }
+  .hero {
+    padding-top: 25px;
+  }
+  .how-it-works {
+    padding: 32px 0;
+    gap: 14px;
+  }
+  .how-it-works > div {
+    padding: 18px;
+  }
+  .hero-rule {
+    font-size: 8px;
+  }
+  .mode-legend {
+    font-size: 10px;
+  }
+}
+@media (max-width: 540px) {
+  main {
+    padding: 0 18px;
+  }
+  .topbar {
+    padding: 17px 18px;
+  }
+  .brand {
+    font-size: 15px;
+    gap: 8px;
+  }
+  .brand small {
+    font-size: 7px;
+  }
+  .brand-icon {
+    width: 33px;
+    height: 33px;
+    font-size: 23px;
+  }
+  .wallet-button {
+    font-size: 11px;
+  }
+  nav button {
+    font-size: 12px;
+    padding: 12px 6px;
+  }
+  .eyebrow {
+    font-size: 8px;
+    gap: 8px;
+  }
+  .hero h1 {
+    font-size: 46px;
+  }
+  .hero p {
+    font-size: 15px;
+  }
+  .hero-actions {
+    flex-direction: column;
+  }
+  .hero-actions button {
+    width: min(290px, 100%);
+  }
+  .hero-rule {
+    font-size: 7px;
+    letter-spacing: 0.04em;
+  }
+  .hero-rule span {
+    width: 20px;
+  }
+  .hall-heading h2 {
+    font-size: 25px;
+  }
+  .hall-tools button {
+    font-size: 11px;
+    min-height: 38px;
+  }
+  .hall-heading {
+    padding: 22px 18px 8px;
+  }
+  .mode-legend {
+    flex-wrap: wrap;
+    font-size: 10px;
+  }
+  .how-it-works > div {
+    padding: 20px;
+  }
+  .compose form,
+  .postbox-setup {
+    padding: 8px 18px 22px;
+  }
+  .mode-switch {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .mode-switch button {
+    font-size: 12px;
+    padding: 12px 8px;
+  }
+  .inbox-welcome {
+    padding: 28px 18px;
+  }
+  .setup-steps {
+    flex-direction: column;
+  }
+  .setup-steps li {
+    padding: 9px 0;
+  }
+  button.postbox {
+    flex-wrap: wrap;
+  }
+  button.postbox small {
+    width: 100%;
+    margin-left: 46px;
+  }
+  table th,
+  table td {
+    padding: 12px 6px;
+    font-size: 12px;
+  }
+  td button {
+    font-size: 11px;
+    padding: 9px;
+  }
+  .delivery-card {
+    padding: 18px;
+  }
+  .delivery-card code {
+    width: 100%;
+  }
+  .receipt {
+    font-size: 12px;
+  }
+  .receipt > div {
+    gap: 10px;
+  }
+  .modal .mode-switch {
+    flex-direction: column;
+  }
+}
+.directory {
+  display: grid;
+  gap: 14px;
+  margin: 28px 0;
+}
+.directory-card {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 24px;
+  background: #26352960;
+  border: 1px solid #75855e40;
+  border-radius: 10px;
+}
+.directory-card > span {
+  color: var(--gold);
+  font-size: 34px;
+}
+.directory-card > div {
+  flex: 1;
+  min-width: 0;
+}
+.directory-card h2 {
+  font-size: 25px;
+  margin: 0;
+}
+.directory-card p {
+  margin-bottom: 0;
+}
+@media (max-width: 540px) {
+  .directory-card {
+    flex-wrap: wrap;
+    padding: 20px;
+    gap: 14px;
+  }
+  .directory-card > button {
+    width: 100%;
+  }
+}

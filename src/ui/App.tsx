@@ -32,6 +32,7 @@ import {
   envelopeMailboxContext,
 } from "../core/mailbox";
 import { Postboxes } from "./Postboxes";
+import { AmountInput, tari } from "./AmountInput";
 import { networkPreset, checkPublicIndexer } from "../core/networks";
 
 const exampleLetters: Envelope[] = [
@@ -71,7 +72,7 @@ const exampleLetters: Envelope[] = [
     context: emptyDeployment,
     payload: {
       subject: "A message from the other side",
-      body: "If the clerk offers you tea, say yes. If the tea offers you advice, listen carefully.\n\nWelcome to the post office between worlds.",
+      body: "If the clerk offers you tea, say yes. If the tea offers you advice, listen carefully.\n\nA little kindness, delivered through Sapient.",
     },
     gift: "0",
     reserve: "0",
@@ -107,7 +108,8 @@ export function App() {
     [reserve, setReserve] = useState("0"),
     [fee, setFee] = useState("100000"),
     [reply, setReply] = useState(""),
-    [recipient, setRecipient] = useState("");
+    [recipient, setRecipient] = useState(""),
+    [directoryQuery, setDirectoryQuery] = useState("");
   const [review, setReview] = useState(false),
     [prepared, setPrepared] = useState<{
       envelope: Envelope;
@@ -177,11 +179,12 @@ export function App() {
       .catch(() => {
         if (!cancelled)
           setStatus(
-            "No deployment configured. Explore the post office preview.",
+            "Post office settings could not load. Reload the page to try again.",
           );
       });
-    if (!routeOnce.current) {
-      routeOnce.current = true;
+    const readHash = () => {
+      closeLetter();
+      setError("");
       try {
         const parsed = parseGiftLink(location.hash);
         if (parsed) {
@@ -194,18 +197,31 @@ export function App() {
         } else {
           const initialView = location.hash.slice(2);
           if (
-            ["hall", "compose", "postboxes", "ledger", "network"].includes(
-              initialView,
-            )
+            [
+              "hall",
+              "compose",
+              "postboxes",
+              "ledger",
+              "network",
+              "activity",
+            ].includes(initialView)
           )
             setView(initialView);
         }
       } catch (e) {
         setError((e as Error).message);
       }
+    };
+    if (!routeOnce.current) {
+      routeOnce.current = true;
+      readHash();
     }
+    window.addEventListener("hashchange", readHash);
+    window.addEventListener("popstate", readHash);
     return () => {
       cancelled = true;
+      window.removeEventListener("hashchange", readHash);
+      window.removeEventListener("popstate", readHash);
     };
   }, []);
   useEffect(() => {
@@ -228,14 +244,14 @@ export function App() {
           setLetters(data.letters);
           setBoxes(data.postboxes);
           setCursor(data.nextCursor);
-          setStatus("Chain state loaded through your selected indexer.");
+          setStatus("Mail is up to date.");
         }
       })
       .catch(() => {
         connected?.provider.stopWatcher();
         if (!cancelled)
           setError(
-            "Could not read the configured post office. Check deployment identity, network, state encoding and indexer connectivity.",
+            "Could not read the post office right now. Try Refresh in a moment.",
           );
       });
     return () => {
@@ -282,6 +298,19 @@ export function App() {
       cancelled = true;
     };
   }, [route, chain]);
+  useEffect(() => {
+    if (!active) return;
+    setCreateAccount(false);
+    if (current) {
+      setDestMode("wallet");
+      setAddress(current.address);
+      setDestination(current.account.component_address);
+    } else {
+      setDestMode("manual");
+      setAddress("");
+      setDestination("");
+    }
+  }, [active?.id, wallet, account]);
   useEffect(
     () => () => {
       secret.current?.fill(0);
@@ -358,27 +387,31 @@ export function App() {
         : { ...emptyDeployment.evidence },
     });
   }
-  async function selectOffice(file: "deployment.json" | "deployment-v2.json") {
-    const response = await fetch(`${import.meta.env.BASE_URL}${file}`, {
+  async function restoreOffice() {
+    const response = await fetch(`${import.meta.env.BASE_URL}deployment.json`, {
       cache: "no-store",
     });
     if (!response.ok)
-      throw new Error("Reviewed post office configuration unavailable");
-    const profile: Deployment = await response.json();
-    if (profile.network !== 38 || !profile.registry || !profile.evidence)
-      throw new Error("Unsupported post office configuration");
-    changeDeployment(profile, true);
-    setStatus(
-      file === "deployment.json"
-        ? "Original public office selected. Historical letters are preserved."
-        : "Sapient postbox office selected. Use Postboxes to create or recover your inbox.",
-    );
+      throw new Error("Post office settings unavailable. Please try again.");
+    changeDeployment(await response.json(), true);
+    setStatus("Sapient post office settings restored.");
   }
   function navigate(v: string) {
     setView(v);
     setError("");
     setReview(false);
-    history.replaceState(null, "", `${location.pathname}#/${v}`);
+    history.pushState(null, "", `${location.pathname}#/${v}`);
+    window.scrollTo(0, 0);
+  }
+  function shareConfirmed(id: string) {
+    if (prepared?.envelope.id !== id || !prepared.capability) return;
+    setPrivateLink(
+      createGiftLink(new URL(import.meta.env.BASE_URL, location.href).href, {
+        id,
+        capability: prepared.capability,
+        context: d,
+      }),
+    );
   }
   function closeLetter() {
     openSequence.current += 1;
@@ -414,7 +447,7 @@ export function App() {
     setCursor(data.nextCursor);
     setPage(1);
     setPreview(false);
-    setStatus("Chain state loaded through your selected indexer.");
+    setStatus("Mail is up to date.");
     if (active) {
       const updated = await reader.readLetter(active.id, active.component);
       if (
@@ -544,6 +577,9 @@ export function App() {
   }
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
       <header className="topbar">
         <a
           className="brand"
@@ -562,14 +598,15 @@ export function App() {
         </a>
         <nav aria-label="Main navigation">
           {[
-            ["hall", "The hall"],
+            ["hall", "Public mail"],
             ["compose", "Write a letter"],
-            ["postboxes", "Postboxes"],
-            ["ledger", "Address ledger"],
+            ["postboxes", "My inbox"],
+            ["activity", "Activity"],
           ].map(([v, label]) => (
             <button
               key={v}
               className={view === v ? "nav-active" : ""}
+              aria-current={view === v ? "page" : undefined}
               onClick={() => navigate(v)}
             >
               {label}
@@ -578,25 +615,29 @@ export function App() {
         </nav>
         <button
           className="wallet-button"
+          disabled={busy}
           onClick={() => (wallet ? disconnect() : setConnect(true))}
         >
           <span className={wallet ? "dot live" : "dot"} />
           {wallet ? "Disconnect wallet" : "Connect wallet"}
         </button>
       </header>
-      <main>
+      <main id="main-content">
         <div className="eyebrow">
-          <span /> TARI OOTLE ·{" "}
+          <span /> SAPIENT ·{" "}
           {d.network === 16
             ? "LOCALNET"
             : d.network === 38
               ? "ESMERALDA"
               : "IGOR"}{" "}
-          TEST ASSETS <span />
+          TESTNET · TEST TARI ONLY <span />
         </div>
         {view === "hall" && (
           <>
             <section className="hero">
+              <div className="hero-sigil" aria-hidden="true">
+                ☾
+              </div>
               <p className="kicker">SOME THINGS ARE BETTER LEFT UNSEALED.</p>
               <h1>
                 A little mystery.
@@ -604,14 +645,18 @@ export function App() {
               </h1>
               <p>
                 Letters from strangers. Gifts from ghosts.
-                <br />
-                Welcome to the post office between worlds.
+                <br />A little kindness, delivered through Sapient.
               </p>
-              <button className="primary" onClick={() => navigate("compose")}>
-                Write a letter <span>↗</span>
-              </button>
+              <div className="hero-actions">
+                <button className="primary" onClick={() => navigate("compose")}>
+                  Leave a little kindness <span>↗</span>
+                </button>
+                <button onClick={() => navigate("postboxes")}>
+                  Open my inbox <span>✉</span>
+                </button>
+              </div>
               <div className="hero-rule">
-                <span /> NO GHOSTDROP BACKEND. JUST YOU & THE CHAIN. <span />
+                <span /> READ WITHOUT A WALLET · SEND WITH SAPIENT <span />
               </div>
             </section>
             <section
@@ -620,8 +665,8 @@ export function App() {
             >
               <div className="hall-heading">
                 <div>
-                  <span className="kicker">THE FLOATING HALL</span>
-                  <h2>Something is waiting.</h2>
+                  <span className="kicker">PUBLIC MAIL</span>
+                  <h2>Letters left for anyone.</h2>
                 </div>
                 <div className="hall-tools">
                   <button aria-pressed={list} onClick={() => setList(!list)}>
@@ -641,13 +686,13 @@ export function App() {
                   <div>
                     <strong>
                       {d.registry
-                        ? "A deployed post office is configured."
-                        : "The post office is awaiting deployment."}
+                        ? "The spirits are fetching your mail."
+                        : "The post office is unavailable."}
                     </strong>
                     <p>
                       {d.registry
-                        ? "Waiting for chain data. Use Refresh to retry the selected indexer."
-                        : "No funded gifts are being advertised. You can explore a clearly labelled visual preview."}
+                        ? "Taking a little longer? Use Refresh to try again."
+                        : "No live gifts are shown. You can explore a clearly labelled preview."}
                     </p>
                   </div>
                   {!d.registry && (
@@ -726,7 +771,7 @@ export function App() {
                             {e.claimed
                               ? "Collected"
                               : e.mode === "public"
-                                ? `${e.gift} µTARI gift`
+                                ? `${tari(e.gift)} TARI gift`
                                 : "Gift availability recorded on chain"}
                           </small>
                         )}
@@ -738,13 +783,18 @@ export function App() {
                   <div className="empty-hall">
                     <span>✉</span>
                     <p>
-                      The hall is quiet.
+                      {chain ? "The hall is quiet." : "Listening for letters…"}
                       <br />
                       <small>
-                        Confirmed public notes and sealed invitations will
-                        appear here.
+                        Public letters will appear here when someone sends one.
+                        You could be the first wandering soul.
                       </small>
                     </p>
+                    {chain && (
+                      <button onClick={() => navigate("compose")}>
+                        Write the first letter ↗
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -796,24 +846,24 @@ export function App() {
                 <span className="number">01</span>
                 <h3>Leave a little kindness</h3>
                 <p>
-                  Connect your Ootle wallet. Write a public note or seal a
-                  letter behind a private link.
+                  Write a public letter, share a secret link, or send to a
+                  friend’s postbox. Add a test TARI gift if you like.
                 </p>
               </div>
               <div>
                 <span className="number">02</span>
                 <h3>Let it find someone</h3>
                 <p>
-                  Public mail floats into the hall. Private links carry the
-                  secret in their URL fragment.
+                  Connect Sapient when you’re ready to send. Review the gift and
+                  fees, then approve in your wallet.
                 </p>
               </div>
               <div>
                 <span className="number">03</span>
                 <h3>Make their night</h3>
                 <p>
-                  When verified, funded gifts travel to a compatible receiving
-                  account. Opening never claims.
+                  Read public mail without connecting. Claim a gift when you
+                  choose; the sender sets aside its collection fee.
                 </p>
               </div>
             </section>
@@ -825,10 +875,7 @@ export function App() {
             <h1>
               Send something <em>unexpected.</em>
             </h1>
-            <p>
-              A letter can be public, sealed by a link, or addressed to a
-              postbox.
-            </p>
+            <p>Choose who can open it. A few words can make someone’s night.</p>
             <div className="mode-switch" role="group" aria-label="Mail mode">
               {(["public", "link", "postbox"] as const).map((m) => (
                 <button
@@ -853,18 +900,17 @@ export function App() {
             </div>
             {mode === "link" && (
               <p className="info">
-                Anyone with the link can read the letter and collect its
-                unclaimed gift, including the sender. Keep a copy: there is no
-                recovery service.
+                Only people with your complete link can open this letter. Anyone
+                holding it can collect the gift once, including you. Save the
+                link before sending; lost links cannot be recovered.
               </p>
             )}
             {mode === "postbox" && (
               <p className="info">
-                Addressed mail requires a registered postbox and its controlling
-                wallet.{" "}
+                A private letter for a Sapient postbox.{" "}
                 {writesReady(d, "postbox", "sapient")
-                  ? "The letter is encrypted for the selected postbox. Its controller can recover historical mail and collect gifts through Sapient."
-                  : "Choose the verified Sapient postbox office in Network & verification. This office has no verified postbox recovery configuration, so addressed sending remains disabled."}
+                  ? "Only its owner can open it or collect its gift. Choose a friend below, or paste their postbox ID."
+                  : "Private postbox sending is currently unavailable. Check the post office connection in Settings."}
               </p>
             )}
             <form
@@ -905,6 +951,13 @@ export function App() {
               {mode === "postbox" && (
                 <label>
                   Recipient postbox
+                  <button
+                    type="button"
+                    className="text-button"
+                    onClick={() => navigate("ledger")}
+                  >
+                    Browse the spirit directory ↗
+                  </button>
                   <select
                     value={recipient}
                     disabled={busy}
@@ -935,35 +988,38 @@ export function App() {
                 </label>
               )}
               <div className="form-row">
-                <label>
-                  Gift · whole µTARI
-                  <input
-                    inputMode="numeric"
-                    value={gift}
-                    disabled={busy}
-                    onChange={(e) => {
-                      setGift(e.target.value);
-                      setReview(false);
-                    }}
-                  />
-                </label>
-                <label>
-                  Extra collection-fee reserve · µTARI
-                  <input
-                    inputMode="numeric"
+                <AmountInput
+                  label="Gift amount (optional)"
+                  value={gift}
+                  disabled={busy}
+                  onChange={(value) => {
+                    setGift(value);
+                    setReserve(
+                      value && BigInt(value) > 0n
+                        ? reserve === "0"
+                          ? "100000"
+                          : reserve
+                        : "0",
+                    );
+                    setReview(false);
+                  }}
+                />
+                {gift && BigInt(gift) > 0n && (
+                  <AmountInput
+                    label="Set aside for collection fees"
                     value={reserve}
                     disabled={busy}
-                    onChange={(e) => {
-                      setReserve(e.target.value);
+                    onChange={(value) => {
+                      setReserve(value);
                       setReview(false);
                     }}
                   />
-                </label>
+                )}
               </div>
               <p className="fine-print">
-                Short letters only: the complete serialized envelope must fit
-                within 4 KiB. No expiry or refunds. Unused collection reserve
-                remains locked in the envelope vault.
+                The recipient gets the full gift. You fund collection fees
+                separately. Gifts have no expiry or refunds; unused collection
+                funds stay locked. Use 0 for a letter without a gift.
               </p>
               <label className="checkbox">
                 <input
@@ -982,7 +1038,10 @@ export function App() {
                   <select
                     value={reply}
                     disabled={busy}
-                    onChange={(e) => setReply(e.target.value)}
+                    onChange={(e) => {
+                      setReply(e.target.value);
+                      setReview(false);
+                    }}
                   >
                     {owned.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -1012,18 +1071,22 @@ export function App() {
                   </select>
                 </label>
               )}
-              <label>
-                Publication-fee cap · µTARI
-                <input
+              <details className="advanced">
+                <summary>Sending fee limit</summary>
+                <AmountInput
+                  label="Maximum sending fee per attempt"
                   value={fee}
                   disabled={busy}
-                  inputMode="numeric"
-                  onChange={(e) => {
-                    setFee(e.target.value);
+                  onChange={(value) => {
+                    setFee(value);
                     setReview(false);
                   }}
                 />
-              </label>
+                <p className="fine-print">
+                  Sapient estimates the fee before you approve. Your letter and
+                  its encrypted wrapping must fit within 4 KiB.
+                </p>
+              </details>
               {wallet?.kind === "sapient" && (
                 <p className="fine-print">
                   This cap applies to each transaction. Sapient may retry input
@@ -1055,14 +1118,29 @@ export function App() {
                     ? "Sealed on this device"
                     : "Ready for review"}
                 </h2>
+                <dl className="receipt">
+                  <div>
+                    <dt>Recipient receives</dt>
+                    <dd>{tari(gift)} TARI</dd>
+                  </div>
+                  <div>
+                    <dt>Collection funds</dt>
+                    <dd>{tari(reserve)} TARI</dd>
+                  </div>
+                  <div>
+                    <dt>Sending fee limit</dt>
+                    <dd>{tari(fee)} TARI per attempt</dd>
+                  </div>
+                  <div>
+                    <dt>Gift + collection funds</dt>
+                    <dd>
+                      {tari((BigInt(gift) + BigInt(reserve)).toString())} TARI
+                    </dd>
+                  </div>
+                </dl>
                 <p>
-                  Gift: {gift} µTARI · Collection reserve: {reserve} µTARI ·
-                  Publication cap: {fee} µTARI.
-                </p>
-                <p>
-                  Recipient payout: {gift} µTARI, if the independently funded
-                  reserve covers execution. Sapient estimates this draft's
-                  publication fees before requesting approval.
+                  Sapient will show the sending fee before you approve.
+                  Collection works only if the funds you set aside cover it.
                 </p>
                 <p className="fine-print">
                   Nothing has been published or funded yet. Encryption includes
@@ -1109,8 +1187,9 @@ export function App() {
                         fee,
                         localStorage,
                       );
+                      navigate("activity");
                       setStatus(
-                        `Submitted ${id}. Reconcile confirmation before generating a share link.`,
+                        `Letter submitted. Check its confirmation below before sharing. Transaction: ${id}.`,
                       );
                     })
                   }
@@ -1119,8 +1198,8 @@ export function App() {
                 </button>
                 {!writesReady(d, mode, "sapient") && (
                   <p className="info">
-                    Sending is gated until local engine claims, guest delivery,
-                    Sapient signing and confirmation are verified.
+                    Sending is currently unavailable for these post office
+                    settings.
                   </p>
                 )}
               </div>
@@ -1138,6 +1217,7 @@ export function App() {
             task={task}
             onStatus={setStatus}
             onConnect={() => setConnect(true)}
+            onActivity={() => navigate("activity")}
             onOpen={(e) => void task(() => openPostbox(e))}
             onRefresh={refresh}
             onMore={loadMore}
@@ -1151,33 +1231,75 @@ export function App() {
               Find a <em>familiar spirit.</em>
             </h1>
             <p>
-              Discoverable postboxes from the selected chain state. Duplicate
-              nicknames are distinguished by their stable IDs.
+              Find a friend’s listed postbox. Check the ID with your friend:
+              different people can use the same name.
             </p>
-            {boxes.filter((p) => p.discoverable).length ? (
-              <table>
-                <thead>
-                  <tr>
-                    <th>Nickname</th>
-                    <th>Postbox ID</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {boxes
-                    .filter((p) => p.discoverable)
-                    .map((p) => (
-                      <tr key={p.id}>
-                        <td>{p.nickname}</td>
-                        <td>
-                          <code>{p.id}</code>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="quiet-state">No registered postboxes loaded.</div>
+            <label>
+              Find a postbox
+              <input
+                type="search"
+                value={directoryQuery}
+                onChange={(e) => setDirectoryQuery(e.target.value)}
+                placeholder="Search a name or postbox ID"
+              />
+            </label>
+            <div className="directory">
+              {boxes
+                .filter(
+                  (p) =>
+                    p.discoverable &&
+                    `${p.nickname} ${p.id}`
+                      .toLowerCase()
+                      .includes(directoryQuery.toLowerCase()),
+                )
+                .map((p) => (
+                  <article className="directory-card" key={p.id}>
+                    <span aria-hidden="true">✉</span>
+                    <div>
+                      <h2>{p.nickname}</h2>
+                      <p className="postbox-address">{p.id}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setMode("postbox");
+                        setRecipient(p.id);
+                        setPrepared(undefined);
+                        navigate("compose");
+                      }}
+                    >
+                      Write to {p.nickname} ↗
+                    </button>
+                  </article>
+                ))}
+            </div>
+            {!boxes.some(
+              (p) =>
+                p.discoverable &&
+                `${p.nickname} ${p.id}`
+                  .toLowerCase()
+                  .includes(directoryQuery.toLowerCase()),
+            ) && (
+              <div className="quiet-state">
+                <h2>
+                  {directoryQuery
+                    ? "No spirits by that name."
+                    : "The directory is quiet."}
+                </h2>
+                <p>
+                  {directoryQuery
+                    ? "Try another name or ask your friend for their postbox ID."
+                    : "Friends can share an unlisted postbox ID directly. You can also create your own."}
+                </p>
+              </div>
             )}
+            <button
+              onClick={() => {
+                setMode("postbox");
+                navigate("compose");
+              }}
+            >
+              Back to the writing desk
+            </button>
           </section>
         )}
         {view === "network" && (
@@ -1190,147 +1312,181 @@ export function App() {
               Static hosting, a replaceable Ootle indexer, and your Sapient
               wallet. No GhostDrop server.
             </p>
-            <h2>Esmeralda post offices</h2>
-            <p>
-              The original office keeps its public letters and private links.
-              The new office supports Sapient postboxes, restored-wallet
-              recovery and gift-funded collection. Choose the office containing
-              your mail; reloading returns to the original office.
-            </p>
-            <div className="actions">
-              <button
-                disabled={busy}
-                onClick={() => void task(() => selectOffice("deployment.json"))}
-              >
-                Use original public office
-              </button>
-              <button
-                disabled={busy}
-                onClick={() =>
-                  void task(() => selectOffice("deployment-v2.json"))
-                }
-              >
-                Use Sapient postbox office
-              </button>
+            <div className="info">
+              You’re using the Sapient post office on Esmeralda. These are test
+              coins. Choose Esmeralda in Sapient before connecting.
             </div>
-            <label>
-              Ootle test network
-              <select
-                disabled={busy}
-                value={d.network}
-                onChange={(e) =>
-                  changeDeployment(networkPreset(Number(e.target.value)))
-                }
-              >
-                <option value={38}>Esmeralda · public testnet</option>
-                <option value={36}>Igor · custom testnet endpoint</option>
-                <option value={16}>Localnet · your local indexer</option>
-              </select>
-            </label>
-            <label>
-              Indexer endpoint
-              <input
-                value={d.indexerUrl}
-                disabled={busy}
-                onChange={(e) =>
-                  changeDeployment({ indexerUrl: e.target.value })
-                }
-                placeholder="HTTPS indexer URL"
-              />
-            </label>
-            <label>
-              Test asset resource
-              <input
-                disabled={busy}
-                value={d.resource}
-                onChange={(e) => changeDeployment({ resource: e.target.value })}
-              />
-            </label>
-            <div className="actions">
-              <button
-                disabled={busy || !d.indexerUrl}
-                onClick={() =>
-                  void task(async () => {
-                    setIndexerStatus("");
-                    const result = await checkPublicIndexer(d);
-                    setIndexerStatus(
-                      `Connected to ${result.network} · epoch ${result.epoch} · indexer ${result.version} · asset ${result.symbol}. No wallet or transaction was used.`,
-                    );
-                  })
-                }
-              >
-                Check indexer connection
-              </button>
-              <a
-                href="https://ootle.tari.com/"
-                target="_blank"
-                rel="noreferrer"
-              >
-                Ootle documentation ↗
-              </a>
-            </div>
-            {indexerStatus && <p role="status">{indexerStatus}</p>}
-            {!d.registry && (
-              <p className="info">
-                Public network settings are ready to check. GhostDrop still
-                needs its own deployed registry and two template addresses
-                before live mail can load. Addresses from a local test chain do
-                not work on the public testnet.
+            <button disabled={busy} onClick={() => void task(restoreOffice)}>
+              Restore default settings
+            </button>
+            <details className="advanced">
+              <summary>Advanced connection settings</summary>
+              <p className="fine-print">
+                Changing these settings clears the reviewed wallet and gift
+                permissions. Only use contract addresses you trust.
               </p>
-            )}
-            <label>
-              Registry component
-              <input
-                value={d.registry}
-                disabled={busy}
-                onChange={(e) => changeDeployment({ registry: e.target.value })}
-              />
-            </label>
-            <label>
-              Registry template identity
-              <input
-                value={d.template}
-                disabled={busy}
-                onChange={(e) => changeDeployment({ template: e.target.value })}
-              />
-            </label>
-            <label>
-              Envelope template identity
-              <input
-                value={d.envelopeTemplate}
-                disabled={busy}
-                onChange={(e) =>
-                  changeDeployment({ envelopeTemplate: e.target.value })
-                }
-              />
-            </label>
-            <p className="info">
-              Configure and review public/deployment.json to enable a verified
-              deployment. Link secrets and API keys never belong there. Indexer
-              responses are trusted infrastructure; this client does not verify
-              consensus proofs.
+              <label>
+                Ootle test network
+                <select
+                  disabled={busy}
+                  value={d.network}
+                  onChange={(e) =>
+                    changeDeployment(networkPreset(Number(e.target.value)))
+                  }
+                >
+                  <option value={38}>Esmeralda · public testnet</option>
+                  <option value={36}>Igor · custom testnet endpoint</option>
+                  <option value={16}>Localnet · your local indexer</option>
+                </select>
+              </label>
+              <label>
+                Indexer endpoint
+                <input
+                  value={d.indexerUrl}
+                  disabled={busy}
+                  onChange={(e) =>
+                    changeDeployment({ indexerUrl: e.target.value })
+                  }
+                  placeholder="HTTPS indexer URL"
+                />
+              </label>
+              <label>
+                Test asset resource
+                <input
+                  disabled={busy}
+                  value={d.resource}
+                  onChange={(e) =>
+                    changeDeployment({ resource: e.target.value })
+                  }
+                />
+              </label>
+              <div className="actions">
+                <button
+                  disabled={busy || !d.indexerUrl}
+                  onClick={() =>
+                    void task(async () => {
+                      setIndexerStatus("");
+                      const result = await checkPublicIndexer(d);
+                      setIndexerStatus(
+                        `Connected to ${result.network} · epoch ${result.epoch} · indexer ${result.version} · asset ${result.symbol}. No wallet or transaction was used.`,
+                      );
+                    })
+                  }
+                >
+                  Check indexer connection
+                </button>
+                <a
+                  href="https://ootle.tari.com/"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Ootle documentation ↗
+                </a>
+              </div>
+              {indexerStatus && <p role="status">{indexerStatus}</p>}
+              {!d.registry && (
+                <p className="info">
+                  Public network settings are ready to check. GhostDrop still
+                  needs its own deployed registry and two template addresses
+                  before live mail can load. Addresses from a local test chain
+                  do not work on the public testnet.
+                </p>
+              )}
+              <label>
+                Registry component
+                <input
+                  value={d.registry}
+                  disabled={busy}
+                  onChange={(e) =>
+                    changeDeployment({ registry: e.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Registry template identity
+                <input
+                  value={d.template}
+                  disabled={busy}
+                  onChange={(e) =>
+                    changeDeployment({ template: e.target.value })
+                  }
+                />
+              </label>
+              <label>
+                Envelope template identity
+                <input
+                  value={d.envelopeTemplate}
+                  disabled={busy}
+                  onChange={(e) =>
+                    changeDeployment({ envelopeTemplate: e.target.value })
+                  }
+                />
+              </label>
+              <p className="info">
+                The indexer supplies public mail data. GhostDrop checks contract
+                identities but does not verify consensus proofs. Keep wallet
+                secrets and private links out of these settings.
+              </p>
+              <h2>Required evidence</h2>
+              <ul className="evidence-list">
+                {Object.entries(d.evidence).map(([k, v]) => (
+                  <li key={k}>
+                    <span className={v ? "evidence-yes" : "evidence-no"}>
+                      {v ? "✓" : "○"}
+                    </span>
+                    {k}: {v ? "recorded by deployer" : "unverified"}
+                  </li>
+                ))}
+              </ul>
+            </details>
+          </section>
+        )}
+        {view === "activity" && (
+          <section className="page-panel">
+            <span className="kicker">THE DELIVERY BOOK</span>
+            <h1>
+              Your <em>activity.</em>
+            </h1>
+            <p>
+              Check that your letters, gifts and postbox changes have arrived.
+              This history is saved in this browser; your wallet keeps the
+              transaction records.
             </p>
-            <h2>Required evidence</h2>
-            <ul className="evidence-list">
-              {Object.entries(d.evidence).map(([k, v]) => (
-                <li key={k}>
-                  <span className={v ? "evidence-yes" : "evidence-no"}>
-                    {v ? "✓" : "○"}
-                  </span>
-                  {k}: {v ? "recorded by deployer" : "unverified"}
-                </li>
-              ))}
-            </ul>
-            <h2>Pending transactions</h2>
+            {!readPending(localStorage).some(
+              (p) => p.network === d.network && p.registry === d.registry,
+            ) && (
+              <div className="quiet-state">
+                <span aria-hidden="true">✧</span>
+                <h2>No deliveries yet.</h2>
+                <p>
+                  Your next little act of kindness starts at the writing desk.
+                </p>
+                <button onClick={() => navigate("compose")}>
+                  Write a letter ↗
+                </button>
+              </div>
+            )}
             {readPending(localStorage)
               .filter(
                 (p) => p.network === d.network && p.registry === d.registry,
               )
               .map((p) => (
-                <div className="pending" key={p.id}>
+                <div className="pending delivery-card" key={p.id}>
                   <code>{short(p.id)}</code>
                   <span>
-                    {p.operation} · {p.state}
+                    {p.operation === "publish"
+                      ? "Letter"
+                      : p.operation === "claim"
+                        ? "Gift collection"
+                        : p.operation === "capsule"
+                          ? "Postbox backup"
+                          : "Postbox"}{" "}
+                    ·{" "}
+                    {p.state === "confirmed"
+                      ? "Delivered"
+                      : p.state === "rejected"
+                        ? "Not completed"
+                        : "Awaiting confirmation"}
                   </span>
                   <button
                     disabled={!chain || busy}
@@ -1354,6 +1510,8 @@ export function App() {
                               state: "confirmed",
                             });
                             await refresh();
+                            if (p.operation === "publish")
+                              shareConfirmed(p.envelopeId);
                             setStatus(
                               "Envelope state confirms delivery/publication. For missing or ambiguous attempts inspect donor/account history before retrying.",
                             );
@@ -1371,28 +1529,12 @@ export function App() {
                         savePending(localStorage, { ...p, state });
                         await refresh();
                         setStatus(`Transaction ${short(p.id)}: ${state}.`);
-                        if (
-                          prepared?.envelope.id === p.envelopeId &&
-                          state === "confirmed" &&
-                          prepared.capability
-                        ) {
-                          const r = {
-                            id: p.envelopeId,
-                            capability: prepared.capability,
-                            context: d,
-                          };
-                          setPrivateLink(
-                            createGiftLink(
-                              new URL(import.meta.env.BASE_URL, location.href)
-                                .href,
-                              r,
-                            ),
-                          );
-                        }
+                        if (state === "confirmed" && p.operation === "publish")
+                          shareConfirmed(p.envelopeId);
                       })
                     }
                   >
-                    Reconcile
+                    Check status
                   </button>
                   {p.walletRequest && p.state === "unknown" && (
                     <button
@@ -1441,10 +1583,8 @@ export function App() {
       <footer>
         <span className="footer-brand">✦ GHOSTDROP</span>
         <p>Made for the generous souls among us.</p>
-        <button onClick={() => navigate("network")}>
-          Network & verification ↗
-        </button>
-        <span className="footer-note">TEST ASSETS ONLY · AUDIO OFF</span>
+        <button onClick={() => navigate("network")}>Settings ↗</button>
+        <span className="footer-note">ESMERALDA TESTNET · SAPIENT</span>
       </footer>
       {connect && (
         <div className="modal-backdrop">
@@ -1467,9 +1607,9 @@ export function App() {
             <span className="kicker">YOUR SAPIENT WALLET</span>
             <h2 id="wallet-title">Connect Sapient</h2>
             <p>
-              Approve GhostDrop in Sapient. Your wallet holds your keys and asks
-              you to approve each transaction. No daemon URL, API key or file
-              import is needed.
+              Unlock Sapient, choose Esmeralda, then approve this site’s
+              connection. Your wallet keeps your keys and asks before every
+              transaction.
             </p>
             <details>
               <summary>What do I need?</summary>
@@ -1479,10 +1619,9 @@ export function App() {
                 There is no separate GhostDrop bridge or background program.
               </p>
               <p className="fine-print">
-                Public mail and private-link mail open without a wallet. Sending
-                requires a wallet to sign and pay fees. Postbox key recovery is
-                being verified separately for Sapient; existing mail keys have
-                been preserved. Unsupported deployment actions stay disabled.
+                Public mail and private links open without a wallet. Sending
+                needs a little test TARI for fees. Your postbox needs a separate
+                privacy permission, which GhostDrop explains before asking.
               </p>
             </details>
             <form
@@ -1536,7 +1675,7 @@ export function App() {
           </section>
         </div>
       )}
-      {active && (
+      {active && !connect && (
         <div className="modal-backdrop">
           <section
             className="modal letter-modal"
@@ -1573,6 +1712,27 @@ export function App() {
                 </p>
               </div>
             )}
+            {active.replyPostbox &&
+              boxes.some((p) => p.id === active.replyPostbox) && (
+                <button
+                  disabled={busy}
+                  onClick={() => {
+                    const replyTo = active.replyPostbox!;
+                    const title = plain?.subject || "Your letter";
+                    closeLetter();
+                    setMode("postbox");
+                    setRecipient(replyTo);
+                    setSubject(`Re: ${title}`.slice(0, 120));
+                    setBody("");
+                    setGift("0");
+                    setReserve("0");
+                    setPrepared(undefined);
+                    navigate("compose");
+                  }}
+                >
+                  Reply to this spirit ↗
+                </button>
+              )}
             <button aria-pressed={ghost} onClick={() => setGhost(!ghost)}>
               ◈ Ghost View
             </button>
@@ -1601,11 +1761,23 @@ export function App() {
                   {active.claimed ? "Gift delivered" : "Collect the gift"}
                 </h3>
                 <p>
-                  Gift {active.gift} µTARI · Extra reserve {active.reserve}{" "}
-                  µTARI · Expected payout {active.gift} µTARI.
+                  You receive {tari(active.gift)} TARI. The sender set aside{" "}
+                  {tari(active.reserve)} TARI for collection fees.
                 </p>
                 {!active.claimed && (
                   <>
+                    {!wallet && (
+                      <div className="info">
+                        <p>
+                          Have Sapient? Connect to choose your receiving account
+                          automatically. You can also collect using a compatible
+                          address below.
+                        </p>
+                        <button onClick={() => setConnect(true)}>
+                          Connect Sapient to receive
+                        </button>
+                      </div>
+                    )}
                     <div className="mode-switch">
                       <button
                         disabled={busy}
@@ -1694,7 +1866,7 @@ export function App() {
                       wallet?.kind === "sapient" &&
                       active.claimProtocol === "sapient-proof-1" &&
                       postboxClaimsReady(d, "sapient")
-                        ? `Sapient will ask you to approve a proof for this gift and destination. GhostDrop then submits the claim. You receive ${active.gift} µTARI; collection fees come from the funded reserve of up to ${active.reserve} µTARI. Your wallet needs no coins for this claim. The approval expires after at most 10 network epochs.`
+                        ? `Sapient will ask you to approve a proof for this gift and destination. GhostDrop then submits the claim. You receive ${tari(active.gift)} TARI; collection fees come from the funded reserve of up to ${tari(active.reserve)} TARI. Your wallet needs no coins for this claim. The approval expires after at most 10 network epochs.`
                         : active.mode === "postbox" &&
                             wallet?.kind === "sapient"
                           ? "Postbox collection is not enabled for this deployment. Your connected wallet must control this postbox."
@@ -1707,6 +1879,8 @@ export function App() {
                       disabled={
                         busy ||
                         !chain ||
+                        !address ||
+                        (!createAccount && !destination) ||
                         !(active.mode === "postbox"
                           ? postboxClaimsReady(d, wallet?.kind ?? "sapient")
                           : claimsReady(d, createAccount)) ||
@@ -1745,7 +1919,7 @@ export function App() {
                                   createAccount,
                                 );
                           setStatus(
-                            `Claim submitted ${id}. Verify delivery through Network & verification.`,
+                            `Gift collection submitted. Close this letter and check Activity for confirmation. Transaction: ${id}.`,
                           );
                         })
                       }
@@ -1756,6 +1930,23 @@ export function App() {
                 )}
               </div>
             )}
+            {status.startsWith("Gift collection submitted") && (
+              <p className="fine-print">{status}</p>
+            )}
+            {error && (
+              <p role="alert" className="error">
+                {error}
+              </p>
+            )}
+            <button
+              disabled={busy}
+              onClick={() => {
+                closeLetter();
+                navigate("activity");
+              }}
+            >
+              View delivery activity ↗
+            </button>
           </section>
         </div>
       )}
