@@ -306,3 +306,56 @@ test("reduced motion freezes atmospheric layers and envelope artwork", async ({
     }
   }
 });
+
+test("busy lists and Activity keep small text, gift funding and every status readable", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await page
+    .getByRole("button", { name: "Explore preview", exact: true })
+    .click();
+  await page.getByRole("button", { name: "List view", exact: false }).click();
+  for (const selector of [
+    ".list-hall .envelope-caption h3",
+    ".letter-excerpt",
+    ".mail-audience",
+    ".mail-row-no-gift",
+    ".search-summary",
+  ])
+    await readable(page.locator(selector + ":visible").first());
+  await page.getByLabel("Show mail", { exact: true }).selectOption("link");
+  await readable(page.locator(".audience-link").first());
+  await page.getByLabel("Show mail", { exact: true }).selectOption("postbox");
+  await readable(page.locator(".audience-postbox").first());
+  await page.getByRole("button", { name: "Activity", exact: true }).click();
+  await page
+    .getByRole("button", { name: "See sample activity", exact: true })
+    .click();
+  for (const selector of [
+    ".activity-summary span",
+    ".activity-tools label",
+    ".activity-range",
+    ".activity-subject",
+    ".activity-explanation",
+    ".activity-entry-footer",
+    ".activity-next strong",
+    ".activity-next",
+  ])
+    await readable(page.locator(selector + ":visible").first());
+  for (const status of ["confirmed", "pending", "rejected"]) {
+    await page
+      .getByRole("combobox", { name: "Activity status", exact: true })
+      .selectOption(status);
+    await readable(page.locator(".activity-badge").first());
+    await readable(page.locator(".activity-explanation").first());
+  }
+  await page
+    .getByRole("combobox", { name: "Activity status", exact: true })
+    .selectOption("confirmed");
+  await page.locator(".activity-receipt summary").first().click();
+  await readable(page.locator(".activity-mail-details dt").first());
+  await readable(page.locator(".activity-mail-details dd").first());
+  expect(
+    await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+  ).toBeNull();
+});

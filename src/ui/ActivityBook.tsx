@@ -1,4 +1,6 @@
 import { useRef, useState } from "react";
+import type { Envelope } from "../core/types";
+import { tari } from "./AmountInput";
 import type { Pending } from "../core/pending";
 import { CopyField } from "./CopyField";
 import {
@@ -14,6 +16,7 @@ export function ActivityBook({
   canCheck,
   canResume,
   publicTitles,
+  mailDetails,
   onCheck,
   onResume,
   onRead,
@@ -25,6 +28,7 @@ export function ActivityBook({
   canCheck: boolean;
   canResume: boolean;
   publicTitles: Record<string, string>;
+  mailDetails: Record<string, Pick<Envelope, "mode" | "gift" | "reserve">>;
   onCheck: (pending: Pending) => void;
   onResume: (pending: Pending) => void;
   onRead: (id: string) => void;
@@ -151,6 +155,7 @@ export function ActivityBook({
       <div className="activity-entries">
         {matches.slice(start, start + 12).map((p) => {
           const detail = activityDetails(p);
+          const mail = mailDetails[p.envelopeId];
           const compact =
             detail.tone === "confirmed" &&
             (p.operation === "publish" || p.operation === "claim");
@@ -244,6 +249,45 @@ export function ActivityBook({
                       : "Original attempt details"}
                 </summary>
                 {compact && nextStep}
+                {mail && (
+                  <>
+                    <dl className="activity-mail-details">
+                      <div>
+                        <dt>Letter type</dt>
+                        <dd>
+                          {
+                            {
+                              public: "Public mail",
+                              link: "Private link",
+                              postbox: "Postbox mail",
+                            }[mail.mode]
+                          }
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Gift originally attached</dt>
+                        <dd>
+                          {mail.gift === "0"
+                            ? "No gift"
+                            : `${tari(mail.gift)} ${sample ? "sample" : "test"} TARI`}
+                        </dd>
+                      </div>
+                      <div>
+                        <dt>Collection reserve originally funded</dt>
+                        <dd>
+                          {mail.reserve === "0"
+                            ? "No collection reserve"
+                            : `${tari(mail.reserve)} ${sample ? "sample" : "test"} TARI`}
+                        </dd>
+                      </div>
+                    </dl>
+                    <p className="fine-print">
+                      {sample
+                        ? "These amounts are fictional examples."
+                        : "These are the letter’s stored funding amounts, not the fees actually paid or the remaining reserve. Check the original receipt and the receiving wallet to confirm the destination and amount received."}
+                    </p>
+                  </>
+                )}
                 <CopyField
                   label={
                     sample

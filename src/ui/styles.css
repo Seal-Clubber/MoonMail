@@ -3166,3 +3166,30 @@ footer {
     scroll-margin-top: 160px;
   }
 }
+
+.activity-mail-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+  font:
+    12px/1.7 system-ui,
+    sans-serif;
+}
+.activity-mail-details div {
+  min-width: 0;
+}
+.activity-mail-details dt {
+  color: #b9cbdc;
+}
+.activity-mail-details dd {
+  margin: 6px 0 0;
+  color: #e7d4b3;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 680px) {
+  .activity-mail-details {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}

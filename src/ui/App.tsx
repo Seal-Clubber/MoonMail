@@ -2388,6 +2388,14 @@ export function App() {
                 canCheck={!!chain}
                 canResume={!writeBlocked && wallet instanceof SapientSession}
                 publicTitles={showSampleActivity ? sampleTitles : publicTitles}
+                mailDetails={Object.fromEntries(
+                  (showSampleActivity ? sampleMail : letters).map(
+                    ({ id, mode, gift, reserve }) => [
+                      id,
+                      { mode, gift, reserve },
+                    ],
+                  ),
+                )}
                 onCheck={(p) => void checkActivity(p)}
                 onResume={(p) => void resumeActivity(p)}
                 onRead={(id) => {

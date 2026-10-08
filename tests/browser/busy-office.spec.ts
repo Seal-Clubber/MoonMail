@@ -313,6 +313,15 @@ test("a busy real Activity book filters legacy uncertain claims without promisin
   await expect(finished.locator(".activity-next")).not.toBeVisible();
   await finished.locator(".activity-receipt summary").click();
   await expect(finished.locator(".activity-next")).toBeVisible();
+  await expect(finished.locator(".activity-mail-details")).toContainText(
+    "Gift originally attached1 test TARI",
+  );
+  await expect(finished.locator(".activity-mail-details")).toContainText(
+    "Collection reserve originally funded0.1 test TARI",
+  );
+  await expect(finished).toContainText(
+    "not the fees actually paid or the remaining reserve",
+  );
   await finished.locator(".activity-receipt summary").click();
   await page
     .getByRole("button", { name: "Next activity", exact: true })
