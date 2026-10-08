@@ -129,6 +129,10 @@ export function beginSubmission(
   storage: Pick<Storage, "getItem" | "setItem">,
   p: Omit<Pending, "id" | "state">,
 ) {
+  // Preparation can await input discovery or signing. Recheck at the point where
+  // this operation reserves its attempt, before any broadcast or wallet request.
+  if (hasUnresolved(storage, p.network, p.registry, p.envelopeId))
+    throw new Error("Reconcile the existing submission first");
   const id = `attempt:${crypto.randomUUID()}`;
   savePending(storage, { ...p, id, state: "unknown" });
   return id;

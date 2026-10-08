@@ -11,7 +11,7 @@ import {
 import { SapientSession, type SapientProvider } from "../src/core/sapient";
 import { emptyDeployment, postboxClaimsReady } from "../src/core/config";
 import { PostOfficeClient } from "../src/core/chain";
-import { readPending } from "../src/core/pending";
+import { readPending, beginSubmission } from "../src/core/pending";
 import type { Envelope } from "../src/core/types";
 
 const simulation = vi.hoisted(() => vi.fn());
@@ -395,4 +395,43 @@ test("lost broadcast response remains unknown and cannot replace the authorized 
   expect(readPending(f.storage)[0].state).toBe("unknown");
   await expect(f.claim()).rejects.toThrow("Reconcile");
   expect(f.provider.submitTransaction).toHaveBeenCalledTimes(1);
+});
+
+test("concurrent guest preparations reserve only one claim before broadcast", async () => {
+  const f = await chainFixture();
+  const publicGift = { ...f.envelope, mode: "public" as const };
+  vi.mocked(f.chain.readLetter).mockResolvedValue(publicGift);
+  f.provider.submitTransaction.mockImplementation(async () => ({
+    transaction_id: "4".repeat(64),
+  }));
+  const results = await Promise.allSettled(
+    [1, 2].map(() =>
+      f.chain.claim(publicGift, f.address, f.selected, undefined, f.storage),
+    ),
+  );
+  expect(results.filter((r) => r.status === "fulfilled")).toHaveLength(1);
+  expect(f.provider.submitTransaction).toHaveBeenCalledTimes(1);
+  expect(readPending(f.storage)).toHaveLength(1);
+});
+
+test("guest claim stops when another preparation reserves its gift during input resolution", async () => {
+  const f = await chainFixture();
+  const publicGift = { ...f.envelope, mode: "public" as const };
+  vi.mocked(f.chain.readLetter).mockResolvedValue(publicGift);
+  f.provider.resolveInputs.mockImplementationOnce(async (inputs) => {
+    beginSubmission(f.storage, {
+      network: f.d.network,
+      registry: f.d.registry,
+      envelopeId: publicGift.id,
+      operation: "claim",
+    });
+    return inputs.map((i: any) => ({ ...i, version: 0 }));
+  });
+  await expect(
+    f.chain.claim(publicGift, f.address, f.selected, undefined, f.storage),
+  ).rejects.toThrow("existing submission");
+  expect(f.provider.submitTransaction).not.toHaveBeenCalled();
+  expect(readPending(f.storage)).toEqual([
+    expect.objectContaining({ state: "unknown", envelopeId: publicGift.id }),
+  ]);
 });
