@@ -1,0 +1,133 @@
+{
+  "checkedAt": "2026-10-08T00:40:21.359515+00:00",
+  "frontendCommit": "b4b86b75da5ddf297fdbbdfcd8e8329a7810bdfb",
+  "base": "https://seal-clubber.github.io/GhostDrop/",
+  "network": 38,
+  "registry": "component_7f205e42678ea72a6a157e9c588851394fc479b99b6be53df407f327c47492f8",
+  "envelopeTemplate": "525974b799e25562f4a9260015bedbbb7b71c675aaf890a4dccaaee4586aeff6",
+  "authorization": {
+    "separateCampaign": true,
+    "explicitHumanApproval": true,
+    "maximumSourceAllocationMicroTari": "796000",
+    "maxTransactionAttempts": 64,
+    "walletMaximumAttemptsPerRequest": 31,
+    "closed": true,
+    "noUnusedBudgetReuse": true
+  },
+  "wallet": {
+    "name": "Sapient",
+    "version": "0.6.6",
+    "officialStoreRuntimeAssetsIntegrityVerified": true,
+    "unmodifiedWallet": true,
+    "existingIsolatedRestoredSource": true,
+    "recipientIsSeparateIsolatedDevelopmentWallet": true
+  },
+  "transactions": [
+    {
+      "id": "public-gift",
+      "transactionId": "80be3cac62fb746f23b101771566b0dfe4d396b258c64e56896a68583457fe6c",
+      "envelopeId": "eec6eaa5-a670-439c-8a32-c0a5d7e697f3",
+      "outcome": "Commit",
+      "broadcastAttempts": 1,
+      "feeMicroTari": "6202",
+      "component": "component_924dad944f066cb833e6f5a2dc2154f3e67fc2c17d36d71ad2d21efc7b735a55",
+      "giftMicroTari": "100000",
+      "reserveMicroTari": "50000",
+      "sourceSpendMicroTari": "156202",
+      "dryRunQuoteMicroTari": "6202",
+      "walletRequestId": "2e692b40-7779-444b-9ca3-0e6159f24f2f",
+      "walletRequestCreations": 1,
+      "walletRequestSubmissions": 1
+    },
+    {
+      "id": "public-gift-claim",
+      "transactionId": "6d240e56b313c09a2944ea522b905de9aba3d2ac47a87fb026c15b14e746aec5",
+      "envelopeId": "eec6eaa5-a670-439c-8a32-c0a5d7e697f3",
+      "outcome": "Commit",
+      "broadcastAttempts": 1,
+      "feeMicroTari": "2697",
+      "payoutMicroTari": "100000",
+      "guestWithoutWallet": true,
+      "openingAndReviewSubmittedNothing": true
+    },
+    {
+      "id": "private-link-gift",
+      "transactionId": "7006c249a505aee8172cd98876f26c78410e9c95c922341d8afee7468a2f7fc9",
+      "envelopeId": "0d8d6981-1879-4bf2-b407-19c00470d074",
+      "outcome": "Commit",
+      "broadcastAttempts": 1,
+      "feeMicroTari": "6780",
+      "component": "component_5d920fd8011cc0f55539dc042fa3a6e8bc028b6867fac12f1343bf0f43e58ef3",
+      "giftMicroTari": "100000",
+      "reserveMicroTari": "50000",
+      "sourceSpendMicroTari": "156780",
+      "dryRunQuoteMicroTari": "6780",
+      "walletRequestId": "6c646792-eebd-43c0-ab52-58f5d72cff29",
+      "walletRequestCreations": 1,
+      "walletRequestSubmissions": 1
+    },
+    {
+      "id": "private-link-gift-claim",
+      "transactionId": "b1a759aaf852317e01b146344ecb2e1c5f759288bac6ed12f2b2fbbd6c15a881",
+      "envelopeId": "0d8d6981-1879-4bf2-b407-19c00470d074",
+      "outcome": "Commit",
+      "broadcastAttempts": 1,
+      "feeMicroTari": "3069",
+      "payoutMicroTari": "100000",
+      "guestWithoutWallet": true,
+      "openingAndReviewSubmittedNothing": true
+    }
+  ],
+  "actualTransactionCount": 4,
+  "actualSourceSpendMicroTari": "312982",
+  "fullPayoutMicroTari": "200000",
+  "totalPublicationFeesMicroTari": "12982",
+  "totalCollectionFeesMicroTari": "5766",
+  "unusedCollectionReservesLockedMicroTari": "94234",
+  "lostResponse": {
+    "actualWalletResultDiscardedAfterSuccessfulSubmission": true,
+    "persistedUnknownAttemptBeforeReload": true,
+    "originalWalletRequestId": "2e692b40-7779-444b-9ca3-0e6159f24f2f",
+    "actualSubmittedStatusRecoveredAfterReload": true,
+    "sameTransactionIdRecovered": "80be3cac62fb746f23b101771566b0dfe4d396b258c64e56896a68583457fe6c",
+    "walletRequestCreations": 1,
+    "walletRequestSubmissions": 1,
+    "actualBroadcastAttempts": 1,
+    "replacementFinancialRequests": 0,
+    "helperInterruption": "Automation callback registration stopped after the initial response loss. The helper was corrected and the existing submitted request resumed read-only; no new request or broadcast was made."
+  },
+  "postClaimReaders": {
+    "checkedAt": "2026-10-08T00:39:00.891Z",
+    "frontendCommit": "b4b86b75da5ddf297fdbbdfcd8e8329a7810bdfb",
+    "results": [
+      {
+        "mode": "public",
+        "viewport": "desktop",
+        "actualSubjectAndBodyRead": true,
+        "claimedGiftShown": true,
+        "repeatedClaimNotOffered": true,
+        "noWallet": true,
+        "noTransactionJournal": true,
+        "noPostRequests": true,
+        "noScriptErrors": true,
+        "noOverflow": true
+      },
+      {
+        "mode": "private-link",
+        "viewport": "mobile",
+        "actualSubjectAndBodyRead": true,
+        "claimedGiftShown": true,
+        "repeatedClaimNotOffered": true,
+        "noWallet": true,
+        "noTransactionJournal": true,
+        "noPostRequests": true,
+        "noScriptErrors": true,
+        "noOverflow": true,
+        "capabilityScrubbedFromVisibleUrl": true,
+        "noCapabilityInStorageOrRequests": true
+      }
+    ],
+    "noNewFinancialOperation": true
+  },
+  "scope": "Actual published HTTPS assets and actual Esmeralda indexer, with no app/config/ledger overrides. The provider wrapper deliberately drops one genuine successful result and guards request/fee limits; wallet package remains unmodified. Public guest claim ran at desktop size and private-link guest claim at mobile size. No new postbox, template, registry, restore, burn, bridge, personal-wallet access, extra transfer or independent payout spend. Independent spend and addressed recovery retain their earlier campaign scope. This tests a lost wallet-provider response after successful submission, not raw indexer transport loss or failure before request creation. Private link, capability and plaintext are omitted."
+}

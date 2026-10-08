@@ -16,6 +16,8 @@ Sending review shows the complete included reply postbox ID, or **No reply postb
 
 Disconnecting or changing post office clears the optional return postbox and prepared review. Your written subject, message, gift and fee settings remain at the writing desk. Reconnect the wallet and explicitly choose a registered return address again if you want replies. [Reply-session verification](docs/reply-session-evidence.json) records local cleanup checks; [published acceptance](docs/gui-release-published-evidence.json) confirms stock Sapient disconnect cleanup on actual Pages HTTPS without financial or private-view requests.
 
+[Published Sapient gift verification](docs/sapient-gift-published-evidence.json) confirms public and private-link sending with the stock wallet, guest collection of each full 0.1-TARI gift, and recovery of the original wallet request after deliberately losing one successful submission response. Four real Esmeralda transactions committed; the separate test campaign is closed.
+
 Collection has a separate destination review: check the full address, receiving account, payout and fee reserve before choosing **Confirm & collect gift**. Opening that review never requests a proof or submits a claim.
 
 **Testnet only:** the current office uses Esmeralda test TARI. Choose Esmeralda in Sapient. Sending and creating a postbox cost wallet fees. Collection uses the sender’s separate fee reserve; an addressed recipient can collect the full gift with zero coins. Gifts have no expiry or refund, and unused collection funds stay locked.
