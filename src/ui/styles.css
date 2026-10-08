@@ -445,16 +445,22 @@ h3 {
   opacity: 0.83;
 }
 .ghost-eyes {
-  display: block;
-  font-size: 12px;
-  color: #344d37;
-  letter-spacing: 8px;
-  margin: 33px 0 0 7px;
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin: 34px 0 0;
+  filter: drop-shadow(0 0 4px #9fd5ff88);
 }
-.ghost-cheek {
-  font-size: 29px;
-  color: #879c78;
-  letter-spacing: 15px;
+.ghost-eyes::before,
+.ghost-eyes::after {
+  content: "";
+  width: 10px;
+  height: 6px;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 35%, 100% 100%, 15% 85%);
+}
+.ghost-eyes::after {
+  clip-path: polygon(0 35%, 100% 0, 85% 85%, 0 100%);
 }
 .clerk-tag {
   position: absolute;
@@ -2310,14 +2316,11 @@ p,
   opacity: 0.55;
 }
 .ghost-clerk {
-  background: linear-gradient(#3865a0, #234670);
+  background: linear-gradient(#274f80, #142e51);
   opacity: 1;
 }
 .ghost-eyes {
   color: #e7f3ff;
-}
-.ghost-cheek {
-  color: #9fc8e6;
 }
 .how-it-works > div,
 .compose form,

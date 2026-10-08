@@ -1377,8 +1377,7 @@ export function App() {
                   ✧ · ✦ · ✧
                 </div>
                 <div className="ghost-clerk" aria-hidden="true">
-                  <span className="ghost-eyes">● ●</span>
-                  <span className="ghost-cheek">· ·</span>
+                  <span className="ghost-eyes" />
                 </div>
                 <div className="clerk-tag">
                   <span>YOUR SPECTRAL CLERK</span>
