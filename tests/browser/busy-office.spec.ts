@@ -88,6 +88,7 @@ test("36 sample letters paginate, filter and read in list view without any gift 
   await expect(page.locator(".preview-banner")).toContainText("fictional");
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.locator(".pagination")).toContainText("Page 2 of 3");
+  await expect(page.locator(".search-summary")).toBeFocused();
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.locator(".pagination")).toContainText("Page 3 of 3");
   await expect(
@@ -245,6 +246,7 @@ test("sample activity covers approvals and outcomes without changing the real de
   await page
     .getByRole("button", { name: "Next activity", exact: true })
     .click();
+  await expect(page.locator(".activity-range")).toBeFocused();
   await expect(
     page.getByRole("navigation", { name: "Activity pages" }),
   ).toContainText("Page 2 of 3");
@@ -302,6 +304,16 @@ test("a busy real Activity book filters legacy uncertain claims without promisin
     localStorage.getItem("ghostdrop:pending:v1"),
   );
   await expect(page.locator(".activity-entry")).toHaveCount(12);
+  const finished = page
+    .locator(".activity-confirmed")
+    .filter({
+      has: page.getByRole("heading", { name: "Send a letter", exact: true }),
+    })
+    .first();
+  await expect(finished.locator(".activity-next")).not.toBeVisible();
+  await finished.locator(".activity-receipt summary").click();
+  await expect(finished.locator(".activity-next")).toBeVisible();
+  await finished.locator(".activity-receipt summary").click();
   await page
     .getByRole("button", { name: "Next activity", exact: true })
     .click();

@@ -11,3 +11,15 @@ Optional sample mail and sample Activity are clearly labelled fictional design e
 ## Validation
 
 The initial refinement passes 184 client tests, 218 desktop/mobile browser checks, strict TypeScript, the Pages-base production build and formatting/diff checks. Coverage includes 36-letter pagination, all audiences, 28-action Activity pagination and filters, legacy unreceipted claims, 320-pixel layouts, and a delayed real registry response while a sample modal is open. The latter cannot turn a sample gift into a live claim.
+
+## Real Esmeralda mail
+
+The current registry has 41 actual letters, including 33 public-hall envelopes across three pages. The busy-office campaign added 20 public letters, 10 encrypted private-link letters and six letters to the existing development recovery postbox. All 36 publications have actual commit receipts and state reads. Four gifts contain 0.025 test TARI with a separate 0.025 collection reserve; one public and one private-link gift were collected into the isolated recipient, with the full amounts verified in its balance. Two remain available.
+
+The source spent 0.494788 test TARI, below the 0.632 cap. Exactly 38 broadcasts were sent, including the two claims. No bridge, burn, top-up, personal wallet or additional contract deployment was used. Private bearer links remain encrypted outside this repository. The original closed campaigns were preserved.
+
+See [public receipt and reading evidence](busy-esmeralda-mail-evidence.json). Local production reading checks use the real Esmeralda indexer and unmodified stock Sapient 0.6.6: desktop, 390- and 320-pixel list/public reading; collected and available private-link reading without a wallet; all six addressed letters decrypted by the restored controlling wallet; and the sender's 36 original confirmed Activity records. Application assets were served locally for this reviewed UI check; the mail itself is on the public Esmeralda ledger.
+
+Completed letter and gift actions keep a concise confirmation visible, with next steps under their transaction details. Uncertain actions and recovery-backup steps keep the guidance visible. Turning a page moves keyboard focus to its updated result range.
+
+The already published HTTPS site independently passed a fresh read-only check: all 33 hall letters across three pages on desktop and mobile, the new collected public gift's exact body, and both a collected and available new private-link letter. No wallet, app/ledger overrides or broadcasts were used. The existing hosted frontend has its older layout until the human pushes the UI checkpoints; testnet mail does not wait for that push.

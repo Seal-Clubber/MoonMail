@@ -3135,3 +3135,34 @@ footer {
     padding: 12px;
   }
 }
+
+/* Finished deliveries stay easy to scan; uncertain actions keep their next step visible. */
+.activity-entry-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.activity-entry h2 {
+  margin-top: 0;
+}
+.activity-kind + h2 {
+  margin-top: 7px;
+}
+.search-summary,
+.activity-range {
+  scroll-margin-top: 110px;
+}
+.search-summary:focus,
+.activity-range:focus {
+  outline: 2px solid #a6c6e9;
+  outline-offset: 6px;
+  border-radius: 3px;
+}
+@media (max-width: 680px) {
+  .activity-entry h2 {
+    font-size: 21px;
+  }
+  .search-summary,
+  .activity-range {
+    scroll-margin-top: 160px;
+  }
+}

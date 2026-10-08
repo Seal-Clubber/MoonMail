@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { Pending } from "../core/pending";
 import { CopyField } from "./CopyField";
 import {
@@ -31,6 +31,7 @@ export function ActivityBook({
   onInbox: () => void;
   sample?: boolean;
 }) {
+  const range = useRef<HTMLParagraphElement>(null);
   const [filter, setFilter] = useState<ActivityFilter>("all");
   const [operation, setOperation] = useState("all");
   const [query, setQuery] = useState("");
@@ -51,6 +52,10 @@ export function ActivityBook({
   const pages = Math.max(1, Math.ceil(matches.length / 12));
   const current = Math.min(page, pages);
   const start = (current - 1) * 12;
+  function turnPage(next: number) {
+    setPage(next);
+    requestAnimationFrame(() => range.current?.focus());
+  }
   function change(action: () => void) {
     action();
     setPage(1);
@@ -119,7 +124,7 @@ export function ActivityBook({
           </select>
         </label>
       </div>
-      <p className="activity-range" role="status">
+      <p className="activity-range" role="status" ref={range} tabIndex={-1}>
         {matches.length
           ? `Showing ${start + 1}–${Math.min(start + 12, matches.length)} of ${matches.length} actions`
           : "No actions match these filters."}
@@ -146,6 +151,15 @@ export function ActivityBook({
       <div className="activity-entries">
         {matches.slice(start, start + 12).map((p) => {
           const detail = activityDetails(p);
+          const compact =
+            detail.tone === "confirmed" &&
+            (p.operation === "publish" || p.operation === "claim");
+          const nextStep = (
+            <p className="activity-next">
+              <strong>What next</strong>
+              {detail.nextStep}
+            </p>
+          );
           return (
             <article
               className={`pending delivery-card activity-entry activity-${detail.tone}`}
@@ -153,25 +167,20 @@ export function ActivityBook({
             >
               <div className="activity-entry-heading">
                 <div>
-                  <span className="activity-kind">
-                    {sample ? "SAMPLE ACTION" : "YOUR ACTION"}
-                  </span>
-                  <h2>{detail.title}</h2>
-                  {publicTitles[p.envelopeId] && (
-                    <p className="activity-subject">
-                      {publicTitles[p.envelopeId]}
-                    </p>
+                  {sample && (
+                    <span className="activity-kind">SAMPLE ACTION</span>
                   )}
+                  <h2>{detail.title}</h2>
                 </div>
                 <span className={`activity-badge badge-${detail.tone}`}>
                   {detail.label}
                 </span>
               </div>
+              {publicTitles[p.envelopeId] && (
+                <p className="activity-subject">{publicTitles[p.envelopeId]}</p>
+              )}
               <p className="activity-explanation">{detail.explanation}</p>
-              <p className="activity-next">
-                <strong>What next</strong>
-                {detail.nextStep}
-              </p>
+              {!compact && nextStep}
               <div className="activity-entry-footer">
                 <span>
                   {p.createdAt ? (
@@ -234,6 +243,7 @@ export function ActivityBook({
                       ? "Transaction and delivery details"
                       : "Original attempt details"}
                 </summary>
+                {compact && nextStep}
                 <CopyField
                   label={
                     sample
@@ -280,7 +290,10 @@ export function ActivityBook({
       </div>
       {pages > 1 && (
         <nav className="pagination" aria-label="Activity pages">
-          <button disabled={current === 1} onClick={() => setPage(current - 1)}>
+          <button
+            disabled={current === 1}
+            onClick={() => turnPage(current - 1)}
+          >
             Previous activity
           </button>
           <span>
@@ -288,7 +301,7 @@ export function ActivityBook({
           </span>
           <button
             disabled={current === pages}
-            onClick={() => setPage(current + 1)}
+            onClick={() => turnPage(current + 1)}
           >
             Next activity
           </button>

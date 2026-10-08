@@ -75,6 +75,7 @@ const short = (v: string) =>
   v.length > 20 ? `${v.slice(0, 10)}…${v.slice(-6)}` : v;
 export function App() {
   const [officeLoadError, setOfficeLoadError] = useState(false);
+  const hallRange = useRef<HTMLParagraphElement>(null);
   const deploymentRevision = useRef(0);
   const initialOfficePending = useRef(true);
   const [view, setView] = useState("hall"),
@@ -1021,6 +1022,10 @@ export function App() {
     setPrepared({ envelope, capability: sealed?.capability });
     setReview(true);
   }
+  function turnMailPage(next: number) {
+    setPage(next);
+    requestAnimationFrame(() => hallRange.current?.focus());
+  }
   function togglePreview() {
     closeLetter();
     setPreview(!preview);
@@ -1407,7 +1412,12 @@ export function App() {
                       </select>
                     </div>
                   </div>
-                  <p className="search-summary" role="status">
+                  <p
+                    className="search-summary"
+                    role="status"
+                    ref={hallRange}
+                    tabIndex={-1}
+                  >
                     {shown.length
                       ? `Showing ${(visiblePage - 1) * 12 + 1}–${Math.min(visiblePage * 12, shown.length)} of ${shown.length} matching letters`
                       : "No matching letters"}{" "}
@@ -1593,7 +1603,7 @@ export function App() {
                 <div className="pagination">
                   <button
                     disabled={visiblePage === 1}
-                    onClick={() => setPage(visiblePage - 1)}
+                    onClick={() => turnMailPage(visiblePage - 1)}
                   >
                     Previous
                   </button>
@@ -1602,7 +1612,7 @@ export function App() {
                   </span>
                   <button
                     disabled={visiblePage * 12 >= shown.length}
-                    onClick={() => setPage(visiblePage + 1)}
+                    onClick={() => turnMailPage(visiblePage + 1)}
                   >
                     Next
                   </button>
