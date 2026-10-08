@@ -1192,94 +1192,104 @@ test("retrying the first settings load retains an incoming private link only in 
   expect(writes).toBe(0);
 });
 
-test("a stalled receiving-account check releases collection review and ignores a late response", async ({
-  page,
-}) => {
-  await page.clock.install();
-  const owner = generateKeypair(),
-    view = generateKeypair();
-  const address = generateOotleAddress(owner.public_key, view.public_key, 38);
-  const controller = Buffer.from(owner.public_key).toString("hex");
-  owner.free();
-  view.free();
-  const account = `component_${"9".repeat(64)}`;
-  const d = {
-    ...deployment,
-    resource: `resource_${"01".repeat(32)}`,
-    evidence: {
-      ...emptyDeployment.evidence,
-      engineClaims: true,
-      guestPayout: true,
-    },
-  };
-  await page.route("**/deployment.json", (r) => r.fulfill({ json: d }));
-  let started!: () => void, release!: () => void;
-  const requested = new Promise<void>((r) => (started = r)),
-    held = new Promise<void>((r) => (release = r));
-  let writes = 0;
-  await page.route(`${d.indexerUrl}**`, async (r) => {
-    if (r.request().method() !== "GET") {
-      writes++;
-      return r.abort();
-    }
-    const response = state(r.request().url());
-    if (r.request().url().includes(account)) {
-      started();
-      await held;
-      return r.fulfill({
-        json: {
-          substate: {
-            Component: {
-              header: {
-                template_address: "0".repeat(64),
-                owner_rule: { ByPublicKey: controller },
+for (const movedFocus of [false, true])
+  test(`a stalled receiving-account check releases collection review and ${movedFocus ? "preserves moved focus" : "restores keyboard focus"}`, async ({
+    page,
+  }) => {
+    await page.clock.install();
+    const owner = generateKeypair(),
+      view = generateKeypair();
+    const address = generateOotleAddress(owner.public_key, view.public_key, 38);
+    const controller = Buffer.from(owner.public_key).toString("hex");
+    owner.free();
+    view.free();
+    const account = `component_${"9".repeat(64)}`;
+    const d = {
+      ...deployment,
+      resource: `resource_${"01".repeat(32)}`,
+      evidence: {
+        ...emptyDeployment.evidence,
+        engineClaims: true,
+        guestPayout: true,
+      },
+    };
+    await page.route("**/deployment.json", (r) => r.fulfill({ json: d }));
+    let started!: () => void, release!: () => void;
+    const requested = new Promise<void>((r) => (started = r)),
+      held = new Promise<void>((r) => (release = r));
+    let writes = 0;
+    await page.route(`${d.indexerUrl}**`, async (r) => {
+      if (r.request().method() !== "GET") {
+        writes++;
+        return r.abort();
+      }
+      const response = state(r.request().url());
+      if (r.request().url().includes(account)) {
+        started();
+        await held;
+        return r.fulfill({
+          json: {
+            substate: {
+              Component: {
+                header: {
+                  template_address: "0".repeat(64),
+                  owner_rule: { ByPublicKey: controller },
+                },
+                body: { state: [] },
               },
-              body: { state: [] },
             },
           },
-        },
-      });
-    }
-    if (r.request().url().includes(envelope)) {
-      response.substate!.Component.body.state[4] = "100000";
-      response.substate!.Component.body.state[5] = "50000";
-    }
-    return r.fulfill({ json: response });
+        });
+      }
+      if (r.request().url().includes(envelope)) {
+        response.substate!.Component.body.state[4] = "100000";
+        response.substate!.Component.body.state[5] = "50000";
+      }
+      return r.fulfill({ json: response });
+    });
+    await page.goto("./");
+    await page.getByRole("button", { name: subject, exact: false }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("Ootle receiving address").fill(address);
+    await dialog
+      .getByLabel("Existing built-in account component")
+      .fill(account);
+    await dialog
+      .getByRole("button", { name: "Review gift collection" })
+      .click();
+    const confirm = dialog
+      .getByRole("region", { name: "Send this gift to your wallet?" })
+      .locator("button.primary");
+    await confirm.focus();
+    await page.keyboard.press("Enter");
+    await requested;
+    await expect(confirm).toBeDisabled();
+    const publicLink = dialog.getByLabel("Public link for this letter");
+    if (movedFocus) await publicLink.focus();
+    await page.clock.runFor(15_100);
+    await expect(confirm).toBeEnabled();
+    await expect(movedFocus ? publicLink : confirm).toBeFocused();
+    await expect(confirm).toHaveAttribute("aria-describedby", "letter-error");
+    await expect(dialog.getByRole("alert")).toContainText("timed out");
+    await expect(
+      dialog.getByRole("region", { name: "Send this gift to your wallet?" }),
+    ).toContainText(address);
+    const done = page.waitForResponse((r) => r.url().includes(account));
+    release();
+    await done;
+    await expect(
+      dialog.getByRole("button", { name: "Change destination" }),
+    ).toBeEnabled();
+    await dialog.getByRole("button", { name: "Change destination" }).click();
+    await expect(dialog.getByLabel("Ootle receiving address")).toHaveValue(
+      address,
+    );
+    await expect(
+      dialog.getByLabel("Existing built-in account component"),
+    ).toHaveValue(account);
+    expect(writes).toBe(0);
+    expect(
+      await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+    ).toBeNull();
+    expect(await page.evaluate(() => !!(window as any).tari)).toBe(false);
   });
-  await page.goto("./");
-  await page.getByRole("button", { name: subject, exact: false }).click();
-  const dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Ootle receiving address").fill(address);
-  await dialog.getByLabel("Existing built-in account component").fill(account);
-  await dialog.getByRole("button", { name: "Review gift collection" }).click();
-  const confirm = dialog
-    .getByRole("region", { name: "Send this gift to your wallet?" })
-    .locator("button.primary");
-  await confirm.click();
-  await requested;
-  await expect(confirm).toBeDisabled();
-  await page.clock.runFor(15_100);
-  await expect(confirm).toBeEnabled();
-  await expect(dialog.getByRole("alert")).toContainText("timed out");
-  await expect(
-    dialog.getByRole("region", { name: "Send this gift to your wallet?" }),
-  ).toContainText(address);
-  const done = page.waitForResponse((r) => r.url().includes(account));
-  release();
-  await done;
-  await expect(
-    dialog.getByRole("button", { name: "Change destination" }),
-  ).toBeEnabled();
-  await dialog.getByRole("button", { name: "Change destination" }).click();
-  await expect(dialog.getByLabel("Ootle receiving address")).toHaveValue(
-    address,
-  );
-  await expect(
-    dialog.getByLabel("Existing built-in account component"),
-  ).toHaveValue(account);
-  expect(writes).toBe(0);
-  expect(
-    await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
-  ).toBeNull();
-  expect(await page.evaluate(() => !!(window as any).tari)).toBe(false);
-});

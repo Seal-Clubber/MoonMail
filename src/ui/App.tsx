@@ -192,6 +192,8 @@ export function App() {
     routeOnce = useRef(false),
     claimReviewWasOpen = useRef(false),
     claimReviewTrigger = useRef<HTMLButtonElement>(null),
+    claimConfirm = useRef<HTMLButtonElement>(null),
+    restoreClaimFocus = useRef(false),
     [page, setPage] = useState(1),
     openSequence = useRef(0),
     draftSequence = useRef(0),
@@ -572,6 +574,18 @@ export function App() {
     claimReviewWasOpen.current = !!claimReview;
   }, [claimReview]);
   useEffect(() => {
+    if (busy || !restoreClaimFocus.current) return;
+    restoreClaimFocus.current = false;
+    if (
+      error &&
+      claimReview &&
+      claimConfirm.current &&
+      !claimConfirm.current.disabled &&
+      document.activeElement === document.body
+    )
+      claimConfirm.current.focus({ preventScroll: true });
+  }, [busy, error, claimReview]);
+  useEffect(() => {
     if (plain && active?.mode === "postbox" && !connect)
       document.getElementById("letter-title")?.focus({ preventScroll: true });
   }, [plain, active?.id, active?.mode, connect]);
@@ -765,6 +779,7 @@ export function App() {
     );
   }
   function closeLetter() {
+    restoreClaimFocus.current = false;
     setPublicLetterRoute(undefined);
     setPublicLetterState("idle");
     setPublicLetterError("");
@@ -2869,12 +2884,19 @@ export function App() {
                             Change destination
                           </button>
                           <button
+                            ref={claimConfirm}
+                            aria-describedby={
+                              error ? "letter-error" : undefined
+                            }
                             className="primary"
                             disabled={
                               busy || writeBlocked || !chain || active.claimed
                             }
                             onClick={() =>
                               void task(async () => {
+                                restoreClaimFocus.current =
+                                  document.activeElement ===
+                                  claimConfirm.current;
                                 const reviewed = claimReview;
                                 if (!chain || !reviewed) return;
                                 const owner = wallet?.accounts.find(
@@ -2920,7 +2942,7 @@ export function App() {
               <p className="fine-print">{status}</p>
             )}
             {error && (
-              <p role="alert" className="error">
+              <p id="letter-error" role="alert" className="error">
                 {error}
               </p>
             )}

@@ -1,0 +1,21 @@
+{
+  "recordedAt": "2026-10-08T03:06:47.488020+00:00",
+  "scope": "Local production frontend. Browser/indexer fixtures only, no transaction or hosted acceptance.",
+  "sourceBase": "894691a",
+  "change": "A recoverable collection failure returns keyboard focus to the confirmation button only when it lost focus to the body. Focus deliberately moved to another field is preserved. The button describes the displayed letter error.",
+  "verification": {
+    "beforeFix": "The existing stalled receiving-account fixture, confirmed with Enter, lost focus after the control was re-enabled on desktop and mobile.",
+    "browser": "Four desktop/mobile keyboard and moved-focus checks PASS. They retain the destination review and letter, release controls, keep the public-link field focused when chosen, and trigger no HTTP write, wallet or pending journal.",
+    "typescript": "PASS",
+    "productionBuild": "PASS",
+    "mainJs": "index-CFMeXMPT.js",
+    "css": "index-D82Q5kcH.css"
+  },
+  "limits": [
+    "Focus restoration does not activate the button or retry a claim. A new user action is required.",
+    "Successful submission/navigation and disabled financial controls are excluded.",
+    "This records collection review only; it does not claim all asynchronous controls restore focus.",
+    "No signing, fee, consent, contract or submission behavior changed.",
+    "Human retains push/publication control."
+  ]
+}
