@@ -11,6 +11,7 @@ import { readDelivery } from "../core/delivery";
 import { browserStorage } from "../core/browser-storage";
 import { CopyField } from "./CopyField";
 import { MailReadNotice } from "./MailReadNotice";
+import { postboxNameError, POSTBOX_NAME_LIMIT } from "../core/postbox-name";
 import { createPostboxLink } from "../core/postbox-links";
 
 export function Postboxes({
@@ -63,6 +64,7 @@ export function Postboxes({
     [viewAcknowledged, setViewAcknowledged] = useState(false),
     [viewApproved, setViewApproved] = useState(false);
 
+  const nameError = postboxNameError(nickname);
   const owned = boxes.filter((p) =>
     wallet?.accounts.some((a) => a.account.owner_public_key === p.controller),
   );
@@ -215,6 +217,7 @@ export function Postboxes({
     );
   }
   async function save(operation: "create" | "edit" | "rotate") {
+    if (nameError) throw new Error(nameError);
     if (!wallet || !chain || !account)
       throw new Error("Connect the controlling wallet");
     if (!enabled)
@@ -499,10 +502,19 @@ export function Postboxes({
                   value={nickname}
                   disabled={busy}
                   onChange={(e) => setNickname(e.target.value)}
-                  maxLength={80}
+                  maxLength={POSTBOX_NAME_LIMIT}
+                  aria-invalid={!!nickname && !!nameError}
+                  aria-describedby={
+                    nickname && nameError ? "postbox-name-error" : undefined
+                  }
                   required
                 />
               </label>
+              {nickname && nameError && (
+                <p id="postbox-name-error" className="error" role="alert">
+                  {nameError}
+                </p>
+              )}
               {(!box || rotating) && (
                 <>
                   <details className="advanced">
@@ -625,6 +637,7 @@ export function Postboxes({
                 className="primary"
                 disabled={
                   !enabled ||
+                  !!nameError ||
                   (!!prepared && prepared.state !== "confirmed") ||
                   (wallet instanceof SapientSession &&
                     (!box || rotating) &&

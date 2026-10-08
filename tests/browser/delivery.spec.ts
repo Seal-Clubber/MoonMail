@@ -505,10 +505,13 @@ test("saved postbox backup confirms read-only; opening needs separate view conse
   await approval.click();
   await expect(
     page.getByRole("button", { name: "2 of 2 · Open my postbox", exact: true }),
-  ).toBeEnabled();
+  ).toBeDisabled();
   await page
     .getByLabel("Postbox name", { exact: true })
     .fill("My moonlit corner");
+  await expect(
+    page.getByRole("button", { name: "2 of 2 · Open my postbox", exact: true }),
+  ).toBeEnabled();
   await expect(page.locator(".setup-summary")).toContainText(
     "My moonlit corner",
   );
@@ -1021,4 +1024,76 @@ test("closing wallet details discards a late public funds read", async ({
   await page.evaluate(() => (window as any).releaseWalletBalance());
   await expect(dialog).toContainText("Public funds: 2 TARI.");
   await assertReadOnlyFunds(page);
+});
+
+test("postbox names respect the chain byte limit before the first backup approval", async ({
+  page,
+}) => {
+  await connectFixture(page);
+  const profile = {
+    ...d,
+    capsule: {
+      template: "1".repeat(64),
+      component: `component_${"2".repeat(64)}`,
+      resource: `resource_${"3".repeat(64)}`,
+    },
+    evidence: { ...d.evidence, mailboxRecovery: true },
+  };
+  await page.route("**/deployment.json", (r) => r.fulfill({ json: profile }));
+  let writes = 0;
+  await page.route(`${d.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") writes++;
+    return r.fulfill({ json: ledger(r.request().url()) });
+  });
+  await page.goto("./#/postboxes");
+  await page
+    .getByRole("button", { name: "Connect wallet", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Connect Sapient", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Create my postbox", exact: true })
+    .click();
+  await page
+    .getByRole("checkbox", {
+      name: "I understand the account-wide private view permission",
+    })
+    .check();
+  await page
+    .getByRole("button", { name: "Approve postbox view access" })
+    .click();
+  const name = page.getByLabel("Postbox name", { exact: true }),
+    backup = page.getByRole("button", {
+      name: "1 of 2 · Save recovery backup",
+      exact: true,
+    });
+  await name.fill("👻".repeat(21));
+  await expect(backup).toBeDisabled();
+  await expect(name).toHaveAttribute("aria-invalid", "true");
+  await expect(page.getByRole("alert")).toContainText(
+    "Choose a shorter postbox name",
+  );
+  for (const valid of ["👻".repeat(20), "é".repeat(40), "a".repeat(80)]) {
+    await name.fill(valid);
+    await expect(backup).toBeEnabled();
+    await expect(name).toHaveAttribute("aria-invalid", "false");
+  }
+  await name.fill("é".repeat(41));
+  await expect(backup).toBeDisabled();
+  await name.fill("   ");
+  await expect(backup).toBeDisabled();
+  await name.fill("");
+  await expect(backup).toBeDisabled();
+  expect(
+    await page.evaluate(() =>
+      (window as any).walletCalls.filter((c: any) =>
+        /Transaction|sign/.test(c.method),
+      ),
+    ),
+  ).toEqual([]);
+  expect(writes).toBe(0);
+  expect(
+    await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+  ).toBeNull();
 });

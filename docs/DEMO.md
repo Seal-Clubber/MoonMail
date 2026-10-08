@@ -4,6 +4,8 @@ Use Esmeralda in Sapient. All amounts are test TARI. The website needs no separa
 
 The mist, fireflies and ghost artwork follow your device’s reduced-motion setting. Text and wallet controls stay still; the parchment writing and reading surfaces use dark ink.
 
+Choose a visible postbox name. If it is too long, shorten it before setup; emoji and accented letters use more space.
+
 Postbox setup shows **1 of 2 · Save recovery backup**, then **2 of 2 · Open my postbox** after confirmation. Approve each transaction in Sapient. Private-view access is a separate permission; each transaction has its own network fee. Reading an existing inbox only needs view permission. Rotation uses the same two approvals to save a new backup and update the encryption key.
 
 ## Read a letter

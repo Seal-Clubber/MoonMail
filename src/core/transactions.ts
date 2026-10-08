@@ -10,6 +10,7 @@ import {
 } from "@tari-project/ootle";
 import type { Deployment, Envelope, Postbox } from "./types";
 import { assertEnvelopeSize } from "./crypto";
+import { postboxNameError } from "./postbox-name";
 import { mailboxKey } from "./mailbox";
 export function money(value: string) {
   if (!/^\d+$/.test(value)) throw new Error("Amounts must be whole microTARI");
@@ -89,11 +90,7 @@ export function postboxTransaction(
   operation: "create" | "edit" | "rotate",
   box: Postbox,
 ) {
-  if (
-    !/^[A-Za-z0-9_-]{1,64}$/.test(box.id) ||
-    !box.nickname.trim() ||
-    new TextEncoder().encode(box.nickname).length > 80
-  )
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(box.id) || !!postboxNameError(box.nickname))
     throw new Error(
       "Choose a postbox ID and a nickname of at most 80 UTF-8 bytes",
     );

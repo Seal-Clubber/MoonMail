@@ -1,0 +1,23 @@
+{
+  "recordedAt": "2026-10-08T01:26:55.528002+00:00",
+  "scope": "Local production UI and client tests. Synthetic provider/indexer fixtures only; no new public transaction, private-view grant in a real wallet or hosted acceptance.",
+  "sourceBase": "7fd22aa",
+  "contractRule": "contracts/ghostdrop-v2/src/lib.rs create_postbox/edit_postbox require a nonempty Rust String of at most80 UTF-8 bytes. Existing transaction builder already enforced the byte boundary after backup preparation.",
+  "change": "Share the byte rule across UI, builder and early client validation. Invalid/blank names cannot start the backup step or second approval; an inline accessible error explains longer Unicode names.",
+  "verification": {
+    "beforeFix": "21ghost emoji (84UTF-8bytes,42UTF-16units) left first backup button enabled; regression failed.",
+    "client": "All161tests /18files PASS, including ASCII80,40accents and20ghost emoji at boundary; over-boundary and blank names reject.",
+    "browser": "54delivery, postbox-claim and app desktop/mobile checks PASS, one Windows CI worker46.4seconds. Valid Unicode boundaries enable the first step; invalid names create zero financial requests or pending records. Resumed empty name cannot start second approval.",
+    "typescript": "PASS",
+    "productionBuild": "PASS",
+    "mainJs": "index-BKdqVreq.js",
+    "css": "index-D82Q5kcH.css"
+  },
+  "limits": [
+    "No contract/template modification or publication.",
+    "Names are preserved exactly; only an all-whitespace name is rejected in addition to contract byte boundary.",
+    "Existing backup confirmation and separate view consent remain required.",
+    "No wallet fee, broadcast, funded setup or new restoration proof claimed.",
+    "GitHub push remains human-controlled."
+  ]
+}

@@ -1,3 +1,4 @@
+import { postboxNameError } from "./postbox-name";
 import { IndexerProvider } from "@tari-project/ootle-indexer";
 import { Network } from "@tari-project/ootle";
 import {
@@ -588,6 +589,8 @@ export class PostOfficeClient {
     fee: string,
     storage: Storage,
   ) {
+    const nameError = postboxNameError(box.nickname);
+    if (nameError) throw new Error(nameError);
     if (!writesReady(this.deployment, "postbox", wallet.kind ?? "daemon"))
       throw new Error("Postbox writes await deployment and recovery evidence");
     if (box.controller !== account.account.owner_public_key)
