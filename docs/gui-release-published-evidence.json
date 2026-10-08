@@ -1,0 +1,234 @@
+{
+  "frontendCommit": "b4b86b75da5ddf297fdbbdfcd8e8329a7810bdfb",
+  "checkedAt": "2026-10-08T00:16:26Z",
+  "base": "https://seal-clubber.github.io/GhostDrop/",
+  "httpsEnforced": true,
+  "workflowRuns": [
+    {
+      "id": 37700402244,
+      "name": "Verify GhostDrop",
+      "headSha": "b4b86b75da5ddf297fdbbdfcd8e8329a7810bdfb",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37700402244"
+    },
+    {
+      "id": 37700402171,
+      "name": "Publish reviewed GhostDrop to GitHub Pages",
+      "headSha": "b4b86b75da5ddf297fdbbdfcd8e8329a7810bdfb",
+      "status": "completed",
+      "conclusion": "success",
+      "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37700402171"
+    }
+  ],
+  "verification": {
+    "clientTests": 157,
+    "clientTestFiles": 17,
+    "browserTests": 156,
+    "browserWorkers": 1,
+    "browserPlatform": "Linux",
+    "allFourVerifyJobsPassed": true,
+    "jobs": {
+      "postbox-claims": 113062210036,
+      "contracts": 113062210077,
+      "recovery-capsule": 113062210198,
+      "static": 113062210229
+    }
+  },
+  "pagesArtifact": {
+    "id": 11516539787,
+    "bytes": 600909,
+    "digest": "sha256:5db41b70101d5437a52b3c7fb09e5db977a33182f4ec0c7786354c41fdc0e6da"
+  },
+  "assets": {
+    "frontendCommit": "b4b86b75da5ddf297fdbbdfcd8e8329a7810bdfb",
+    "base": "https://seal-clubber.github.io/GhostDrop/",
+    "publishedMatchesExactWorkflowArtifact": true,
+    "assetFiles": [
+      {
+        "path": "favicon.svg",
+        "bytes": 896,
+        "sha256": "32cc54bf2ebec8c90c82fa5004c6a82fcc53d03b5a7b785ffc515903ed279ecd"
+      },
+      {
+        "path": "deployment.json",
+        "bytes": 1005,
+        "sha256": "52df5ef95e81f906f1063fa7f593be8cab11fd6f4f5dfd4225c10bdc7ce78acf"
+      },
+      {
+        "path": "assets/index-C7HsHPk3.js",
+        "bytes": 356824,
+        "sha256": "4dfd1a0940ffd76c0208ebeb12bc70ba9aed06453682ccd7991adbf3535e3254"
+      },
+      {
+        "path": "assets/index-D82Q5kcH.css",
+        "bytes": 32243,
+        "sha256": "bbc9ab444c08efe9229c200f99000df058f6858ef5cabd2170da49f0c6f5cb0b"
+      },
+      {
+        "path": "assets/ootle_wasm-DixGV7PA.js",
+        "bytes": 21319,
+        "sha256": "e0dfe02134916f3202e8e84cc8b522bcbeb210fcffb31c900325288d27335810"
+      },
+      {
+        "path": "assets/ootle_wasm_bg-Dvm5bzZ4.wasm",
+        "bytes": 1288441,
+        "sha256": "d3969f2f738a70cf3199992d52c3e766000b5f31b859427849ed4171395897f1"
+      },
+      {
+        "path": "assets/ootle_wasm-CLPAruJ_.js",
+        "bytes": 209,
+        "sha256": "e490145dfae574781fe74c176955b03a51d16d8170cbcc7d7a021414595baa56"
+      },
+      {
+        "path": "index.html",
+        "bytes": 867,
+        "sha256": "167607407ef48eab3eb35011ebc079356923473436eb2ab8e6bb2ff017efec60"
+      },
+      {
+        "path": "deployment-v2.json",
+        "bytes": 1005,
+        "sha256": "52df5ef95e81f906f1063fa7f593be8cab11fd6f4f5dfd4225c10bdc7ce78acf"
+      }
+    ]
+  },
+  "guestBrowser": {
+    "base": "https://seal-clubber.github.io/GhostDrop/",
+    "frontendCommit": "b4b86b75da5ddf297fdbbdfcd8e8329a7810bdfb",
+    "checkedAt": "2026-10-08T00:10:44.351Z",
+    "results": [
+      {
+        "viewport": "desktop",
+        "publicLettersOnFirstPage": 1,
+        "screens": [
+          {
+            "view": "hall",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "compose",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "postboxes",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "activity",
+            "horizontalOverflow": false
+          }
+        ],
+        "financialRequests": 0,
+        "pageErrors": []
+      },
+      {
+        "viewport": "mobile",
+        "publicLettersOnFirstPage": 1,
+        "screens": [
+          {
+            "view": "hall",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "compose",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "postboxes",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "activity",
+            "horizontalOverflow": false
+          }
+        ],
+        "financialRequests": 0,
+        "pageErrors": []
+      }
+    ]
+  },
+  "stockSapientUnsentSetupAndReply": {
+    "checkedAt": "2026-10-08T00:11:14.132Z",
+    "base": "https://seal-clubber.github.io/GhostDrop/",
+    "frontendCommit": "b4b86b75da5ddf297fdbbdfcd8e8329a7810bdfb",
+    "sourceVersion": "0.6.6",
+    "existingIsolatedRestoredProfile": true,
+    "runtimeAssetsMatchReviewedStorePackage": true,
+    "ledgerOrAppOverrides": false,
+    "readOnlyWalletMethodGuard": true,
+    "postboxId": "sapient-v2-recovery-inbox",
+    "checks": {
+      "twoApprovalProgressVisible": true,
+      "privateViewPermissionSeparate": true,
+      "unsentBackupButtonGated": true,
+      "postboxSetupMobileWithoutOverflow": true,
+      "disconnectClearsBoundReply": true,
+      "draftKeptAfterDisconnect": true,
+      "newGuestReviewHasNoReply": true,
+      "actualSiteConnection": true,
+      "addAndRemoveReplyInvalidatesReview": true,
+      "obsoletePrivateLinkReplaced": true,
+      "savedAcknowledgementCleared": true,
+      "preparedReplyIdReviewed": true,
+      "transactionJournalUnchanged": true,
+      "mobileWithoutOverflow": true,
+      "privateConsentRequests": 0,
+      "originDisconnected": true,
+      "transactionRequestsCreated": 0,
+      "signaturesRequested": 0,
+      "transactionsBroadcast": 0,
+      "bulkSubstateReads": 2,
+      "blockedHttp": 0,
+      "blockedWalletMethods": []
+    },
+    "walletMethodNames": [
+      "tari_disconnect",
+      "tari_getNetwork",
+      "tari_requestAccounts",
+      "tari_getWalletAddress",
+      "tari_getCapabilities",
+      "tari_getAccounts"
+    ],
+    "caveat": "Actual stock wallet and public registered postbox; unsent published preparations only, with financial and private-view methods blocked. No claim, publication, seed restoration or private-link capability in output/screenshots."
+  },
+  "publicLetterSharing": {
+    "checkedAt": "2026-10-08T00:13:42.158Z",
+    "frontendCommit": "b4b86b75da5ddf297fdbbdfcd8e8329a7810bdfb",
+    "base": "https://seal-clubber.github.io/GhostDrop/",
+    "network": 38,
+    "registry": "component_7f205e42678ea72a6a157e9c588851394fc479b99b6be53df407f327c47492f8",
+    "publicLetterId": "a07d79d6-b5d3-4e67-9d8c-ffd4b8a76f2e",
+    "sealedLetterId": "351145c0-6c79-43a6-ab5b-96d804d432f7",
+    "ledgerOrAppOverrides": false,
+    "results": [
+      {
+        "viewport": "desktop",
+        "actualPublicSubjectAndBodyRead": true,
+        "actualShareLinkContextCorrect": true,
+        "freshGuestCanOpenAfterOriginalClosed": true,
+        "originalReaderClosed": true,
+        "sealedLetterRejected": true,
+        "walletProviderPresent": false,
+        "transactionJournalCreated": false,
+        "nonReadRequests": 0,
+        "pageErrors": [],
+        "horizontalOverflow": false
+      },
+      {
+        "viewport": "mobile",
+        "actualPublicSubjectAndBodyRead": true,
+        "actualShareLinkContextCorrect": true,
+        "freshGuestCanOpenAfterOriginalClosed": true,
+        "originalReaderClosed": true,
+        "sealedLetterRejected": true,
+        "walletProviderPresent": false,
+        "transactionJournalCreated": false,
+        "nonReadRequests": 0,
+        "pageErrors": [],
+        "horizontalOverflow": false
+      }
+    ],
+    "caveat": "Existing public letter only; actual Pages sharing and fresh guest reading. No publication, clipboard write, private view, wallet connection, gift review, claim or financial operation. Public body/subject omitted from evidence and screenshots."
+  },
+  "scope": "Exact published build, existing public mail and existing isolated restored stock-wallet profile. No new publication, postbox, claim, signature, broadcast, private-view permission, seed restoration, personal wallet access, Store installation UI or native phone test. Historical financial and recovery evidence retains its original scope."
+}
