@@ -10,7 +10,7 @@ Postbox setup shows **1 of 2 · Save recovery backup**, then **2 of 2 · Open my
 
 ## Read a letter
 
-Open **Public mail** and choose a letter. Public reading needs no wallet. If someone gives you a private link, open the complete link to decrypt the letter on your device. Opening a letter never collects a gift. Empty and loading states show no invented mail or funded gifts.
+Open **Public mail** and choose a letter. Public reading needs no wallet. If someone gives you a private link, open the complete link to decrypt the letter on your device. Opening a letter never collects a gift. If a private inbox letter fails to open, use **Retry opening letter** inside it. If Sapient needs view permission, close the letter and approve postbox view access in **My inbox** first. Empty and loading states show no invented mail or funded gifts.
 
 For a public letter, choose **Copy public letter link** and share the complete address. Your friend can open that exact letter without connecting Sapient. Public links give everyone access to the letter and any available public gift; opening alone never collects it. Keep sealed mail on its private link or controlling postbox wallet. If a public link belongs to another office, check it with the sender. The site keeps your current office settings.
 

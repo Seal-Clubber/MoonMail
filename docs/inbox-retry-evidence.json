@@ -1,0 +1,113 @@
+{
+  "recordedAt": "2026-10-08T02:09:06.160435+00:00",
+  "scope": "Local production frontend. This record does not claim publication of these local improvements or a new funded campaign.",
+  "realReadOnlyAcceptance": {
+    "frontendCommit": "71f374026bd2d6b78384690c501e571e4544e12c",
+    "stockSapient": {
+      "checkedAt": "2026-10-08T01:48:40.533Z",
+      "base": "http://127.0.0.1:4173/GhostDrop/",
+      "sourceVersion": "0.6.6",
+      "existingIsolatedRestoredProfile": true,
+      "runtimeAssetsMatchReviewedStorePackage": true,
+      "ledgerOrAppOverrides": false,
+      "readOnlyWalletMethodGuard": true,
+      "checks": {
+        "unicodeNameHintVisible": true,
+        "validNameClearsHint": true,
+        "existingInboxPermissionDoesNotPromiseTransactions": true,
+        "twoApprovalProgressVisible": true,
+        "privateViewPermissionSeparate": true,
+        "unsentBackupButtonGated": true,
+        "postboxSetupMobileWithoutOverflow": true,
+        "disconnectClearsBoundReply": true,
+        "draftKeptAfterDisconnect": true,
+        "newGuestReviewHasNoReply": true,
+        "actualSiteConnection": true,
+        "addAndRemoveReplyInvalidatesReview": true,
+        "obsoletePrivateLinkReplaced": true,
+        "savedAcknowledgementCleared": true,
+        "preparedReplyIdReviewed": true,
+        "transactionJournalUnchanged": true,
+        "mobileWithoutOverflow": true,
+        "privateConsentRequests": 0,
+        "originDisconnected": true,
+        "transactionRequestsCreated": 0,
+        "signaturesRequested": 0,
+        "transactionsBroadcast": 0,
+        "bulkSubstateReads": 2,
+        "blockedHttp": 0,
+        "blockedWalletMethods": []
+      },
+      "walletMethodNames": [
+        "tari_disconnect",
+        "tari_getNetwork",
+        "tari_requestAccounts",
+        "tari_getWalletAddress",
+        "tari_getCapabilities",
+        "tari_getAccounts"
+      ],
+      "caveat": "Actual stock wallet and public registered postbox; unsent local production preparations only, with financial and private-view methods blocked. No claim, publication, seed restoration or private-link capability in output/screenshots."
+    },
+    "actualGuestRead": {
+      "checkedAt": "2026-10-08T01:51:13.552Z",
+      "frontendCommit": "71f374026bd2d6b78384690c501e571e4544e12c",
+      "base": "http://127.0.0.1:4173/GhostDrop/",
+      "ledgerOrAppOverrides": false,
+      "results": [
+        {
+          "mode": "public",
+          "viewport": "desktop",
+          "actualSubjectAndBodyRead": true,
+          "claimedGiftShown": true,
+          "repeatedClaimNotOffered": true,
+          "noWallet": true,
+          "noTransactionJournal": true,
+          "noPostRequests": true,
+          "noScriptErrors": true,
+          "noOverflow": true
+        },
+        {
+          "mode": "private-link",
+          "viewport": "mobile",
+          "actualSubjectAndBodyRead": true,
+          "claimedGiftShown": true,
+          "repeatedClaimNotOffered": true,
+          "noWallet": true,
+          "noTransactionJournal": true,
+          "noPostRequests": true,
+          "noScriptErrors": true,
+          "noOverflow": true,
+          "capabilityScrubbedFromVisibleUrl": true,
+          "noCapabilityInStorageOrRequests": true
+        }
+      ],
+      "noNewFinancialOperation": true
+    },
+    "note": "Stock acceptance uses an existing isolated profile and actual ledger, with financial/private-view requests blocked. Fresh public/private-link guests read previously collected gifts; no replacement claim or transaction. An earlier external guest-helper attempt stopped with an unclassified generic error; the instrumented fresh read-only run completed."
+  },
+  "latestInboxRetry": {
+    "sourceBase": "71f3740",
+    "behavior": [
+      "Permanent recovery resource, carrier and deployment verification share the15-second read deadline.",
+      "Failed opening offers Retry opening letter inside the letter for its controlling wallet. Permission failures explain approving view access separately in My inbox.",
+      "Successful addressed decryption focuses the letter title.",
+      "Losing late carrier responses never request private summaries or open a stale letter."
+    ],
+    "verification": {
+      "beforeFix": "Both stalled-resource/carrier core regressions failed; UI retry regression found no retry control before the change.",
+      "client": "163tests /18files PASS after core extension.",
+      "browser": "38inbox-retry, delivery and addressed-claim desktop/mobile checks PASS, one Windows CI worker38.5seconds. The new case retries into an actual SDK-encrypted synthetic letter using an engine carrier fixture and an already-granted synthetic view permission.",
+      "typescript": "PASS",
+      "productionBuild": "PASS",
+      "mainJs": "index-DmJx6r8w.js",
+      "css": "index-D82Q5kcH.css"
+    },
+    "limits": [
+      "Latest inbox-retry behavior is fixture verified, not a new live private-view or restoration test.",
+      "Full178browser and stock/guest acceptance above retain71f3740 scope; they precede this inbox-only extension.",
+      "Underlying SDK reads may finish in the background; no HTTP abort is claimed.",
+      "Existing permission checks, capsule bindings, secret cleanup and immutable carrier checks remain.",
+      "No new financial operation, private-view grant in a real wallet, contract change or GitHub push."
+    ]
+  }
+}

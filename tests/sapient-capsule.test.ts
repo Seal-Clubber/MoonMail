@@ -285,3 +285,52 @@ test("view revocation during wallet recovery prevents key disclosure", async () 
     f.adapter.recover(account.account.component_address, context, f.descriptor),
   ).rejects.toThrow("private view access");
 });
+
+test.each([
+  ["resource", resource],
+  ["carrier", utxo],
+])(
+  "a stalled capsule %s lookup rejects without requesting private summaries and ignores late completion",
+  async (_kind, target) => {
+    const f = await fixture(),
+      original = f.read.getMockImplementation()!;
+    let release!: (value: Awaited<ReturnType<typeof f.read>>) => void;
+    const stalled = new Promise<Awaited<ReturnType<typeof f.read>>>(
+      (resolve) => (release = resolve),
+    );
+    f.read.mockImplementation(async (id) =>
+      id === target ? stalled : original(id),
+    );
+    let settled: { error: string | null } | undefined;
+    vi.useFakeTimers();
+    const outcome = f.adapter
+      .recover(account.account.component_address, context, f.descriptor)
+      .then(
+        (secret) => {
+          secret.fill(0);
+          settled = { error: null };
+        },
+        (error: Error) => {
+          settled = { error: error.message };
+        },
+      );
+    try {
+      await vi.waitFor(() => expect(f.read).toHaveBeenCalledWith(target));
+      await vi.advanceTimersByTimeAsync(15_001);
+      expect(settled?.error).toContain("read timed out");
+      expect(f.request.mock.calls.map(([method]) => method)).toEqual([
+        "tari_getViewAccess",
+      ]);
+      release(structuredClone(ledger[target as keyof typeof ledger]));
+      await outcome;
+      expect(f.request.mock.calls.map(([method]) => method)).toEqual([
+        "tari_getViewAccess",
+      ]);
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      release(structuredClone(ledger[target as keyof typeof ledger]));
+      await outcome;
+      vi.useRealTimers();
+    }
+  },
+);

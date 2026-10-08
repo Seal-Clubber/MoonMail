@@ -549,6 +549,10 @@ export function App() {
     }
     claimReviewWasOpen.current = !!claimReview;
   }, [claimReview]);
+  useEffect(() => {
+    if (plain && active?.mode === "postbox" && !connect)
+      document.getElementById("letter-title")?.focus({ preventScroll: true });
+  }, [plain, active?.id, active?.mode, connect]);
   useEffect(
     () => () => {
       secret.current?.fill(0);
@@ -2478,7 +2482,7 @@ export function App() {
                   ? "PUBLIC LETTER"
                   : "SEALED INVITATION"}
             </span>
-            <h2 id="letter-title">
+            <h2 id="letter-title" tabIndex={-1}>
               {plain?.subject || "A sealed little secret"}
             </h2>
             {plain ? (
@@ -2491,6 +2495,25 @@ export function App() {
                     ? "This letter is sealed to its postbox. Connect the controlling wallet and use its account-scoped decrypt permission to open it."
                     : "This letter is sealed. Only its complete private link can unlock its subject and contents."}
                 </p>
+                {active.mode === "postbox" &&
+                  wallet?.accounts.some(
+                    (account) =>
+                      account.account.owner_public_key ===
+                      active.claimAuthority,
+                  ) && (
+                    <>
+                      <button
+                        disabled={busy || !chain}
+                        onClick={() => void task(() => openPostbox(active))}
+                      >
+                        {busy ? "Opening your letter…" : "Retry opening letter"}
+                      </button>
+                      <p className="fine-print">
+                        If Sapient needs view permission, close this letter and
+                        approve postbox view access in My inbox first.
+                      </p>
+                    </>
+                  )}
               </div>
             )}
             {active.replyPostbox &&

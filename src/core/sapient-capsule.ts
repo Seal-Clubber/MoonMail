@@ -1,3 +1,4 @@
+import { readWithTimeout } from "./read-timeout";
 import type {
   Letter,
   MailboxContext,
@@ -38,7 +39,7 @@ export async function verifyPermanentCarrier(
     throw new Error("Invalid permanent capsule reference");
   await verifyCapsuleResource(reference.resource, read);
   const id = `utxo_${reference.resource.slice("resource_".length)}_${reference.commitment}`;
-  const utxo = object(object((await read(id)).substate).Utxo);
+  const utxo = object(object((await readWithTimeout(read(id))).substate).Utxo);
   const output = object(utxo.output),
     auth = object(output.auth);
   if (
@@ -53,7 +54,9 @@ async function verifyCapsuleResource(
   address: string,
   read: CapsuleSubstateReader,
 ) {
-  const resource = object(object((await read(address)).substate).Resource);
+  const resource = object(
+    object((await readWithTimeout(read(address))).substate).Resource,
+  );
   const rules = object(resource.access_rules);
   if (
     resource.resource_type !== "Stealth" ||
@@ -89,7 +92,8 @@ export async function verifyCapsuleDeployment(
   )
     throw new Error("Invalid capsule deployment identity");
   const component = object(
-    object((await read(deployment.component)).substate).Component,
+    object((await readWithTimeout(read(deployment.component))).substate)
+      .Component,
   );
   const header = object(component.header);
   if (
