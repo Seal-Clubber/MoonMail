@@ -1,0 +1,107 @@
+{
+  "recordedAt": "2026-10-08T02:43:06.713775+00:00",
+  "scope": "Read-only acceptance of clean local production checkpoint c12b047. Actual ledger and unmodified official Store Sapient; no app/config/ledger overrides. This is not a new hosted or funded test.",
+  "frontendCommit": "c12b047766789739b073eb7346a34b1c12b68781",
+  "frontendBase": "http://127.0.0.1:4173/GhostDrop/",
+  "stockWallet": {
+    "checkedAt": "2026-10-08T02:41:25.577Z",
+    "sourceVersion": "0.6.6",
+    "existingIsolatedRestoredProfile": true,
+    "runtimeAssetsMatchReviewedStorePackage": true,
+    "readOnlyWalletMethodGuard": true,
+    "checks": {
+      "unicodeNameHintVisible": true,
+      "validNameClearsHint": true,
+      "existingInboxPermissionDoesNotPromiseTransactions": true,
+      "twoApprovalProgressVisible": true,
+      "privateViewPermissionSeparate": true,
+      "unsentBackupButtonGated": true,
+      "postboxSetupMobileWithoutOverflow": true,
+      "disconnectClearsBoundReply": true,
+      "draftKeptAfterDisconnect": true,
+      "newGuestReviewHasNoReply": true,
+      "actualSiteConnection": true,
+      "addAndRemoveReplyInvalidatesReview": true,
+      "obsoletePrivateLinkReplaced": true,
+      "savedAcknowledgementCleared": true,
+      "preparedReplyIdReviewed": true,
+      "transactionJournalUnchanged": true,
+      "mobileWithoutOverflow": true,
+      "privateConsentRequests": 0,
+      "originDisconnected": true,
+      "transactionRequestsCreated": 0,
+      "signaturesRequested": 0,
+      "transactionsBroadcast": 0,
+      "bulkSubstateReads": 2,
+      "blockedHttp": 0,
+      "blockedWalletMethods": []
+    },
+    "walletMethodNames": [
+      "tari_disconnect",
+      "tari_getNetwork",
+      "tari_requestAccounts",
+      "tari_getWalletAddress",
+      "tari_getCapabilities",
+      "tari_getAccounts"
+    ],
+    "caveat": "Actual stock wallet and public registered postbox; unsent local production preparations only, with financial and private-view methods blocked. No claim, publication, seed restoration or private-link capability in output/screenshots."
+  },
+  "guestReads": {
+    "checkedAt": "2026-10-08T02:40:54.002Z",
+    "frontendCommit": "c12b047766789739b073eb7346a34b1c12b68781",
+    "base": "http://127.0.0.1:4173/GhostDrop/",
+    "ledgerOrAppOverrides": false,
+    "results": [
+      {
+        "mode": "public",
+        "viewport": "desktop",
+        "actualSubjectAndBodyRead": true,
+        "claimedGiftShown": true,
+        "repeatedClaimNotOffered": true,
+        "noWallet": true,
+        "noTransactionJournal": true,
+        "noPostRequests": true,
+        "noScriptErrors": true,
+        "noOverflow": true
+      },
+      {
+        "mode": "private-link",
+        "viewport": "mobile",
+        "actualSubjectAndBodyRead": true,
+        "claimedGiftShown": true,
+        "repeatedClaimNotOffered": true,
+        "noWallet": true,
+        "noTransactionJournal": true,
+        "noPostRequests": true,
+        "noScriptErrors": true,
+        "noOverflow": true,
+        "capabilityScrubbedFromVisibleUrl": true,
+        "noCapabilityInStorageOrRequests": true
+      }
+    ],
+    "noNewFinancialOperation": true
+  },
+  "privacyAudit": {
+    "checkedAt": "2026-10-08T02:41:30.274099+00:00",
+    "trackedSourceAndCurrentBuildScanned": true,
+    "privateLinkAndCapabilityAbsent": true,
+    "publicEvidenceWhitelisted": true,
+    "privateValuePrinted": false
+  },
+  "visualInspection": "The actual stock-wallet unsent postbox setup and public delivery-review panels were visually inspected; names, two approvals, fee caps and full reply ID remain readable on the narrow layout.",
+  "verification": {
+    "client": "167 tests /19 files PASS.",
+    "browser": "196 desktop/mobile checks PASS with one Windows CI worker.",
+    "typescript": "PASS",
+    "productionBuild": "PASS",
+    "mainJs": "index-9_VFDlYY.js",
+    "css": "index-D82Q5kcH.css"
+  },
+  "limits": [
+    "Actual guest reads reuse the previously collected public/private-link demonstration letters; no replacement claim or transaction occurred.",
+    "Latest inbox retry is fixture verified; no new real private-view grant, private inbox decryption or seed restoration is claimed.",
+    "The first current guest helper run stopped during its public-body assertion after the shorter default wait, with no reported read failure. The instrumented fresh run used a 45-second read assertion limit and completed; the earlier cause is unclassified.",
+    "A separate direct Node HTTP probe returned TypeError for network/health; this is not evidence that the browser endpoint was unavailable. Actual browser/stock-wallet acceptance above passed.",
+    "Human retains push/publish control; hosted checkpoint remains11dca65."
+  ]
+}
