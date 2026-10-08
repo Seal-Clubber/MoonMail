@@ -1,0 +1,28 @@
+{
+  "recordedAt": "2026-10-08T02:59:04.212923+00:00",
+  "sourceBase": "6d28816",
+  "scope": "Local production frontend; provider/indexer/wallet fixtures only. No new live claim, wallet proof, transaction or publication.",
+  "change": "Destination, epoch, vault-discovery and input-resolution reads have a 15-second deadline before submitting a claim or requesting a financial wallet transaction. The noncommitting addressed-claim simulation also has this deadline. Permanent recovery verification retains its existing read deadlines.",
+  "verification": {
+    "beforeFix": "The guest epoch regression timed out rather than rejecting at the read deadline. Against the preceding production build, the receiving-account browser regression kept Collecting disabled after the deadline. Its first locator attempt was corrected to follow the changing busy label before measuring the actual old failure.",
+    "client": "All 174 tests /19 files PASS. Seven new tests cover guest destination/epoch/vault/input stalls, addressed proof input/simulation stalls and a deliberately slow broadcast.",
+    "browser": "94 reader/delivery/postbox-claim desktop/mobile checks PASS with one Windows CI worker (1.2 minutes).",
+    "typescript": "PASS",
+    "productionBuild": "PASS",
+    "mainJs": "index-AXm90a9-.js",
+    "css": "index-D82Q5kcH.css"
+  },
+  "results": [
+    "Timed-out preparation stops before reserving an attempt or broadcasting, even when the losing read later resolves.",
+    "Addressed input/simulation stalls occur after one synthetic ownership approval; a late result cannot submit that proof.",
+    "The guest UI retains its letter, destination and separate review, releases controls and permits an explicit change or retry; the late read triggers no write or journal entry.",
+    "Financial wallet requests, signing and actual consensus submission do not use this read deadline. A broadcast deliberately held beyond it remains uncertain in the original journal and later completes that same attempt."
+  ],
+  "limits": [
+    "Underlying read/simulation requests may finish in the background; no HTTP cancellation is claimed.",
+    "This is a per-preparation-step deadline, not a whole-operation deadline.",
+    "A recipient may need to explicitly authorize a new ownership proof after a preparation failure. No financial claim was submitted by that failed preparation.",
+    "Latest preparation behavior is fixture verified. Earlier real stock/guest acceptance atc12b047 and funded/hosted evidence keep their exact separate scopes.",
+    "Human retains GitHub push and publication control."
+  ]
+}

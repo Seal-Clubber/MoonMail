@@ -1,4 +1,6 @@
-import { expect, test, vi } from "vitest";
+import { afterEach, expect, test, vi } from "vitest";
+import { getVaultIdsForAccount } from "@tari-project/ootle";
+afterEach(() => vi.useRealTimers());
 import {
   generateKeypair,
   generateOotleAddress,
@@ -434,4 +436,112 @@ test("guest claim stops when another preparation reserves its gift during input 
   expect(readPending(f.storage)).toEqual([
     expect.objectContaining({ state: "unknown", envelopeId: publicGift.id }),
   ]);
+});
+
+for (const stage of ["destination", "epoch", "vault", "inputs"] as const)
+  test(`stalled preparation ${stage} ends before a guest claim can broadcast, even after a late read`, async () => {
+    const f = await chainFixture();
+    const gift = { ...f.envelope, mode: "public" as const };
+    vi.mocked(f.chain.readLetter).mockResolvedValue(gift);
+    let release!: (value: any) => void;
+    const held = new Promise<any>((r) => (release = r));
+    const read = vi.fn(() => held);
+    if (stage === "destination") {
+      vi.mocked(f.chain.validateDestination).mockRestore();
+      (f.provider as any).getSubstate = read;
+    } else if (stage === "epoch")
+      f.provider.getCurrentEpoch.mockImplementationOnce(read);
+    else if (stage === "vault")
+      vi.mocked(getVaultIdsForAccount).mockImplementationOnce(read);
+    else f.provider.resolveInputs.mockImplementationOnce(read);
+    vi.useFakeTimers();
+    const result = f.chain.claim(
+      gift,
+      f.address,
+      f.selected,
+      undefined,
+      f.storage,
+    );
+    const failed = expect(result).rejects.toThrow("timed out");
+    await vi.waitFor(() => expect(read).toHaveBeenCalledTimes(1));
+    await vi.advanceTimersByTimeAsync(15_000);
+    await failed;
+    release(
+      stage === "epoch"
+        ? 100
+        : stage === "vault"
+          ? []
+          : stage === "inputs"
+            ? []
+            : {},
+    );
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(result).rejects.toThrow("timed out");
+    expect(f.provider.submitTransaction).not.toHaveBeenCalled();
+    expect(simulation).not.toHaveBeenCalled();
+    expect(readPending(f.storage)).toEqual([]);
+    expect(
+      f.request.mock.calls.some(
+        ([a]) => a.method === "tari_signWalletOwnershipChallenge",
+      ),
+    ).toBe(false);
+  });
+
+for (const stage of ["inputs", "simulation"] as const)
+  test(`stalled preparation ${stage} cannot broadcast an already-approved postbox proof after its late response`, async () => {
+    const f = await chainFixture();
+    let release!: (value: any) => void;
+    const held = new Promise<any>((r) => (release = r));
+    const read = vi.fn(() => held);
+    const simulationResult = {
+      transaction_id: "8".repeat(64),
+      result: {
+        finalize: { result: { Accept: {} }, total_fees_required: "1000" },
+      },
+    };
+    if (stage === "inputs")
+      f.provider.resolveInputs.mockImplementationOnce(read);
+    else simulation.mockImplementationOnce(read);
+    vi.useFakeTimers();
+    const result = f.claim();
+    const failed = expect(result).rejects.toThrow("timed out");
+    await vi.waitFor(() => expect(read).toHaveBeenCalledTimes(1));
+    await vi.advanceTimersByTimeAsync(15_000);
+    await failed;
+    release(stage === "simulation" ? simulationResult : []);
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(result).rejects.toThrow("timed out");
+    expect(f.provider.submitTransaction).not.toHaveBeenCalled();
+    expect(readPending(f.storage)).toEqual([]);
+    expect(
+      f.request.mock.calls.filter(
+        ([a]) => a.method === "tari_signWalletOwnershipChallenge",
+      ),
+    ).toHaveLength(1);
+  });
+
+test("a slow broadcast remains unresolved in its original journal and is never subject to the read deadline", async () => {
+  const f = await chainFixture();
+  let release!: (value: { transaction_id: string }) => void;
+  f.provider.submitTransaction.mockImplementationOnce(
+    () => new Promise((r) => (release = r)),
+  );
+  vi.useFakeTimers();
+  let settled = false;
+  const result = f.claim().finally(() => (settled = true));
+  result.catch(() => {});
+  await vi.waitFor(() =>
+    expect(f.provider.submitTransaction).toHaveBeenCalledTimes(1),
+  );
+  await vi.advanceTimersByTimeAsync(20_000);
+  expect(settled).toBe(false);
+  expect(readPending(f.storage)).toEqual([
+    expect.objectContaining({ state: "unknown", envelopeId: "gift" }),
+  ]);
+  release({ transaction_id: "4".repeat(64) });
+  expect(await result).toBe("4".repeat(64));
+  expect(readPending(f.storage)).toEqual([
+    expect.objectContaining({ id: "4".repeat(64), state: "submitted" }),
+  ]);
+  expect(f.provider.submitTransaction).toHaveBeenCalledTimes(1);
 });

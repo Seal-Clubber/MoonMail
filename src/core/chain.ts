@@ -270,7 +270,7 @@ export class PostOfficeClient {
         throw new Error(
           "Enter the receiving account component as well as its Ootle address",
         );
-      const r = await this.provider.getSubstate(component);
+      const r = await readWithTimeout(this.provider.getSubstate(component));
       const v = r.substate as unknown as {
         Component?: {
           header: {
@@ -321,7 +321,7 @@ export class PostOfficeClient {
       envelope,
       account.account.component_address,
       fee,
-      await this.provider.getCurrentEpoch(),
+      await readWithTimeout(this.provider.getCurrentEpoch()),
     );
     if (wallet instanceof SapientSession) {
       if (
@@ -336,9 +336,11 @@ export class PostOfficeClient {
         this.deployment.registry,
         account.account.component_address,
         this.deployment.resource,
-        ...(await getVaultIdsForAccount(
-          this.provider,
-          account.account.component_address,
+        ...(await readWithTimeout(
+          getVaultIdsForAccount(
+            this.provider,
+            account.account.component_address,
+          ),
         )),
       ].map((substate_id) => ({
         substate_id,
@@ -353,7 +355,7 @@ export class PostOfficeClient {
           ]),
         ).values(),
       );
-      tx.inputs = await this.provider.resolveInputs(tx.inputs);
+      tx.inputs = await readWithTimeout(this.provider.resolveInputs(tx.inputs));
       return wallet.submitOperation(tx, fee, storage, {
         network: this.deployment.network,
         registry: this.deployment.registry,
@@ -440,7 +442,7 @@ export class PostOfficeClient {
     if (!envelope.component) throw new Error("Envelope component missing");
     const latest = await this.readLetter(envelope.id, envelope.component);
     if (latest.claimed) throw new Error("Gift already collected");
-    const epoch = await this.provider.getCurrentEpoch();
+    const epoch = await readWithTimeout(this.provider.getCurrentEpoch());
     const rawTx = createAccount
       ? claimToNewAccountTransaction(
           this.deployment,
@@ -455,10 +457,14 @@ export class PostOfficeClient {
           epoch,
         );
     const vaults = [
-      ...(await getVaultIdsForAccount(this.provider, envelope.component)),
+      ...(await readWithTimeout(
+        getVaultIdsForAccount(this.provider, envelope.component),
+      )),
       ...(createAccount
         ? []
-        : await getVaultIdsForAccount(this.provider, destination)),
+        : await readWithTimeout(
+            getVaultIdsForAccount(this.provider, destination),
+          )),
     ];
     const ids = [
       envelope.component,
@@ -474,7 +480,7 @@ export class PostOfficeClient {
         substate_id !== this.deployment.resource &&
         !substate_id.startsWith("template_"),
     }));
-    const tx = await resolveTransaction(this.provider, rawTx);
+    const tx = await readWithTimeout(resolveTransaction(this.provider, rawTx));
     const signer = claimSecret
       ? SecretKeyWallet.fromSecretKey(
           claimSecret,
@@ -522,9 +528,11 @@ export class PostOfficeClient {
         account.account.component_address,
         this.deployment.resource,
         `template_${this.deployment.template}`,
-        ...(await getVaultIdsForAccount(
-          this.provider,
-          account.account.component_address,
+        ...(await readWithTimeout(
+          getVaultIdsForAccount(
+            this.provider,
+            account.account.component_address,
+          ),
         )),
       ];
       tx.inputs = Array.from(
@@ -541,7 +549,7 @@ export class PostOfficeClient {
           ].map((input) => [input.substate_id, input]),
         ).values(),
       );
-      tx.inputs = await this.provider.resolveInputs(tx.inputs);
+      tx.inputs = await readWithTimeout(this.provider.resolveInputs(tx.inputs));
       return wallet.submitOperation(tx, feeCap, storage, {
         network: this.deployment.network,
         registry: this.deployment.registry,
@@ -667,7 +675,7 @@ export class PostOfficeClient {
       this.deployment,
       account.account.component_address,
       fee,
-      await this.provider.getCurrentEpoch(),
+      await readWithTimeout(this.provider.getCurrentEpoch()),
       operation,
       box,
     );
@@ -707,9 +715,11 @@ export class PostOfficeClient {
       storage,
       {
         readSubstate: (id) => this.provider.getSubstate(id),
-        vaults: (account) => getVaultIdsForAccount(this.provider, account),
-        epoch: () => this.provider.getCurrentEpoch(),
-        resolveInputs: (inputs) => this.provider.resolveInputs(inputs),
+        vaults: (account) =>
+          readWithTimeout(getVaultIdsForAccount(this.provider, account)),
+        epoch: () => readWithTimeout(this.provider.getCurrentEpoch()),
+        resolveInputs: (inputs) =>
+          readWithTimeout(this.provider.resolveInputs(inputs)),
       },
     );
   }
@@ -761,7 +771,7 @@ export class PostOfficeClient {
       this.deployment,
       latest.component,
       destination,
-      await this.provider.getCurrentEpoch(),
+      await readWithTimeout(this.provider.getCurrentEpoch()),
     );
     return this.submitControlled(
       wallet,
@@ -816,7 +826,7 @@ export class PostOfficeClient {
         "Choose the Sapient wallet controlling this available gift",
       );
     const destination = await this.validateDestination(address, component);
-    const epoch = await this.provider.getCurrentEpoch();
+    const epoch = await readWithTimeout(this.provider.getCurrentEpoch());
     if (
       !Number.isSafeInteger(epoch) ||
       epoch < 0 ||
@@ -829,7 +839,7 @@ export class PostOfficeClient {
       destination,
       expiry,
     );
-    const currentEpoch = await this.provider.getCurrentEpoch();
+    const currentEpoch = await readWithTimeout(this.provider.getCurrentEpoch());
     const raw = postboxProofClaimTransaction(
       latest,
       destination,
@@ -844,8 +854,12 @@ export class PostOfficeClient {
       this.deployment.resource,
       `template_${this.deployment.template}`,
       `template_${this.deployment.envelopeTemplate}`,
-      ...(await getVaultIdsForAccount(this.provider, latest.component)),
-      ...(await getVaultIdsForAccount(this.provider, destination)),
+      ...(await readWithTimeout(
+        getVaultIdsForAccount(this.provider, latest.component),
+      )),
+      ...(await readWithTimeout(
+        getVaultIdsForAccount(this.provider, destination),
+      )),
     ];
     raw.inputs = Array.from(new Set(ids)).map((substate_id) => ({
       substate_id,
@@ -855,7 +869,7 @@ export class PostOfficeClient {
         substate_id !== this.deployment.resource &&
         !substate_id.startsWith("template_"),
     }));
-    const tx = await resolveTransaction(this.provider, raw);
+    const tx = await readWithTimeout(resolveTransaction(this.provider, raw));
     const signer = EphemeralKeySigner.generate(
       this.deployment.network as Network,
     );
@@ -864,15 +878,18 @@ export class PostOfficeClient {
     const dryEnvelope = sealTransaction(
       await signTransaction([signer], { ...tx, dry_run: true }),
     );
-    const dry = await this.provider.getClient().getTransport().sendPost<{
-      transaction_id: string;
-      result: {
-        finalize: {
-          result: Record<string, unknown>;
-          total_fees_required: string | number;
+    // Simulation is noncommitting. A timed-out response must not continue into broadcast.
+    const dry = await readWithTimeout(
+      this.provider.getClient().getTransport().sendPost<{
+        transaction_id: string;
+        result: {
+          finalize: {
+            result: Record<string, unknown>;
+            total_fees_required: string | number;
+          };
         };
-      };
-    }>("transactions/dry-run", { transaction: dryEnvelope });
+      }>("transactions/dry-run", { transaction: dryEnvelope }),
+    );
     const execution = dry.result;
     if (!execution || !("Accept" in execution.finalize.result))
       throw new Error(
