@@ -1,5 +1,11 @@
 import { test, expect, type Page } from "@playwright/test";
+import {
+  generateKeypair,
+  generateOotleAddress,
+} from "@tari-project/ootle-wasm";
 import { emptyDeployment } from "../../src/core/config";
+import { sealLetter } from "../../src/core/crypto";
+import { createGiftLink } from "../../src/core/links";
 import { createPublicLetterLink } from "../../src/core/public-letter-links";
 const d = {
   ...emptyDeployment,
@@ -340,5 +346,284 @@ test("an unknown public letter stays unavailable and can be dismissed without an
   expect(childReads).toBe(1);
   await status.getByRole("button", { name: "Dismiss public letter" }).click();
   await expect(status).toHaveCount(0);
+  await noSpending(page, writes);
+});
+
+async function receivingDestination(dialog: ReturnType<Page["getByRole"]>) {
+  const owner = generateKeypair(),
+    view = generateKeypair();
+  const address = generateOotleAddress(owner.public_key, view.public_key, 38);
+  owner.free();
+  view.free();
+  const account = `component_${"e".repeat(64)}`;
+  await dialog
+    .getByLabel("Ootle receiving address", { exact: true })
+    .fill(address);
+  await dialog
+    .getByLabel("Existing built-in account component", { exact: true })
+    .fill(account);
+  return { address, account };
+}
+
+test("collection review discovers an already-collected gift without signing and keeps its letter", async ({
+  page,
+}) => {
+  await configure(page);
+  let collected = false,
+    writes = 0,
+    reads = 0;
+  await page.route(`${d.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") writes++;
+    const value = ledger(r.request().url());
+    if (r.request().url().includes(child)) {
+      reads++;
+      value.substate.Component.body.state[6] = collected;
+    }
+    return r.fulfill({ json: value });
+  });
+  await page.goto("./" + hash());
+  const dialog = page.getByRole("dialog", { name: subject });
+  await expect(dialog).toBeVisible();
+  await receivingDestination(dialog);
+  const before = reads;
+  collected = true;
+  await dialog.getByRole("button", { name: "Review gift collection" }).click();
+  await expect(
+    dialog.getByRole("heading", { name: "Gift collected", exact: true }),
+  ).toBeVisible();
+  await expect(dialog).toContainText(
+    "This gift has already been collected. You can still read the letter.",
+  );
+  await expect(dialog).toContainText(body);
+  await expect(
+    dialog.getByRole("button", { name: "Confirm & collect gift" }),
+  ).toHaveCount(0);
+  expect(reads).toBeGreaterThan(before);
+  await noSpending(page, writes);
+});
+
+test("an availability outage preserves the collection destination for a read-only retry", async ({
+  page,
+}) => {
+  await configure(page);
+  let unavailable = false,
+    writes = 0;
+  await page.route(`${d.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") writes++;
+    return unavailable && r.request().url().includes(child)
+      ? r.fulfill({ status: 503, body: "Temporary outage" })
+      : r.fulfill({ json: ledger(r.request().url()) });
+  });
+  await page.goto("./" + hash());
+  const dialog = page.getByRole("dialog", { name: subject });
+  await expect(dialog).toBeVisible();
+  const destination = await receivingDestination(dialog);
+  unavailable = true;
+  await dialog.getByRole("button", { name: "Review gift collection" }).click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Could not check this gift right now",
+  );
+  await expect(dialog).toContainText(body);
+  await expect(
+    dialog.getByLabel("Ootle receiving address", { exact: true }),
+  ).toHaveValue(destination.address);
+  await expect(
+    dialog.getByLabel("Existing built-in account component", { exact: true }),
+  ).toHaveValue(destination.account);
+  await expect(
+    dialog.getByRole("button", { name: "Confirm & collect gift" }),
+  ).toHaveCount(0);
+  unavailable = false;
+  await dialog.getByRole("button", { name: "Review gift collection" }).click();
+  const review = dialog.getByRole("region", {
+    name: "Send this gift to your wallet?",
+  });
+  await expect(review).toBeVisible();
+  await expect(review).toContainText(destination.address);
+  await expect(review).toContainText(destination.account);
+  await expect(dialog.getByRole("alert")).toHaveCount(0);
+  await noSpending(page, writes);
+});
+
+test("leaving a letter during an availability check ignores the late result", async ({
+  page,
+}) => {
+  await configure(page);
+  let hold = false,
+    writes = 0,
+    release!: () => void,
+    started!: () => void;
+  const pending = new Promise<void>((r) => (release = r)),
+    requested = new Promise<void>((r) => (started = r));
+  await page.route(`${d.indexerUrl}**`, async (r) => {
+    if (r.request().method() !== "GET") writes++;
+    if (hold && r.request().url().includes(child)) {
+      started();
+      await pending;
+    }
+    await r.fulfill({ json: ledger(r.request().url()) });
+  });
+  await page.goto("./" + hash());
+  const dialog = page.getByRole("dialog", { name: subject });
+  await expect(dialog).toBeVisible();
+  await receivingDestination(dialog);
+  hold = true;
+  await dialog.getByRole("button", { name: "Review gift collection" }).click();
+  await requested;
+  await expect(
+    dialog.getByRole("button", { name: "Checking gift…" }),
+  ).toBeDisabled();
+  await page.evaluate(() => (location.hash = "#/activity"));
+  await expect(dialog).toHaveCount(0);
+  const done = page.waitForResponse((r) => r.url().includes(child));
+  release();
+  await done;
+  await expect(
+    page.getByRole("button", { name: "Connect wallet", exact: true }),
+  ).toBeEnabled();
+  await expect(dialog).toHaveCount(0);
+  await expect(
+    page.getByRole("region", { name: "Send this gift to your wallet?" }),
+  ).toHaveCount(0);
+  await noSpending(page, writes);
+});
+
+test("a private gift availability check preserves decrypted text without leaking its capability", async ({
+  page,
+}) => {
+  await configure(page);
+  const sealed = await sealLetter(
+    {
+      subject: "A private kindness",
+      body: "Keep this secret note after collection.",
+    },
+    d,
+    id,
+  );
+  let collected = false,
+    writes = 0;
+  const requests: string[] = [];
+  page.on("request", (r) => requests.push(r.url()));
+  await page.route(`${d.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") writes++;
+    const value = ledger(r.request().url(), 1);
+    if (r.request().url().includes(child)) {
+      const data = value.substate.Component.body.state;
+      data[3] = JSON.stringify(sealed.payload);
+      data[6] = collected;
+      data[7] = sealed.payload.claimPublicKey;
+    }
+    return r.fulfill({ json: value });
+  });
+  await page.goto(
+    createGiftLink(String(test.info().project.use.baseURL), {
+      id,
+      context: d,
+      capability: sealed.capability,
+    }),
+  );
+  const dialog = page.getByRole("dialog", { name: "A private kindness" });
+  await expect(dialog).toBeVisible();
+  await receivingDestination(dialog);
+  await dialog.getByRole("button", { name: "Review gift collection" }).click();
+  await expect(
+    dialog.getByRole("region", { name: "Send this gift to your wallet?" }),
+  ).toBeVisible();
+  await expect(dialog).toContainText("Keep this secret note after collection.");
+  await dialog.getByRole("button", { name: "Change destination" }).click();
+  collected = true;
+  await dialog.getByRole("button", { name: "Review gift collection" }).click();
+  await expect(
+    dialog.getByRole("heading", { name: "Gift collected", exact: true }),
+  ).toBeVisible();
+  await expect(dialog).toContainText("Keep this secret note after collection.");
+  expect(page.url().includes(sealed.capability)).toBe(false);
+  expect(requests.some((url) => url.includes(sealed.capability))).toBe(false);
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+  await noSpending(page, writes);
+});
+
+test("an untrusted availability response cannot replace a verified letter or open collection review", async ({
+  page,
+}) => {
+  await configure(page);
+  let untrusted = false,
+    writes = 0;
+  await page.route(`${d.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") writes++;
+    const value = ledger(r.request().url());
+    if (untrusted && r.request().url().includes(child)) {
+      value.substate.Component.header.owner_rule = "Upgradable";
+      value.substate.Component.body.state[3] = JSON.stringify({
+        subject: "Untrusted replacement",
+        body: "Do not show this.",
+      });
+    }
+    return r.fulfill({ json: value });
+  });
+  await page.goto("./" + hash());
+  const dialog = page.getByRole("dialog", { name: subject });
+  await expect(dialog).toBeVisible();
+  await receivingDestination(dialog);
+  untrusted = true;
+  await dialog.getByRole("button", { name: "Review gift collection" }).click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Could not check this gift right now",
+  );
+  await expect(dialog).toContainText(body);
+  await expect(dialog).not.toContainText("Do not show this.");
+  await expect(
+    dialog.getByRole("button", { name: "Confirm & collect gift" }),
+  ).toHaveCount(0);
+  await noSpending(page, writes);
+});
+
+test("a stalled availability read releases controls and ignores its eventual response", async ({
+  page,
+}) => {
+  await configure(page);
+  let hold = false,
+    writes = 0,
+    release!: () => void,
+    started!: () => void;
+  const pending = new Promise<void>((r) => (release = r)),
+    requested = new Promise<void>((r) => (started = r));
+  await page.route(`${d.indexerUrl}**`, async (r) => {
+    if (r.request().method() !== "GET") writes++;
+    if (hold && r.request().url().includes(child)) {
+      started();
+      await pending;
+    }
+    await r.fulfill({ json: ledger(r.request().url()) });
+  });
+  await page.goto("./" + hash());
+  const dialog = page.getByRole("dialog", { name: subject });
+  await expect(dialog).toBeVisible();
+  const destination = await receivingDestination(dialog);
+  await page.clock.install();
+  hold = true;
+  await dialog.getByRole("button", { name: "Review gift collection" }).click();
+  await requested;
+  await page.clock.runFor(15_001);
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Could not check this gift right now",
+  );
+  await expect(
+    dialog.getByRole("button", { name: "Close letter" }),
+  ).toBeEnabled();
+  await expect(
+    dialog.getByLabel("Ootle receiving address", { exact: true }),
+  ).toHaveValue(destination.address);
+  const done = page.waitForResponse((r) => r.url().includes(child));
+  release();
+  await done;
+  await expect(
+    dialog.getByRole("region", { name: "Send this gift to your wallet?" }),
+  ).toHaveCount(0);
+  hold = false;
+  await dialog.getByRole("button", { name: "Review gift collection" }).click();
+  await expect(
+    dialog.getByRole("region", { name: "Send this gift to your wallet?" }),
+  ).toBeVisible();
   await noSpending(page, writes);
 });

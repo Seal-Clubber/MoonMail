@@ -178,6 +178,7 @@ export function App() {
       .getElementById("writing-desk-title")
       ?.focus({ preventScroll: true });
   }, [view, postboxInvitation, active?.id]);
+  const [checkingGift, setCheckingGift] = useState(false);
   const [claimReview, setClaimReview] = useState<{
     address: string;
     destination: string;
@@ -2537,17 +2538,26 @@ export function App() {
               <div className="claim-panel">
                 {busy && claimReview && (
                   <p role="status">
-                    Check Sapient for an approval request. Keep this letter open
-                    until the outcome is clear.
+                    {active.mode === "postbox"
+                      ? "Check Sapient for an approval request."
+                      : "Submitting gift collection."}{" "}
+                    Keep this letter open until the outcome is clear.
                   </p>
                 )}
                 <h3>
-                  {active.claimed ? "Gift delivered" : "Collect the gift"}
+                  {active.claimed ? "Gift collected" : "Collect the gift"}
                 </h3>
                 <p>
-                  You receive {tari(active.gift)} TARI. The sender set aside{" "}
+                  {active.claimed ? "Gift amount:" : "You receive"}{" "}
+                  {tari(active.gift)} TARI. The sender set aside{" "}
                   {tari(active.reserve)} TARI for collection fees.
                 </p>
+                {active.claimed && (
+                  <p role="status" className="fine-print">
+                    This gift has already been collected. You can still read the
+                    letter.
+                  </p>
+                )}
                 {!active.claimed && (
                   <>
                     {!wallet && (
@@ -2692,16 +2702,65 @@ export function App() {
                             )) ||
                           (active.mode === "link" && !secret.current)
                         }
-                        onClick={() => {
-                          setError("");
-                          setClaimReview({
-                            address: address.trim(),
-                            destination: destination.trim(),
-                            createAccount,
-                          });
-                        }}
+                        onClick={() =>
+                          void task(async () => {
+                            if (!chain) return;
+                            const sequence = openSequence.current;
+                            const reviewed = {
+                              address: address.trim(),
+                              destination: destination.trim(),
+                              createAccount,
+                            };
+                            setCheckingGift(true);
+                            let timeout:
+                              | ReturnType<typeof setTimeout>
+                              | undefined;
+                            try {
+                              let latest: Envelope;
+                              try {
+                                // A stalled read must not trap the visitor in a busy
+                                // modal. The losing read has no state-changing callback.
+                                latest = await Promise.race([
+                                  chain.readLetter(active.id, active.component),
+                                  new Promise<Envelope>((_, reject) => {
+                                    timeout = setTimeout(
+                                      () =>
+                                        reject(
+                                          new Error(
+                                            "Gift availability read timed out",
+                                          ),
+                                        ),
+                                      15_000,
+                                    );
+                                  }),
+                                ]);
+                              } catch {
+                                if (sequence !== openSequence.current) return;
+                                throw new Error(
+                                  "Could not check this gift right now. Your letter and destination are still here; try Review gift collection again.",
+                                );
+                              }
+                              if (sequence !== openSequence.current) return;
+                              setActive(latest);
+                              setLetters((loaded) =>
+                                loaded.map((letter) =>
+                                  letter.id === latest.id &&
+                                  letter.component === latest.component
+                                    ? latest
+                                    : letter,
+                                ),
+                              );
+                              if (!latest.claimed) setClaimReview(reviewed);
+                            } finally {
+                              if (timeout !== undefined) clearTimeout(timeout);
+                              setCheckingGift(false);
+                            }
+                          })
+                        }
                       >
-                        Review gift collection
+                        {checkingGift
+                          ? "Checking gift…"
+                          : "Review gift collection"}
                       </button>
                     )}
                     {claimReview && (

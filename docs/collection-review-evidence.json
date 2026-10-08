@@ -1,0 +1,34 @@
+{
+  "recordedAt": "2026-10-08T01:22:09.095588+00:00",
+  "scope": "Local production frontend, synthetic read-only indexer/provider fixtures; no new public transaction or hosted acceptance.",
+  "sourceBase": "21bab99",
+  "changedSource": [
+    "src/ui/App.tsx",
+    "tests/browser/public-letter-link.spec.ts"
+  ],
+  "behavior": [
+    "Review gift collection re-reads the verified envelope before opening the destination review. No proof, wallet request, journal reservation or financial submit occurs during review.",
+    "An already-collected gift removes collection controls, updates loaded hall state and keeps the letter readable.",
+    "An unavailable/untrusted response retains the verified letter and entered destination for explicit retry.",
+    "A read taking longer than15seconds releases busy controls. An eventual losing response cannot open review or update state; underlying SDK read may finish in the background.",
+    "Navigation/disconnection invalidates the letter generation; late availability results are ignored.",
+    "Private plaintext remains in memory; capability remains absent from request URLs, local storage and scrubbed address bar.",
+    "Guest submission status describes submission instead of requesting a Sapient approval."
+  ],
+  "verification": {
+    "beforeFix": "Already-collected and outage regressions failed against previous build. Stalled-read regression failed before timeout.",
+    "fullBrowserBeforeTimeout": "166 desktop/mobile browser checks PASS, one Windows CI worker,2.1minutes.",
+    "finalTargeted": "42 public-link/availability and postbox-claim desktop/mobile browser checks PASS after timeout,30.7seconds.",
+    "typescript": "PASS",
+    "productionBuild": "PASS",
+    "mainJs": "index-HFgPBxtm.js",
+    "css": "index-D82Q5kcH.css",
+    "previousCoreGuard": "159 client tests /17files PASS for unchanged core source at21bab99."
+  },
+  "limits": [
+    "Availability is an indexer snapshot, not a gift reservation; core and contract recheck on collection.",
+    "Indexer is trusted infrastructure; this client does not verify consensus proofs.",
+    "No new live wallet approval, financial operation, publication, payout, restoration or distributed lock is claimed.",
+    "Human retains GitHub push/publish control."
+  ]
+}
