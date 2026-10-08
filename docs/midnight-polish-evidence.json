@@ -1,0 +1,28 @@
+{
+  "recordedAt": "2026-10-08T03:58:23.257020+00:00",
+  "scope": "Local production CSS polish. Unconfigured deployment and clearly labeled preview mail for visual checks; existing browser fixtures for regressions. No hosted or real-wallet acceptance.",
+  "sourceBase": "ec92749",
+  "stylesheetSha256": "6f644f910abfc112f12f218ef9989f6192d7527b3bb91509ff5d7bfca546a13e",
+  "design": [
+    "Midnight blue backgrounds, cards and inputs with warm parchment letters and gold actions.",
+    "The left-aligned dark-blue ghost/envelope mark remains centered inside its badge.",
+    "Active navigation retains its gold underline while hovered; wide phones place wallet controls alongside the brand, while narrow screens stack them.",
+    "Guide cards have numbered badges, restrained depth and clearer spacing. The mail hall has a moonlit backdrop and envelope-title interaction feedback.",
+    "Existing mist, ghost and envelope animations retain reduced-motion support; no new assets or dependencies."
+  ],
+  "verification": {
+    "typescript": "PASS",
+    "productionBuild": "PASS",
+    "fullBrowser": "All 208 desktop/mobile browser checks PASS with one Windows CI worker (1.7 minutes), including the earlier uncertain-claim and private-inbox keyboard extensions.",
+    "theme": "Six included desktop/mobile theme checks PASS: 11 rendered text samples meet contrast >=4.5:1, left brand/icon alignment and guest/synthetic-connected overflow at 320/390/768/1440px, and reduced-motion animation freezing.",
+    "visualLayout": "12 additional local layout checks PASS across hall, compose, inbox and Activity at 320/390/1440px. Desktop/mobile screenshots saved outside the repository; representative hall, writing desk and inbox visually inspected. Zero HTTP writes or wallet requests.",
+    "clientTests": "176 client tests /19 files passed at ec92749. This pass changes only CSS and documentation; client tests were not rerun.",
+    "mainJs": "index-xAHGa4j9.js",
+    "css": "index-DUx9kBaZ.css"
+  },
+  "limits": [
+    "No wallet, fee, transaction, contract, consent, private-link or journal behavior changes.",
+    "Live Pages and stock Sapient acceptance remain scoped to their earlier exact builds until a human push and new verification.",
+    "Financial campaigns remain closed. No publication, workflow dispatch or Git push was performed."
+  ]
+}
