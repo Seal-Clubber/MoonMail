@@ -1,0 +1,29 @@
+{
+  "recordedAt": "2026-10-08T02:39:25.308924+00:00",
+  "scope": "Local production frontend; synthetic browser/indexer fixtures and client checks. No new financial action or hosted publication.",
+  "sourceBase": "1cd9bb5",
+  "change": "Static office profiles have a 15-second response/JSON deadline and runtime shape checks. Late initial downloads cannot replace manually selected settings. Failed loads retain the current office and offer an explicit retry. Completing the first load preserves incoming links in memory.",
+  "verification": {
+    "beforeFix": "Original four desktop regressions reproduced a late download overwriting the selected office, absent startup retry, indefinite restore blocking and an unusable malformed-profile page.",
+    "client": "167 tests across 19 files PASS. Includes current deployed/unconfigured profiles, damaged field/evidence/capsule types, stalled JSON body after headers and HTTP rejection.",
+    "browser": "All 196 desktop/mobile browser checks PASS with one Windows CI worker (2.3 minutes). Includes five new profile cases on both viewports.",
+    "fixtureCorrections": "Initial timeout case now waits for the request before advancing fake time. Private retry fixture uses the correct stored claim-authority field; both corrected cases pass. The private retention change was identified by code review; the earlier invalid fixture is not an isolated before-fix proof.",
+    "typescript": "PASS",
+    "productionBuild": "PASS",
+    "mainJs": "index-9_VFDlYY.js",
+    "css": "index-D82Q5kcH.css"
+  },
+  "results": [
+    "Late startup results do not start reads against an office the visitor did not choose.",
+    "Timed-out restore releases controls, preserves the current office and ignores its late response after a later manual change.",
+    "Malformed profiles keep the page usable for explicit retry, with no script error.",
+    "A private link received before initial settings failure opens after retry without being pasted again. Its capability stays out of the current URL, requests and storage; no wallet or write is needed.",
+    "Financial submission timing, consent, reviewed contract identities and fee rules are unchanged."
+  ],
+  "limits": [
+    "Shape validation does not authenticate deployment identities or constitute contract verification. Existing reviewed configuration and chain validation remain required.",
+    "The promise deadline ignores late completion; underlying fetch may finish in the background. No HTTP cancellation is claimed.",
+    "Explicitly restoring or changing an already-selected office still clears incoming private routes. Only completing the first load retains them.",
+    "Human retains GitHub push and publication control."
+  ]
+}

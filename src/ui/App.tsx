@@ -54,6 +54,7 @@ import {
 import { parsePostboxLink, type PostboxRoute } from "../core/postbox-links";
 import { MailReadNotice } from "./MailReadNotice";
 import { networkPreset, checkPublicIndexer } from "../core/networks";
+import { loadOfficeProfile } from "../core/office-profile";
 
 const exampleLetters: Envelope[] = [
   {
@@ -103,6 +104,9 @@ const exampleLetters: Envelope[] = [
 const short = (v: string) =>
   v.length > 20 ? `${v.slice(0, 10)}…${v.slice(-6)}` : v;
 export function App() {
+  const [officeLoadError, setOfficeLoadError] = useState(false);
+  const deploymentRevision = useRef(0);
+  const initialOfficePending = useRef(true);
   const [view, setView] = useState("hall"),
     [d, setD] = useState<Deployment>(() => networkPreset(38)),
     [chain, setChain] = useState<PostOfficeClient>();
@@ -250,19 +254,17 @@ export function App() {
   }, [wallet]);
   useEffect(() => {
     let cancelled = false;
-    fetch(`${import.meta.env.BASE_URL}deployment.json`, { cache: "no-store" })
-      .then((r) => {
-        if (!r.ok) throw new Error("Configuration unavailable");
-        return r.json();
-      })
-      .then((data: Deployment) => {
-        if (!cancelled) setD(data);
+    const revision = deploymentRevision.current;
+    loadOfficeProfile(`${import.meta.env.BASE_URL}deployment.json`)
+      .then((data) => {
+        if (!cancelled && revision === deploymentRevision.current) {
+          initialOfficePending.current = false;
+          setD(data);
+        }
       })
       .catch(() => {
-        if (!cancelled)
-          setStatus(
-            "Post office settings could not load. Reload the page to try again.",
-          );
+        if (!cancelled && revision === deploymentRevision.current)
+          setOfficeLoadError(true);
       });
     const readHash = () => {
       closeLetter();
@@ -663,6 +665,9 @@ export function App() {
     change: Partial<Deployment>,
     reviewedProfile = false,
   ) {
+    deploymentRevision.current += 1;
+    initialOfficePending.current = false;
+    setOfficeLoadError(false);
     draftSequence.current += 1;
     readSequence.current += 1;
     setLoadingMore(false);
@@ -703,14 +708,23 @@ export function App() {
         : { ...emptyDeployment.evidence },
     });
   }
-  async function restoreOffice() {
-    const response = await fetch(`${import.meta.env.BASE_URL}deployment.json`, {
-      cache: "no-store",
-    });
-    if (!response.ok)
-      throw new Error("Post office settings unavailable. Please try again.");
-    changeDeployment(await response.json(), true);
-    setStatus("Sapient post office settings restored.");
+  async function restoreOffice(retryInitial = false) {
+    const revision = ++deploymentRevision.current;
+    setOfficeLoadError(false);
+    try {
+      const profile = await loadOfficeProfile(
+        `${import.meta.env.BASE_URL}deployment.json`,
+      );
+      if (revision !== deploymentRevision.current) return;
+      if (retryInitial && initialOfficePending.current) {
+        // Completing the first load must preserve incoming links kept in memory.
+        initialOfficePending.current = false;
+        setD(profile);
+      } else changeDeployment(profile, true);
+      setStatus("Sapient post office settings restored.");
+    } catch {
+      if (revision === deploymentRevision.current) setOfficeLoadError(true);
+    }
   }
   function navigate(v: string) {
     setPublicLetterRoute(undefined);
@@ -1071,6 +1085,20 @@ export function App() {
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
+        {officeLoadError && (
+          <div role="alert" className="message error">
+            <p>
+              Post office settings could not load. Your current settings are
+              kept. Try loading them again.
+            </p>
+            <button
+              disabled={busy}
+              onClick={() => void task(() => restoreOffice(true))}
+            >
+              Retry loading post office
+            </button>
+          </div>
+        )}
         {postboxInvitation && (
           <PostboxInvitation
             invitation={postboxInvitation}

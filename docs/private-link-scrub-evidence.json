@@ -10,7 +10,8 @@
     "typescript": "PASS",
     "productionBuild": "PASS",
     "mainJs": "index-DL9cCKr7.js",
-    "css": "index-D82Q5kcH.css"
+    "css": "index-D82Q5kcH.css",
+    "fullBrowser": "All 186 desktop/mobile browser checks PASS at1cd9bb5, one Windows CI worker, before the settings-load changes."
   },
   "results": [
     "Rejected private routes show a complete-link recovery message without opening their target.",

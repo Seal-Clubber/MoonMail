@@ -993,3 +993,197 @@ for (const damage of ["context", "identifier", "path"] as const)
     expect(await page.evaluate(() => localStorage.length)).toBe(0);
     expect(await page.evaluate(() => !!(window as any).tari)).toBe(false);
   });
+
+test("a late initial settings download preserves the visitor's selected office", async ({
+  page,
+}) => {
+  let release!: () => void;
+  const held = new Promise<void>((r) => (release = r));
+  await page.route("**/deployment.json", async (r) => {
+    await held;
+    await r.fulfill({ json: deployment });
+  });
+  let reads = 0;
+  await page.route(`${deployment.indexerUrl}**`, (r) => {
+    reads++;
+    return r.fulfill({ json: state(r.request().url()) });
+  });
+  await page.goto("./#/network");
+  await page.getByText("Advanced connection settings", { exact: true }).click();
+  await page.getByLabel("Ootle test network").selectOption("16");
+  await page.getByLabel("Indexer endpoint").fill("http://localhost:12345/");
+  const done = page.waitForResponse((r) => r.url().endsWith("deployment.json"));
+  release();
+  await done;
+  await expect(page.getByLabel("Ootle test network")).toHaveValue("16");
+  await expect(page.getByLabel("Indexer endpoint")).toHaveValue(
+    "http://localhost:12345/",
+  );
+  await expect(
+    page.getByLabel("Registry component", { exact: true }),
+  ).toHaveValue("");
+  expect(reads).toBe(0);
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+});
+
+test("a stalled initial settings download offers an explicit retry and ignores its late answer", async ({
+  page,
+}) => {
+  await page.clock.install();
+  let release!: () => void;
+  const held = new Promise<void>((r) => (release = r));
+  let attempts = 0;
+  await page.route("**/deployment.json", async (r) => {
+    const attempt = ++attempts;
+    if (attempt === 1) await held;
+    await r.fulfill({
+      json: attempt === 1 ? { ...deployment, network: 16 } : deployment,
+    });
+  });
+  await page.route(`${deployment.indexerUrl}**`, (r) =>
+    r.fulfill({ json: state(r.request().url()) }),
+  );
+  await page.goto("./");
+  await expect.poll(() => attempts).toBe(1);
+  await page.clock.runFor(15_100);
+  const retry = page.getByRole("button", { name: "Retry loading post office" });
+  await expect(retry).toBeEnabled();
+  await expect(page.getByRole("alert")).toContainText(
+    "settings could not load",
+  );
+  await retry.click();
+  await expect(
+    page.getByRole("button", { name: subject, exact: false }),
+  ).toBeVisible();
+  await expect(retry).toHaveCount(0);
+  const done = page.waitForResponse((r) => r.url().endsWith("deployment.json"));
+  release();
+  await done;
+  await page.getByRole("button", { name: "Settings", exact: false }).click();
+  await page.getByText("Advanced connection settings", { exact: true }).click();
+  await expect(page.getByLabel("Ootle test network")).toHaveValue("38");
+  expect(attempts).toBe(2);
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+});
+
+test("a stalled restore preserves the current office and releases its controls", async ({
+  page,
+}) => {
+  await page.clock.install();
+  let release!: () => void;
+  const held = new Promise<void>((r) => (release = r));
+  let attempts = 0;
+  await page.route("**/deployment.json", async (r) => {
+    if (++attempts === 2) await held;
+    await r.fulfill({ json: deployment });
+  });
+  await page.route(`${deployment.indexerUrl}**`, (r) =>
+    r.fulfill({ json: state(r.request().url()) }),
+  );
+  await page.goto("./#/network");
+  await page.getByText("Advanced connection settings", { exact: true }).click();
+  await expect(
+    page.getByLabel("Registry component", { exact: true }),
+  ).toHaveValue(deployment.registry);
+  const restore = page.getByRole("button", {
+    name: "Restore default settings",
+  });
+  await restore.click();
+  await expect(restore).toBeDisabled();
+  await page.clock.runFor(15_100);
+  await expect(restore).toBeEnabled();
+  await expect(page.getByRole("alert")).toContainText("Try");
+  await expect(
+    page.getByLabel("Registry component", { exact: true }),
+  ).toHaveValue(deployment.registry);
+  await page.getByLabel("Ootle test network").selectOption("16");
+  const done = page.waitForResponse((r) => r.url().endsWith("deployment.json"));
+  release();
+  await done;
+  await expect(page.getByLabel("Ootle test network")).toHaveValue("16");
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+});
+
+test("a malformed settings profile leaves the site usable for an explicit retry", async ({
+  page,
+}) => {
+  let malformed = true;
+  await page.route("**/deployment.json", (r) =>
+    r.fulfill({ json: malformed ? null : deployment }),
+  );
+  await page.route(`${deployment.indexerUrl}**`, (r) =>
+    r.fulfill({ json: state(r.request().url()) }),
+  );
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto("./");
+  const retry = page.getByRole("button", { name: "Retry loading post office" });
+  await expect(retry).toBeEnabled();
+  malformed = false;
+  await retry.click();
+  await expect(
+    page.getByRole("button", { name: subject, exact: false }),
+  ).toBeVisible();
+  expect(errors).toEqual([]);
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+});
+
+test("retrying the first settings load retains an incoming private link only in memory", async ({
+  page,
+}) => {
+  await page.clock.install();
+  const sealed = await sealLetter(
+    {
+      subject: "A secret after settings recover",
+      body: "The original incoming link still opens.",
+    },
+    deployment,
+    "recovered",
+  );
+  let attempts = 0,
+    writes = 0;
+  const requests: string[] = [];
+  let release!: () => void;
+  const held = new Promise<void>((r) => (release = r));
+  await page.route("**/deployment.json", async (r) => {
+    if (++attempts === 1) await held;
+    await r.fulfill({ json: deployment });
+  });
+  page.on("request", (r) => requests.push(r.url()));
+  await page.route(`${deployment.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") writes++;
+    const response = state(r.request().url());
+    if (r.request().url().includes(envelope)) {
+      const data = response.substate!.Component.body.state;
+      data[2] = 1;
+      data[3] = JSON.stringify(sealed.payload);
+      data[7] = sealed.payload.claimPublicKey;
+    }
+    return r.fulfill({ json: response });
+  });
+  await page.goto(
+    createGiftLink(String(test.info().project.use.baseURL), {
+      id: "recovered",
+      capability: sealed.capability,
+      context: deployment,
+    }),
+  );
+  await expect.poll(() => attempts).toBe(1);
+  expect(page.url().includes(sealed.capability)).toBe(false);
+  await page.clock.runFor(15_100);
+  await page.getByRole("button", { name: "Retry loading post office" }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(
+    dialog.getByRole("heading", { name: "A secret after settings recover" }),
+  ).toBeVisible();
+  await expect(dialog).toContainText("The original incoming link still opens.");
+  const done = page.waitForResponse((r) => r.url().endsWith("deployment.json"));
+  release();
+  await done;
+  await expect(dialog).toBeVisible();
+  expect(requests.some((url) => url.includes(sealed.capability))).toBe(false);
+  expect(page.url().includes(sealed.capability)).toBe(false);
+  expect(await page.evaluate(() => localStorage.length)).toBe(0);
+  expect(await page.evaluate(() => !!(window as any).tari)).toBe(false);
+  expect(writes).toBe(0);
+});

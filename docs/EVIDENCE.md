@@ -1,5 +1,7 @@
 # Verification evidence
 
+**Office profile recovery (local):** initial and restore downloads have a 15-second response/JSON deadline and runtime shape checks. Delayed startup data cannot replace a manually chosen office. Failures retain settings and offer explicit retry; completing the first load preserves incoming links only in memory. Four original failures reproduced before the fix. All 167 client tests /19 files and196 desktop/mobile browser checks pass, with strict TypeScript/build. Synthetic private retry verifies plaintext, scrubbed URL and no capability in requests/storage, without a wallet or transaction. [Exact scope and fixture corrections](office-profile-evidence.json).
+
 **Private-link rejection privacy (local):** malformed context, identifier and path previously left the capability visible after parsing failed. Scrubbing now happens before validation; rejected routes show a complete-link message without opening their target. Reload and Back/Forward retain the scrubbed current entry. All104 reader/public-link/app desktop/mobile checks and163 client tests pass with strict TypeScript/build. No synthetic capability enters requests or storage; no wallet or transaction is used. This does not claim global browser-history erasure. [Exact evidence](private-link-scrub-evidence.json).
 
 **Private-inbox retry and latest local acceptance:** recovery-carrier/resource/deployment reads share the15-second deadline. Both resource/carrier regressions failed before it; the UI originally offered no direct retry. The controlling wallet can retry inside the sealed letter, with separate view-permission guidance; successful decryption focuses its title. All163clienttests /18files and38inbox/delivery/claim desktop/mobile checks pass, with strictTS/build. These are fixtures, including actual SDK encryption and an engine carrier. Separately, preceding71f3740 passed stockStoreSapient0.6.6 connection/setup/name-hint/reply/disconnect on local production against real ledger, and fresh public/private guests reread existing collected gifts without a wallet or repeat claim. No financial/private-view grant or journal change occurred. [Exact scopes and caveats](inbox-retry-evidence.json).
@@ -37,6 +39,10 @@ The staged HTTPS interface opened real historical encrypted mail using the resto
 ## Earlier evidence and milestones
 
 The records below retain their original build, dates and boundaries. Former disabled-gate and absent-public-identity statements describe earlier stages; the new evidence applies only to the separate V2 profile.
+
+## Historical integration checkpoints
+
+These dated milestones preserve what was incomplete at that time. Current Sapient V2 deployment, funded claims and hosted verification are recorded above.
 
 **Gated capsule setup:** production preparation now feeds the actual Ootle engine fixture and stock-wallet restoration lab. Creation validates deployment identities, declares funding inputs, journals only public recovery metadata before approval, and resumes the same wallet request after a lost response. The postbox UI implements explicit account-wide view consent; desktop/mobile fixture tests prove no implicit permission or submission. Registered creation/rotation and public lost-response tests are still pending. Sapient addressed gifts remain separately blocked. [Setup evidence](sapient-capsule-setup-evidence.json).
 

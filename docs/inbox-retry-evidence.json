@@ -100,11 +100,11 @@
       "typescript": "PASS",
       "productionBuild": "PASS",
       "mainJs": "index-DmJx6r8w.js",
-      "css": "index-D82Q5kcH.css"
+      "css": "index-D82Q5kcH.css",
+      "fullBrowser": "All 180 desktop/mobile browser checks PASS at6f3e38d, one Windows CI worker, before the subsequent private-link privacy changes."
     },
     "limits": [
       "Latest inbox-retry behavior is fixture verified, not a new live private-view or restoration test.",
-      "Full178browser and stock/guest acceptance above retain71f3740 scope; they precede this inbox-only extension.",
       "Underlying SDK reads may finish in the background; no HTTP abort is claimed.",
       "Existing permission checks, capsule bindings, secret cleanup and immutable carrier checks remain.",
       "No new financial operation, private-view grant in a real wallet, contract change or GitHub push."
