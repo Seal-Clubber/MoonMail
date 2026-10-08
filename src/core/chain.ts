@@ -506,6 +506,7 @@ export class PostOfficeClient {
     storage: Storage,
     operation: "postbox" | "claim",
     identity: string,
+    postboxAction?: "create" | "edit" | "rotate",
   ) {
     if (wallet instanceof SapientSession) {
       if (
@@ -555,6 +556,7 @@ export class PostOfficeClient {
         registry: this.deployment.registry,
         operation,
         envelopeId: identity,
+        ...(postboxAction ? { postboxAction } : {}),
       });
     }
     if (!account.account.owner_key_id)
@@ -589,6 +591,7 @@ export class PostOfficeClient {
       registry: this.deployment.registry,
       operation,
       envelopeId: identity,
+      ...(postboxAction ? { postboxAction } : {}),
     });
     const result = await wallet.submit(request);
     completeSubmission(storage, attempt, result.transaction_id);
@@ -687,6 +690,7 @@ export class PostOfficeClient {
       storage,
       "postbox",
       `postbox:${box.id}`,
+      operation,
     );
   }
   async storeSapientCapsule(

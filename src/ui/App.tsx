@@ -1,5 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { GhostMark } from "./GhostMark";
+import { ActivityBook } from "./ActivityBook";
+import {
+  sampleMail,
+  sampleLetter,
+  sampleActivity,
+  filterSampleMail,
+  type SampleMailFilter,
+} from "./sample-office";
 import type {
   Deployment,
   Envelope,
@@ -37,10 +45,11 @@ import {
   savePending,
   inspectPending,
   pendingIsUnresolved,
+  type Pending,
 } from "../core/pending";
 import { readDelivery } from "../core/delivery";
 import { browserStorage, checkBrowserStorage } from "../core/browser-storage";
-import { filterHallMail, type MailFilter } from "../core/mail-search";
+import { filterHallMail } from "../core/mail-search";
 import {
   mailboxKey,
   sealMailbox,
@@ -62,51 +71,6 @@ import { networkPreset, checkPublicIndexer } from "../core/networks";
 import { loadOfficeProfile } from "../core/office-profile";
 import { useActionFocus } from "./useActionFocus";
 
-const exampleLetters: Envelope[] = [
-  {
-    id: "preview-1",
-    mode: "public",
-    context: emptyDeployment,
-    payload: {
-      subject: "To whoever needs a little light",
-      body: "The nights are getting longer. Here is a small reminder: even a haunted house is a home to someone.\n\nLeave a little kindness behind you.\n— A wandering soul",
-    },
-    gift: "0",
-    reserve: "0",
-    claimed: false,
-    sender: "Visual preview",
-  },
-  {
-    id: "preview-2",
-    mode: "link",
-    context: emptyDeployment,
-    payload: {
-      version: "gd-link-1",
-      iv: "",
-      ciphertext: "",
-      wrapIv: "",
-      wrappedClaimKey: "",
-      claimPublicKey: "",
-    },
-    gift: "0",
-    reserve: "0",
-    claimed: false,
-    sender: "Visual preview",
-  },
-  {
-    id: "preview-3",
-    mode: "public",
-    context: emptyDeployment,
-    payload: {
-      subject: "A message from the other side",
-      body: "If the clerk offers you tea, say yes. If the tea offers you advice, listen carefully.\n\nA little kindness, delivered through Sapient.",
-    },
-    gift: "0",
-    reserve: "0",
-    claimed: false,
-    sender: "Visual preview",
-  },
-];
 const short = (v: string) =>
   v.length > 20 ? `${v.slice(0, 10)}…${v.slice(-6)}` : v;
 export function App() {
@@ -136,6 +100,8 @@ export function App() {
     [active, setActive] = useState<Envelope>(),
     [plain, setPlain] = useState<Letter>(),
     [ghost, setGhost] = useState(false);
+  const activeSample = !!active && sampleMail.includes(active);
+  const [showSampleActivity, setShowSampleActivity] = useState(false);
   const [mode, setMode] = useState<MailMode>("link"),
     [subject, setSubject] = useState(""),
     [body, setBody] = useState(""),
@@ -146,7 +112,7 @@ export function App() {
     [recipient, setRecipient] = useState(""),
     [directoryQuery, setDirectoryQuery] = useState("");
   const [mailQuery, setMailQuery] = useState(""),
-    [mailFilter, setMailFilter] = useState<MailFilter>("all");
+    [mailFilter, setMailFilter] = useState<SampleMailFilter>("all");
   const [review, setReview] = useState(false),
     [prepared, setPrepared] = useState<{
       envelope: Envelope;
@@ -695,6 +661,7 @@ export function App() {
     readSequence.current += 1;
     setLoadingMore(false);
     setPage(1);
+    setPreview(false);
     setMailQuery("");
     setMailFilter("all");
     if (change.network !== undefined && change.network !== d.network)
@@ -754,6 +721,10 @@ export function App() {
     setPublicLetterState("idle");
     setPostboxInvitation(undefined);
     setView(v);
+    if (v !== "hall") {
+      setPreview(false);
+      setMailFilter("all");
+    }
     setError("");
     setReview(false);
     history.pushState(null, "", `${location.pathname}#/${v}`);
@@ -859,13 +830,12 @@ export function App() {
     setBoxes(data.postboxes);
     setCursor(data.nextCursor);
     setPage(1);
-    setPreview(false);
     setStatus(
       data.unavailableLetterIds.length
         ? "Loaded available mail. Some letters need another read."
         : "Mail is up to date.",
     );
-    if (active) {
+    if (active && !activeSample) {
       const updated = await reader.readLetter(active.id, active.component);
       if (
         sequence === readSequence.current &&
@@ -937,10 +907,16 @@ export function App() {
           );
     if (openSequence.current === sequence) setPlain(letter);
   }
-  const hallLetters = (preview ? exampleLetters : letters).filter(
-    (e) => e.mode !== "postbox",
-  );
-  const shown = filterHallMail(hallLetters, mailFilter, mailQuery);
+  const hallLetters = preview
+    ? sampleMail
+    : letters.filter((e) => e.mode !== "postbox");
+  const shown = preview
+    ? filterSampleMail(mailFilter, mailQuery)
+    : filterHallMail(
+        hallLetters,
+        mailFilter === "postbox" ? "all" : mailFilter,
+        mailQuery,
+      );
   const visiblePage = Math.min(page, Math.max(1, Math.ceil(shown.length / 12)));
   const current = wallet?.accounts[account];
   const draftPostbox =
@@ -1045,6 +1021,71 @@ export function App() {
     setPrepared({ envelope, capability: sealed?.capability });
     setReview(true);
   }
+  function togglePreview() {
+    closeLetter();
+    setPreview(!preview);
+    setPage(1);
+    setMailQuery("");
+    setMailFilter("all");
+  }
+  async function checkActivity(p: Pending) {
+    await task(async () => {
+      if (!chain) return;
+      if (p.id.startsWith("attempt:")) {
+        if (p.operation === "postbox" || p.operation === "capsule") {
+          setStatus(
+            "This wallet submission has no transaction ID. Inspect the controlling wallet's transaction history before resolving it; matching postbox state alone cannot identify the submitted transaction. Retrying remains blocked.",
+          );
+          return;
+        }
+        const e = await chain.readLetter(p.envelopeId);
+        if (p.operation === "publish") {
+          savePending(browserStorage, {
+            ...p,
+            state: "confirmed",
+          });
+          await refresh();
+          if (p.operation === "publish") shareConfirmed(p.envelopeId);
+          setStatus(
+            "Envelope state confirms delivery/publication. For missing or ambiguous attempts inspect donor/account history before retrying.",
+          );
+        } else {
+          // A public/private-link gift may have been collected by someone else.
+          // Without this attempt's receipt, its claimed flag cannot identify our payout.
+          setStatus(
+            e.claimed
+              ? "This gift has been collected, but its state cannot confirm your payout. Inspect your receiving account and its transaction history. The original attempt remains unresolved; do not send a replacement."
+              : "This collection has no transaction ID. Inspect your receiving account and its transaction history. The original attempt remains unresolved; do not send a replacement.",
+          );
+        }
+        return;
+      }
+      const next = await readDelivery(chain, p);
+      const state = next.state;
+      savePending(browserStorage, next);
+      await refresh();
+      setStatus(`Transaction ${short(p.id)}: ${state}.`);
+      if (state === "confirmed" && p.operation === "publish")
+        shareConfirmed(p.envelopeId);
+    });
+  }
+  async function resumeActivity(p: Pending) {
+    await task(async () => {
+      if (!(wallet instanceof SapientSession)) return;
+      const id = await wallet.resume(p.id, browserStorage);
+      setStatus(`Sapient submission ${id}. Reconcile chain confirmation next.`);
+    });
+  }
+  const publicTitles = Object.fromEntries(
+    letters
+      .filter((e) => e.mode === "public")
+      .map((e) => [e.id, (e.payload as Letter).subject]),
+  );
+  const sampleTitles = Object.fromEntries(
+    sampleMail
+      .filter((e) => e.mode === "public")
+      .map((e) => [e.id, sampleLetter(e.id)!.subject]),
+  );
   return (
     <div className="app-shell">
       <div className="haunting" aria-hidden="true">
@@ -1270,12 +1311,17 @@ export function App() {
                   <h2>Letters left for anyone.</h2>
                 </div>
                 <div className="hall-tools">
+                  {d.registry && (
+                    <button onClick={togglePreview}>
+                      {preview ? "Leave preview" : "Try sample mail"}
+                    </button>
+                  )}
                   <button aria-pressed={list} onClick={() => setList(!list)}>
                     {list ? "✧ Scene view" : "☷ List view"}
                   </button>
                   <button
                     onClick={() => void task(refresh)}
-                    disabled={!d.registry || !d.indexerUrl || busy}
+                    disabled={preview || !d.registry || !d.indexerUrl || busy}
                   >
                     ↻ Refresh
                   </button>
@@ -1305,12 +1351,7 @@ export function App() {
                     </p>
                   </div>
                   {!d.registry && (
-                    <button
-                      onClick={() => {
-                        setPreview(!preview);
-                        setPage(1);
-                      }}
-                    >
+                    <button onClick={togglePreview}>
                       {preview ? "Leave preview" : "Explore preview"}
                     </button>
                   )}
@@ -1319,7 +1360,13 @@ export function App() {
               {preview && (
                 <p className="preview-banner" role="status">
                   VISUAL PREVIEW · These example letters are not stored on chain
-                  and contain no funded gifts.
+                  and contain no funded gifts. Sample amounts and collection
+                  states are fictional.
+                  <span>
+                    Browse {sampleMail.length} examples, including private
+                    invitations and postbox mail. Every sample can be read here;
+                    real sealed mail requires its link or controlling wallet.
+                  </span>
                 </p>
               )}
               {(chain || preview) && (
@@ -1344,20 +1391,27 @@ export function App() {
                         id="hall-mail-filter"
                         value={mailFilter}
                         onChange={(event) => {
-                          setMailFilter(event.target.value as MailFilter);
+                          setMailFilter(event.target.value as SampleMailFilter);
                           setPage(1);
                         }}
                       >
-                        <option value="all">All hall mail</option>
+                        <option value="all">
+                          {preview ? "All sample mail" : "All hall mail"}
+                        </option>
                         <option value="public">Public letters</option>
                         <option value="link">Sealed invitations</option>
                         <option value="gifts">Uncollected public gifts</option>
+                        {preview && (
+                          <option value="postbox">Sample postbox mail</option>
+                        )}
                       </select>
                     </div>
                   </div>
                   <p className="search-summary" role="status">
-                    {shown.length} {shown.length === 1 ? "letter" : "letters"}{" "}
-                    shown from {hallLetters.length} loaded.
+                    {shown.length
+                      ? `Showing ${(visiblePage - 1) * 12 + 1}–${Math.min(visiblePage * 12, shown.length)} of ${shown.length} matching letters`
+                      : "No matching letters"}{" "}
+                    · {hallLetters.length} loaded.
                     {cursor &&
                       !preview &&
                       " Search covers loaded mail; load more to include more letters."}
@@ -1388,15 +1442,17 @@ export function App() {
                     .slice((visiblePage - 1) * 12, visiblePage * 12)
                     .map((e, i) => (
                       <button
-                        className={`envelope-card envelope-${i % 3} ${e.mode === "link" ? "sealed" : ""}`}
+                        className={`envelope-card envelope-${i % 3} ${e.mode !== "public" ? "sealed" : ""}`}
                         key={e.id}
                         onClick={() => {
                           setCreateAccount(false);
                           setActive(e);
                           setPlain(
-                            e.mode === "public"
-                              ? (e.payload as Letter)
-                              : undefined,
+                            preview
+                              ? sampleLetter(e.id)
+                              : e.mode === "public"
+                                ? (e.payload as Letter)
+                                : undefined,
                           );
                         }}
                       >
@@ -1413,28 +1469,77 @@ export function App() {
                           <span className="letter-kind">
                             {e.mode === "public"
                               ? "OPEN LETTER"
-                              : "PRIVATE INVITATION"}
+                              : e.mode === "postbox"
+                                ? "SAMPLE POSTBOX MAIL"
+                                : "PRIVATE INVITATION"}
                           </span>
                           <h3>
-                            {e.mode === "public"
-                              ? (e.payload as Letter).subject
-                              : "A sealed little secret"}
+                            {preview
+                              ? sampleLetter(e.id)!.subject
+                              : e.mode === "public"
+                                ? (e.payload as Letter).subject
+                                : "A sealed little secret"}
                           </h3>
                           <p>
                             {e.mode === "public"
                               ? "Anyone may read"
-                              : "Requires its private link"}
+                              : e.mode === "postbox"
+                                ? "Fictional addressed example"
+                                : "Requires its private link"}
                           </p>
-                          {!preview && BigInt(e.gift) > 0n && (
-                            <small>
-                              {e.claimed
-                                ? "Collected"
+                          {list && (
+                            <p className="letter-excerpt">
+                              {preview
+                                ? sampleLetter(e.id)!
+                                    .body.replace(/\s+/g, " ")
+                                    .slice(0, 150)
                                 : e.mode === "public"
-                                  ? `${tari(e.gift)} TARI gift`
-                                  : "Gift availability recorded on chain"}
+                                  ? (e.payload as Letter).body
+                                      .replace(/\s+/g, " ")
+                                      .slice(0, 150)
+                                  : "Sealed contents stay private. Open with the sender’s complete private link."}
+                            </p>
+                          )}
+                          {BigInt(e.gift) > 0n && (
+                            <small>
+                              {preview
+                                ? e.claimed
+                                  ? "Sample gift · collected"
+                                  : `${tari(e.gift)} sample TARI gift`
+                                : e.claimed
+                                  ? "Collected"
+                                  : e.mode === "public"
+                                    ? `${tari(e.gift)} TARI gift`
+                                    : "Gift availability recorded on chain"}
                             </small>
                           )}
                         </div>
+                        {list && (
+                          <>
+                            <div className="mail-row-meta">
+                              <span
+                                className={`mail-audience audience-${e.mode}`}
+                              >
+                                {e.mode === "public"
+                                  ? "Public letter"
+                                  : e.mode === "link"
+                                    ? "Private link"
+                                    : "Postbox mail"}
+                              </span>
+                              <span className="mail-row-reference">
+                                {preview ? "Sample" : "Letter"} {short(e.id)}
+                              </span>
+                              {BigInt(e.gift) === 0n && (
+                                <span className="mail-row-no-gift">
+                                  Letter only
+                                </span>
+                              )}
+                            </div>
+                            <span className="mail-row-open" aria-hidden="true">
+                              ↗
+                            </span>
+                          </>
+                        )}
                       </button>
                     ))}
                 </div>
@@ -1492,7 +1597,7 @@ export function App() {
                   >
                     Previous
                   </button>
-                  <span>
+                  <span role="status">
                     Page {visiblePage} of {Math.ceil(shown.length / 12)}
                   </span>
                   <button
@@ -1516,7 +1621,12 @@ export function App() {
               <div className="mode-legend">
                 <span>✧ Public letters</span>
                 <span>⌘ Sealed invitations</span>
-                <span>▥ Personal postboxes</span>
+                <span>
+                  ▥{" "}
+                  {preview
+                    ? "Sample postbox mail"
+                    : "Personal postboxes live in My inbox"}
+                </span>
               </div>
             </section>
             <section className="how-it-works">
@@ -2211,7 +2321,7 @@ export function App() {
           </section>
         )}
         {view === "activity" && (
-          <section className="page-panel">
+          <section className="page-panel activity-page">
             <span className="kicker">THE DELIVERY BOOK</span>
             <h1 id="activity-title" tabIndex={-1}>
               Your <em>activity.</em>
@@ -2219,125 +2329,70 @@ export function App() {
             <p>
               Check that your letters, gifts and postbox changes have arrived.
               This history is saved in this browser; your wallet keeps the
-              transaction records.
+              transaction records. Incoming letters live in My inbox; this book
+              tracks your sending, collections and postbox approvals.
             </p>
+            <div className="activity-preview-control">
+              <button
+                onClick={() => setShowSampleActivity(!showSampleActivity)}
+              >
+                {showSampleActivity
+                  ? "Return to my activity"
+                  : "See sample activity"}
+              </button>
+              <span>See how a busy delivery book looks.</span>
+            </div>
+            {showSampleActivity && (
+              <p className="info sample-activity-notice" role="status">
+                SAMPLE ACTIVITY · These {sampleActivity.length} fictional
+                actions are separate from your real history. No transactions are
+                sent, checked or resumed. References and times are examples.
+              </p>
+            )}
             {autoChecking && (
               <p className="info">
                 Checking delivery automatically. You can leave this page; your
                 submitted transaction keeps going.
               </p>
             )}
-            {!deliveryHistory.error && !deliveries.length && (
-              <div className="quiet-state">
-                <span aria-hidden="true">✧</span>
-                <h2>No deliveries yet.</h2>
-                <p>
-                  Your next little act of kindness starts at the writing desk.
-                </p>
-                <button onClick={() => navigate("compose")}>
-                  Write a letter ↗
-                </button>
-              </div>
-            )}
-            {deliveries.map((p) => (
-              <div className="pending delivery-card" key={p.id}>
-                <code>{short(p.id)}</code>
-                <span>
-                  {p.operation === "publish"
-                    ? "Letter"
-                    : p.operation === "claim"
-                      ? "Gift collection"
-                      : p.operation === "capsule"
-                        ? "Postbox backup"
-                        : "Postbox"}{" "}
-                  ·{" "}
-                  {p.state === "confirmed" && !pendingIsUnresolved(p)
-                    ? "Delivered"
-                    : p.state === "rejected"
-                      ? "Not completed"
-                      : "Awaiting confirmation"}
-                </span>
-                <button
-                  disabled={!chain || busy}
-                  onClick={() =>
-                    void task(async () => {
-                      if (!chain) return;
-                      if (p.id.startsWith("attempt:")) {
-                        if (
-                          p.operation === "postbox" ||
-                          p.operation === "capsule"
-                        ) {
-                          setStatus(
-                            "This wallet submission has no transaction ID. Inspect the controlling wallet's transaction history before resolving it; matching postbox state alone cannot identify the submitted transaction. Retrying remains blocked.",
-                          );
-                          return;
-                        }
-                        const e = await chain.readLetter(p.envelopeId);
-                        if (p.operation === "publish") {
-                          savePending(browserStorage, {
-                            ...p,
-                            state: "confirmed",
-                          });
-                          await refresh();
-                          if (p.operation === "publish")
-                            shareConfirmed(p.envelopeId);
-                          setStatus(
-                            "Envelope state confirms delivery/publication. For missing or ambiguous attempts inspect donor/account history before retrying.",
-                          );
-                        } else {
-                          // A public/private-link gift may have been collected by someone else.
-                          // Without this attempt's receipt, its claimed flag cannot identify our payout.
-                          setStatus(
-                            e.claimed
-                              ? "This gift has been collected, but its state cannot confirm your payout. Inspect your receiving account and its transaction history. The original attempt remains unresolved; do not send a replacement."
-                              : "This collection has no transaction ID. Inspect your receiving account and its transaction history. The original attempt remains unresolved; do not send a replacement.",
-                          );
-                        }
-                        return;
-                      }
-                      const next = await readDelivery(chain, p);
-                      const state = next.state;
-                      savePending(browserStorage, next);
-                      await refresh();
-                      setStatus(`Transaction ${short(p.id)}: ${state}.`);
-                      if (state === "confirmed" && p.operation === "publish")
-                        shareConfirmed(p.envelopeId);
-                    })
-                  }
-                >
-                  Check status
-                </button>
-                {p.walletRequest &&
-                  p.id.startsWith("attempt:") &&
-                  p.state === "unknown" && (
-                    <button
-                      disabled={
-                        busy ||
-                        writeBlocked ||
-                        !(wallet instanceof SapientSession)
-                      }
-                      onClick={() =>
-                        void task(async () => {
-                          if (!(wallet instanceof SapientSession)) return;
-                          const id = await wallet.resume(p.id, browserStorage);
-                          setStatus(
-                            `Sapient submission ${id}. Reconcile chain confirmation next.`,
-                          );
-                        })
-                      }
-                    >
-                      Resume Sapient approval
-                    </button>
-                  )}
-                {p.state === "unknown" && (
-                  <p className="delivery-help">
-                    {p.id.startsWith("attempt:")
-                      ? "No confirmed transaction ID yet. Resume the saved Sapient request if available, or check your wallet’s history. Don’t send a replacement."
-                      : "This outcome needs review and fees may have been paid. Check Sapient history before trying again; GhostDrop keeps the original transaction blocked."}
+            {!showSampleActivity &&
+              !deliveryHistory.error &&
+              !deliveries.length && (
+                <div className="quiet-state">
+                  <span aria-hidden="true">✧</span>
+                  <h2>No deliveries yet.</h2>
+                  <p>
+                    Your next little act of kindness starts at the writing desk.
                   </p>
-                )}
-              </div>
-            ))}
+                  <button onClick={() => navigate("compose")}>
+                    Write a letter ↗
+                  </button>
+                </div>
+              )}
+            {(showSampleActivity || deliveries.length > 0) && (
+              <ActivityBook
+                key={`${d.network}:${d.registry}:${showSampleActivity}`}
+                records={showSampleActivity ? sampleActivity : deliveries}
+                sample={showSampleActivity}
+                busy={busy}
+                canCheck={!!chain}
+                canResume={!writeBlocked && wallet instanceof SapientSession}
+                publicTitles={showSampleActivity ? sampleTitles : publicTitles}
+                onCheck={(p) => void checkActivity(p)}
+                onResume={(p) => void resumeActivity(p)}
+                onRead={(id) => {
+                  const letter = letters.find(
+                    (e) => e.id === id && e.mode === "public",
+                  );
+                  if (!letter) return;
+                  closeLetter();
+                  setActive(letter);
+                  setPlain(letter.payload as Letter);
+                  setCreateAccount(false);
+                }}
+                onInbox={() => navigate("postboxes")}
+              />
+            )}
             {privateLink && (
               <div className="confirmed-link">
                 <CopyField
@@ -2556,7 +2611,7 @@ export function App() {
               ×
             </button>
             <span className="kicker">
-              {preview
+              {activeSample
                 ? "VISUAL PREVIEW"
                 : active.mode === "public"
                   ? "PUBLIC LETTER"
@@ -2623,7 +2678,9 @@ export function App() {
             </button>
             {ghost && (
               <div className="ghost-view">
-                <h3>{preview ? "Example payload" : "Stored chain payload"}</h3>
+                <h3>
+                  {activeSample ? "Example payload" : "Stored chain payload"}
+                </h3>
                 <pre>{JSON.stringify(active.payload, null, 2)}</pre>
                 <p>
                   Encryption hides the subject and body of sealed mail. This
@@ -2633,7 +2690,7 @@ export function App() {
                 </p>
               </div>
             )}
-            {!preview && active.mode === "public" && (
+            {!activeSample && active.mode === "public" && (
               <PublicLetterShare envelope={active} />
             )}
             {privateLink && (
@@ -2645,7 +2702,7 @@ export function App() {
                 value={privateLink}
               />
             )}
-            {!preview && BigInt(active.gift) > 0n && (
+            {!activeSample && BigInt(active.gift) > 0n && (
               <div className="claim-panel">
                 {busy && claimReview && (
                   <p role="status">

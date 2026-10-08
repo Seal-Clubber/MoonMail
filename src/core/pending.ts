@@ -13,6 +13,8 @@ export interface Pending {
   operation: "publish" | "claim" | "postbox" | "capsule";
   envelopeId: string;
   state: "submitted" | "confirmed" | "rejected" | "unknown";
+  createdAt?: number;
+  postboxAction?: "create" | "edit" | "rotate";
   capsule?: CapsuleRecord;
   walletRequest?: { provider: "sapient"; id: string; account: string };
 }
@@ -57,6 +59,13 @@ function strictPending(storage: Pick<Storage, "getItem">): Pending[] {
           typeof p.registry !== "string" ||
           !Number.isInteger(p.network) ||
           !["publish", "claim", "postbox", "capsule"].includes(p.operation) ||
+          (p.createdAt !== undefined &&
+            (!Number.isSafeInteger(p.createdAt) ||
+              p.createdAt <= 0 ||
+              !Number.isFinite(new Date(p.createdAt).getTime()))) ||
+          (p.postboxAction !== undefined &&
+            (p.operation !== "postbox" ||
+              !["create", "edit", "rotate"].includes(p.postboxAction))) ||
           !validCapsule(p) ||
           (p.walletRequest !== undefined &&
             (!(
@@ -146,7 +155,12 @@ export function beginSubmission(
   if (hasUnresolved(storage, p.network, p.registry, p.envelopeId))
     throw new Error("Reconcile the existing submission first");
   const id = `attempt:${crypto.randomUUID()}`;
-  savePending(storage, { ...p, id, state: "unknown" });
+  savePending(storage, {
+    ...p,
+    createdAt: p.createdAt ?? Date.now(),
+    id,
+    state: "unknown",
+  });
   return id;
 }
 export function completeSubmission(
