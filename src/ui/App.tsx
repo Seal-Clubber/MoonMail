@@ -32,7 +32,12 @@ import {
   type LinkRoute,
 } from "../core/links";
 import { money } from "../core/transactions";
-import { readPending, savePending, inspectPending } from "../core/pending";
+import {
+  readPending,
+  savePending,
+  inspectPending,
+  pendingIsUnresolved,
+} from "../core/pending";
 import { readDelivery } from "../core/delivery";
 import { browserStorage, checkBrowserStorage } from "../core/browser-storage";
 import { filterHallMail, type MailFilter } from "../core/mail-search";
@@ -174,6 +179,7 @@ export function App() {
   const modalBusy = useRef(busy);
   const modalReturnFocus = useRef<HTMLElement | null>(null);
   const focusAddressedDraft = useRef(false);
+  const focusActivity = useRef(false);
   modalBusy.current = busy;
   useEffect(() => {
     if (!focusAddressedDraft.current || view !== "compose" || postboxInvitation)
@@ -183,6 +189,11 @@ export function App() {
       .getElementById("writing-desk-title")
       ?.focus({ preventScroll: true });
   }, [view, postboxInvitation, active?.id]);
+  useEffect(() => {
+    if (!focusActivity.current || view !== "activity" || active) return;
+    focusActivity.current = false;
+    document.getElementById("activity-title")?.focus({ preventScroll: true });
+  }, [view, active?.id]);
   const [checkingGift, setCheckingGift] = useState(false);
   const [claimReview, setClaimReview] = useState<{
     address: string;
@@ -221,6 +232,12 @@ export function App() {
   }, []);
   const deliveries = deliveryHistory.records.filter(
     (p) => p.network === d.network && p.registry === d.registry,
+  );
+  const collectionPending = deliveries.some(
+    (p) =>
+      p.operation === "claim" &&
+      p.envelopeId === active?.id &&
+      pendingIsUnresolved(p),
   );
   const owned = boxes.filter(
     (p) => p.controller === wallet?.accounts[account]?.account.owner_public_key,
@@ -2197,7 +2214,7 @@ export function App() {
         {view === "activity" && (
           <section className="page-panel">
             <span className="kicker">THE DELIVERY BOOK</span>
-            <h1>
+            <h1 id="activity-title" tabIndex={-1}>
               Your <em>activity.</em>
             </h1>
             <p>
@@ -2235,7 +2252,7 @@ export function App() {
                         ? "Postbox backup"
                         : "Postbox"}{" "}
                   ·{" "}
-                  {p.state === "confirmed"
+                  {p.state === "confirmed" && !pendingIsUnresolved(p)
                     ? "Delivered"
                     : p.state === "rejected"
                       ? "Not completed"
@@ -2257,7 +2274,7 @@ export function App() {
                           return;
                         }
                         const e = await chain.readLetter(p.envelopeId);
-                        if (p.operation === "publish" || e.claimed) {
+                        if (p.operation === "publish") {
                           savePending(browserStorage, {
                             ...p,
                             state: "confirmed",
@@ -2267,6 +2284,14 @@ export function App() {
                             shareConfirmed(p.envelopeId);
                           setStatus(
                             "Envelope state confirms delivery/publication. For missing or ambiguous attempts inspect donor/account history before retrying.",
+                          );
+                        } else {
+                          // A public/private-link gift may have been collected by someone else.
+                          // Without this attempt's receipt, its claimed flag cannot identify our payout.
+                          setStatus(
+                            e.claimed
+                              ? "This gift has been collected, but its state cannot confirm your payout. Inspect your receiving account and its transaction history. The original attempt remains unresolved; do not send a replacement."
+                              : "This collection has no transaction ID. Inspect your receiving account and its transaction history. The original attempt remains unresolved; do not send a replacement.",
                           );
                         }
                         return;
@@ -2632,10 +2657,16 @@ export function App() {
                   </p>
                 )}
                 <h3>
-                  {active.claimed ? "Gift collected" : "Collect the gift"}
+                  {active.claimed
+                    ? "Gift collected"
+                    : collectionPending && !busy
+                      ? "Collection pending"
+                      : "Collect the gift"}
                 </h3>
                 <p>
-                  {active.claimed ? "Gift amount:" : "You receive"}{" "}
+                  {active.claimed || collectionPending
+                    ? "Gift amount:"
+                    : "You receive"}{" "}
                   {tari(active.gift)} TARI. The sender set aside{" "}
                   {tari(active.reserve)} TARI for collection fees.
                 </p>
@@ -2645,7 +2676,26 @@ export function App() {
                     letter.
                   </p>
                 )}
-                {!active.claimed && (
+                {collectionPending && !busy && (
+                  <div role="status" className="info">
+                    <p>Your collection is awaiting confirmation.</p>
+                    <p className="fine-print">
+                      A collected gift alone cannot confirm which account
+                      received it. Check the original transaction in Activity
+                      and your receiving account’s history before trying again.
+                    </p>
+                    <button
+                      onClick={() => {
+                        focusActivity.current = true;
+                        closeLetter();
+                        navigate("activity");
+                      }}
+                    >
+                      Check collection in Activity
+                    </button>
+                  </div>
+                )}
+                {!active.claimed && (!collectionPending || busy) && (
                   <>
                     {!wallet && (
                       <div className="info">

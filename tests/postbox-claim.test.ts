@@ -13,7 +13,12 @@ import {
 import { SapientSession, type SapientProvider } from "../src/core/sapient";
 import { emptyDeployment, postboxClaimsReady } from "../src/core/config";
 import { PostOfficeClient } from "../src/core/chain";
-import { readPending, beginSubmission } from "../src/core/pending";
+import {
+  readPending,
+  beginSubmission,
+  savePending,
+  hasUnresolved,
+} from "../src/core/pending";
 import type { Envelope } from "../src/core/types";
 
 const simulation = vi.hoisted(() => vi.fn());
@@ -544,4 +549,43 @@ test("a slow broadcast remains unresolved in its original journal and is never s
     expect.objectContaining({ id: "4".repeat(64), state: "submitted" }),
   ]);
   expect(f.provider.submitTransaction).toHaveBeenCalledTimes(1);
+});
+
+test("a legacy confirmed claim without a receipt still blocks a replacement preparation", async () => {
+  const f = await chainFixture();
+  const gift = { ...f.envelope, mode: "public" as const };
+  vi.mocked(f.chain.readLetter).mockResolvedValue(gift);
+  const legacy = {
+    id: "attempt:legacy-claim",
+    network: f.d.network,
+    registry: f.d.registry,
+    operation: "claim" as const,
+    envelopeId: gift.id,
+    state: "confirmed" as const,
+  };
+  savePending(f.storage, legacy);
+  await expect(
+    f.chain.claim(gift, f.address, f.selected, undefined, f.storage),
+  ).rejects.toThrow("existing submission");
+  expect(f.provider.submitTransaction).not.toHaveBeenCalled();
+  expect(readPending(f.storage)).toEqual([legacy]);
+});
+
+test("receipt-confirmed claims and state-confirmed publications retain their existing resolution", async () => {
+  const f = await chainFixture();
+  for (const p of [
+    { id: "4".repeat(64), operation: "claim" as const },
+    { id: "attempt:published", operation: "publish" as const },
+  ]) {
+    savePending(f.storage, {
+      ...p,
+      network: f.d.network,
+      registry: f.d.registry,
+      envelopeId: "resolved",
+      state: "confirmed",
+    });
+    expect(
+      hasUnresolved(f.storage, f.d.network, f.d.registry, "resolved"),
+    ).toBe(false);
+  }
 });

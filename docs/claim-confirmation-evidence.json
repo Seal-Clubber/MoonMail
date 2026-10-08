@@ -1,0 +1,22 @@
+{
+  "recordedAt": "2026-10-08T03:32:07.822409+00:00",
+  "scope": "Local source and production frontend with browser/indexer fixtures. No live transaction or hosted acceptance.",
+  "sourceBase": "cecef5e",
+  "change": "Uncertain gift collection remains unresolved until its original transaction receipt confirms it. A collected gift flag alone does not prove the receiving account was paid. Legacy confirmed claims without a receipt remain unresolved without rewriting their journal.",
+  "verification": {
+    "beforeFix": "Manual checking of a claim without a receipt reported publication confirmation when the gift was collected. The original implementation also marked that claim confirmed from the gift flag alone.",
+    "clientTests": "All 176 client tests across 19 files PASS, including replacement-preparation rejection for legacy claims missing a receipt and unchanged resolution of receipt-confirmed claims/publications.",
+    "browser": "Eight desktop/mobile targeted checks PASS: unknown unclaimed, unknown collected, legacy confirmed without receipt, and known original receipt moving from Pending to finalized Commit. Pending letters remain readable, repeat collection is hidden, Activity receives keyboard focus, missing-receipt journals remain unchanged, and known receipts confirm the original ID. Zero HTTP writes or wallet calls.",
+    "typescript": "PASS",
+    "productionBuild": "PASS",
+    "mainJs": "index-I9WkchEN.js",
+    "css": "index-D82Q5kcH.css",
+    "fullBrowser": "The previous full 200-browser run passed at fd4a139, before the shared inbox focus and uncertain-claim extensions. The current 208-browser suite has not been run in full."
+  },
+  "limits": [
+    "Without a transaction ID, the user must inspect the receiving account and transaction history. A gift collected by another party cannot establish this attempt succeeded.",
+    "No automatic replacement claim, new wallet permission, signing, fee, contract or financial timing change.",
+    "These are fixtures, not new funded consensus tests. Prior real and hosted evidence keeps its exact build scope.",
+    "Human retains GitHub push/publication control."
+  ]
+}

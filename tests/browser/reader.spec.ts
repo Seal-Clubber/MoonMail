@@ -1293,3 +1293,162 @@ for (const movedFocus of [false, true])
     ).toBeNull();
     expect(await page.evaluate(() => !!(window as any).tari)).toBe(false);
   });
+
+for (const { claimed, savedState } of [
+  { claimed: false, savedState: "unknown" },
+  { claimed: true, savedState: "unknown" },
+  { claimed: true, savedState: "confirmed" },
+])
+  test(`an uncertain ${savedState} claim ${claimed ? "on a collected gift" : "without a receipt"} never confirms someone else's payout`, async ({
+    page,
+  }) => {
+    await configure(page);
+    const pending = [
+      {
+        id: "attempt:uncertain-collection",
+        network: deployment.network,
+        registry: deployment.registry,
+        operation: "claim",
+        envelopeId: "recovered",
+        state: savedState,
+      },
+    ];
+    const journal = JSON.stringify(pending);
+    await page.addInitScript(
+      (journal) => localStorage.setItem("ghostdrop:pending:v1", journal),
+      journal,
+    );
+    let writes = 0;
+    await page.route(`${deployment.indexerUrl}**`, (r) => {
+      if (r.request().method() !== "GET") writes++;
+      const response = state(r.request().url());
+      if (r.request().url().includes(envelope)) {
+        response.substate!.Component.body.state[4] = "100000";
+        response.substate!.Component.body.state[5] = "50000";
+        response.substate!.Component.body.state[6] = claimed;
+      }
+      return r.fulfill({ json: response });
+    });
+    await page.goto("./#/activity");
+    const card = page.locator(".delivery-card");
+    await expect(card).toContainText("Awaiting confirmation");
+    await card.getByRole("button", { name: "Check status" }).click();
+    await expect(card).toContainText("Awaiting confirmation");
+    await expect(card).not.toContainText("Delivered");
+    await expect(page.locator(".message.status")).toContainText(
+      claimed ? "cannot confirm your payout" : "no transaction ID",
+    );
+    expect(
+      await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+    ).toBe(journal);
+    await page
+      .getByRole("button", { name: "Public mail", exact: true })
+      .click();
+    await page.getByRole("button", { name: subject, exact: false }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog).toContainText(
+      "Your collection is awaiting confirmation.",
+    );
+    await expect(
+      dialog.getByRole("button", { name: "Review gift collection" }),
+    ).toHaveCount(0);
+    await expect(
+      dialog.getByRole("button", { name: "Confirm & collect gift" }),
+    ).toHaveCount(0);
+    await dialog
+      .getByRole("button", { name: "Check collection in Activity" })
+      .click();
+    await expect(dialog).toHaveCount(0);
+    await expect(
+      page.getByRole("heading", { name: "Your activity.", exact: true }),
+    ).toBeFocused();
+    expect(
+      await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+    ).toBe(journal);
+    expect(writes).toBe(0);
+    expect(await page.evaluate(() => !!(window as any).tari)).toBe(false);
+  });
+
+test("a known pending claim offers its original Activity receipt instead of another collection", async ({
+  page,
+}) => {
+  await configure(page);
+  const tx = "8".repeat(64);
+  let confirmed = false,
+    writes = 0;
+  await page.addInitScript(
+    ({ network, registry, tx }) => {
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        get: () => true,
+      });
+      localStorage.setItem(
+        "ghostdrop:pending:v1",
+        JSON.stringify([
+          {
+            id: tx,
+            network,
+            registry,
+            operation: "claim",
+            envelopeId: "recovered",
+            state: "submitted",
+          },
+        ]),
+      );
+    },
+    { ...deployment, tx },
+  );
+  await page.route(`${deployment.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") writes++;
+    if (r.request().url().includes("transactions/"))
+      return r.fulfill({
+        json: {
+          result: confirmed
+            ? { Finalized: { final_decision: "Commit" } }
+            : "Pending",
+        },
+      });
+    const response = state(r.request().url());
+    if (r.request().url().includes(envelope)) {
+      response.substate!.Component.body.state[4] = "100000";
+      response.substate!.Component.body.state[5] = "50000";
+      response.substate!.Component.body.state[6] = confirmed;
+    }
+    return r.fulfill({ json: response });
+  });
+  await page.goto("./");
+  await page.getByRole("button", { name: subject, exact: false }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText(
+    "Your collection is awaiting confirmation.",
+  );
+  await expect(
+    dialog.getByRole("button", { name: "Review gift collection" }),
+  ).toHaveCount(0);
+  await dialog
+    .getByRole("button", { name: "Check collection in Activity" })
+    .click();
+  const card = page.locator(".delivery-card");
+  const check = card.getByRole("button", { name: "Check status" });
+  await check.click();
+  await expect(page.locator(".message.status")).toContainText("submitted");
+  await expect(card).toContainText("Awaiting confirmation");
+  confirmed = true;
+  await check.click();
+  await expect(card).toContainText("Delivered");
+  expect(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem("ghostdrop:pending:v1")!)[0],
+    ),
+  ).toMatchObject({ id: tx, state: "confirmed" });
+  await page.getByRole("button", { name: "Public mail", exact: true }).click();
+  await page.getByRole("button", { name: subject, exact: false }).click();
+  await expect(
+    dialog.getByRole("heading", { name: "Gift collected", exact: true }),
+  ).toBeVisible();
+  await expect(
+    dialog.getByRole("button", { name: "Check collection in Activity" }),
+  ).toHaveCount(0);
+  expect(writes).toBe(0);
+  expect(await page.evaluate(() => !!(window as any).tari)).toBe(false);
+});

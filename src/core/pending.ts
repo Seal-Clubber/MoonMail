@@ -109,6 +109,18 @@ export function savePending(
     JSON.stringify([...all.filter((x) => x.id !== p.id), p]),
   );
 }
+// Older UI versions could mark a claim confirmed using only the gift's claimed
+// flag. Without a receipt ID that does not identify this recipient's payout.
+export function pendingIsUnresolved(
+  p: Pick<Pending, "state" | "operation" | "id">,
+) {
+  return (
+    ["submitted", "unknown"].includes(p.state) ||
+    (p.operation === "claim" &&
+      p.state === "confirmed" &&
+      !/^[a-f0-9]{64}$/.test(p.id))
+  );
+}
 export function hasUnresolved(
   storage: Pick<Storage, "getItem">,
   network: number,
@@ -120,7 +132,7 @@ export function hasUnresolved(
       p.network === network &&
       p.registry === registry &&
       p.envelopeId === envelopeId &&
-      ["submitted", "unknown"].includes(p.state),
+      pendingIsUnresolved(p),
   );
 }
 // Persist before crossing the network boundary. A lost HTTP response is uncertain,
