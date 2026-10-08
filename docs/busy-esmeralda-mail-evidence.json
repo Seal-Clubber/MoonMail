@@ -750,5 +750,97 @@
         "noSecretInURLOrStorage": true
       }
     ]
+  },
+  "finalUIReadOnlyAcceptance": {
+    "checkedAt": "2026-10-08T23:03:38.664Z",
+    "network": 38,
+    "registry": "component_7f205e42678ea72a6a157e9c588851394fc479b99b6be53df407f327c47492f8",
+    "frontendCommit": "b8e87b51c1439ac31230c7bbac550ffcf2df1869",
+    "ledgerOverrides": false,
+    "financialBroadcasts": 0,
+    "checks": [
+      {
+        "name": "real-list-and-public-reader",
+        "width": 1440,
+        "pages": 3,
+        "letters": 33,
+        "noWallet": true,
+        "noJournal": true,
+        "noOverflow": true
+      },
+      {
+        "name": "real-list-and-public-reader",
+        "width": 390,
+        "pages": 3,
+        "letters": 33,
+        "noWallet": true,
+        "noJournal": true,
+        "noOverflow": true
+      },
+      {
+        "name": "real-list-and-public-reader",
+        "width": 320,
+        "pages": 3,
+        "letters": 33,
+        "noWallet": true,
+        "noJournal": true,
+        "noOverflow": true
+      },
+      {
+        "name": "real-private-link-reader",
+        "publication": "mail-05",
+        "collected": true,
+        "noWallet": true,
+        "noJournal": true,
+        "noOverflow": true
+      },
+      {
+        "name": "real-private-link-reader",
+        "publication": "mail-09",
+        "collected": false,
+        "noWallet": true,
+        "noJournal": true,
+        "noOverflow": true
+      },
+      {
+        "name": "real-original-Activity",
+        "confirmedCampaignActions": 36,
+        "originalStartTimes": true,
+        "noOverflow": true
+      },
+      {
+        "name": "real-restored-postbox-decryption",
+        "letters": 6,
+        "existingKeyVersion": 2
+      },
+      {
+        "name": "actual-confirmed-gift-funding-details",
+        "publication": "mail-34",
+        "originalGiftMicroTari": "25000",
+        "originalReserveMicroTari": "25000",
+        "receivingAmountNotInferredFromFundingFields": true,
+        "mobileNoOverflow": true
+      }
+    ],
+    "loaded": 41,
+    "hallLetters": 33,
+    "confirmedPublications": 36,
+    "audiences": {
+      "public": 20,
+      "privateLink": 10,
+      "postbox": 6
+    }
+  },
+  "finalValidation": {
+    "clientTests": 184,
+    "browserTests": 220,
+    "strictTypeScript": true,
+    "productionPagesBaseBuild": true,
+    "formatAndDiffChecks": true,
+    "minimumNewSmallTextContrast": 4.5,
+    "privacyPrivateValuesChecked": 34,
+    "privateMaterialFound": false,
+    "localDevelopmentFilesTracked": false,
+    "sourceAndBuildScan": true
   }
 }
