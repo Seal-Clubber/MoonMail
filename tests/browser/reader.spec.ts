@@ -1452,3 +1452,63 @@ test("a known pending claim offers its original Activity receipt instead of anot
   expect(writes).toBe(0);
   expect(await page.evaluate(() => !!(window as any).tari)).toBe(false);
 });
+
+test("long unbroken public letters wrap without clipping the hall or reading controls", async ({
+  page,
+}) => {
+  await configure(page);
+  const title = "Moonlit".repeat(17);
+  const body = `https://example.invalid/${"wandering".repeat(90)}`;
+  let writes = 0;
+  await page.route(`${deployment.indexerUrl}**`, (route) => {
+    if (route.request().method() !== "GET") {
+      writes++;
+      return route.abort();
+    }
+    const data = state(route.request().url());
+    if (route.request().url().includes(envelope))
+      data.substate!.Component.body.state[3] = JSON.stringify({
+        subject: title,
+        body,
+      });
+    return route.fulfill({ json: data });
+  });
+  await page.goto("./");
+  for (const width of [320, 390, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const card = page.getByRole("button", { name: title, exact: false });
+    await expect(card).toBeVisible();
+    const heading = card.locator("h3");
+    await expect(heading).toHaveText(title);
+    expect(
+      await heading.evaluate(
+        (node) => node.scrollWidth <= node.clientWidth + 1,
+      ),
+    ).toBe(true);
+    await card.click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.locator("h2")).toHaveText(title);
+    await expect(dialog.locator(".letter-body")).toHaveText(body);
+    for (const target of [dialog.locator("h2"), dialog.locator(".letter-body")])
+      expect(
+        await target.evaluate(
+          (node) => node.scrollWidth <= node.clientWidth + 1,
+        ),
+      ).toBe(true);
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    const close = dialog.getByRole("button", {
+      name: "Close letter",
+      exact: true,
+    });
+    const size = await close.boundingBox();
+    expect(size!.width).toBeGreaterThanOrEqual(44);
+    expect(size!.height).toBeGreaterThanOrEqual(44);
+    await close.click();
+    await expect(dialog).toHaveCount(0);
+  }
+  expect(writes).toBe(0);
+});

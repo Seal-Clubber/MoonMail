@@ -1,5 +1,7 @@
 # Sapient wallet integration
 
+The midnight design is published at `c49d79d`: HTTPS is enforced, Pages and all four Verify jobs passed, and all nine live files match the exact artifact. Actual stock Sapient unsent setup/reply/disconnect and guest public/private-letter reading passed without financial operations or new private-view grants. [Exact evidence](midnight-release-evidence.json) separates this release from the later local wrapping/touch-target correction.
+
 The website's wallet is [Sapient](https://sapient.tari.mw/), an Ootle browser extension. Visitors use GhostDrop and their normal Sapient wallet. The page detects Sapient's injected provider, asks for the selected account, and sends transaction requests to the wallet's approval popup. Financial seeds and signing keys stay in Sapient. There is no GhostDrop daemon, proxy, extra extension, credential entry or file import.
 
 Public letters, private-link decryption and prepaid guest claims still work without connection. Connecting optionally provides the selected account and public receiving address. Switch accounts or networks in Sapient; reconnect GhostDrop after a change.

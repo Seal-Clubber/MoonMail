@@ -1,0 +1,241 @@
+{
+  "recordedAt": "2026-10-08T04:11:22.648167+00:00",
+  "scope": "Exact human-pushed midnight design on HTTPS, followed by a separate local reading-layout correction.",
+  "published": {
+    "frontendCommit": "c49d79d50b6483e1723b77059ea0cea1b2137587",
+    "base": "https://seal-clubber.github.io/GhostDrop/",
+    "httpsEnforced": true,
+    "workflows": [
+      {
+        "id": 37725320983,
+        "name": "Publish reviewed GhostDrop to GitHub Pages",
+        "headSha": "c49d79d50b6483e1723b77059ea0cea1b2137587",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37725320983"
+      },
+      {
+        "id": 37725321081,
+        "name": "Verify GhostDrop",
+        "headSha": "c49d79d50b6483e1723b77059ea0cea1b2137587",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37725321081"
+      }
+    ],
+    "verifyJobs": [
+      {
+        "id": 113142057048,
+        "name": "contracts",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37725321081/job/113142057048"
+      },
+      {
+        "id": 113142057130,
+        "name": "static",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37725321081/job/113142057130"
+      },
+      {
+        "id": 113142057175,
+        "name": "recovery-capsule",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37725321081/job/113142057175"
+      },
+      {
+        "id": 113142057245,
+        "name": "postbox-claims",
+        "status": "completed",
+        "conclusion": "success",
+        "url": "https://github.com/Seal-Clubber/GhostDrop/actions/runs/37725321081/job/113142057245"
+      }
+    ],
+    "artifact": {
+      "run": 37725320983,
+      "sha": "c49d79d50b6483e1723b77059ea0cea1b2137587",
+      "artifactId": 11527082794,
+      "artifactDigest": "sha256:e2c248d79744be07235be1e1f88aa0dd24fc50da27056026d893691642c34dff",
+      "bytes": 602403
+    },
+    "publishedMatchesExactWorkflowArtifact": true,
+    "assetFiles": [
+      {
+        "path": "favicon.svg",
+        "bytes": 896,
+        "sha256": "32cc54bf2ebec8c90c82fa5004c6a82fcc53d03b5a7b785ffc515903ed279ecd"
+      },
+      {
+        "path": "deployment.json",
+        "bytes": 1005,
+        "sha256": "52df5ef95e81f906f1063fa7f593be8cab11fd6f4f5dfd4225c10bdc7ce78acf"
+      },
+      {
+        "path": "assets/index-xAHGa4j9.js",
+        "bytes": 362725,
+        "sha256": "2442f9feac45524a986b1aacdf138ed329ba911496fa41830093097e0181ef15"
+      },
+      {
+        "path": "assets/index-DUx9kBaZ.css",
+        "bytes": 35056,
+        "sha256": "af427d4c5612480fee2ec63944b342ed12e3dd7893681d12d185000ef67bed15"
+      },
+      {
+        "path": "assets/ootle_wasm-DixGV7PA.js",
+        "bytes": 21319,
+        "sha256": "e0dfe02134916f3202e8e84cc8b522bcbeb210fcffb31c900325288d27335810"
+      },
+      {
+        "path": "assets/ootle_wasm_bg-Dvm5bzZ4.wasm",
+        "bytes": 1288441,
+        "sha256": "d3969f2f738a70cf3199992d52c3e766000b5f31b859427849ed4171395897f1"
+      },
+      {
+        "path": "assets/ootle_wasm-CLPAruJ_.js",
+        "bytes": 209,
+        "sha256": "e490145dfae574781fe74c176955b03a51d16d8170cbcc7d7a021414595baa56"
+      },
+      {
+        "path": "index.html",
+        "bytes": 867,
+        "sha256": "a9a55d93d76f663380b9fad7fe2c0174c0572449496a16b40f8970456aca7650"
+      },
+      {
+        "path": "deployment-v2.json",
+        "bytes": 1005,
+        "sha256": "52df5ef95e81f906f1063fa7f593be8cab11fd6f4f5dfd4225c10bdc7ce78acf"
+      }
+    ],
+    "guestPageChecks": [
+      {
+        "viewport": "desktop",
+        "publicLettersOnFirstPage": 2,
+        "screens": [
+          {
+            "view": "hall",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "compose",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "postboxes",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "activity",
+            "horizontalOverflow": false
+          }
+        ],
+        "financialRequests": 0,
+        "pageErrors": []
+      },
+      {
+        "viewport": "mobile",
+        "publicLettersOnFirstPage": 2,
+        "screens": [
+          {
+            "view": "hall",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "compose",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "postboxes",
+            "horizontalOverflow": false
+          },
+          {
+            "view": "activity",
+            "horizontalOverflow": false
+          }
+        ],
+        "financialRequests": 0,
+        "pageErrors": []
+      }
+    ],
+    "stockSapient": {
+      "version": "0.6.6",
+      "runtimeAssetsMatchReviewedStorePackage": true,
+      "existingIsolatedRestoredProfile": true,
+      "ledgerOrAppOverrides": false,
+      "checks": {
+        "existingInboxPermissionDoesNotPromiseTransactions": true,
+        "twoApprovalProgressVisible": true,
+        "privateViewPermissionSeparate": true,
+        "unsentBackupButtonGated": true,
+        "postboxSetupMobileWithoutOverflow": true,
+        "disconnectClearsBoundReply": true,
+        "draftKeptAfterDisconnect": true,
+        "newGuestReviewHasNoReply": true,
+        "actualSiteConnection": true,
+        "addAndRemoveReplyInvalidatesReview": true,
+        "obsoletePrivateLinkReplaced": true,
+        "savedAcknowledgementCleared": true,
+        "preparedReplyIdReviewed": true,
+        "transactionJournalUnchanged": true,
+        "mobileWithoutOverflow": true,
+        "privateConsentRequests": 0,
+        "originDisconnected": true,
+        "transactionRequestsCreated": 0,
+        "signaturesRequested": 0,
+        "transactionsBroadcast": 0,
+        "bulkSubstateReads": 2,
+        "blockedHttp": 0,
+        "blockedWalletMethods": []
+      }
+    },
+    "actualLetterReads": [
+      {
+        "mode": "public",
+        "viewport": "desktop",
+        "actualSubjectAndBodyRead": true,
+        "claimedGiftShown": true,
+        "repeatedClaimNotOffered": true,
+        "noWallet": true,
+        "noTransactionJournal": true,
+        "noPostRequests": true,
+        "noScriptErrors": true,
+        "noOverflow": true
+      },
+      {
+        "mode": "private-link",
+        "viewport": "mobile",
+        "actualSubjectAndBodyRead": true,
+        "claimedGiftShown": true,
+        "repeatedClaimNotOffered": true,
+        "noWallet": true,
+        "noTransactionJournal": true,
+        "noPostRequests": true,
+        "noScriptErrors": true,
+        "noOverflow": true,
+        "capabilityScrubbedFromVisibleUrl": true,
+        "noCapabilityInStorageOrRequests": true
+      }
+    ],
+    "limits": [
+      "Stock-wallet checks are unsent setup/reply/disconnect. No view grant, signature, transaction request, financial broadcast or new seed restoration.",
+      "Actual public/private letters are previously collected campaign letters. No fresh gift was published or claimed.",
+      "Reviewed official Store runtime loaded in an isolated automation browser. Store installation UI and native-phone onboarding were not automated."
+    ]
+  },
+  "localReadingLayout": {
+    "sourceBase": "c49d79d50b6483e1723b77059ea0cea1b2137587",
+    "change": "Unbroken subjects wrap in hall captions and reading titles; pasted URLs wrap in letter bodies. Modal close controls have 44-by-44-pixel touch targets.",
+    "beforeFix": "Both desktop and mobile regressions failed because a 119-character unbroken public subject overflowed its hall heading.",
+    "browser": "96 reader/theme/interface checks PASS, then full210 desktop/mobile checks PASS (1.8minutes). New tests preserve exact subject/body, check wrapping/document bounds at320/390/1440px, close normally and perform zero HTTP writes.",
+    "typescript": "PASS",
+    "productionBuild": "PASS",
+    "clientTests": "176 client tests /19files previously PASS at ec92749. Later changes affect CSS/tests/docs only.",
+    "stylesheetSha256": "bbbda0c9e0c94866d52debe88725104ebea0598a4c5a19e2dcac4dab3121d331",
+    "mainJs": "index-xJ4SsEac.js",
+    "css": "index-zoE0c-nS.css",
+    "publication": "Local correction awaits human push; hosted acceptance above is c49d79d before this correction."
+  },
+  "noAgentPushOrPublication": true,
+  "noNewFinancialOperation": true
+}

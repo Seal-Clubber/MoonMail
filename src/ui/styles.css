@@ -2713,3 +2713,21 @@ footer {
     grid-row: 2;
   }
 }
+/* Preserve complete subjects and pasted URLs on narrow reading surfaces. */
+.envelope-card,
+.envelope-caption {
+  min-width: 0;
+}
+.envelope-caption h3,
+.modal h2,
+.letter-body {
+  overflow-wrap: anywhere;
+}
+.modal .close {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}

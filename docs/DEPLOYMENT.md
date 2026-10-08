@@ -1,5 +1,7 @@
 # Deployment
 
+The midnight design is published at `c49d79d`: HTTPS is enforced, Pages and all four Verify jobs passed, and all nine live files match the exact artifact. Actual stock Sapient unsent setup/reply/disconnect and guest public/private-letter reading passed without financial operations or new private-view grants. [Exact evidence](midnight-release-evidence.json) separates this release from the later local wrapping/touch-target correction.
+
 **Current wallet target: Sapient.** Visitors use the static website and stock Sapient browser wallet. No daemon credentials, custom wallet build, separate GhostDrop extension, bridge program or file import is required. Public reading and public/private-link gift collection allow guests; sending and postbox setup require Sapient. [Sapient setup and limits](SAPIENT.md) describe the supported provider and approval flow.
 
 The current `public/deployment.json` selects the verified Esmeralda Sapient V2 office, including its registry, envelope and recovery capsule identities. `sapientWallet`, `mailboxRecovery` and `postboxClaims` are enabled by the recorded [V2 campaign](postbox-v2-esmeralda-evidence.json). Postbox creation, key rotation, restored-wallet recovery, ownership-proof collection into a zero-TARI account and independent payout spending passed actual public tests. The original office is not selectable and old mail is not migrated.
