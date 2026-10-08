@@ -1,0 +1,30 @@
+{
+  "recordedAt": "2026-10-08T01:48:25.700828+00:00",
+  "scope": "Local production build. Browser/provider/indexer fixtures only; no hosted or funded claim.",
+  "sourceBase": "6fc65b7",
+  "change": "15-second per-request deadlines for indexer connection identity, registry, verified-envelope and receipt reads. The collection review uses the same core deadline.",
+  "verification": {
+    "beforeFix": "Stalled identity, registry and refresh tests failed while loading remained indefinite. Manual receipt test failed because its status button remained disabled.",
+    "client": "161tests /18files PASS.",
+    "browser": "All178desktop/mobile browser checks PASS, one Windows CI worker2.2minutes. Earlier78reader/public-link and36delivery/postbox-claim checks also passed.",
+    "typescript": "PASS",
+    "productionBuild": "PASS",
+    "mainJs": "index-CtCKGB_r.js",
+    "css": "index-D82Q5kcH.css"
+  },
+  "results": [
+    "Initial timeout exits loading; explicit Refresh retries without a financial action.",
+    "Refresh timeout retains previously verified mail and releases retry controls.",
+    "Losing late reads cannot replace displayed mail or open a stale collection review.",
+    "Manual receipt timeout retains the original journal unchanged; late receipt is ignored. An explicit later check can confirm the same original ID.",
+    "Private-letter and collection timeout/privacy regressions remain passing."
+  ],
+  "limits": [
+    "Per-request deadline, not a total page-load deadline across multiple request batches.",
+    "Underlying SDK fetch may finish in the background; this does not claim HTTP cancellation.",
+    "No automatic read replacement on timeout; existing explicit retry controls remain.",
+    "Signing, wallet-request polling, simulation, submission, fee rules and contract state are unchanged.",
+    "This does not extend completed financial campaign authorization.",
+    "Human retains push/publish control."
+  ]
+}

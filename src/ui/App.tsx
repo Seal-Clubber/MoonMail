@@ -2712,28 +2712,13 @@ export function App() {
                               createAccount,
                             };
                             setCheckingGift(true);
-                            let timeout:
-                              | ReturnType<typeof setTimeout>
-                              | undefined;
                             try {
                               let latest: Envelope;
                               try {
-                                // A stalled read must not trap the visitor in a busy
-                                // modal. The losing read has no state-changing callback.
-                                latest = await Promise.race([
-                                  chain.readLetter(active.id, active.component),
-                                  new Promise<Envelope>((_, reject) => {
-                                    timeout = setTimeout(
-                                      () =>
-                                        reject(
-                                          new Error(
-                                            "Gift availability read timed out",
-                                          ),
-                                        ),
-                                      15_000,
-                                    );
-                                  }),
-                                ]);
+                                latest = await chain.readLetter(
+                                  active.id,
+                                  active.component,
+                                );
                               } catch {
                                 if (sequence !== openSequence.current) return;
                                 throw new Error(
@@ -2752,7 +2737,6 @@ export function App() {
                               );
                               if (!latest.claimed) setClaimReview(reviewed);
                             } finally {
-                              if (timeout !== undefined) clearTimeout(timeout);
                               setCheckingGift(false);
                             }
                           })

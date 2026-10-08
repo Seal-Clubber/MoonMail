@@ -834,3 +834,104 @@ test("an unknown reply postbox offers no recipient shortcut", async ({
   ).toHaveCount(0);
   await noWrites();
 });
+
+for (const target of ["identity", "registry"] as const)
+  test(`a stalled initial ${target} read exits loading and retries without a financial action`, async ({
+    page,
+  }) => {
+    await configure(page);
+    await page.clock.install();
+    let stalled = true,
+      writes = 0,
+      release!: () => void,
+      started!: () => void;
+    const pending = new Promise<void>((r) => (release = r)),
+      requested = new Promise<void>((r) => (started = r));
+    await page.route(`${deployment.indexerUrl}**`, async (r) => {
+      if (r.request().method() !== "GET") writes++;
+      const matches =
+        target === "identity"
+          ? new URL(r.request().url()).pathname === "/identity"
+          : r.request().url().includes(deployment.registry);
+      if (stalled && matches) {
+        started();
+        await pending;
+      }
+      await r.fulfill({ json: state(r.request().url()) });
+    });
+    await page.goto("./");
+    await requested;
+    await page.clock.runFor(15_001);
+    await expect(page.getByRole("alert")).toContainText(
+      "Could not read the post office",
+    );
+    const retry = page.getByRole("button", { name: "↻ Refresh", exact: true });
+    await expect(retry).toBeEnabled();
+    await expect(
+      page.getByRole("button", { name: subject, exact: false }),
+    ).toHaveCount(0);
+    const done = page.waitForResponse((r) =>
+      target === "identity"
+        ? new URL(r.url()).pathname === "/identity"
+        : r.url().includes(deployment.registry),
+    );
+    release();
+    await done;
+    await expect(
+      page.getByRole("button", { name: subject, exact: false }),
+    ).toHaveCount(0);
+    stalled = false;
+    await retry.click();
+    await expect(
+      page.getByRole("button", { name: subject, exact: false }),
+    ).toBeVisible();
+    expect(writes).toBe(0);
+    expect(
+      await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+    ).toBeNull();
+  });
+
+test("a stalled hall refresh retains previously verified mail and releases its retry control", async ({
+  page,
+}) => {
+  await configure(page);
+  let hold = false,
+    writes = 0,
+    release!: () => void,
+    started!: () => void;
+  const pending = new Promise<void>((r) => (release = r)),
+    requested = new Promise<void>((r) => (started = r));
+  await page.route(`${deployment.indexerUrl}**`, async (r) => {
+    if (r.request().method() !== "GET") writes++;
+    if (hold && r.request().url().includes(deployment.registry)) {
+      started();
+      await pending;
+    }
+    await r.fulfill({ json: state(r.request().url()) });
+  });
+  await page.goto("./");
+  const letter = page.getByRole("button", { name: subject, exact: false }),
+    retry = page.getByRole("button", { name: "↻ Refresh", exact: true });
+  await expect(letter).toBeVisible();
+  await page.clock.install();
+  hold = true;
+  await retry.click();
+  await requested;
+  await page.clock.runFor(15_001);
+  await expect(page.getByText("Mail could not be refreshed.")).toBeVisible();
+  await expect(letter).toBeVisible();
+  await expect(retry).toBeEnabled();
+  const done = page.waitForResponse((r) =>
+    r.url().includes(deployment.registry),
+  );
+  release();
+  await done;
+  await expect(page.getByText("Mail could not be refreshed.")).toBeVisible();
+  hold = false;
+  await retry.click();
+  await expect(page.getByText("Mail could not be refreshed.")).toHaveCount(0);
+  expect(writes).toBe(0);
+  expect(
+    await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+  ).toBeNull();
+});

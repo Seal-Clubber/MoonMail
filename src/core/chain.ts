@@ -1,3 +1,4 @@
+import { readWithTimeout } from "./read-timeout";
 import { postboxNameError } from "./postbox-name";
 import { IndexerProvider } from "@tari-project/ootle-indexer";
 import { Network } from "@tari-project/ootle";
@@ -175,14 +176,18 @@ export class PostOfficeClient {
       throw new Error("No deployed post office configured");
     return new PostOfficeClient(
       d,
-      await IndexerProvider.connect({
-        url: endpoint(d.indexerUrl, d.network === 16),
-        network: d.network as Network,
-      }),
+      await readWithTimeout(
+        IndexerProvider.connect({
+          url: endpoint(d.indexerUrl, d.network === 16),
+          network: d.network as Network,
+        }),
+      ),
     );
   }
   private async readOffice() {
-    const r = await this.provider.getSubstate(this.deployment.registry);
+    const r = await readWithTimeout(
+      this.provider.getSubstate(this.deployment.registry),
+    );
     const v = r.substate as unknown as {
       Component?: {
         header: { template_address: string; owner_rule: unknown };
@@ -238,7 +243,7 @@ export class PostOfficeClient {
       component = office.letterRefs.find((r) => r.id === id)?.component;
       if (!component) throw new Error("Unknown envelope");
     }
-    const r = await this.provider.getSubstate(component);
+    const r = await readWithTimeout(this.provider.getSubstate(component));
     const c = (
       r.substate as unknown as {
         Component?: {
@@ -769,7 +774,7 @@ export class PostOfficeClient {
     );
   }
   async reconcile(id: string) {
-    const r = await this.provider.getTransactionResult(id);
+    const r = await readWithTimeout(this.provider.getTransactionResult(id));
     return classifyOutcome(r.result);
   }
   private async claimPostboxProof(

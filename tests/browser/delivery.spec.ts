@@ -1097,3 +1097,83 @@ test("postbox names respect the chain byte limit before the first backup approva
     await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
   ).toBeNull();
 });
+
+test("a stalled manual delivery check preserves the original attempt and ignores a late receipt", async ({
+  page,
+}) => {
+  await configure(page);
+  await connectFixture(page);
+  await page.clock.install();
+  let hold = true,
+    writes = 0,
+    release!: () => void,
+    started!: () => void;
+  const pending = new Promise<void>((r) => (release = r)),
+    requested = new Promise<void>((r) => (started = r));
+  await page.route(`${d.indexerUrl}**`, async (r) => {
+    if (r.request().method() !== "GET") writes++;
+    if (r.request().url().includes(`/transactions/${transaction}/result`)) {
+      if (hold) {
+        started();
+        await pending;
+      }
+      return r.fulfill({
+        json: { result: { Finalized: { final_decision: "Commit" } } },
+      });
+    }
+    await r.fulfill({ json: ledger(r.request().url()) });
+  });
+  await page.addInitScript(
+    ({ network, registry, transaction }) => {
+      // Isolate the explicit check from automatic foreground receipt polling.
+      Object.defineProperty(document, "hidden", {
+        configurable: true,
+        get: () => true,
+      });
+      localStorage.setItem(
+        "ghostdrop:pending:v1",
+        JSON.stringify([
+          {
+            id: transaction,
+            network,
+            registry,
+            operation: "publish",
+            envelopeId: "pending-letter",
+            state: "submitted",
+          },
+        ]),
+      );
+    },
+    { ...d, transaction },
+  );
+  await page.goto("./#/activity");
+  const check = page.getByRole("button", { name: "Check status", exact: true });
+  await expect(check).toBeEnabled();
+  const before = await page.evaluate(() =>
+    localStorage.getItem("ghostdrop:pending:v1"),
+  );
+  await check.click();
+  await requested;
+  await page.clock.runFor(15_001);
+  await expect(check).toBeEnabled();
+  await expect(page.getByRole("alert")).toContainText("read timed out");
+  expect(
+    await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+  ).toBe(before);
+  const done = page.waitForResponse((r) =>
+    r.url().includes(`/transactions/${transaction}/result`),
+  );
+  release();
+  await done;
+  expect(
+    await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+  ).toBe(before);
+  await expect(page.locator(".delivery-card")).toContainText(
+    "Awaiting confirmation",
+  );
+  hold = false;
+  await check.click();
+  await expect(page.locator(".delivery-card")).toContainText("Delivered");
+  expect(await page.evaluate(() => (window as any).walletCalls)).toEqual([]);
+  expect(writes).toBe(0);
+});
