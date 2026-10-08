@@ -55,6 +55,7 @@ import { parsePostboxLink, type PostboxRoute } from "../core/postbox-links";
 import { MailReadNotice } from "./MailReadNotice";
 import { networkPreset, checkPublicIndexer } from "../core/networks";
 import { loadOfficeProfile } from "../core/office-profile";
+import { useActionFocus } from "./useActionFocus";
 
 const exampleLetters: Envelope[] = [
   {
@@ -188,12 +189,15 @@ export function App() {
     destination: string;
     createAccount: boolean;
   }>();
+  const collectionFocus = useActionFocus(busy, !!error && !!claimReview);
+  const inboxFocus = useActionFocus(
+    busy,
+    !!error && active?.mode === "postbox" && !plain,
+  );
   const secret = useRef<Uint8Array | undefined>(undefined),
     routeOnce = useRef(false),
     claimReviewWasOpen = useRef(false),
     claimReviewTrigger = useRef<HTMLButtonElement>(null),
-    claimConfirm = useRef<HTMLButtonElement>(null),
-    restoreClaimFocus = useRef(false),
     [page, setPage] = useState(1),
     openSequence = useRef(0),
     draftSequence = useRef(0),
@@ -574,18 +578,6 @@ export function App() {
     claimReviewWasOpen.current = !!claimReview;
   }, [claimReview]);
   useEffect(() => {
-    if (busy || !restoreClaimFocus.current) return;
-    restoreClaimFocus.current = false;
-    if (
-      error &&
-      claimReview &&
-      claimConfirm.current &&
-      !claimConfirm.current.disabled &&
-      document.activeElement === document.body
-    )
-      claimConfirm.current.focus({ preventScroll: true });
-  }, [busy, error, claimReview]);
-  useEffect(() => {
     if (plain && active?.mode === "postbox" && !connect)
       document.getElementById("letter-title")?.focus({ preventScroll: true });
   }, [plain, active?.id, active?.mode, connect]);
@@ -779,7 +771,8 @@ export function App() {
     );
   }
   function closeLetter() {
-    restoreClaimFocus.current = false;
+    collectionFocus.clear();
+    inboxFocus.clear();
     setPublicLetterRoute(undefined);
     setPublicLetterState("idle");
     setPublicLetterError("");
@@ -2566,8 +2559,16 @@ export function App() {
                   ) && (
                     <>
                       <button
+                        ref={inboxFocus.ref}
+                        aria-describedby={error ? "letter-error" : undefined}
                         disabled={busy || !chain}
-                        onClick={() => void task(() => openPostbox(active))}
+                        onClick={() =>
+                          void task(() => {
+                            const opening = openPostbox(active);
+                            inboxFocus.remember();
+                            return opening;
+                          })
+                        }
                       >
                         {busy ? "Opening your letter…" : "Retry opening letter"}
                       </button>
@@ -2884,7 +2885,7 @@ export function App() {
                             Change destination
                           </button>
                           <button
-                            ref={claimConfirm}
+                            ref={collectionFocus.ref}
                             aria-describedby={
                               error ? "letter-error" : undefined
                             }
@@ -2894,9 +2895,7 @@ export function App() {
                             }
                             onClick={() =>
                               void task(async () => {
-                                restoreClaimFocus.current =
-                                  document.activeElement ===
-                                  claimConfirm.current;
+                                collectionFocus.remember();
                                 const reviewed = claimReview;
                                 if (!chain || !reviewed) return;
                                 const owner = wallet?.accounts.find(

@@ -9,7 +9,8 @@
     "typescript": "PASS",
     "productionBuild": "PASS",
     "mainJs": "index-CFMeXMPT.js",
-    "css": "index-D82Q5kcH.css"
+    "css": "index-D82Q5kcH.css",
+    "fullBrowser": "Full 200 desktop/mobile checks PASS atfd4a139 before the inbox extension."
   },
   "limits": [
     "Focus restoration does not activate the button or retry a claim. A new user action is required.",
@@ -17,5 +18,15 @@
     "This records collection review only; it does not claim all asynchronous controls restore focus.",
     "No signing, fee, consent, contract or submission behavior changed.",
     "Human retains push/publication control."
-  ]
+  ],
+  "inboxExtension": {
+    "recordedAt": "2026-10-08T03:15:06.494383+00:00",
+    "sourceBase": "fd4a139",
+    "change": "A shared focus helper now covers failed private-inbox retry and collection, retaining the same body-only restoration rule and error description.",
+    "beforeFix": "After a second stalled resource read, the re-enabled private Retry opening letter control remained unfocused.",
+    "browser": "Six inbox/collection desktop/mobile fixture checks PASS. Two consecutive inbox timeouts and late resource responses never request private summaries; the third explicit attempt decrypts the real SDK-encrypted fixture and focuses its title. Existing collection moved-focus checks still pass.",
+    "mainJs": "index-CXdTOqE6.js",
+    "css": "index-D82Q5kcH.css",
+    "limits": "Existing already-granted synthetic view permission only; no real wallet grant, financial request, hosted acceptance or restoration test."
+  }
 }

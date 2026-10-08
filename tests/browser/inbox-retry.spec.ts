@@ -98,7 +98,7 @@ test("a stalled private inbox read can retry in its letter without signing or lo
     writes = 0,
     release!: () => void,
     started!: () => void;
-  const pending = new Promise<void>((r) => (release = r)),
+  let pending = new Promise<void>((r) => (release = r)),
     requested = new Promise<void>((r) => (started = r));
   await page.route(`${d.indexerUrl}**`, async (r) => {
     if (r.request().method() !== "GET") writes++;
@@ -187,6 +187,30 @@ test("a stalled private inbox read can retry in its letter without signing or lo
   const done = page.waitForResponse((r) => r.url().includes(resource));
   release();
   await done;
+  await expect(dialog.locator(".letter-body")).toHaveCount(0);
+  // A second explicit attempt can fail too; keyboard users must keep a retry target.
+  pending = new Promise<void>((r) => (release = r));
+  requested = new Promise<void>((r) => (started = r));
+  const retryControl = dialog.locator(".sealed-state button");
+  await retryControl.focus();
+  await page.keyboard.press("Enter");
+  await requested;
+  await expect(retryControl).toBeDisabled();
+  await page.clock.runFor(15_001);
+  await expect(retryControl).toBeEnabled();
+  await expect(retryControl).toBeFocused();
+  await expect(retryControl).toHaveAttribute(
+    "aria-describedby",
+    "letter-error",
+  );
+  expect(
+    await page.evaluate(() =>
+      (window as any).walletMethods.includes("tari_getShieldedOutputs"),
+    ),
+  ).toBe(false);
+  const secondLate = page.waitForResponse((r) => r.url().includes(resource));
+  release();
+  await secondLate;
   await expect(dialog.locator(".letter-body")).toHaveCount(0);
   hold = false;
   await retry.click();
