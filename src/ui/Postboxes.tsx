@@ -208,7 +208,9 @@ export function Postboxes({
     setPrepared(next);
     onStatus(
       next.state === "confirmed"
-        ? "Recovery backup confirmed. Approve opening your postbox when you’re ready."
+        ? rotating
+          ? "Recovery backup confirmed. Approve updating your encryption key when you’re ready."
+          : "Recovery backup confirmed. Approve opening your postbox when you’re ready."
         : "Backup is not confirmed yet. Keep this setup and check its original transaction in Sapient.",
     );
   }
@@ -253,7 +255,7 @@ export function Postboxes({
           ),
         );
         onStatus(
-          `Recovery backup submitted. Waiting for confirmation before opening your postbox. Transaction: ${result.transactionId}.`,
+          `Recovery backup submitted. Waiting for confirmation before ${rotating ? "updating your encryption key" : "opening your postbox"}. Transaction: ${result.transactionId}.`,
         );
         return;
       }
@@ -380,8 +382,10 @@ export function Postboxes({
                   Postbox recovery needs your permission. This lets GhostDrop
                   read the connected account's private output summaries,
                   including amounts and memos for other resources. It does not
-                  reveal your wallet seed or signing keys. This permission comes
-                  before the two transaction approvals.
+                  reveal your wallet seed or signing keys.{" "}
+                  {editing && (!box || rotating)
+                    ? "This permission comes before the two transaction approvals."
+                    : "Approve this permission to read your private mail. Opening a letter does not send a transaction."}
                 </p>
                 <label className="checkbox">
                   <input
@@ -530,7 +534,9 @@ export function Postboxes({
                       </strong>
                       <p>
                         {prepared.state === "confirmed"
-                          ? "The next approval opens your postbox. Your encrypted backup stays on Ootle."
+                          ? rotating
+                            ? "The next approval updates your encryption key. Your encrypted backup stays on Ootle."
+                            : "The next approval opens your postbox. Your encrypted backup stays on Ootle."
                           : prepared.state === "submitted"
                             ? "Keep this setup until its outcome is clear. Known transactions are checked automatically for up to two minutes; no wallet approval is resumed automatically."
                             : "Keep the original setup and inspect Sapient history before trying again. Use the status or approval button below to check this same request."}

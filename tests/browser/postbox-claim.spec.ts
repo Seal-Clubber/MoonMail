@@ -172,6 +172,39 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
       await page
         .getByRole("combobox", { name: "My postboxes", exact: true })
         .selectOption("box");
+      await expect(
+        page.getByText("Opening a letter does not send a transaction.", {
+          exact: false,
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByText(
+          "This permission comes before the two transaction approvals.",
+          {
+            exact: false,
+          },
+        ),
+      ).toHaveCount(0);
+      await page.getByRole("button", { name: "Edit selected postbox" }).click();
+      await expect(page.locator(".setup-steps")).toHaveCount(0);
+      await page
+        .getByRole("button", { name: "Rotate encryption key", exact: true })
+        .click();
+      await expect(page.locator(".setup-steps li")).toHaveCount(2);
+      await expect(page.locator(".setup-steps")).toContainText(
+        "Update encryption key",
+      );
+      await expect(
+        page.getByText(
+          "This permission comes before the two transaction approvals.",
+          {
+            exact: false,
+          },
+        ),
+      ).toBeVisible();
+      await page
+        .getByRole("combobox", { name: "My postboxes", exact: true })
+        .selectOption("box");
       await page.getByRole("button", { name: /Sealed letter · gift/ }).click();
       const dialog = page.getByRole("dialog", {
         name: "A sealed little secret",
