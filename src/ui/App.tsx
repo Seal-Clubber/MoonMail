@@ -268,27 +268,41 @@ export function App() {
       closeLetter();
       setError("");
       setPostboxInvitation(undefined);
+      const hash = location.hash;
+      const privateLink = hash === "#/letter" || hash.startsWith("#/letter/");
+      let scrubbed = false;
       try {
-        const parsed = parseGiftLink(location.hash);
+        // Scrub the untrusted fragment before validation can reject a damaged link.
+        if (privateLink) {
+          history.replaceState(
+            null,
+            "",
+            `${location.pathname}${location.search}#/letter`,
+          );
+          scrubbed = true;
+        }
+        const parsed = parseGiftLink(hash);
+        if (privateLink && !parsed)
+          throw new Error("A private letter needs its complete private link");
         if (parsed) {
-          setRoute(parsed);
           history.replaceState(
             null,
             "",
             `${location.pathname}${location.search}#/letter/${encodeURIComponent(parsed.id)}`,
           );
+          setRoute(parsed);
         } else {
-          const invitation = parsePostboxLink(location.hash);
+          const invitation = parsePostboxLink(hash);
           if (invitation) {
             setPostboxInvitation(invitation);
             return;
           }
-          const publicLink = parsePublicLetterLink(location.hash);
+          const publicLink = parsePublicLetterLink(hash);
           if (publicLink) {
             setPublicLetterRoute(publicLink);
             return;
           }
-          const initialView = location.hash.slice(2);
+          const initialView = hash.slice(2);
           if (
             [
               "hall",
@@ -302,7 +316,13 @@ export function App() {
             setView(initialView);
         }
       } catch (e) {
-        setError((e as Error).message);
+        setError(
+          privateLink
+            ? scrubbed
+              ? "This private link is incomplete or damaged. Ask its sender for the complete private link."
+              : "This browser could not hide the private link. Close this tab and try a supported browser."
+            : (e as Error).message,
+        );
       }
     };
     if (!routeOnce.current) {

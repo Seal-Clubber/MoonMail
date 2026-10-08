@@ -935,3 +935,61 @@ test("a stalled hall refresh retains previously verified mail and releases its r
     await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
   ).toBeNull();
 });
+
+for (const damage of ["context", "identifier", "path"] as const)
+  test(`a damaged private ${damage} link clears its secret before rejection and history navigation`, async ({
+    page,
+  }) => {
+    await configure(page);
+    const sealed = await sealLetter(
+      { subject: "A synthetic secret", body: "No opening should occur." },
+      deployment,
+      "recovered",
+    );
+    let targetReads = 0,
+      writes = 0;
+    const requests: string[] = [];
+    page.on("request", (r) => requests.push(r.url()));
+    await page.route(`${deployment.indexerUrl}**`, (r) => {
+      if (r.request().method() !== "GET") writes++;
+      if (r.request().url().includes(envelope)) targetReads++;
+      // The ordinary hall is empty; a rejected private route must never read its target.
+      const response = state(r.request().url());
+      if (r.request().url().includes(deployment.registry))
+        response.substate!.Component.body.state[1] = {};
+      return r.fulfill({ json: response });
+    });
+    const u = new URL(
+      createGiftLink(String(test.info().project.use.baseURL), {
+        id: "recovered",
+        capability: sealed.capability,
+        context: deployment,
+      }),
+    );
+    if (damage === "context")
+      u.hash = u.hash.replace(`&template=${deployment.template}`, "");
+    else if (damage === "identifier")
+      u.hash = u.hash.replace("/recovered/", "/%E0%A4/");
+    else u.hash = u.hash.replace("?network=", "/unexpected?network=");
+    await page.goto(u.href);
+    await expect(page.getByRole("alert")).toBeVisible();
+    expect(page.url().includes(sealed.capability)).toBe(false);
+    await expect(page.getByRole("alert")).toContainText(
+      "complete private link",
+    );
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page
+      .getByRole("button", { name: "Write a letter", exact: true })
+      .click();
+    await page.goBack();
+    expect(page.url().includes(sealed.capability)).toBe(false);
+    await page.reload();
+    expect(page.url().includes(sealed.capability)).toBe(false);
+    await page.goForward();
+    expect(page.url().includes(sealed.capability)).toBe(false);
+    expect(requests.some((url) => url.includes(sealed.capability))).toBe(false);
+    expect(targetReads).toBe(0);
+    expect(writes).toBe(0);
+    expect(await page.evaluate(() => localStorage.length)).toBe(0);
+    expect(await page.evaluate(() => !!(window as any).tari)).toBe(false);
+  });

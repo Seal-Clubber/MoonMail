@@ -1,0 +1,26 @@
+{
+  "recordedAt": "2026-10-08T02:24:31.980068+00:00",
+  "scope": "Local production frontend, synthetic browser/indexer fixtures; no financial action or hosted publication.",
+  "sourceBase": "6f3e38d",
+  "change": "Private route fragments are replaced before link parsing. Rejected links cannot retain their capability in the current address or history entry. Valid links retain only the public letter ID in the address.",
+  "verification": {
+    "beforeFix": "All three damaged-link cases failed because the capability remained in the URL after rejection.",
+    "browser": "104 reader/public-link/app desktop/mobile checks PASS, including malformed context, identifier and path; reload and Back/Forward; ordinary valid private/public routes.",
+    "client": "163 tests across 18 files PASS.",
+    "typescript": "PASS",
+    "productionBuild": "PASS",
+    "mainJs": "index-DL9cCKr7.js",
+    "css": "index-D82Q5kcH.css"
+  },
+  "results": [
+    "Rejected private routes show a complete-link recovery message without opening their target.",
+    "Synthetic capabilities remain absent from requests and storage; no wallet, write request or transaction is created.",
+    "Valid private reading and collection-review regressions still pass."
+  ],
+  "limits": [
+    "The history replacement changes the current browser entry; it does not claim erasure of browser logs, sync records or the original incoming link.",
+    "If the browser rejects the history replacement, GhostDrop refuses to open the private route and explains closing the tab.",
+    "Capabilities in incoming private links are still secrets that recipients must protect.",
+    "Human retains GitHub push and publication control."
+  ]
+}
