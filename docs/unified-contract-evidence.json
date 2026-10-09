@@ -1,7 +1,7 @@
 {
-  "date": "2026-10-09",
-  "status": "persisted-option-codec-corrected-and-verified-awaiting-fresh-publication",
-  "publicTransactions": 4,
+  "date": "2026-10-10",
+  "status": "Esmeralda-contract-deployed-and-stock-Sapient-accepted-frontend-awaiting-user-push",
+  "publicTransactions": 15,
   "templatePackage": "contracts/ghostdrop-v3",
   "templateName": "GhostDrop",
   "engine": "0.45.0",
@@ -34,11 +34,12 @@
     "ordinaryReadReceipts": "not-published",
     "publicMetadata": "routing,controller,gift,approximate-size,timing,fees"
   },
-  "scope": "The initial artifact and empty root were published on real Esmeralda, followed by two isolated actor funding transactions. Stock Sapient capsule simulation then exposed persisted absent fields represented as empty arrays; no capsule transaction was broadcast. The corrected artifact accepts null and empty-array absence, rejects malformed nonempty data, and passes 35 engine /191 client /232 browser checks. Fresh publication and actual mail/settings/claim acceptance remain required.",
+  "scope": "Fifteen original transactions on real Esmeralda. Independent restored stock Sapient verified actual long public, private-link and addressed letters plus encrypted mailbox settings and a gift-funded postbox claim. Public/link gift payout and new-account paths are covered by the 35 local engine tests, not an additional V3 live gift campaign. UI used reviewed local HTTPS-staged assets against the real indexer; this does not claim the GitHub Pages frontend has been published.",
   "artifact": {
     "bytes": 509192,
     "sha256": "c741b1036ea1cdec8eff32baa2d8895434f17fb1d52a425a97e27691bcd30869",
-    "published": false
+    "published": true,
+    "templateAddress": "260d6982a415b7053ca2e1ae2c302b3b717b9b6ca525a85572f011ec81cc3794"
   },
   "implementationCommit": "6623e543695855f35f0581a84934a3b9f3c91cdf",
   "initialPublication": {
@@ -50,5 +51,118 @@
     "capsulePreflightTransactionPublished": false,
     "capsuleFeePaidMicroTari": "0",
     "publicConfigurationEnabled": false
-  }
+  },
+  "sourceBuildCommit": "f82cd75bc6eb5a6aa2036eae14d5c139a5f9e413",
+  "deployment": {
+    "network": 38,
+    "registry": "component_bc15e50d664440dbdfb1a310fb316c35ab22f964d485c222024a402b4cad4f99",
+    "template": "260d6982a415b7053ca2e1ae2c302b3b717b9b6ca525a85572f011ec81cc3794",
+    "capsuleResource": "resource_bc958a377ee912349464ef95818d94fbeee890ca167ee915d1e795cfaf283cbc"
+  },
+  "actualFeesMicroTari": "12015929",
+  "transactions": [
+    {
+      "action": "publish-unified",
+      "transactionId": "0a38362219f2a31c491c82a2bbeee65116f808758bfa3c3b8dba3f63bbe7f39b",
+      "actualFeeMicroTari": "11832522"
+    },
+    {
+      "action": "create-unified-root",
+      "transactionId": "80c0f40e9588378f6150ea4c88d69b63b87c9057e6b67455c38a9d306ab78814",
+      "actualFeeMicroTari": "3323"
+    },
+    {
+      "action": "capsule-v1",
+      "transactionId": "9c9625868e57c5d508fa470383a3c8992cbc8269ed708368c446c3b3f47cb83c",
+      "actualFeeMicroTari": "12581"
+    },
+    {
+      "action": "register",
+      "transactionId": "232cb47f6486520a395e7fd764a8f5b4cf65a5034e9ff140aeb35c6dcb9f686a",
+      "actualFeeMicroTari": "3491"
+    },
+    {
+      "action": "mail-public",
+      "transactionId": "3afddb703500dc68c2c1ee6b87d8651dc19d73dc629150ba21495cda4a59011c",
+      "actualFeeMicroTari": "21123"
+    },
+    {
+      "action": "mail-link",
+      "transactionId": "7d08f5b15cac4949bdcd04409b89221f3614401695e27654d8b2fb9e06f71a76",
+      "actualFeeMicroTari": "20981"
+    },
+    {
+      "action": "mail-postbox-gift",
+      "transactionId": "afd9f6af59d171d98d62925bf04161e8d9e19925f5e233e557ce1c84639f1020",
+      "actualFeeMicroTari": "23988"
+    },
+    {
+      "action": "settings-v1",
+      "transactionId": "92c07c9a68bfb8735b0b47bb396486498ff3207bee1c051959773b808cadd612",
+      "actualFeeMicroTari": "12170"
+    },
+    {
+      "action": "settings-v2",
+      "transactionId": "362212d472aaf3baf8050525337b7eeb7366ae10777a16489eb77195827cb06c",
+      "actualFeeMicroTari": "11996"
+    },
+    {
+      "action": "capsule-v2",
+      "transactionId": "b494650c7cedce32e73a043ce7380670d0ad849f43e1fad08ff2b2c222c0efa3",
+      "actualFeeMicroTari": "12609"
+    },
+    {
+      "action": "rotate",
+      "transactionId": "a369da5dbf6f4181a4f2e9e4268e57633a7840574877a25fb7a98f228ea304f4",
+      "actualFeeMicroTari": "3733"
+    },
+    {
+      "action": "settings-v3",
+      "transactionId": "5725a358d1241977d185278f198fbe9f66b01f4c7e1856cc85a6e100a0f88884",
+      "actualFeeMicroTari": "11996"
+    },
+    {
+      "action": "mail-postbox-v2",
+      "transactionId": "70f7d72ad7dce88035fee9a825129eb4c14f00902edc3d97628a1488f105f210",
+      "actualFeeMicroTari": "23457"
+    },
+    {
+      "action": "empty",
+      "transactionId": "b4e38c16bebfa2b6f720f0f608ad11f0b4f932be0c3dd22f3fd6cb120647fe56",
+      "actualFeeMicroTari": "1633"
+    },
+    {
+      "action": "claim",
+      "transactionId": "0ba4a051eeecec31216dda2875544004b1aaca9f3d5e57de5e0868b1b7c6b218",
+      "actualFeeMicroTari": "20326"
+    }
+  ],
+  "acceptance": {
+    "unmodifiedStockSapient": "0.6.6",
+    "restoredController": true,
+    "keyRotation": true,
+    "historicalAndCurrentPrivateMail": true,
+    "lettersExceedLegacy4KiB": true,
+    "encryptedReadStarArchiveSortDensity": true,
+    "staleRevisionEngineRejected": true,
+    "emptyRecipient": true,
+    "fullGiftPayoutMicroTari": "100000",
+    "giftReservePays": true,
+    "replayPrevented": true,
+    "desktopMobileWidths": [1440, 390, 320],
+    "privatePlaintextStorage": false,
+    "guestLongPublicAndPrivateLinkReading": {
+      "actualChain": true,
+      "walletRequired": false,
+      "completeMessages": true,
+      "desktopMobileWidths": [1440, 390, 320],
+      "capabilityScrubbed": true,
+      "capabilityInRequests": false,
+      "plaintextBrowserPersistence": false,
+      "financialTransactions": 0,
+      "checkedAt": "2026-10-09T22:28:00.978Z"
+    }
+  },
+  "dateTimezone": "Europe/Amsterdam",
+  "uiCheckedAt": "2026-10-09T22:24:29.847Z"
 }
