@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-09",
+  "status": "locally-verified-awaiting-approved-Esmeralda-deployment",
+  "publicTransactions": 0,
+  "templatePackage": "contracts/ghostdrop-v3",
+  "templateName": "GhostDrop",
+  "engine": "0.45.0",
+  "templateLibrary": "0.34.0",
+  "validation": {
+    "clientTests": 189,
+    "clientFiles": 21,
+    "browserTests": 232,
+    "engineFullSuiteBeforeAdditionalMetadataBuilderTest": 32,
+    "additionalProductionMetadataBuilderEngineTests": 1,
+    "typescript": "passed",
+    "pagesBaseBuild": "passed",
+    "desktopMobileScreenshots": "inspected",
+    "mailboxSmallTextContrast": "at-least-4.5:1"
+  },
+  "limits": {
+    "letterComponentBytes": 32768,
+    "legacyLetterBytes": 4096,
+    "ciphertextSnapshotBytes": 98304,
+    "decodedPreferencesBytes": 65536,
+    "markedLetterIds": 512,
+    "postboxes": 512,
+    "letters": 4096
+  },
+  "privacy": {
+    "persistedPrivatePlaintext": false,
+    "backend": false,
+    "layoutAndMarks": "encrypted-chain-snapshot-after-confirmed-batch-save",
+    "ordinaryReadReceipts": "not-published",
+    "publicMetadata": "routing,controller,gift,approximate-size,timing,fees"
+  },
+  "scope": "Browser fixtures contain synthetic mail; engine fixtures are local and include no public broadcasts. Existing real Esmeralda mailbox acceptance applies to the prior deployment, not this new contract."
+}

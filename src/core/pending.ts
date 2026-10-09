@@ -10,7 +10,7 @@ export interface Pending {
   id: string;
   network: number;
   registry: string;
-  operation: "publish" | "claim" | "postbox" | "capsule";
+  operation: "publish" | "claim" | "postbox" | "capsule" | "mailbox";
   envelopeId: string;
   state: "submitted" | "confirmed" | "rejected" | "unknown";
   createdAt?: number;
@@ -58,7 +58,9 @@ function strictPending(storage: Pick<Storage, "getItem">): Pending[] {
           typeof p.envelopeId !== "string" ||
           typeof p.registry !== "string" ||
           !Number.isInteger(p.network) ||
-          !["publish", "claim", "postbox", "capsule"].includes(p.operation) ||
+          !["publish", "claim", "postbox", "capsule", "mailbox"].includes(
+            p.operation,
+          ) ||
           (p.createdAt !== undefined &&
             (!Number.isSafeInteger(p.createdAt) ||
               p.createdAt <= 0 ||
@@ -69,7 +71,7 @@ function strictPending(storage: Pick<Storage, "getItem">): Pending[] {
           !validCapsule(p) ||
           (p.walletRequest !== undefined &&
             (!(
-              ["publish", "postbox"].includes(p.operation) ||
+              ["publish", "postbox", "mailbox"].includes(p.operation) ||
               (p.operation === "capsule" &&
                 p.capsule?.descriptor.recovery === "sapient-capsule-1" &&
                 p.walletRequest.account === p.capsule.account)

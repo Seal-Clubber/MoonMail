@@ -1,9 +1,19 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Envelope, Letter, Postbox } from "../core/types";
+import { useChainMailbox, type MailboxAccess } from "./useChainMailbox";
+import { READ, STAR, ARCHIVE } from "../core/mailbox-state";
+import { AmountInput } from "./AmountInput";
 import { tari } from "./AmountInput";
 
 // Every folder is a view of loaded on-chain state, not a device-only mailbox record.
-type Folder = "inbox" | "gifts" | "collected" | "sent";
+type Folder =
+  | "inbox"
+  | "gifts"
+  | "collected"
+  | "sent"
+  | "starred"
+  | "archive"
+  | "unread";
 const folders: { id: Folder; label: string; icon: string }[] = [
   { id: "inbox", label: "Inbox", icon: "✉" },
   { id: "gifts", label: "Available gifts", icon: "◇" },
@@ -22,7 +32,9 @@ export function MailboxWorkspace({
   onCompose,
   onUnlock,
   onReaderTarget,
+  stateAccess,
 }: {
+  stateAccess?: MailboxAccess;
   box: Postbox;
   letters: Envelope[];
   plain: ReadonlyMap<string, Letter>;
@@ -35,9 +47,23 @@ export function MailboxWorkspace({
   onUnlock: (letters: Envelope[]) => void;
   onReaderTarget: (target: HTMLDivElement | null) => void;
 }) {
+  const state = useChainMailbox(box, stateAccess);
+  const marks = new Map(state.draft.marks);
+  const availableFolders = state.loaded
+    ? [
+        ...folders,
+        { id: "unread" as const, label: "Unread", icon: "•" },
+        { id: "starred" as const, label: "Starred", icon: "☆" },
+        { id: "archive" as const, label: "Archive", icon: "▣" },
+      ]
+    : folders;
   const [folder, setFolder] = useState<Folder>("inbox");
   const [query, setQuery] = useState("");
-  const [sort, setSort] = useState("chain");
+  const [localSort, setSort] = useState("chain");
+  const sort = state.loaded ? state.draft.sort : localSort;
+  useEffect(() => {
+    if (!state.loaded) setFolder("inbox");
+  }, [state.loaded]);
   const [page, setPage] = useState(1);
   const [sentId, setSentId] = useState("");
   const range = useRef<HTMLParagraphElement>(null);
@@ -52,7 +78,10 @@ export function MailboxWorkspace({
     (e) => e.sender === box.controller && e.replyPostbox === box.id,
   );
   const views: Record<Folder, Envelope[]> = {
-    inbox,
+    inbox: inbox.filter((e) => !((marks.get(e.id) || 0) & ARCHIVE)),
+    starred: inbox.filter((e) => (marks.get(e.id) || 0) & STAR),
+    archive: inbox.filter((e) => (marks.get(e.id) || 0) & ARCHIVE),
+    unread: inbox.filter((e) => !((marks.get(e.id) || 0) & (READ | ARCHIVE))),
     sent,
     gifts: inbox.filter((e) => BigInt(e.gift) > 0n && !e.claimed),
     collected: inbox.filter((e) => BigInt(e.gift) > 0n && e.claimed),
@@ -107,7 +136,7 @@ export function MailboxWorkspace({
   }
   return (
     <section
-      className={`mailbox-workspace ${selected ? "reading" : ""}`}
+      className={`mailbox-workspace ${selected ? "reading" : ""} ${state.loaded ? state.draft.density : ""}`}
       aria-label={`${box.nickname} mailbox`}
     >
       <aside className="mailbox-sidebar">
@@ -124,7 +153,7 @@ export function MailboxWorkspace({
           Compose letter <span aria-hidden="true">＋</span>
         </button>
         <nav aria-label="Mailbox folders">
-          {folders.map((f) => (
+          {availableFolders.map((f) => (
             <button
               key={f.id}
               aria-pressed={folder === f.id}
@@ -137,6 +166,74 @@ export function MailboxWorkspace({
             </button>
           ))}
         </nav>
+        {state.ready && (
+          <div className="mailbox-state-panel">
+            <h3>Mailbox settings</h3>
+            {!state.loaded ? (
+              <>
+                <p>
+                  Load your encrypted read, star, archive and layout settings
+                  from Ootle.
+                </p>
+                <button
+                  disabled={busy || !stateAccess?.approved}
+                  onClick={state.load}
+                >
+                  Load mailbox settings
+                </button>
+              </>
+            ) : (
+              <>
+                <p role="status">
+                  {state.dirty
+                    ? "Unsaved changes · this session only"
+                    : "Matches saved Ootle settings"}
+                </p>
+                <label>
+                  Message spacing
+                  <select
+                    value={state.draft.density}
+                    disabled={busy}
+                    onChange={(e) =>
+                      state.change({
+                        density: e.target.value as "comfortable" | "compact",
+                      })
+                    }
+                  >
+                    <option value="comfortable">Comfortable</option>
+                    <option value="compact">Compact</option>
+                  </select>
+                </label>
+                <details>
+                  <summary>Save changes on Ootle</summary>
+                  <p>
+                    One Sapient approval saves the batch. Your wallet pays the
+                    fee. Marks are encrypted; approximate size and transaction
+                    timing are public.
+                  </p>
+                  <AmountInput
+                    label="Mailbox save fee cap (TARI)"
+                    value={state.fee}
+                    disabled={busy}
+                    onChange={state.setFee}
+                  />
+                  <button
+                    disabled={busy || !state.dirty || stateAccess?.writeBlocked}
+                    onClick={state.save}
+                  >
+                    Save mailbox changes
+                  </button>
+                </details>
+                <button disabled={busy || !state.dirty} onClick={state.discard}>
+                  Discard unsaved changes
+                </button>
+                <button disabled={busy || state.dirty} onClick={state.reload}>
+                  Reload saved settings
+                </button>
+              </>
+            )}
+          </div>
+        )}
         <p className="mailbox-device-note">
           Mail and gift states come from Ootle. Reconnect the same Sapient
           wallet on another device to recover your postboxes.
@@ -146,7 +243,7 @@ export function MailboxWorkspace({
         <header className="mailbox-list-header">
           <div>
             <span className="kicker">{box.nickname}</span>
-            <h2>{folders.find((f) => f.id === folder)?.label}</h2>
+            <h2>{availableFolders.find((f) => f.id === folder)?.label}</h2>
           </div>
           <span className="mailbox-mail-count">
             {views[folder].length} loaded
@@ -170,7 +267,11 @@ export function MailboxWorkspace({
           <select
             value={sort}
             onChange={(e) => {
-              setSort(e.target.value);
+              if (state.loaded)
+                state.change({
+                  sort: e.target.value as "chain" | "subject" | "gift",
+                });
+              else setSort(e.target.value);
               setPage(1);
             }}
           >
@@ -271,6 +372,37 @@ export function MailboxWorkspace({
                     </span>
                   </span>
                 </button>
+                {state.loaded && folder !== "sent" && (
+                  <div className="mailbox-row-actions">
+                    <button
+                      disabled={busy}
+                      aria-pressed={!!((marks.get(e.id) || 0) & READ)}
+                      onClick={() => state.toggle(e.id, READ)}
+                    >
+                      {(marks.get(e.id) || 0) & READ
+                        ? "Mark unread"
+                        : "Mark read"}
+                    </button>
+                    <button
+                      disabled={busy}
+                      aria-pressed={!!((marks.get(e.id) || 0) & STAR)}
+                      onClick={() => state.toggle(e.id, STAR)}
+                    >
+                      {(marks.get(e.id) || 0) & STAR ? "Unstar" : "Star"}
+                    </button>
+                    <button
+                      disabled={busy}
+                      onClick={() => {
+                        state.toggle(e.id, ARCHIVE);
+                        onClose();
+                      }}
+                    >
+                      {(marks.get(e.id) || 0) & ARCHIVE
+                        ? "Move to inbox"
+                        : "Archive"}
+                    </button>
+                  </div>
+                )}
               </div>
             );
           })}

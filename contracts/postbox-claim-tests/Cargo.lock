@@ -1126,6 +1126,7 @@ dependencies = [
  "blake2",
  "ghostdrop_envelope_v2",
  "ghostdrop_template_v2",
+ "ghostdrop_v3",
  "serde_json",
  "tari_engine_types",
  "tari_template_lib",
@@ -1136,6 +1137,16 @@ dependencies = [
 name = "ghostdrop_template_v2"
 version = "0.2.0"
 dependencies = [
+ "tari_template_lib",
+]
+
+[[package]]
+name = "ghostdrop_v3"
+version = "0.3.0"
+dependencies = [
+ "bech32",
+ "blake2",
+ "serde_json",
  "tari_template_lib",
 ]
 

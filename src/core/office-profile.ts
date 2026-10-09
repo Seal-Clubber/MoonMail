@@ -23,7 +23,12 @@ export function officeProfile(value: unknown): Deployment {
       "httpsWallet",
       "mailboxRecovery",
     ].some((key) => typeof evidence[key] !== "boolean") ||
-    ["guestAccountCreation", "sapientWallet", "postboxClaims"].some(
+    [
+      "guestAccountCreation",
+      "sapientWallet",
+      "postboxClaims",
+      "mailboxState",
+    ].some(
       (key) =>
         evidence[key] !== undefined && typeof evidence[key] !== "boolean",
     ) ||
@@ -31,6 +36,11 @@ export function officeProfile(value: unknown): Deployment {
       d.postboxClaimProtocol !== "sapient-proof-1")
   )
     throw new Error("Invalid post office settings");
+  if (
+    d.contractProtocol !== undefined &&
+    (d.contractProtocol !== "unified-1" || d.template !== d.envelopeTemplate)
+  )
+    throw new Error("Invalid unified post office settings");
   if (d.capsule !== undefined) {
     const capsule = d.capsule as Record<string, unknown> | null;
     if (
@@ -43,6 +53,15 @@ export function officeProfile(value: unknown): Deployment {
     )
       throw new Error("Invalid post office recovery settings");
   }
+  if (
+    d.contractProtocol === "unified-1" &&
+    (!d.capsule ||
+      (d.capsule as Record<string, unknown>).template !== d.template ||
+      (d.capsule as Record<string, unknown>).component !== d.registry)
+  )
+    throw new Error(
+      "Unified recovery must use the same post office template and component",
+    );
   return value as Deployment;
 }
 

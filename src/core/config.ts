@@ -83,3 +83,15 @@ export function endpoint(value: string, local = false) {
     throw new Error("Use HTTPS, or HTTP loopback for a local daemon/localnet");
   return u.href;
 }
+
+export function mailboxStateReady(d: Deployment) {
+  return (
+    d.contractProtocol === "unified-1" &&
+    d.template === d.envelopeTemplate &&
+    d.evidence.mailboxState === true &&
+    writesReady(d, "postbox", "sapient")
+  );
+}
+export function letterLimit(d: Deployment): 4096 | 32768 {
+  return d.contractProtocol === "unified-1" ? 32768 : 4096;
+}

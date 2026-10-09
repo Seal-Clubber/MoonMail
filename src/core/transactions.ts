@@ -9,6 +9,7 @@ import {
   boolLiteral,
 } from "@tari-project/ootle";
 import type { Deployment, Envelope, Postbox } from "./types";
+import { letterLimit } from "./config";
 import { assertEnvelopeSize } from "./crypto";
 import { postboxNameError } from "./postbox-name";
 import { mailboxKey } from "./mailbox";
@@ -47,7 +48,7 @@ export function publishTransaction(
   if (total > 18446744073709551615n || gift > 0n !== reserve > 0n)
     throw new Error("Gift requires its own bounded fee reserve");
   const payload = JSON.stringify(envelope.payload);
-  assertEnvelopeSize(envelope);
+  assertEnvelopeSize(envelope, letterLimit(d));
   return TransactionBuilder.new(d.network as Network, epoch + 10)
     .feeTransactionPayFromComponent(account, money(fee))
     .withInputs(
@@ -163,6 +164,50 @@ export function claimToNewAccountTransaction(
           { componentAddress: component, methodName: "claim_and_pay_fee" },
           [{ Workspace: "receiving_account" }, intLiteral(BigInt(d.network))],
         ),
+    )
+    .buildUnsignedTransaction();
+}
+
+export function mailboxStateTransaction(
+  d: Deployment,
+  account: string,
+  fee: string,
+  epoch: number,
+  postbox: string,
+  ciphertext: string,
+  revision: string,
+  component?: string,
+) {
+  if (
+    d.contractProtocol !== "unified-1" ||
+    d.template !== d.envelopeTemplate ||
+    !/^[A-Za-z0-9_-]{1,64}$/.test(postbox) ||
+    !ciphertext ||
+    new TextEncoder().encode(ciphertext).length > 98304 ||
+    !/^(0|[1-9][0-9]*)$/.test(revision) ||
+    money(revision) === 18446744073709551615n ||
+    !!component !== (revision !== "0")
+  )
+    throw new Error("Invalid mailbox state transaction");
+  if (component && !/^component_[a-f0-9]{64}$/.test(component))
+    throw new Error("Invalid mailbox component");
+  return TransactionBuilder.new(d.network as Network, epoch + 10)
+    .feeTransactionPayFromComponent(account, money(fee))
+    .withInputs([
+      { substate_id: `template_${d.template}`, version: null, is_write: false },
+      ...(component
+        ? [{ substate_id: component, version: null, is_write: true }]
+        : []),
+    ])
+    .callMethod(
+      {
+        componentAddress: component || d.registry,
+        methodName: component ? "set_ciphertext" : "open_mailbox",
+      },
+      [
+        component ? intLiteral(money(revision)) : stringLiteral(postbox),
+        stringLiteral(ciphertext),
+      ],
     )
     .buildUnsignedTransaction();
 }

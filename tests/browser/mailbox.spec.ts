@@ -6,11 +6,22 @@ import {
 import { emptyDeployment } from "../../src/core/config";
 import { encodeMailboxCapsule } from "../../src/core/capsules";
 import { sealMailbox } from "../../src/core/mailbox";
+import {
+  sealPreferences,
+  READ,
+  STAR,
+  ARCHIVE,
+} from "../../src/core/mailbox-state";
 import { readable } from "./support/contrast";
 import ledger from "../fixtures/capsule-carrier.json" with { type: "json" };
 
 // Connection, wallet-view and public-ledger fixtures. Never sign or broadcast.
-async function mailboxFixture(page: Page, firstId = "note-01") {
+async function mailboxFixture(
+  page: Page,
+  firstId = "note-01",
+  unified = false,
+  damaged = false,
+) {
   const owner = generateKeypair(),
     view = generateKeypair(),
     key = generateKeypair();
@@ -31,6 +42,27 @@ async function mailboxFixture(page: Page, firstId = "note-01") {
     id.startsWith("resource_"),
   )!;
   const utxo = Object.keys(ledger).find((id) => id.startsWith("utxo_"))!;
+  if (unified)
+    Object.assign(d, {
+      resource: `resource_${"01".repeat(32)}`,
+      contractProtocol: "unified-1",
+      postboxClaimProtocol: "sapient-proof-1",
+      envelopeTemplate: d.template,
+      capsule: {
+        template: d.template,
+        component: d.registry,
+        resource,
+      },
+      evidence: {
+        ...d.evidence,
+        engineClaims: true,
+        guestPayout: true,
+        sapientWallet: true,
+        mailboxRecovery: true,
+        postboxClaims: true,
+        mailboxState: true,
+      },
+    });
   const context = { ...d, controller, postbox: "home", keyVersion: 1 };
   const secret = key.secret_key;
   key.free();
@@ -112,6 +144,47 @@ async function mailboxFixture(page: Page, firstId = "note-01") {
     "7".repeat(64),
     "",
   ];
+  const stateComponent = `component_${"6".repeat(64)}`;
+  const savedState = unified
+    ? await sealPreferences(
+        {
+          marks: [
+            [firstId, READ | STAR],
+            ["note-02", ARCHIVE],
+          ],
+          sort: "subject",
+          density: "compact",
+        },
+        context,
+        "1",
+        descriptor,
+      )
+    : "";
+  if (unified) {
+    for (const [id, state] of Object.entries(states))
+      states[id] = [
+        38,
+        {},
+        {},
+        `template_${d.template}`,
+        {},
+        1,
+        [...state, "vault_fixture", null, d.registry],
+        null,
+        null,
+      ];
+    states[stateComponent] = [
+      38,
+      {},
+      {},
+      `template_${d.template}`,
+      {},
+      2,
+      null,
+      ["home", controller, "1", damaged ? "broken" : savedState, d.registry],
+      null,
+    ];
+  }
   let writes = 0;
   await page.route("**/deployment.json", (r) => r.fulfill({ json: d }));
   await page.route(`${d.indexerUrl}**`, (r) => {
@@ -130,7 +203,7 @@ async function mailboxFixture(page: Page, firstId = "note-01") {
         json: structuredClone(ledger[carrier as keyof typeof ledger]),
       });
     const child = Object.keys(states).find((id) => url.includes(id));
-    const state = child
+    let state = child
       ? states[child]
       : [
           38,
@@ -160,6 +233,8 @@ async function mailboxFixture(page: Page, firstId = "note-01") {
           },
           `template_${d.envelopeTemplate}`,
         ];
+    if (unified && !child)
+      state = [...state, { home: stateComponent }, 0, null, null, resource];
     return r.fulfill({
       json: {
         substate: {
@@ -495,3 +570,91 @@ for (const id of ["constructor", "__proto__"]) {
     await assertReadOnly(page, writes);
   });
 }
+
+test("unified mailbox recovers encrypted marks and layout after a fresh browser session without writes", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(page, "note-01", true);
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page);
+  await page
+    .getByRole("button", { name: "Load mailbox settings", exact: true })
+    .click();
+  await expect(
+    page.getByText("Matches saved Ootle settings", { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
+  await readable(page.locator(".mailbox-state-panel p").first());
+  await readable(page.locator(".mailbox-state-panel h3"));
+  if (process.env.GHOSTDROP_MAILBOX_SCREENSHOTS)
+    await page.screenshot({
+      path: `${process.env.GHOSTDROP_MAILBOX_SCREENSHOTS}/mailbox-${page.viewportSize()?.width}.png`,
+      fullPage: true,
+    });
+  await expect(
+    page.getByRole("combobox", { name: "Sort letters" }),
+  ).toHaveValue("subject");
+  const folders = page.getByRole("navigation", { name: "Mailbox folders" });
+  await expect(folders.getByRole("button", { name: /Inbox/ })).toContainText(
+    "26",
+  );
+  await folders.getByRole("button", { name: /Starred/ }).click();
+  await expect(
+    page.getByRole("button", {
+      name: "Open letter: A quiet midnight hello",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Unstar", exact: true }).click();
+  await expect(
+    page.getByText("Unsaved changes · this session only", { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".mailbox-range")).toHaveText(
+    "No loaded letters in this view",
+  );
+  await page.getByRole("button", { name: "Discard unsaved changes" }).click();
+  await expect(
+    page.getByRole("button", { name: "Unstar", exact: true }),
+  ).toBeVisible();
+  await folders.getByRole("button", { name: /Archive/ }).click();
+  await expect(
+    page.getByRole("button", { name: "Open letter: Letter 2", exact: true }),
+  ).toBeVisible();
+  await assertReadOnly(page, writes);
+  await page.reload();
+  await connect(page);
+  await unlock(page);
+  await page
+    .getByRole("button", { name: "Load mailbox settings", exact: true })
+    .click();
+  await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
+  await folders.getByRole("button", { name: /Starred/ }).click();
+  await expect(
+    page.getByRole("button", { name: "Unstar", exact: true }),
+  ).toBeVisible();
+  await assertReadOnly(page, writes);
+});
+test("damaged encrypted settings do not become an empty editable mailbox", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(page, "note-01", true, true);
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page);
+  await page
+    .getByRole("button", { name: "Load mailbox settings", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Load mailbox settings", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Save mailbox changes", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page
+      .getByRole("navigation", { name: "Mailbox folders" })
+      .getByRole("button", { name: /Archive/ }),
+  ).toHaveCount(0);
+  await assertReadOnly(page, writes);
+});

@@ -123,6 +123,7 @@ export function ActivityBook({
             <option value="all">All actions</option>
             <option value="publish">Letters sent</option>
             <option value="claim">Gift collections</option>
+            <option value="mailbox">Mailbox settings</option>
             <option value="postbox">Postbox changes</option>
             <option value="capsule">Recovery backups</option>
           </select>
@@ -234,7 +235,7 @@ export function ActivityBook({
                   </button>
                 )}
                 {!sample &&
-                  (p.operation === "postbox" || p.operation === "capsule") && (
+                  ["postbox", "capsule", "mailbox"].includes(p.operation) && (
                     <button disabled={busy} onClick={onInbox}>
                       Open My inbox ↗
                     </button>

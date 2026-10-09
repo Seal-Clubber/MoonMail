@@ -22,7 +22,7 @@ Compose letter opens the existing writing desk with this postbox selected for re
 
 Encryption protects sealed subjects and messages. Revealed test TARI amounts, sender/controller keys, routing, transaction timing and reply postbox IDs remain observable. This is Esmeralda testnet mail, with the existing indexer trust model; it is not SMTP/IMAP email and cannot send to Gmail, Proton or Outlook addresses.
 
-There are no device-only archive, star or unread records in this mailbox. Persistent preferences, private read receipts, saved contacts and recoverable encrypted sent copies need a separately reviewed contract and encryption design. The existing browser delivery journal remains necessary for safe reconciliation of uncertain signing/transaction requests; it is not the authority for on-chain mail or gifts. It does not automatically move to a new browser.
+The current deployed post office has no archive, star or unread records. The locally verified [single-template contract](unified-contract.md) adds encrypted on-chain read/star/archive and layout settings after a fresh approved deployment. It does not publish read receipts or add saved contacts or encrypted sender copies. Device-only persistent preferences are not introduced. The existing browser delivery journal remains necessary for safe reconciliation of uncertain signing/transaction requests; it is not the authority for on-chain mail or gifts. It does not automatically move to a new browser.
 
 ## Verification
 

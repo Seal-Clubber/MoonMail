@@ -21,6 +21,7 @@ import {
   claimsReady,
   writesReady,
   postboxClaimsReady,
+  mailboxStateReady,
   endpoint,
 } from "./config";
 import { postboxProofClaimTransaction } from "./postbox-claim";
@@ -30,6 +31,7 @@ import {
   claimToNewAccountTransaction,
   publishTransaction,
   postboxTransaction,
+  mailboxStateTransaction,
 } from "./transactions";
 import { mailboxKey } from "./mailbox";
 import {
@@ -88,7 +90,23 @@ export function decodeEnvelope(
   id: string,
   component: string,
 ): Envelope {
-  const raw = arr(state);
+  const unified = d.contractProtocol === "unified-1";
+  const outer = arr(state);
+  if (
+    unified &&
+    (outer.length < 7 ||
+      outer.length > 9 ||
+      outer[0] !== d.network ||
+      outer[5] !== 1 ||
+      outer[7] != null ||
+      outer[8] != null ||
+      taggedAddress(outer[3], "template") !== `template_${d.template}` ||
+      map(outer[1]).length ||
+      map(outer[2]).length ||
+      map(outer[4]).length)
+  )
+    throw new Error("Invalid unified letter component");
+  const raw = unified ? arr(outer[6]) : outer;
   if (raw[0] !== d.network) throw new Error("Envelope network mismatch");
   const e = raw.slice(1);
   if (
@@ -149,6 +167,30 @@ export function decodeOffice(state: unknown, d: Deployment) {
     d.envelopeTemplate
   )
     throw new Error("Wrong envelope template");
+  if (
+    d.contractProtocol === "unified-1" &&
+    (a.length !== 9 ||
+      a[5] !== 0 ||
+      a[6] !== null ||
+      a[7] !== null ||
+      d.template !== d.envelopeTemplate)
+  )
+    throw new Error("Invalid unified post office");
+  if (
+    d.contractProtocol === "unified-1" &&
+    (!d.capsule ||
+      d.capsule.template !== d.template ||
+      d.capsule.component !== d.registry ||
+      taggedAddress(a[8], "resource") !== d.capsule.resource)
+  )
+    throw new Error("Unified recovery resource mismatch");
+  const mailboxRefs =
+    d.contractProtocol === "unified-1"
+      ? map(a[4]).map(([id, value]) => ({
+          id,
+          component: taggedAddress(value, "component"),
+        }))
+      : [];
   const letterRefs = map(a[1]).map(([id, value]) => ({
     id,
     component: taggedAddress(value, "component"),
@@ -164,7 +206,43 @@ export function decodeOffice(state: unknown, d: Deployment) {
       discoverable: p[4] === true,
     };
   });
-  return { letterRefs, postboxes };
+  return { letterRefs, postboxes, mailboxRefs };
+}
+export function decodeMailboxState(
+  state: unknown,
+  d: Deployment,
+  box: Postbox,
+) {
+  const a = arr(state);
+  if (
+    d.contractProtocol !== "unified-1" ||
+    a.length < 8 ||
+    a.length > 9 ||
+    a[0] !== d.network ||
+    a[5] !== 2 ||
+    a[6] !== null ||
+    a[8] != null ||
+    taggedAddress(a[3], "template") !== `template_${d.template}` ||
+    map(a[1]).length ||
+    map(a[2]).length ||
+    map(a[4]).length
+  )
+    throw new Error("Invalid mailbox component");
+  const m = arr(a[7]);
+  const revision = amount(m[2]);
+  const ciphertext = text(m[3]);
+  if (
+    m.length !== 5 ||
+    text(m[0]) !== box.id ||
+    bytes(m[1]) !== box.controller ||
+    taggedAddress(m[4], "component") !== d.registry ||
+    !/^[1-9][0-9]*$/.test(revision) ||
+    BigInt(revision) > 18446744073709551615n ||
+    !ciphertext ||
+    new TextEncoder().encode(ciphertext).length > 98304
+  )
+    throw new Error("Mailbox identity or revision mismatch");
+  return { revision, ciphertext };
 }
 export class PostOfficeClient {
   private constructor(
@@ -260,6 +338,84 @@ export class PostOfficeClient {
     )
       throw new Error("Untrusted envelope template or owner rule");
     return decodeEnvelope(c.body.state, this.deployment, id, component);
+  }
+  async readMailbox(
+    box: Postbox,
+  ): Promise<{ revision: string; ciphertext: string; component?: string }> {
+    if (this.deployment.contractProtocol !== "unified-1")
+      throw new Error(
+        "This post office does not support saved mailbox settings",
+      );
+    const office = await this.readOffice();
+    const registered = office.postboxes.find((p) => p.id === box.id);
+    if (!registered || registered.controller !== box.controller)
+      throw new Error("Postbox controller mismatch");
+    const component = office.mailboxRefs.find(
+      (p) => p.id === box.id,
+    )?.component;
+    if (!component) return { revision: "0", ciphertext: "" };
+    const r = await readWithTimeout(this.provider.getSubstate(component));
+    const c = (
+      r.substate as unknown as {
+        Component?: {
+          header: { template_address: string; owner_rule: unknown };
+          body: { state: unknown };
+        };
+      }
+    ).Component;
+    if (
+      !c ||
+      c.header.template_address.replace(/^template_/, "") !==
+        this.deployment.template ||
+      c.header.owner_rule !== "None"
+    )
+      throw new Error("Untrusted mailbox component");
+    return {
+      ...decodeMailboxState(c.body.state, this.deployment, box),
+      component,
+    };
+  }
+  async saveMailbox(
+    wallet: ConnectedWallet,
+    account: WalletAccount,
+    box: Postbox,
+    expected: { revision: string; component?: string },
+    ciphertext: string,
+    fee: string,
+    storage: Storage,
+  ) {
+    if (
+      !(wallet instanceof SapientSession) ||
+      !mailboxStateReady(this.deployment) ||
+      account.account.owner_public_key !== box.controller
+    )
+      throw new Error("Verified Sapient mailbox settings are unavailable");
+    const latest = await this.readMailbox(box);
+    if (
+      latest.revision !== expected.revision ||
+      latest.component !== expected.component
+    )
+      throw new Error("Mailbox state changed; reload before saving");
+    const epoch = await readWithTimeout(this.provider.getCurrentEpoch());
+    const tx = mailboxStateTransaction(
+      this.deployment,
+      account.account.component_address,
+      fee,
+      epoch,
+      box.id,
+      ciphertext,
+      expected.revision,
+      expected.component,
+    );
+    return this.submitControlled(
+      wallet,
+      account,
+      tx,
+      fee,
+      storage,
+      "mailbox",
+      `mailbox:${box.id}`,
+    );
   }
   async validateDestination(address: string, component: string) {
     const parsed = parseOotleAddress(address);
@@ -504,7 +660,7 @@ export class PostOfficeClient {
     tx: ReturnType<typeof publishTransaction>,
     feeCap: string,
     storage: Storage,
-    operation: "postbox" | "claim",
+    operation: "postbox" | "claim" | "mailbox",
     identity: string,
     postboxAction?: "create" | "edit" | "rotate",
   ) {

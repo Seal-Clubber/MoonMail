@@ -6,27 +6,31 @@ export function activityDetails(p: Pending) {
   const hasReceipt = /^[a-f0-9]{64}$/.test(p.id);
   const unresolved = pendingIsUnresolved(p);
   const title =
-    p.operation === "publish"
-      ? "Send a letter"
-      : p.operation === "claim"
-        ? "Collect a gift"
-        : p.operation === "capsule"
-          ? "Save a recovery backup"
-          : p.postboxAction === "create"
-            ? "Open a postbox"
-            : p.postboxAction === "rotate"
-              ? "Update a postbox encryption key"
-              : p.postboxAction === "edit"
-                ? "Edit a postbox"
-                : "Change a postbox";
+    p.operation === "mailbox"
+      ? "Save mailbox changes"
+      : p.operation === "publish"
+        ? "Send a letter"
+        : p.operation === "claim"
+          ? "Collect a gift"
+          : p.operation === "capsule"
+            ? "Save a recovery backup"
+            : p.postboxAction === "create"
+              ? "Open a postbox"
+              : p.postboxAction === "rotate"
+                ? "Update a postbox encryption key"
+                : p.postboxAction === "edit"
+                  ? "Edit a postbox"
+                  : "Change a postbox";
   const subject =
-    p.operation === "publish"
-      ? "your letter"
-      : p.operation === "claim"
-        ? "this gift collection"
-        : p.operation === "capsule"
-          ? "the encrypted recovery backup"
-          : "the postbox change";
+    p.operation === "mailbox"
+      ? "your encrypted mailbox settings"
+      : p.operation === "publish"
+        ? "your letter"
+        : p.operation === "claim"
+          ? "this gift collection"
+          : p.operation === "capsule"
+            ? "the encrypted recovery backup"
+            : "the postbox change";
   let explanation: string, nextStep: string;
   if (p.state === "rejected") {
     explanation = `The transaction for ${subject} did not complete. This record does not promise that no fees were paid.`;
@@ -34,17 +38,19 @@ export function activityDetails(p: Pending) {
       "Check Sapient transaction history for the reason and any fees before preparing another attempt.";
   } else if (!unresolved) {
     explanation =
-      p.operation === "publish"
-        ? "Your letter was confirmed at this post office. This does not mean anyone has read it."
-        : p.operation === "claim"
-          ? "The original collection transaction was confirmed. Inspect your receiving account to see its payout."
-          : p.operation === "capsule"
-            ? "The encrypted recovery backup was confirmed. This is the first approval, not the finished postbox."
-            : "The postbox transaction was confirmed. Your inbox shows the current postbox settings.";
+      p.operation === "mailbox"
+        ? "Your encrypted mailbox settings were confirmed on Ootle. Reload My inbox to read the current version."
+        : p.operation === "publish"
+          ? "Your letter was confirmed at this post office. This does not mean anyone has read it."
+          : p.operation === "claim"
+            ? "The original collection transaction was confirmed. Inspect your receiving account to see its payout."
+            : p.operation === "capsule"
+              ? "The encrypted recovery backup was confirmed. This is the first approval, not the finished postbox."
+              : "The postbox transaction was confirmed. Your inbox shows the current postbox settings.";
     nextStep =
       p.operation === "capsule"
         ? "Return to My inbox and resume setup for the second approval. If you already completed it, no further approval is needed."
-        : p.operation === "postbox"
+        : ["postbox", "mailbox"].includes(p.operation)
           ? "Open My inbox to check the postbox."
           : p.operation === "claim"
             ? "Keep the original receipt if you need to check the receiving account history."
@@ -86,13 +92,13 @@ export function activityDetails(p: Pending) {
           : p.state === "unknown" || !hasReceipt
             ? "review"
             : "pending",
-    entityLabel:
-      p.operation === "capsule" || p.operation === "postbox"
-        ? "Postbox ID"
-        : "Letter ID",
+    entityLabel: ["capsule", "postbox", "mailbox"].includes(p.operation)
+      ? "Postbox ID"
+      : "Letter ID",
     entity:
       p.capsule?.context.postbox ||
       p.envelopeId
+        .replace(/^mailbox:/, "")
         .replace(/^postbox:/, "")
         .replace(/^capsule:/, "")
         .replace(/:\d+$/, ""),

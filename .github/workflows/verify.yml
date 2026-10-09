@@ -60,9 +60,11 @@ jobs:
             contracts/envelope-v2 -> target
             contracts/ghostdrop-v2 -> target
             contracts/postbox-claim-tests -> target
+            contracts/ghostdrop-v3 -> target
       - run: cargo test --manifest-path contracts/envelope-v2/Cargo.toml --locked
       - run: cargo build --manifest-path contracts/envelope-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
       - run: cargo build --manifest-path contracts/ghostdrop-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
+      - run: cargo build --manifest-path contracts/ghostdrop-v3/Cargo.toml --target wasm32-unknown-unknown --release --locked
       - run: cargo test --manifest-path contracts/postbox-claim-tests/Cargo.toml --locked -- --include-ignored
   recovery-capsule:
     runs-on: ubuntu-latest

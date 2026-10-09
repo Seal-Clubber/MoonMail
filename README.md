@@ -2,6 +2,8 @@
 
 A spooky place to leave a kind letter, send a gift, or open your private inbox. Visitors need the website and their normal [Sapient wallet](https://sapient.tari.mw/). No GhostDrop bridge, daemon, API key or file import is needed.
 
+A new [single-template contract](docs/unified-contract.md) is implemented and locally verified for mail, gifts, Sapient postboxes, permanent recovery, encrypted read/star/archive/layout settings and 32 KiB envelopes. It needs a fresh approved Esmeralda deployment; the current public configuration remains on the existing contract and limits.
+
 The moonlit interface uses a left-aligned brand with a centered dark-blue ghost-and-envelope icon, slow mist and firefly animation, and brighter text on dark surfaces with dark ink on parchment. Motion stops when your device requests reduced motion; decoration never covers controls.
 
 - **Public mail:** read letters without connecting. Search loaded public subjects/messages or public letter IDs, and filter by public letters, sealed invitations or uncollected public gifts. Sealed contents are never searched. Load more includes additional on-chain mail; anyone can collect an available public gift once.

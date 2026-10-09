@@ -63,13 +63,21 @@ export const ENVELOPE_LIMIT = 4096;
 export function envelopeSize(payload: unknown) {
   return te.encode(JSON.stringify(payload)).byteLength;
 }
-export function assertEnvelopeSize(payload: unknown) {
-  if (envelopeSize(payload) > ENVELOPE_LIMIT)
+export function assertEnvelopeSize(
+  payload: unknown,
+  limit: 4096 | 32768 = 4096,
+) {
+  if (envelopeSize(payload) > limit)
     throw new Error(
-      "The complete letter envelope must fit within 4 KiB. Shorten your message.",
+      `The complete letter envelope must fit within ${limit / 1024} KiB. Shorten your message.`,
     );
 }
-export async function sealLetter(letter: Letter, context: Context, id: string) {
+export async function sealLetter(
+  letter: Letter,
+  context: Context,
+  id: string,
+  limit: 4096 | 32768 = 4096,
+) {
   const { generateKeypair } = await import("@tari-project/ootle-wasm");
   const pair = generateKeypair();
   const claimSecret = new Uint8Array(pair.secret_key),
@@ -105,7 +113,7 @@ export async function sealLetter(letter: Letter, context: Context, id: string) {
       wrappedClaimKey: base64url(new Uint8Array(wrappedClaimKey)),
       claimPublicKey,
     };
-    assertEnvelopeSize(payload);
+    assertEnvelopeSize(payload, limit);
     return { payload, capability: base64url(root) };
   } finally {
     root.fill(0);
@@ -117,10 +125,11 @@ export async function openLetter(
   capability: string,
   context: Context,
   id: string,
+  limit: 4096 | 32768 = 4096,
 ) {
   if (payload.version !== "gd-link-1")
     throw new Error("Unsupported encryption version");
-  assertEnvelopeSize(payload);
+  assertEnvelopeSize(payload, limit);
   const root = fromBase64url(capability);
   if (root.length !== 32 || base64url(root) !== capability)
     throw new Error("The link requires a canonical 256-bit capability");

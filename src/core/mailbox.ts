@@ -112,6 +112,26 @@ export async function sealMailbox(
   context: MailboxContext,
   id: string,
   descriptor: MailboxKey,
+  limit: 4096 | 32768 = 4096,
+): Promise<MailboxPayload> {
+  return sealData(letter, context, id, descriptor, limit);
+}
+export function sealMailboxStatePayload(
+  letter: Letter,
+  context: MailboxContext,
+  id: string,
+  descriptor: MailboxKey,
+) {
+  if (!/^ms:[A-Za-z0-9_-]{43}$/.test(id))
+    throw new Error("Invalid mailbox state purpose");
+  return sealData(letter, context, id, descriptor, 98304);
+}
+async function sealData(
+  letter: Letter,
+  context: MailboxContext,
+  id: string,
+  descriptor: MailboxKey,
+  limit: number,
 ): Promise<MailboxPayload> {
   const key = mailboxKey(descriptor);
   if (key.keyVersion !== context.keyVersion)
@@ -166,7 +186,10 @@ export async function sealMailbox(
       ...(key.recovery ? { recovery: key.recovery } : {}),
       ...(key.capsule ? { capsule: { ...key.capsule } } : {}),
     };
-    assertEnvelopeSize(payload);
+    if (limit === 98304) {
+      if (encode(payload).length > limit)
+        throw new Error("Mailbox ciphertext exceeds limit");
+    } else assertEnvelopeSize(payload, limit as 4096 | 32768);
     return payload;
   } finally {
     secret?.fill(0);

@@ -1,3 +1,4 @@
+import { letterLimit } from "../core/config";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { GhostMark } from "./GhostMark";
@@ -27,12 +28,7 @@ import {
 import type { ConnectedWallet } from "../core/wallet";
 import { SapientSession, sapientProvider } from "../core/sapient";
 import { PostOfficeClient } from "../core/chain";
-import {
-  sealLetter,
-  openLetter,
-  assertEnvelopeSize,
-  ENVELOPE_LIMIT,
-} from "../core/crypto";
+import { sealLetter, openLetter, assertEnvelopeSize } from "../core/crypto";
 import { draftEnvelopeSize } from "../core/letter-size";
 import {
   createGiftLink,
@@ -475,6 +471,7 @@ export function App() {
           link.capability,
           d,
           e.id,
+          letterLimit(d),
         );
         if (cancelled) {
           result.claimSecret.fill(0);
@@ -751,6 +748,11 @@ export function App() {
         (change.network !== undefined && change.network !== d.network)
           ? change.capsule
           : (change.capsule ?? d.capsule),
+      contractProtocol:
+        reviewedProfile ||
+        (change.network !== undefined && change.network !== d.network)
+          ? change.contractProtocol
+          : (change.contractProtocol ?? d.contractProtocol),
       postboxClaimProtocol:
         reviewedProfile ||
         (change.network !== undefined && change.network !== d.network)
@@ -1047,7 +1049,7 @@ export function App() {
   } catch {
     /* Invalid postbox keys stay blocked by the existing preparation checks. */
   }
-  const draftTooLarge = draftSize !== undefined && draftSize > ENVELOPE_LIMIT;
+  const draftTooLarge = draftSize !== undefined && draftSize > letterLimit(d);
 
   function clearWallet(revoke: boolean) {
     connectionSequence.current += 1;
@@ -1099,7 +1101,9 @@ export function App() {
       throw new Error("Choose a registered recipient postbox");
     const id = crypto.randomUUID();
     const sealed =
-      mode === "link" ? await sealLetter({ subject, body }, d, id) : undefined;
+      mode === "link"
+        ? await sealLetter({ subject, body }, d, id, letterLimit(d))
+        : undefined;
     const key = postbox ? mailboxKey(postbox.encryptionKey) : undefined;
     const addressed =
       postbox && key
@@ -1113,6 +1117,7 @@ export function App() {
             },
             id,
             key,
+            letterLimit(d),
           )
         : undefined;
     const envelope: Envelope = {
@@ -1120,7 +1125,7 @@ export function App() {
       id,
       payload: addressed || sealed?.payload || { subject, body },
     };
-    assertEnvelopeSize(envelope);
+    assertEnvelopeSize(envelope, letterLimit(d));
     if (draftSequence.current !== sequence) return;
     setLinkSaved(false);
     setPrepared({ envelope, capability: sealed?.capability });
@@ -1141,7 +1146,7 @@ export function App() {
     await task(async () => {
       if (!chain) return;
       if (p.id.startsWith("attempt:")) {
-        if (p.operation === "postbox" || p.operation === "capsule") {
+        if (["postbox", "capsule", "mailbox"].includes(p.operation)) {
           setStatus(
             "This wallet submission has no transaction ID. Inspect the controlling wallet's transaction history before resolving it; matching postbox state alone cannot identify the submitted transaction. Retrying remains blocked.",
           );
@@ -1842,7 +1847,7 @@ export function App() {
                 id="letter-body"
                 value={body}
                 disabled={busy}
-                maxLength={2600}
+                maxLength={d.contractProtocol === "unified-1" ? 16000 : 2600}
                 aria-describedby="letter-space"
                 aria-invalid={draftTooLarge}
                 onChange={(e) => {
@@ -1864,14 +1869,14 @@ export function App() {
                       <strong>
                         {draftTooLarge
                           ? "Letter is full"
-                          : `${Math.max(0, Math.floor((1 - draftSize / ENVELOPE_LIMIT) * 100))}% remaining`}
+                          : `${Math.max(0, Math.floor((1 - draftSize / letterLimit(d)) * 100))}% remaining`}
                       </strong>
                     </div>
                     <progress
                       aria-label="Letter space used"
-                      aria-valuetext={`${Math.min(100, Math.ceil((draftSize / ENVELOPE_LIMIT) * 100))}% used`}
-                      max={ENVELOPE_LIMIT}
-                      value={Math.min(draftSize, ENVELOPE_LIMIT)}
+                      aria-valuetext={`${Math.min(100, Math.ceil((draftSize / letterLimit(d)) * 100))}% used`}
+                      max={letterLimit(d)}
+                      value={Math.min(draftSize, letterLimit(d))}
                     />
                     <p role={draftTooLarge ? "alert" : undefined}>
                       {draftTooLarge
@@ -2028,7 +2033,8 @@ export function App() {
                 />
                 <p className="fine-print">
                   Sapient estimates the fee before you approve. Your letter and
-                  its encrypted wrapping must fit within 4 KiB.
+                  its encrypted wrapping must fit within {letterLimit(d) / 1024}{" "}
+                  KiB.
                 </p>
               </details>
               {wallet?.kind === "sapient" && (

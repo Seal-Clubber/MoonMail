@@ -1,0 +1,78 @@
+{
+  "engine": "0.45.0",
+  "publicTransactions": 0,
+  "template": "542ff791c0d8a4e1ab0336fab6ac0c16d6ef60ab28c5a1aeb52e75a81ff44d8d",
+  "registry": "component_8d38f486b3420f18c7b9c77150de3750c8dfe473aef1df315adc6d5489f8078e",
+  "component": "component_8d0a3a5c07660c015f694a22bbc90e8fc9959f7f083873106456be07705a534d",
+  "controller": "d884dd886cc7464402a04920485aebe6dd657b98072de655c46ec6179a52cd0d",
+  "rootState": [
+    16,
+    {},
+    {
+      "home": [
+        "home",
+        "Home",
+        {
+          "@cbor": "bytes",
+          "hex": "d884dd886cc7464402a04920485aebe6dd657b98072de655c46ec6179a52cd0d"
+        },
+        "test-key",
+        true
+      ]
+    },
+    {
+      "@cbor": "bytes",
+      "hex": "542ff791c0d8a4e1ab0336fab6ac0c16d6ef60ab28c5a1aeb52e75a81ff44d8d"
+    },
+    {
+      "home": {
+        "@cbor": "tag",
+        "tag": 128,
+        "value": {
+          "@cbor": "bytes",
+          "hex": "8d0a3a5c07660c015f694a22bbc90e8fc9959f7f083873106456be07705a534d"
+        }
+      }
+    },
+    0,
+    null,
+    null,
+    {
+      "@cbor": "tag",
+      "tag": 131,
+      "value": {
+        "@cbor": "bytes",
+        "hex": "8dc0d1efa852343973a8580f489da0c09af4fe157b0b62ee7484d9365886a379"
+      }
+    }
+  ],
+  "mailboxState": [
+    16,
+    {},
+    {},
+    {
+      "@cbor": "bytes",
+      "hex": "542ff791c0d8a4e1ab0336fab6ac0c16d6ef60ab28c5a1aeb52e75a81ff44d8d"
+    },
+    {},
+    2,
+    null,
+    [
+      "home",
+      {
+        "@cbor": "bytes",
+        "hex": "d884dd886cc7464402a04920485aebe6dd657b98072de655c46ec6179a52cd0d"
+      },
+      2,
+      "encrypted-revision-two",
+      {
+        "@cbor": "tag",
+        "tag": 128,
+        "value": {
+          "@cbor": "bytes",
+          "hex": "8d38f486b3420f18c7b9c77150de3750c8dfe473aef1df315adc6d5489f8078e"
+        }
+      }
+    ]
+  ]
+}

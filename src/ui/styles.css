@@ -3678,3 +3678,41 @@ footer {
   font-size: 12px;
   line-height: 1.5;
 }
+
+.mailbox-state-panel {
+  padding: 16px 12px;
+  border-block: 1px solid #496278;
+  color: #e7eef6;
+  font-size: 0.85rem;
+}
+.mailbox-state-panel h3 {
+  font-size: 1rem;
+  color: #eed9a9;
+}
+.mailbox-state-panel button {
+  width: 100%;
+  margin: 6px 0;
+}
+.mailbox-state-panel p {
+  line-height: 1.5;
+}
+.mailbox-row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 14px 12px;
+}
+.mailbox-row-actions button {
+  padding: 5px 8px;
+  font-size: 0.8rem;
+}
+.mailbox-row-actions button[aria-pressed="true"] {
+  color: #eed9a9;
+  border-color: #9b855e;
+}
+.mailbox-workspace.compact .mailbox-message-open {
+  padding-block: 10px;
+}
+.mailbox-workspace.compact .mailbox-row-preview {
+  display: none;
+}

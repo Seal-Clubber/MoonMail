@@ -740,6 +740,15 @@ export function Postboxes({
                   box.controller,
                 ])}
                 box={box}
+                stateAccess={{
+                  wallet,
+                  chain,
+                  deployment,
+                  approved: viewApproved,
+                  writeBlocked,
+                  task,
+                  onStatus,
+                }}
                 letters={letters}
                 plain={plain}
                 activeId={activeId}

@@ -71,6 +71,7 @@ export interface Postbox {
   discoverable: boolean;
 }
 export interface Deployment extends Context {
+  contractProtocol?: "unified-1";
   postboxClaimProtocol?: "sapient-proof-1";
   capsule?: CapsuleDeployment;
   envelopeTemplate: string;
@@ -86,5 +87,6 @@ export interface Deployment extends Context {
     mailboxRecovery: boolean;
     sapientWallet?: boolean;
     postboxClaims?: boolean;
+    mailboxState?: boolean;
   };
 }

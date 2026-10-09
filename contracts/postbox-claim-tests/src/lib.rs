@@ -613,3 +613,12 @@ mod tests {
         assert_eq!(balance(&f, d), Amount::from(1_000_000u64));
     }
 }
+
+#[cfg(test)]
+mod mailbox_state;
+
+#[cfg(test)]
+mod unified_claims;
+
+#[cfg(test)]
+mod unified_capsules;
