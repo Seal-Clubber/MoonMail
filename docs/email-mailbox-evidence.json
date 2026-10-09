@@ -1,0 +1,59 @@
+{
+  "schema": "ghostdrop-email-acceptance-1",
+  "checkedAt": "2026-10-09T23:38:15.540Z",
+  "frontendSource": "d4e5d7a00b48207c6a2f32dabccf610acc4fc153",
+  "network": 38,
+  "registry": "component_bc15e50d664440dbdfb1a310fb316c35ab22f964d485c222024a402b4cad4f99",
+  "stockSapient": "0.6.6",
+  "newContractDeploymentRequired": false,
+  "publicWebsitePublishedByAgent": false,
+  "financialTransactions": 4,
+  "actualFeesMicroTari": "45547",
+  "transactions": [
+    {
+      "operation": "sent-addressed",
+      "transactionId": "0d3ed86175e047b8d03cf0a2ba685250e3c2d2e61ccbbbbf3330e9c0871ffed9",
+      "actualFeeMicroTari": "11240",
+      "outcome": "Commit"
+    },
+    {
+      "operation": "sent-reply",
+      "transactionId": "91aa0a3e5e87770c5e76fac124a40e7a58aea6cc6cfc61ff005e1a83f64246e1",
+      "actualFeeMicroTari": "11505",
+      "outcome": "Commit"
+    },
+    {
+      "operation": "sent-link",
+      "transactionId": "b00bfeea53327af64724d0094b1f4c16f964dc84f7144f55a019de54325a5211",
+      "actualFeeMicroTari": "10726",
+      "outcome": "Commit"
+    },
+    {
+      "operation": "preferences",
+      "transactionId": "6afa0e8c076e79a405d7ddb5c8ee82142441eccc05f83ccaae78b6cd5c10dff6",
+      "actualFeeMicroTari": "12076",
+      "outcome": "Commit"
+    }
+  ],
+  "verification": {
+    "independentRestoredWalletProfile": true,
+    "encryptedAddressedSent": true,
+    "encryptedLinkSentWithoutSecretLink": true,
+    "encryptedReplyConversation": "two self-addressed test messages; cross-correspondent routing covered by client/browser tests",
+    "bulkReadAndStarRecovered": true,
+    "favouriteRecovered": true,
+    "encryptedMailboxRevision": "4",
+    "realOfficialIndexerResponses": true,
+    "ledgerResponseFixturesUsed": false,
+    "privatePlaintextInBrowserStorage": false,
+    "disconnectClearedMailbox": true,
+    "viewportWidths": [1440, 390, 320]
+  },
+  "limits": [
+    "Legacy mail without a sender copy cannot be recovered in Sent.",
+    "Both ciphertexts and encrypted reply metadata share the existing32KiB combined payload limit.",
+    "Thread display covers loaded and unlocked messages; no read receipt or email delivery service is implied.",
+    "HTTPS test used pinned local assets at the Pages origin; publication remains user-controlled."
+  ],
+  "relationToEarlierCampaign": "Separate completed four-transaction verification; previous unified-contract campaign retains its fifteen original transactions."
+}
