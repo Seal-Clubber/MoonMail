@@ -31,6 +31,8 @@ export function Postboxes({
   onClose,
   onCompose,
   onRead,
+  onReadSent,
+  sentPlain,
   plain,
   activeId,
   onReaderTarget,
@@ -55,6 +57,8 @@ export function Postboxes({
   onClose: () => void;
   onCompose: (box: Postbox) => void;
   onRead: (letter: Envelope) => Promise<Letter>;
+  onReadSent: (letter: Envelope) => Promise<Letter>;
+  sentPlain: ReadonlyMap<string, Letter>;
   plain: ReadonlyMap<string, Letter>;
   activeId?: string;
   onReaderTarget: (target: HTMLDivElement | null) => void;
@@ -721,17 +725,21 @@ export function Postboxes({
                 }}
                 letters={letters}
                 plain={plain}
+                sentPlain={sentPlain}
+                onOpenSent={(e) =>
+                  void task(() => onReadSent(e).then(() => undefined))
+                }
                 activeId={activeId}
                 busy={busy}
                 canUnlock={!(wallet instanceof SapientSession) || viewApproved}
                 onOpen={onOpen}
                 onClose={onClose}
                 onCompose={() => onCompose(box)}
-                onUnlock={(mail) =>
+                onUnlock={(mail, sent) =>
                   void task(async () => {
                     let opened = 0;
                     for (const e of mail) {
-                      await onRead(e);
+                      await (sent ? onReadSent(e) : onRead(e));
                       opened++;
                     }
                     onStatus(

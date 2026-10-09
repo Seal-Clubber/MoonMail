@@ -52,6 +52,12 @@ import {
   sealMailbox,
   envelopeMailboxContext,
 } from "../core/mailbox";
+import {
+  addSentCopy,
+  sentCopy,
+  sentContext,
+  sentPurpose,
+} from "../core/sent-mail";
 import { Postboxes } from "./Postboxes";
 import { AmountInput, tari } from "./AmountInput";
 import { CopyField } from "./CopyField";
@@ -101,6 +107,10 @@ export function App() {
   const [mailboxPlain, setMailboxPlain] = useState<Map<string, Letter>>(
     () => new Map(),
   );
+  const [sentPlain, setSentPlain] = useState<Map<string, Letter>>(
+    () => new Map(),
+  );
+  const [saveSent, setSaveSent] = useState(true);
   const [mailboxReaderTarget, setMailboxReaderTarget] =
     useState<HTMLDivElement | null>(null);
   const inlinePostboxReader =
@@ -109,6 +119,7 @@ export function App() {
   const [showSampleActivity, setShowSampleActivity] = useState(false);
   useEffect(() => {
     setMailboxPlain(new Map());
+    setSentPlain(new Map());
   }, [wallet, d.network, d.registry, d.template]);
 
   const [mode, setMode] = useState<MailMode>("link"),
@@ -737,6 +748,7 @@ export function App() {
     setReadState("idle");
     setLetters([]);
     setMailboxPlain(new Map());
+    setSentPlain(new Map());
     setUnavailableLetterIds([]);
     setBoxes([]);
     setCursor("");
@@ -983,6 +995,41 @@ export function App() {
     setMailboxPlain((previous) => new Map(previous).set(envelope.id, letter));
     return letter;
   }
+  async function readSent(envelope: Envelope): Promise<Letter> {
+    const session = connectionSequence.current,
+      deployment = deploymentRevision.current;
+    const copy = sentCopy(envelope);
+    const owner = wallet?.accounts.find(
+      (a) => a.account.owner_public_key === envelope.sender,
+    );
+    if (
+      !copy ||
+      !(wallet instanceof SapientSession) ||
+      !owner ||
+      !chain ||
+      envelope.context.network !== chain.deployment.network ||
+      envelope.context.registry !== chain.deployment.registry ||
+      envelope.context.template !== chain.deployment.template
+    )
+      throw new Error("Connect the sending postbox's Sapient wallet");
+    const letter = await wallet
+      .capsuleMailbox((id) => chain.provider.getSubstate(id))
+      .open(
+        owner.account.component_address,
+        sentContext(envelope, copy),
+        await sentPurpose(envelope),
+        copy.payload,
+      );
+    if (
+      session !== connectionSequence.current ||
+      deployment !== deploymentRevision.current
+    )
+      throw new Error(
+        "Wallet session changed. Reconnect before unlocking sent mail.",
+      );
+    setSentPlain((previous) => new Map(previous).set(envelope.id, letter));
+    return letter;
+  }
   async function openPostbox(envelope: Envelope) {
     closeLetter();
     setActive(envelope);
@@ -1027,6 +1074,22 @@ export function App() {
   const current = wallet?.accounts[account];
   const draftPostbox =
     mode === "postbox" ? boxes.find((p) => p.id === recipient) : undefined;
+  const sendingBox = boxes.find(
+    (p) => p.id === reply && p.controller === current?.account.owner_public_key,
+  );
+  let sentDescriptor;
+  try {
+    const key = sendingBox && mailboxKey(sendingBox.encryptionKey);
+    if (
+      d.contractProtocol === "unified-1" &&
+      key?.recovery === "sapient-capsule-1"
+    )
+      sentDescriptor = key;
+  } catch {
+    /* A damaged descriptor cannot enable a sent copy. */
+  }
+  const includeSent =
+    mode !== "public" && saveSent && !!sentDescriptor && !!sendingBox;
   const draftMetadata = {
     mode,
     context: d,
@@ -1045,6 +1108,13 @@ export function App() {
         { subject, body },
         { ...draftMetadata, id: "0".repeat(36) },
         draftPostbox ? mailboxKey(draftPostbox.encryptionKey) : undefined,
+        includeSent
+          ? {
+              key: sentDescriptor!,
+              postbox: sendingBox!.id,
+              controller: sendingBox!.controller,
+            }
+          : undefined,
       );
   } catch {
     /* Invalid postbox keys stay blocked by the existing preparation checks. */
@@ -1058,6 +1128,7 @@ export function App() {
     if (revoke) wallet?.disconnect();
     setWallet(undefined);
     setMailboxPlain(new Map());
+    setSentPlain(new Map());
     setClaimReview(undefined);
     secret.current?.fill(0);
     secret.current = undefined;
@@ -1120,11 +1191,13 @@ export function App() {
             letterLimit(d),
           )
         : undefined;
-    const envelope: Envelope = {
+    let envelope: Envelope = {
       ...draftMetadata,
       id,
       payload: addressed || sealed?.payload || { subject, body },
     };
+    if (includeSent)
+      envelope = await addSentCopy(envelope, { subject, body }, sendingBox!);
     assertEnvelopeSize(envelope, letterLimit(d));
     if (draftSequence.current !== sequence) return;
     setLinkSaved(false);
@@ -1816,7 +1889,7 @@ export function App() {
               <p className="info">
                 A private letter for a Sapient postbox.{" "}
                 {writesReady(d, "postbox", "sapient")
-                  ? "Only its owner can open it or collect its gift. Choose a friend below, or paste their postbox ID."
+                  ? "The recipient controls opening the delivered copy and collecting its gift. You can keep a separately encrypted Sent copy. Choose a friend below, or paste their postbox ID."
                   : "Private postbox sending is currently unavailable. Check the post office connection in Settings."}
               </p>
             )}
@@ -2000,6 +2073,29 @@ export function App() {
                   </select>
                 </label>
               )}
+              {mode !== "public" && d.contractProtocol === "unified-1" && (
+                <div className="sent-copy-choice">
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={saveSent}
+                      disabled={busy || !sentDescriptor}
+                      onChange={(e) => {
+                        setSaveSent(e.target.checked);
+                        setReview(false);
+                        setPrepared(undefined);
+                        setLinkSaved(false);
+                      }}
+                    />
+                    Save an encrypted copy in Sent
+                  </label>
+                  <p className="fine-print">
+                    {sentDescriptor
+                      ? "Your sending postbox can recover this copy with Sapient on another device. It uses extra on-chain letter space; no extra wallet approval is needed."
+                      : "Include your Sapient postbox for replies above to save recoverable Sent mail."}
+                  </p>
+                </div>
+              )}
               {wallet && wallet.accounts.length > 1 && (
                 <label>
                   Funding account
@@ -2101,6 +2197,16 @@ export function App() {
                       )}
                     </dd>
                   </div>
+                  {prepared.envelope.mode !== "public" && (
+                    <div>
+                      <dt>Sent folder</dt>
+                      <dd>
+                        {sentCopy(prepared.envelope)
+                          ? "Encrypted copy saved with this letter"
+                          : "No recoverable sender copy"}
+                      </dd>
+                    </div>
+                  )}
                 </dl>
                 {prepared.envelope.replyPostbox && (
                   <p className="fine-print">
@@ -2223,6 +2329,8 @@ export function App() {
             onClose={closeLetter}
             onCompose={composeFromPostbox}
             onRead={readPostbox}
+            onReadSent={readSent}
+            sentPlain={sentPlain}
             plain={mailboxPlain}
             activeId={active?.mode === "postbox" ? active.id : undefined}
             onReaderTarget={setMailboxReaderTarget}

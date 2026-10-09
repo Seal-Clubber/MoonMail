@@ -8,7 +8,14 @@ export interface Letter {
   subject: string;
   body: string;
 }
+export interface SentCopy {
+  version: "gd-sent-1";
+  postbox: string;
+  controller: string;
+  payload: MailboxPayload;
+}
 export interface SealedPayload {
+  sent?: SentCopy;
   version: "gd-link-1";
   iv: string;
   ciphertext: string;
@@ -38,6 +45,7 @@ export interface MailboxKey {
   capsule?: CapsuleReference;
 }
 export interface MailboxPayload {
+  sent?: SentCopy;
   version: "gd-postbox-1";
   keyVersion: number;
   recipientKey: string;

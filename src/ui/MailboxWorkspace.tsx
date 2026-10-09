@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Envelope, Letter, Postbox } from "../core/types";
 import { useChainMailbox, type MailboxAccess } from "./useChainMailbox";
+import { hasSentCopy } from "../core/sent-mail";
 import { READ, STAR, ARCHIVE } from "../core/mailbox-state";
 import { AmountInput } from "./AmountInput";
 import { tari } from "./AmountInput";
@@ -24,6 +25,8 @@ export function MailboxWorkspace({
   box,
   letters,
   plain,
+  sentPlain,
+  onOpenSent,
   activeId,
   busy,
   canUnlock,
@@ -38,13 +41,15 @@ export function MailboxWorkspace({
   box: Postbox;
   letters: Envelope[];
   plain: ReadonlyMap<string, Letter>;
+  sentPlain: ReadonlyMap<string, Letter>;
+  onOpenSent: (e: Envelope) => void;
   activeId?: string;
   busy: boolean;
   canUnlock: boolean;
   onOpen: (e: Envelope) => void;
   onClose: () => void;
   onCompose: () => void;
-  onUnlock: (letters: Envelope[]) => void;
+  onUnlock: (letters: Envelope[], sent?: boolean) => void;
   onReaderTarget: (target: HTMLDivElement | null) => void;
 }) {
   const state = useChainMailbox(box, stateAccess);
@@ -95,7 +100,7 @@ export function MailboxWorkspace({
       ? plain.get(e.id)
       : e.mode === "public"
         ? (e.payload as Letter)
-        : undefined;
+        : sentPlain.get(e.id);
   }
   const found = views[folder].filter((e) =>
     [
@@ -127,7 +132,10 @@ export function MailboxWorkspace({
   const pages = Math.max(1, Math.ceil(found.length / 12));
   const currentPage = Math.min(page, pages);
   const visible = found.slice((currentPage - 1) * 12, currentPage * 12);
-  const locked = inbox.filter((e) => !plain.get(e.id));
+  const locked =
+    folder === "sent"
+      ? sent.filter((e) => hasSentCopy(e) && !sentPlain.get(e.id))
+      : inbox.filter((e) => !plain.get(e.id));
   function chooseFolder(next: Folder) {
     setFolder(next);
     setPage(1);
@@ -280,11 +288,11 @@ export function MailboxWorkspace({
             <option value="gift">Gift amount · largest first</option>
           </select>
         </label>
-        {folder !== "sent" && locked.length > 0 && (
+        {locked.length > 0 && (
           <div className="mailbox-unlock">
             <button
               disabled={busy || !canUnlock}
-              onClick={() => onUnlock(locked)}
+              onClick={() => onUnlock(locked, folder === "sent")}
             >
               {busy
                 ? "Opening your mail…"
@@ -301,8 +309,9 @@ export function MailboxWorkspace({
         )}
         {folder === "sent" && (
           <p className="mailbox-folder-note">
-            Loaded on-chain letters sent with this reply postbox. Encrypted sent
-            copies are not saved or recoverable here.
+            Letters sent from this postbox. New encrypted Sent copies unlock
+            with your Sapient wallet. Older letters without a saved copy show
+            delivery details only.
           </p>
         )}
         <p className="mailbox-range" ref={range} tabIndex={-1} role="status">
@@ -333,6 +342,8 @@ export function MailboxWorkspace({
                     if (folder === "sent") {
                       onClose();
                       setSentId(e.id);
+                      if (hasSentCopy(e) && canUnlock && !sentPlain.get(e.id))
+                        onOpenSent(e);
                     } else {
                       setSentId("");
                       onOpen(e);
@@ -475,17 +486,19 @@ export function MailboxWorkspace({
         {folder === "sent" && selected && (
           <article className="mailbox-sent-detail">
             <span className="kicker">SENT ON OOTLE</span>
-            <h2>
-              {selected.mode === "public"
-                ? (selected.payload as Letter).subject
-                : "Your sealed letter"}
-            </h2>
-            {selected.mode === "public" ? (
-              <p className="letter-body">{(selected.payload as Letter).body}</p>
+            <h2>{content(selected)?.subject || "Your sealed letter"}</h2>
+            {content(selected) ? (
+              <p className="letter-body">{content(selected)!.body}</p>
+            ) : hasSentCopy(selected) ? (
+              <p>
+                Approve private view access above and unlock Sent to read your
+                encrypted copy. Reading sends no transaction.
+              </p>
             ) : (
               <p>
-                The recipient controls decryption. GhostDrop does not retain a
-                plaintext copy of encrypted sent mail.
+                This older letter has no saved encrypted sender copy. Its
+                delivery details remain available; a private-link letter still
+                opens with its original secret link.
               </p>
             )}
             <dl>

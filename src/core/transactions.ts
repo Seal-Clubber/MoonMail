@@ -12,6 +12,7 @@ import type { Deployment, Envelope, Postbox } from "./types";
 import { letterLimit } from "./config";
 import { assertEnvelopeSize } from "./crypto";
 import { postboxNameError } from "./postbox-name";
+import { sentCopy } from "./sent-mail";
 import { mailboxKey } from "./mailbox";
 export function money(value: string) {
   if (!/^\d+$/.test(value)) throw new Error("Amounts must be whole microTARI");
@@ -47,6 +48,7 @@ export function publishTransaction(
   const total = gift + reserve;
   if (total > 18446744073709551615n || gift > 0n !== reserve > 0n)
     throw new Error("Gift requires its own bounded fee reserve");
+  sentCopy(envelope);
   const payload = JSON.stringify(envelope.payload);
   assertEnvelopeSize(envelope, letterLimit(d));
   return TransactionBuilder.new(d.network as Network, epoch + 10)

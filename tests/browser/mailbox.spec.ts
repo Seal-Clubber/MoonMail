@@ -5,6 +5,9 @@ import {
 } from "@tari-project/ootle-wasm";
 import { emptyDeployment } from "../../src/core/config";
 import { encodeMailboxCapsule } from "../../src/core/capsules";
+import { addSentCopy } from "../../src/core/sent-mail";
+import { sealLetter } from "../../src/core/crypto";
+import type { Envelope } from "../../src/core/types";
 import { sealMailbox } from "../../src/core/mailbox";
 import {
   sealPreferences,
@@ -21,6 +24,7 @@ async function mailboxFixture(
   firstId = "note-01",
   unified = false,
   damaged = false,
+  encryptedSent = false,
 ) {
   const owner = generateKeypair(),
     view = generateKeypair(),
@@ -144,6 +148,77 @@ async function mailboxFixture(
     "7".repeat(64),
     "",
   ];
+  if (encryptedSent) {
+    const other = generateKeypair();
+    const otherDescriptor = {
+      version: "gd-postbox-1" as const,
+      keyVersion: 1,
+      publicKey: Buffer.from(other.public_key).toString("hex"),
+    };
+    other.free();
+    for (const mode of ["postbox", "link"] as const) {
+      const id = "sent-" + mode,
+        component = `component_${(mode === "postbox" ? "31" : "32").repeat(32)}`;
+      const letter = {
+        subject:
+          mode === "postbox"
+            ? "My private sent letter"
+            : "My saved link letter",
+        body: "Recovered in Sent without the recipient's key.",
+      };
+      const payload =
+        mode === "link"
+          ? (await sealLetter(letter, d, id, 32768)).payload
+          : await sealMailbox(
+              letter,
+              {
+                ...d,
+                postbox: "elsewhere",
+                controller: "7".repeat(64),
+                keyVersion: 1,
+              },
+              id,
+              otherDescriptor,
+              32768,
+            );
+      const envelope: Envelope = {
+        id,
+        mode,
+        context: d,
+        payload,
+        sender: controller,
+        replyPostbox: "home",
+        gift: "0",
+        reserve: "0",
+        claimed: false,
+        ...(mode === "postbox"
+          ? { recipientPostbox: "elsewhere", claimAuthority: "7".repeat(64) }
+          : {}),
+      };
+      const saved = await addSentCopy(envelope, letter, {
+        id: "home",
+        nickname: "Moonlit home",
+        controller,
+        encryptionKey: JSON.stringify(descriptor),
+        discoverable: true,
+      });
+      references[id] = component;
+      states[component] = [
+        38,
+        id,
+        mode === "link" ? 1 : 2,
+        JSON.stringify(saved.payload),
+        "0",
+        "0",
+        false,
+        mode === "link" ? (payload as any).claimPublicKey : "7".repeat(64),
+        mode === "link" ? "" : "elsewhere",
+        "home",
+        controller,
+        "",
+      ];
+    }
+  }
   const stateComponent = `component_${"6".repeat(64)}`;
   const savedState = unified
     ? await sealPreferences(
@@ -672,5 +747,129 @@ test("damaged encrypted settings do not become an empty editable mailbox", async
       .getByRole("navigation", { name: "Mailbox folders" })
       .getByRole("button", { name: /Archive/ }),
   ).toHaveCount(0);
+  await assertReadOnly(page, writes);
+});
+
+test("encrypted Sent recovers addressed and link mail in a fresh wallet session without recipient access or writes", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(page, "note-01", true, false, true);
+  await page.goto("./#/postboxes");
+  await connect(page);
+  const folders = page.getByRole("navigation", { name: "Mailbox folders" });
+  await folders.getByRole("button", { name: /Sent/ }).click();
+  await expect(folders.getByRole("button", { name: /Sent/ })).toContainText(
+    "3",
+  );
+  const grant = async () => {
+    await page.locator(".mailbox-view-access > summary").click();
+    await page
+      .getByRole("checkbox", {
+        name: "I understand the account-wide private view permission",
+      })
+      .check();
+    await page
+      .getByRole("button", { name: "Approve postbox view access", exact: true })
+      .click();
+  };
+  await expect(
+    page.getByRole("button", { name: "Unlock 2 loaded letters", exact: true }),
+  ).toBeDisabled();
+  await grant();
+  await page
+    .getByRole("button", { name: "Unlock 2 loaded letters", exact: true })
+    .click();
+  for (const subject of ["My private sent letter", "My saved link letter"]) {
+    await page
+      .getByRole("button", { name: "Open letter: " + subject, exact: true })
+      .click();
+    await expect(page.locator(".mailbox-sent-detail .letter-body")).toHaveText(
+      "Recovered in Sent without the recipient's key.",
+    );
+    await expect(
+      page.getByRole("button", { name: /Confirm.*collect/ }),
+    ).toHaveCount(0);
+    await page
+      .getByRole("button", { name: "Back to messages", exact: true })
+      .click();
+  }
+  await page
+    .getByRole("searchbox", { name: "Search this folder" })
+    .fill("saved link");
+  await expect(page.locator(".mailbox-range")).toHaveText(
+    "1–1 of 1 loaded letters",
+  );
+  expect(
+    await page.evaluate(() =>
+      [...Object.values(localStorage), ...Object.values(sessionStorage)].some(
+        (v) =>
+          v.includes("Recovered in Sent") ||
+          v.includes("My private sent letter"),
+      ),
+    ),
+  ).toBe(false);
+  await page
+    .getByRole("button", { name: "Disconnect wallet", exact: true })
+    .click();
+  await expect(page.locator(".mailbox-workspace")).toHaveCount(0);
+  await page.reload();
+  await connect(page);
+  await folders.getByRole("button", { name: /Sent/ }).click();
+  await expect(
+    page.getByRole("button", {
+      name: "Open letter: My private sent letter",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await grant();
+  await page
+    .getByRole("button", { name: "Unlock 2 loaded letters", exact: true })
+    .click();
+  await page
+    .getByRole("button", {
+      name: "Open letter: My private sent letter",
+      exact: true,
+    })
+    .click();
+  await expect(page.locator(".mailbox-sent-detail .letter-body")).toContainText(
+    "Recovered in Sent",
+  );
+  await assertReadOnly(page, writes);
+});
+
+test("writing from a postbox includes encrypted Sent in review and changing that choice requires a new review", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(page, "note-01", true);
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await page
+    .getByRole("button", { name: "Compose letter", exact: false })
+    .click();
+  await page
+    .getByRole("button", { name: "⌘ Private link", exact: true })
+    .click();
+  await page
+    .getByLabel("Subject", { exact: true })
+    .fill("Sender recovery review");
+  await page
+    .getByLabel("Your letter", { exact: false })
+    .fill("A normal sent message, encrypted on Ootle.");
+  const save = page.getByRole("checkbox", {
+    name: "Save an encrypted copy in Sent",
+    exact: true,
+  });
+  await expect(save).toBeChecked();
+  await expect(save).toBeEnabled();
+  await page.getByRole("button", { name: /Review letter/ }).click();
+  await expect(page.locator(".review")).toContainText(
+    "Encrypted copy saved with this letter",
+  );
+  await save.uncheck();
+  await expect(page.locator(".review")).toHaveCount(0);
+  await page.getByRole("button", { name: /Review letter/ }).click();
+  await expect(page.locator(".review")).toContainText(
+    "No recoverable sender copy",
+  );
   await assertReadOnly(page, writes);
 });

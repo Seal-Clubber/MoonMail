@@ -7,6 +7,7 @@ export function draftEnvelopeSize(
   letter: Letter,
   envelope: Omit<Envelope, "payload">,
   mailbox?: MailboxKey,
+  sentMailbox?: { key: MailboxKey; postbox: string; controller: string },
 ) {
   const ciphertext = "A".repeat(
     Math.ceil(((envelopeSize(letter) + 16) * 4) / 3),
@@ -36,5 +37,26 @@ export function draftEnvelopeSize(
             }
           : undefined;
   if (!payload) throw new Error("Choose a postbox to check letter space");
-  return envelopeSize({ ...envelope, payload });
+  const sent =
+    envelope.mode !== "public" && sentMailbox
+      ? {
+          version: "gd-sent-1",
+          postbox: sentMailbox.postbox,
+          controller: sentMailbox.controller,
+          payload: {
+            version: "gd-postbox-1",
+            keyVersion: sentMailbox.key.keyVersion,
+            recipientKey: sentMailbox.key.publicKey,
+            ephemeralPublicKey: "a".repeat(64),
+            iv: "A".repeat(16),
+            ciphertext,
+            recovery: sentMailbox.key.recovery,
+            capsule: sentMailbox.key.capsule,
+          },
+        }
+      : undefined;
+  return envelopeSize({
+    ...envelope,
+    payload: sent ? { ...payload, sent } : payload,
+  });
 }

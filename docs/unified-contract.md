@@ -28,7 +28,7 @@ Saving pays ordinary wallet fees. Several edits can be batched into one Sapient 
 
 The root allocates its own immutable stealth recovery resource. Only that root can mint carrier units. Store accepts exactly one encrypted unit with no existing inputs, no revealed change and a DenyAll spend condition. Burn, recall, freeze and mint-rule updates are locked. The controller can recover an old memo after restoring Sapient without moving or spending the carrier. Postbox setup retains its two clearly labelled approvals: permanent recovery first, then registration.
 
-Directories are bounded at 512 postboxes and 4,096 letters to stay within engine substate limits. This is an Esmeralda testnet release, not an unlimited production email service. Archive hides a letter from Inbox; it does not erase immutable chain data or refund storage. Sender/controller keys, routing and gift amounts remain public. Sent still has no encrypted sender copy. SMTP addresses, attachments, contacts, a sender blocklist and anonymous routing are outside this release.
+Directories are bounded at 512 postboxes and 4,096 letters to stay within engine substate limits. This is an Esmeralda testnet release, not an unlimited production email service. Archive hides a letter from Inbox; it does not erase immutable chain data or refund storage. Sender/controller keys, routing and gift amounts remain public. The client can store separately encrypted sender copies in the existing opaque letter payload; both recipient and sender ciphertext count toward the same 32 KiB component budget. Older letters without a sender copy remain unchanged. SMTP addresses, attachments, contacts, a sender blocklist and anonymous routing are outside this release.
 
 ## Verification
 
