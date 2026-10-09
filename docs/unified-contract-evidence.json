@@ -1,20 +1,20 @@
 {
   "date": "2026-10-09",
-  "status": "locally-verified-awaiting-approved-Esmeralda-deployment",
-  "publicTransactions": 0,
+  "status": "persisted-option-codec-corrected-and-verified-awaiting-fresh-publication",
+  "publicTransactions": 4,
   "templatePackage": "contracts/ghostdrop-v3",
   "templateName": "GhostDrop",
   "engine": "0.45.0",
   "templateLibrary": "0.34.0",
   "validation": {
-    "clientTests": 189,
+    "clientTests": 191,
     "clientFiles": 21,
     "browserTests": 232,
     "typescript": "passed",
     "pagesBaseBuild": "passed",
     "desktopMobileScreenshots": "inspected",
     "mailboxSmallTextContrast": "at-least-4.5:1",
-    "engineTests": 33,
+    "engineTests": 35,
     "ignoredEngineTests": 0,
     "releaseWasm": "passed"
   },
@@ -34,11 +34,21 @@
     "ordinaryReadReceipts": "not-published",
     "publicMetadata": "routing,controller,gift,approximate-size,timing,fees"
   },
-  "scope": "Browser fixtures contain synthetic mail; engine fixtures are local and include no public broadcasts. Existing real Esmeralda mailbox acceptance applies to the prior deployment, not this new contract.",
+  "scope": "The initial artifact and empty root were published on real Esmeralda, followed by two isolated actor funding transactions. Stock Sapient capsule simulation then exposed persisted absent fields represented as empty arrays; no capsule transaction was broadcast. The corrected artifact accepts null and empty-array absence, rejects malformed nonempty data, and passes 35 engine /191 client /232 browser checks. Fresh publication and actual mail/settings/claim acceptance remain required.",
   "artifact": {
-    "bytes": 508322,
-    "sha256": "063271d39d7b557865a7763d2d86e5b46dacfdcfa6915431dc4e600bd418f4be",
+    "bytes": 509192,
+    "sha256": "c741b1036ea1cdec8eff32baa2d8895434f17fb1d52a425a97e27691bcd30869",
     "published": false
   },
-  "implementationCommit": "6623e543695855f35f0581a84934a3b9f3c91cdf"
+  "implementationCommit": "6623e543695855f35f0581a84934a3b9f3c91cdf",
+  "initialPublication": {
+    "template": "a20fbba814e0cce4f7b1f2c01213800420455759a29116f8fd2f00989e56ea62",
+    "registry": "component_7b021311911877aa7fe0b4f2a3b21a70f5411139bafa23247773de7a654314d6",
+    "publicationTransaction": "648155be4eaac2ab7a4588c31164c78828b208ded37611fd93377d96248335fb",
+    "initializationTransaction": "1cbaa6680b01bb3e28389a4dcfdfc2e77b59e7a240d57f5642a1bc0a1cf79b04",
+    "capsulePreflight": "rejected-before-broadcast",
+    "capsulePreflightTransactionPublished": false,
+    "capsuleFeePaidMicroTari": "0",
+    "publicConfigurationEnabled": false
+  }
 }

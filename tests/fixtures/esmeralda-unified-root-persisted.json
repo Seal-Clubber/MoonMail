@@ -1,0 +1,27 @@
+{
+  "source": "real Esmeralda indexer persisted root, 2026-10-09",
+  "registry": "component_7b021311911877aa7fe0b4f2a3b21a70f5411139bafa23247773de7a654314d6",
+  "template": "a20fbba814e0cce4f7b1f2c01213800420455759a29116f8fd2f00989e56ea62",
+  "resource": "resource_7bbbc5a77bf4438811da19cb34d0bb06bce803ce3527e2c5859009fe29bfb2a7",
+  "state": [
+    38,
+    {},
+    {},
+    {
+      "@cbor": "bytes",
+      "hex": "a20fbba814e0cce4f7b1f2c01213800420455759a29116f8fd2f00989e56ea62"
+    },
+    {},
+    0,
+    [],
+    [],
+    {
+      "@cbor": "tag",
+      "tag": 131,
+      "value": {
+        "@cbor": "bytes",
+        "hex": "7bbbc5a77bf4438811da19cb34d0bb06bce803ce3527e2c5859009fe29bfb2a7"
+      }
+    }
+  ]
+}

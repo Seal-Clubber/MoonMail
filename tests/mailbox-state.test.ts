@@ -259,3 +259,31 @@ test("the client decodes real engine BOR state and rejects wrong component roles
     }),
   ).toThrow();
 });
+
+
+test("real Esmeralda persisted empty optional arrays preserve office identity", async () => {
+  const { default: live } = await import("./fixtures/esmeralda-unified-root-persisted.json");
+  const { decodeOffice } = await import("../src/core/chain");
+  const deployment = { ...d, network: 38 as const, registry: live.registry,
+    template: live.template, envelopeTemplate: live.template,
+    capsule: { template: live.template, component: live.registry, resource: live.resource } };
+  expect(decodeOffice(live.state, deployment)).toEqual({letterRefs: [], postboxes: [], mailboxRefs: []});
+  const malformed: unknown[] = structuredClone(live.state);
+  malformed[6] = [[]];
+  expect(() => decodeOffice(malformed, deployment)).toThrow("Invalid unified post office");
+});
+
+test("persisted empty optional arrays remain absent in mailbox state", async () => {
+  const { default: f } = await import("./fixtures/engine-unified-mailbox.json");
+  const { decodeOffice, decodeMailboxState, taggedAddress } = await import("../src/core/chain");
+  const template = f.template.replace(/^template_/, "");
+  const deployment = {...d, registry: f.registry, template, envelopeTemplate: template,
+    capsule: {template, component: f.registry, resource: taggedAddress(f.rootState[8], "resource")}};
+  const office = decodeOffice(f.rootState, deployment);
+  const state: unknown[] = structuredClone(f.mailboxState);
+  state[6] = [];
+  if (state.length === 9) state[8] = [];
+  expect(decodeMailboxState(state, deployment, office.postboxes[0])).toEqual({revision: "2", ciphertext: "encrypted-revision-two"});
+  state[6] = [[]];
+  expect(() => decodeMailboxState(state, deployment, office.postboxes[0])).toThrow();
+});

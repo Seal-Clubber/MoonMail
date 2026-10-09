@@ -1,4 +1,5 @@
 pub mod letter;
+pub mod optional;
 pub mod ownership;
 use tari_template_lib::prelude::*;
 #[template]
@@ -14,8 +15,11 @@ pub mod ghostdrop_v3 {
         envelope_template: TemplateAddress,
         mailboxes: BTreeMap<String, ComponentAddress>,
         kind: u8,
+        #[cbor(with = "crate::optional")]
         envelope: Option<Envelope>,
+        #[cbor(with = "crate::optional")]
         mailbox: Option<MailboxState>,
+        #[cbor(with = "crate::optional")]
         recovery_resource: Option<ResourceAddress>,
     }
     #[derive(Clone)]

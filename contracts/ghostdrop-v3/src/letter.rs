@@ -44,6 +44,7 @@ pub mod letter {
         #[n(6)]
         pub claimed: bool,
         #[n(7)]
+        #[cbor(with = "crate::optional")]
         pub authority: Option<RistrettoPublicKeyBytes>,
         #[n(8)]
         pub recipient: String,
@@ -56,6 +57,7 @@ pub mod letter {
         #[n(12)]
         vault: Vault,
         #[n(13)]
+        #[cbor(with = "crate::optional")]
         pub destination: Option<ComponentAddress>,
         #[n(14)]
         pub registry: ComponentAddress,

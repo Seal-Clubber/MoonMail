@@ -47,6 +47,10 @@ function arr(v: unknown): unknown[] {
     throw new Error("Unsupported component state encoding");
   return v;
 }
+// Indexer persistence may represent an absent CBOR value as an empty array.
+function absent(v: unknown): boolean {
+  return v == null || (Array.isArray(v) && v.length === 0);
+}
 function map(v: unknown): [string, unknown][] {
   if (v && typeof v === "object" && !Array.isArray(v)) {
     const o = v as Record<string, unknown>;
@@ -98,8 +102,8 @@ export function decodeEnvelope(
       outer.length > 9 ||
       outer[0] !== d.network ||
       outer[5] !== 1 ||
-      outer[7] != null ||
-      outer[8] != null ||
+      !absent(outer[7]) ||
+      !absent(outer[8]) ||
       taggedAddress(outer[3], "template") !== `template_${d.template}` ||
       map(outer[1]).length ||
       map(outer[2]).length ||
@@ -171,8 +175,8 @@ export function decodeOffice(state: unknown, d: Deployment) {
     d.contractProtocol === "unified-1" &&
     (a.length !== 9 ||
       a[5] !== 0 ||
-      a[6] !== null ||
-      a[7] !== null ||
+      !absent(a[6]) ||
+      !absent(a[7]) ||
       d.template !== d.envelopeTemplate)
   )
     throw new Error("Invalid unified post office");
@@ -220,8 +224,8 @@ export function decodeMailboxState(
     a.length > 9 ||
     a[0] !== d.network ||
     a[5] !== 2 ||
-    a[6] !== null ||
-    a[8] != null ||
+    !absent(a[6]) ||
+    !absent(a[8]) ||
     taggedAddress(a[3], "template") !== `template_${d.template}` ||
     map(a[1]).length ||
     map(a[2]).length ||

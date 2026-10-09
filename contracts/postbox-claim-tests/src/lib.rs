@@ -622,3 +622,6 @@ mod unified_claims;
 
 #[cfg(test)]
 mod unified_capsules;
+
+#[cfg(test)]
+mod persistent_optional;
