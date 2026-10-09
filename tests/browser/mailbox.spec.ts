@@ -418,6 +418,19 @@ test("fresh wallet sessions recover the same chain mailbox without stored plaint
   await expect(
     page.getByRole("region", { name: "A quiet midnight hello", exact: true }),
   ).toBeVisible();
+  await page.getByRole("button", { name: "Public mail", exact: true }).click();
+  await expect(page.locator(".mailbox-letter")).toHaveCount(0);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: "My inbox", exact: true }).click();
+  await page
+    .getByRole("button", {
+      name: "Open letter: A quiet midnight hello",
+      exact: true,
+    })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "A quiet midnight hello", exact: true }),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Disconnect wallet", exact: true })
     .click();

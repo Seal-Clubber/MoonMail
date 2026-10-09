@@ -780,6 +780,10 @@ export function App() {
     }
   }
   function navigate(v: string) {
+    if (active?.mode === "postbox" && inlinePostboxReader) {
+      if (busy) return;
+      closeLetter();
+    }
     setPublicLetterRoute(undefined);
     setPublicLetterState("idle");
     setPostboxInvitation(undefined);
