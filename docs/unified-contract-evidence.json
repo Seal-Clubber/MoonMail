@@ -10,12 +10,13 @@
     "clientTests": 189,
     "clientFiles": 21,
     "browserTests": 232,
-    "engineFullSuiteBeforeAdditionalMetadataBuilderTest": 32,
-    "additionalProductionMetadataBuilderEngineTests": 1,
     "typescript": "passed",
     "pagesBaseBuild": "passed",
     "desktopMobileScreenshots": "inspected",
-    "mailboxSmallTextContrast": "at-least-4.5:1"
+    "mailboxSmallTextContrast": "at-least-4.5:1",
+    "engineTests": 33,
+    "ignoredEngineTests": 0,
+    "releaseWasm": "passed"
   },
   "limits": {
     "letterComponentBytes": 32768,
@@ -33,5 +34,11 @@
     "ordinaryReadReceipts": "not-published",
     "publicMetadata": "routing,controller,gift,approximate-size,timing,fees"
   },
-  "scope": "Browser fixtures contain synthetic mail; engine fixtures are local and include no public broadcasts. Existing real Esmeralda mailbox acceptance applies to the prior deployment, not this new contract."
+  "scope": "Browser fixtures contain synthetic mail; engine fixtures are local and include no public broadcasts. Existing real Esmeralda mailbox acceptance applies to the prior deployment, not this new contract.",
+  "artifact": {
+    "bytes": 508322,
+    "sha256": "063271d39d7b557865a7763d2d86e5b46dacfdcfa6915431dc4e600bd418f4be",
+    "published": false
+  },
+  "implementationCommit": "6623e543695855f35f0581a84934a3b9f3c91cdf"
 }
