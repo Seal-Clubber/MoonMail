@@ -23,3 +23,7 @@ Compose letter opens the existing writing desk with this postbox selected for re
 Encryption protects sealed subjects and messages. Revealed test TARI amounts, sender/controller keys, routing, transaction timing and reply postbox IDs remain observable. This is Esmeralda testnet mail, with the existing indexer trust model; it is not SMTP/IMAP email and cannot send to Gmail, Proton or Outlook addresses.
 
 There are no device-only archive, star or unread records in this mailbox. Persistent preferences, private read receipts, saved contacts and recoverable encrypted sent copies need a separately reviewed contract and encryption design. The existing browser delivery journal remains necessary for safe reconciliation of uncertain signing/transaction requests; it is not the authority for on-chain mail or gifts. It does not automatically move to a new browser.
+
+## Verification
+
+[Mailbox verification evidence](chain-mailbox-evidence.json) separates synthetic browser regressions from real Esmeralda acceptance. The real checks use the existing isolated restored stock Sapient wallet and existing on-chain letters, with signing/broadcast methods blocked. All six addressed campaign letters opened in the new reading pane; the mailbox, search and reading worked at 390 px and 320 px. The real 33-letter public hall and two private-link readers also passed. This verifies the local production build against the real network, not a newly published Pages deployment.
