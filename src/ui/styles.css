@@ -3952,3 +3952,15 @@ footer {
   align-items: center;
   justify-content: center;
 }
+
+/* Short windows must keep messages reachable when bulk tools or unlock notices grow. */
+@media (min-width: 901px) {
+  .mailbox-open .mailbox-list-panel {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+  .mailbox-open .mailbox-message-list {
+    flex: 1 0 180px;
+    min-height: 180px;
+  }
+}

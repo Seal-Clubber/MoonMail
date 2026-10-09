@@ -1083,3 +1083,35 @@ test("encrypted Inbox and Sent replies form a verified conversation and reply ke
   await expect(page.locator(".reply-context")).toHaveCount(0);
   await assertReadOnly(page, writes);
 });
+
+test("bulk selection keeps messages reachable in a short desktop window", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 });
+  const writes = await mailboxFixture(page, "note-01", true);
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await page.locator(".mailbox-view-access > summary").click();
+  await page
+    .getByRole("checkbox", {
+      name: "I understand the account-wide private view permission",
+    })
+    .check();
+  await page
+    .getByRole("button", { name: "Approve postbox view access" })
+    .click();
+  await page
+    .getByRole("button", { name: "Load mailbox settings", exact: true })
+    .click();
+  await page
+    .getByRole("checkbox", { name: "Select letter note-01", exact: true })
+    .check();
+  await page
+    .getByRole("checkbox", { name: "Select letter note-10", exact: true })
+    .check();
+  await page
+    .getByRole("button", { name: "Mark selected read", exact: true })
+    .click();
+  await expect(page.getByText("0 selected", { exact: true })).toBeVisible();
+  await assertReadOnly(page, writes);
+});
