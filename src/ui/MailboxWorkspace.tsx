@@ -25,7 +25,7 @@ export function MailboxWorkspace({
 }: {
   box: Postbox;
   letters: Envelope[];
-  plain: Record<string, Letter>;
+  plain: ReadonlyMap<string, Letter>;
   activeId?: string;
   busy: boolean;
   canUnlock: boolean;
@@ -63,7 +63,7 @@ export function MailboxWorkspace({
       : inbox.find((e) => e.id === activeId);
   function content(e: Envelope) {
     return folder !== "sent"
-      ? plain[e.id]
+      ? plain.get(e.id)
       : e.mode === "public"
         ? (e.payload as Letter)
         : undefined;
@@ -98,7 +98,7 @@ export function MailboxWorkspace({
   const pages = Math.max(1, Math.ceil(found.length / 12));
   const currentPage = Math.min(page, pages);
   const visible = found.slice((currentPage - 1) * 12, currentPage * 12);
-  const locked = inbox.filter((e) => !plain[e.id]);
+  const locked = inbox.filter((e) => !plain.get(e.id));
   function chooseFolder(next: Folder) {
     setFolder(next);
     setPage(1);

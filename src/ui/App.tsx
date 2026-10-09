@@ -102,7 +102,9 @@ export function App() {
     [active, setActive] = useState<Envelope>(),
     [plain, setPlain] = useState<Letter>(),
     [ghost, setGhost] = useState(false);
-  const [mailboxPlain, setMailboxPlain] = useState<Record<string, Letter>>({});
+  const [mailboxPlain, setMailboxPlain] = useState<Map<string, Letter>>(
+    () => new Map(),
+  );
   const [mailboxReaderTarget, setMailboxReaderTarget] =
     useState<HTMLDivElement | null>(null);
   const inlinePostboxReader =
@@ -110,7 +112,7 @@ export function App() {
   const activeSample = !!active && sampleMail.includes(active);
   const [showSampleActivity, setShowSampleActivity] = useState(false);
   useEffect(() => {
-    setMailboxPlain({});
+    setMailboxPlain(new Map());
   }, [wallet, d.network, d.registry, d.template]);
 
   const [mode, setMode] = useState<MailMode>("link"),
@@ -737,7 +739,7 @@ export function App() {
     setChain(undefined);
     setReadState("idle");
     setLetters([]);
-    setMailboxPlain({});
+    setMailboxPlain(new Map());
     setUnavailableLetterIds([]);
     setBoxes([]);
     setCursor("");
@@ -972,15 +974,16 @@ export function App() {
       throw new Error(
         "Wallet session changed. Reconnect before unlocking your mail.",
       );
-    setMailboxPlain((previous) => ({ ...previous, [envelope.id]: letter }));
+    setMailboxPlain((previous) => new Map(previous).set(envelope.id, letter));
     return letter;
   }
   async function openPostbox(envelope: Envelope) {
     closeLetter();
     setActive(envelope);
     const sequence = openSequence.current;
-    if (mailboxPlain[envelope.id]) {
-      setPlain(mailboxPlain[envelope.id]);
+    const cached = mailboxPlain.get(envelope.id);
+    if (cached) {
+      setPlain(cached);
       return;
     }
     const letter = await readPostbox(envelope);
@@ -1048,7 +1051,7 @@ export function App() {
     openSequence.current += 1;
     if (revoke) wallet?.disconnect();
     setWallet(undefined);
-    setMailboxPlain({});
+    setMailboxPlain(new Map());
     setClaimReview(undefined);
     secret.current?.fill(0);
     secret.current = undefined;

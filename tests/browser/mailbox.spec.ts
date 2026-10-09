@@ -10,7 +10,7 @@ import { readable } from "./support/contrast";
 import ledger from "../fixtures/capsule-carrier.json" with { type: "json" };
 
 // Connection, wallet-view and public-ledger fixtures. Never sign or broadcast.
-async function mailboxFixture(page: Page) {
+async function mailboxFixture(page: Page, firstId = "note-01") {
   const owner = generateKeypair(),
     view = generateKeypair(),
     key = generateKeypair();
@@ -42,9 +42,9 @@ async function mailboxFixture(page: Page) {
     capsule: { resource, commitment: utxo.slice(-64) },
   };
   const states: Record<string, unknown[]> = {};
-  const references: Record<string, string> = {};
+  const references: Record<string, string> = Object.create(null);
   for (let i = 1; i <= 27; i++) {
-    const id = `note-${String(i).padStart(2, "0")}`;
+    const id = i === 1 ? firstId : `note-${String(i).padStart(2, "0")}`;
     const child = `component_${(i + 100).toString(16).padStart(64, "0")}`;
     references[id] = child;
     const payload = await sealMailbox(
@@ -452,3 +452,33 @@ test("fresh wallet sessions recover the same chain mailbox without stored plaint
   ).toContainText("A private note for your eyes only.");
   await assertReadOnly(page, writes);
 });
+
+for (const id of ["constructor", "__proto__"]) {
+  test(`a real encrypted payload with letter ID ${id} must unlock normally`, async ({
+    page,
+  }) => {
+    const writes = await mailboxFixture(page, id);
+    await page.goto("./#/postboxes");
+    await connect(page);
+    await expect(
+      page.getByRole("button", {
+        name: "Unlock 27 loaded letters",
+        exact: true,
+      }),
+    ).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: `Sealed letter · ${id}`, exact: true }),
+    ).toBeVisible();
+    await unlock(page);
+    await page
+      .getByRole("button", {
+        name: "Open letter: A quiet midnight hello",
+        exact: true,
+      })
+      .click();
+    await expect(
+      page.getByRole("region", { name: "A quiet midnight hello", exact: true }),
+    ).toContainText("A private note for your eyes only.");
+    await assertReadOnly(page, writes);
+  });
+}

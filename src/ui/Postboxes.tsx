@@ -55,7 +55,7 @@ export function Postboxes({
   onClose: () => void;
   onCompose: (box: Postbox) => void;
   onRead: (letter: Envelope) => Promise<Letter>;
-  plain: Record<string, Letter>;
+  plain: ReadonlyMap<string, Letter>;
   activeId?: string;
   onReaderTarget: (target: HTMLDivElement | null) => void;
   onRefresh: () => Promise<void>;
