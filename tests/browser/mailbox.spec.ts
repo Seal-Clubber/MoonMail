@@ -227,6 +227,7 @@ async function mailboxFixture(
             [firstId, READ | STAR],
             ["note-02", ARCHIVE],
           ],
+          favourites: ["home"],
           sort: "subject",
           density: "compact",
         },
@@ -871,5 +872,85 @@ test("writing from a postbox includes encrypted Sent in review and changing that
   await expect(page.locator(".review")).toContainText(
     "No recoverable sender copy",
   );
+  await assertReadOnly(page, writes);
+});
+
+test("bulk selection stages consistent read and archive changes and discard restores saved state", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(page, "note-01", true);
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page);
+  await page
+    .getByRole("button", { name: "Load mailbox settings", exact: true })
+    .click();
+  await page
+    .getByRole("checkbox", { name: "Select letter note-10", exact: true })
+    .check();
+  await page
+    .getByRole("checkbox", { name: "Select letter note-11", exact: true })
+    .check();
+  await page
+    .getByRole("button", { name: "Mark selected read", exact: true })
+    .click();
+  const folders = page.getByRole("navigation", { name: "Mailbox folders" });
+  await folders.getByRole("button", { name: /Unread/ }).click();
+  await expect(
+    page.getByRole("checkbox", { name: "Select letter note-10", exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("checkbox", { name: "Select this page", exact: true })
+    .check();
+  await expect(
+    page.getByRole("button", { name: "Archive selected", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Archive selected", exact: true })
+    .click();
+  await expect(page.getByText("0 selected", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Unsaved changes · this session only", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Discard unsaved changes", exact: true })
+    .click();
+  await expect(folders.getByRole("button", { name: /Inbox/ })).toContainText(
+    "26",
+  );
+  await expect(folders.getByRole("button", { name: /Unread/ })).toContainText(
+    "25",
+  );
+  await assertReadOnly(page, writes);
+});
+test("favourites recover encrypted, stage edits and lead the recipient picker", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(page, "note-01", true);
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page);
+  await page
+    .getByRole("button", { name: "Load mailbox settings", exact: true })
+    .click();
+  await page.locator(".mailbox-contacts summary").click();
+  const favourite = page.getByRole("button", {
+    name: "Favourite Moonlit home",
+    exact: true,
+  });
+  await expect(favourite).toHaveAttribute("aria-pressed", "true");
+  await favourite.click();
+  await expect(favourite).toHaveAttribute("aria-pressed", "false");
+  await page
+    .getByRole("button", { name: "Discard unsaved changes", exact: true })
+    .click();
+  await expect(favourite).toHaveAttribute("aria-pressed", "true");
+  await page.locator(".mailbox-contact button").first().click();
+  await expect(
+    page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
+  ).toHaveValue("home");
+  await expect(
+    page.locator("#recipient-postbox optgroup").first(),
+  ).toHaveAttribute("label", "Favourite postboxes");
   await assertReadOnly(page, writes);
 });

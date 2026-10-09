@@ -12,6 +12,7 @@ import { browserStorage } from "../core/browser-storage";
 import { CopyField } from "./CopyField";
 import { MailReadNotice } from "./MailReadNotice";
 import { postboxNameError, POSTBOX_NAME_LIMIT } from "../core/postbox-name";
+import type { MailboxPreferences } from "../core/mailbox-state";
 import { MailboxWorkspace } from "./MailboxWorkspace";
 import type { Letter } from "../core/types";
 import { createPostboxLink } from "../core/postbox-links";
@@ -30,6 +31,8 @@ export function Postboxes({
   onOpen,
   onClose,
   onCompose,
+  onContact,
+  onPreferences,
   onRead,
   onReadSent,
   sentPlain,
@@ -56,6 +59,8 @@ export function Postboxes({
   onOpen: (letter: Envelope) => void;
   onClose: () => void;
   onCompose: (box: Postbox) => void;
+  onContact: (id: string, box: Postbox) => void;
+  onPreferences: (id: string, p: MailboxPreferences) => void;
   onRead: (letter: Envelope) => Promise<Letter>;
   onReadSent: (letter: Envelope) => Promise<Letter>;
   sentPlain: ReadonlyMap<string, Letter>;
@@ -714,6 +719,9 @@ export function Postboxes({
                   box.controller,
                 ])}
                 box={box}
+                boxes={boxes}
+                onContact={(id) => onContact(id, box)}
+                onPreferences={onPreferences}
                 stateAccess={{
                   wallet,
                   chain,

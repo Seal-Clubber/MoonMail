@@ -3,6 +3,7 @@ import { base64url, fromBase64url } from "./crypto";
 import { mailboxKey, openMailbox, sealMailboxStatePayload } from "./mailbox";
 export interface MailboxPreferences {
   marks: [string, number][];
+  favourites?: string[];
   sort: "chain" | "subject" | "gift";
   density: "comfortable" | "compact";
 }
@@ -43,12 +44,53 @@ export function preferences(value: unknown): MailboxPreferences {
     ids.add(entry[0]);
   }
   return {
+    favourites: favourites(p.favourites),
     marks: p.marks
       .map(([id, flags]) => [id, flags] as [string, number])
       .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
     sort: p.sort,
     density: p.density,
   };
+}
+function favourites(value: unknown): string[] {
+  if (value === undefined) return [];
+  if (
+    !Array.isArray(value) ||
+    value.length > 128 ||
+    value.some(
+      (id) =>
+        typeof id !== "string" ||
+        !id ||
+        new TextEncoder().encode(id).length > 64,
+    ) ||
+    new Set(value).size !== value.length
+  )
+    throw new Error("Invalid favourite postboxes");
+  return [...value].sort();
+}
+export function setMarks(
+  p: MailboxPreferences,
+  ids: string[],
+  bit: number,
+  enabled: boolean,
+) {
+  if (![READ, STAR, ARCHIVE].includes(bit))
+    throw new Error("Invalid mailbox action");
+  const map = new Map(p.marks);
+  for (const id of ids) {
+    const flags = enabled
+      ? (map.get(id) || 0) | bit
+      : (map.get(id) || 0) & ~bit;
+    if (flags) map.set(id, flags);
+    else map.delete(id);
+  }
+  return preferences({ ...p, marks: Array.from(map) });
+}
+export function toggleFavourite(p: MailboxPreferences, id: string) {
+  const ids = new Set(p.favourites || []);
+  if (ids.has(id)) ids.delete(id);
+  else ids.add(id);
+  return preferences({ ...p, favourites: Array.from(ids) });
 }
 export function toggleMark(p: MailboxPreferences, id: string, bit: number) {
   if (![READ, STAR, ARCHIVE].includes(bit))

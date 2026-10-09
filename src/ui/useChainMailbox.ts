@@ -12,6 +12,8 @@ import {
   sealPreferences,
   statePayload,
   toggleMark,
+  setMarks,
+  toggleFavourite,
   type MailboxPreferences,
 } from "../core/mailbox-state";
 import { browserStorage } from "../core/browser-storage";
@@ -119,6 +121,7 @@ export function useChainMailbox(box: Postbox, access?: MailboxAccess) {
     loaded,
     dirty,
     draft,
+    saved,
     fee,
     setFee,
     load: () =>
@@ -145,6 +148,22 @@ export function useChainMailbox(box: Postbox, access?: MailboxAccess) {
         } catch (error) {
           access?.onStatus((error as Error).message);
         }
+      }
+    },
+    markMany: (ids: string[], bit: number, enabled: boolean) => {
+      if (!loaded) return;
+      try {
+        setDraft(setMarks(draft, ids, bit, enabled));
+      } catch (error) {
+        access?.onStatus((error as Error).message);
+      }
+    },
+    favourite: (id: string) => {
+      if (!loaded) return;
+      try {
+        setDraft(toggleFavourite(draft, id));
+      } catch (error) {
+        access?.onStatus((error as Error).message);
       }
     },
     change: (patch: Partial<Pick<MailboxPreferences, "sort" | "density">>) => {

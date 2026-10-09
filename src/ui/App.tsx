@@ -1,5 +1,5 @@
 import { letterLimit } from "../core/config";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { GhostMark } from "./GhostMark";
 import { ActivityBook } from "./ActivityBook";
@@ -29,6 +29,8 @@ import type { ConnectedWallet } from "../core/wallet";
 import { SapientSession, sapientProvider } from "../core/sapient";
 import { PostOfficeClient } from "../core/chain";
 import { sealLetter, openLetter, assertEnvelopeSize } from "../core/crypto";
+import { recipientGroups } from "../core/contacts";
+import type { MailboxPreferences } from "../core/mailbox-state";
 import { draftEnvelopeSize } from "../core/letter-size";
 import {
   createGiftLink,
@@ -111,6 +113,14 @@ export function App() {
     () => new Map(),
   );
   const [saveSent, setSaveSent] = useState(true);
+  const [mailboxPreferences, setMailboxPreferences] = useState<
+    Map<string, MailboxPreferences>
+  >(() => new Map());
+  const rememberPreferences = useCallback(
+    (id: string, p: MailboxPreferences) =>
+      setMailboxPreferences((old) => new Map(old).set(id, p)),
+    [],
+  );
   const [mailboxReaderTarget, setMailboxReaderTarget] =
     useState<HTMLDivElement | null>(null);
   const inlinePostboxReader =
@@ -120,6 +130,7 @@ export function App() {
   useEffect(() => {
     setMailboxPlain(new Map());
     setSentPlain(new Map());
+    setMailboxPreferences(new Map());
   }, [wallet, d.network, d.registry, d.template]);
 
   const [mode, setMode] = useState<MailMode>("link"),
@@ -749,6 +760,7 @@ export function App() {
     setLetters([]);
     setMailboxPlain(new Map());
     setSentPlain(new Map());
+    setMailboxPreferences(new Map());
     setUnavailableLetterIds([]);
     setBoxes([]);
     setCursor("");
@@ -1077,6 +1089,15 @@ export function App() {
   const sendingBox = boxes.find(
     (p) => p.id === reply && p.controller === current?.account.owner_public_key,
   );
+  const contactHome =
+    sendingBox ||
+    boxes.find((p) => p.controller === current?.account.owner_public_key);
+  const contactGroups = recipientGroups(
+    boxes,
+    letters,
+    contactHome,
+    contactHome ? mailboxPreferences.get(contactHome.id)?.favourites : [],
+  );
   let sentDescriptor;
   try {
     const key = sendingBox && mailboxKey(sendingBox.encryptionKey);
@@ -1129,6 +1150,7 @@ export function App() {
     setWallet(undefined);
     setMailboxPlain(new Map());
     setSentPlain(new Map());
+    setMailboxPreferences(new Map());
     setClaimReview(undefined);
     secret.current?.fill(0);
     secret.current = undefined;
@@ -1985,14 +2007,31 @@ export function App() {
                     }}
                   >
                     <option value="">Choose a registered postbox</option>
-                    {boxes
-                      .filter((p) => p.discoverable || p.id === recipient)
-                      .map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.nickname}
-                          {!p.discoverable ? " · Unlisted" : ""} · {short(p.id)}
-                        </option>
-                      ))}
+                    {contactGroups.map(
+                      (group) =>
+                        !!group.boxes.length && (
+                          <optgroup key={group.label} label={group.label}>
+                            {group.boxes.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.nickname}
+                                {!p.discoverable ? " · Unlisted" : ""} ·{" "}
+                                {short(p.id)}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ),
+                    )}
+                    {recipient &&
+                      !contactGroups.some((g) =>
+                        g.boxes.some((p) => p.id === recipient),
+                      ) &&
+                      boxes
+                        .filter((p) => p.id === recipient)
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.nickname} · Unlisted · {short(p.id)}
+                          </option>
+                        ))}
                   </select>
                   <input
                     aria-label="Recipient postbox ID"
@@ -2328,6 +2367,11 @@ export function App() {
             onOpen={(e) => void task(() => openPostbox(e))}
             onClose={closeLetter}
             onCompose={composeFromPostbox}
+            onPreferences={rememberPreferences}
+            onContact={(id, box) => {
+              composeFromPostbox(box);
+              beginAddressedDraft(id);
+            }}
             onRead={readPostbox}
             onReadSent={readSent}
             sentPlain={sentPlain}

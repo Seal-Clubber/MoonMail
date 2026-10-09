@@ -3825,3 +3825,71 @@ footer {
     flex: 1;
   }
 }
+
+.mailbox-bulk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  border-block: 1px solid var(--line);
+}
+.mailbox-bulk label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.mailbox-bulk small {
+  flex-basis: 100%;
+  color: var(--muted);
+}
+.mailbox-bulk button {
+  font-size: 0.78rem;
+  padding: 6px 8px;
+}
+.mailbox-message {
+  position: relative;
+}
+.mailbox-select {
+  position: absolute;
+  left: 8px;
+  top: 16px;
+  z-index: 1;
+}
+.mailbox-message:has(.mailbox-select) .mailbox-message-open {
+  padding-left: 38px;
+}
+.mailbox-contacts {
+  margin-block: 20px;
+  font-size: 0.8rem;
+}
+.mailbox-contacts summary {
+  cursor: pointer;
+  line-height: 1.5;
+}
+.mailbox-contacts section {
+  margin-block: 16px;
+}
+.mailbox-contacts h3 {
+  font-size: 0.8rem;
+}
+.mailbox-contact {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 4px;
+}
+.mailbox-contact button {
+  min-width: 0;
+  padding: 8px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.mailbox-contact button:first-child {
+  flex: 1;
+}
+.mailbox-contact small {
+  display: block;
+  font-size: 0.65rem;
+}
+.mailbox-contact button[aria-pressed="true"] {
+  color: #ffd78b;
+}

@@ -6,6 +6,8 @@ import { sealMailbox, openMailbox } from "../src/core/mailbox";
 import {
   emptyPreferences,
   toggleMark,
+  setMarks,
+  toggleFavourite,
   preferences,
   sealPreferences,
   openPreferences,
@@ -60,6 +62,7 @@ test("encrypted preferences recover on a fresh device, bind revision and registr
         ["constructor", READ | STAR],
         ["__proto__", ARCHIVE],
       ] as [string, number][],
+      favourites: ["trusted-home", "private-friend"],
       sort: "gift" as const,
       density: "compact" as const,
     };
@@ -72,6 +75,7 @@ test("encrypted preferences recover on a fresh device, bind revision and registr
     expect(sealed).not.toContain("constructor");
     expect(sealed).not.toContain("__proto__");
     expect(sealed).not.toContain("compact");
+    expect(sealed).not.toContain("trusted-home");
     expect(
       await openPreferences(
         sealed,
@@ -260,30 +264,97 @@ test("the client decodes real engine BOR state and rejects wrong component roles
   ).toThrow();
 });
 
-
 test("real Esmeralda persisted empty optional arrays preserve office identity", async () => {
-  const { default: live } = await import("./fixtures/esmeralda-unified-root-persisted.json");
+  const { default: live } =
+    await import("./fixtures/esmeralda-unified-root-persisted.json");
   const { decodeOffice } = await import("../src/core/chain");
-  const deployment = { ...d, network: 38 as const, registry: live.registry,
-    template: live.template, envelopeTemplate: live.template,
-    capsule: { template: live.template, component: live.registry, resource: live.resource } };
-  expect(decodeOffice(live.state, deployment)).toEqual({letterRefs: [], postboxes: [], mailboxRefs: []});
+  const deployment = {
+    ...d,
+    network: 38 as const,
+    registry: live.registry,
+    template: live.template,
+    envelopeTemplate: live.template,
+    capsule: {
+      template: live.template,
+      component: live.registry,
+      resource: live.resource,
+    },
+  };
+  expect(decodeOffice(live.state, deployment)).toEqual({
+    letterRefs: [],
+    postboxes: [],
+    mailboxRefs: [],
+  });
   const malformed: unknown[] = structuredClone(live.state);
   malformed[6] = [[]];
-  expect(() => decodeOffice(malformed, deployment)).toThrow("Invalid unified post office");
+  expect(() => decodeOffice(malformed, deployment)).toThrow(
+    "Invalid unified post office",
+  );
 });
 
 test("persisted empty optional arrays remain absent in mailbox state", async () => {
   const { default: f } = await import("./fixtures/engine-unified-mailbox.json");
-  const { decodeOffice, decodeMailboxState, taggedAddress } = await import("../src/core/chain");
+  const { decodeOffice, decodeMailboxState, taggedAddress } =
+    await import("../src/core/chain");
   const template = f.template.replace(/^template_/, "");
-  const deployment = {...d, registry: f.registry, template, envelopeTemplate: template,
-    capsule: {template, component: f.registry, resource: taggedAddress(f.rootState[8], "resource")}};
+  const deployment = {
+    ...d,
+    registry: f.registry,
+    template,
+    envelopeTemplate: template,
+    capsule: {
+      template,
+      component: f.registry,
+      resource: taggedAddress(f.rootState[8], "resource"),
+    },
+  };
   const office = decodeOffice(f.rootState, deployment);
   const state: unknown[] = structuredClone(f.mailboxState);
   state[6] = [];
   if (state.length === 9) state[8] = [];
-  expect(decodeMailboxState(state, deployment, office.postboxes[0])).toEqual({revision: "2", ciphertext: "encrypted-revision-two"});
+  expect(decodeMailboxState(state, deployment, office.postboxes[0])).toEqual({
+    revision: "2",
+    ciphertext: "encrypted-revision-two",
+  });
   state[6] = [[]];
-  expect(() => decodeMailboxState(state, deployment, office.postboxes[0])).toThrow();
+  expect(() =>
+    decodeMailboxState(state, deployment, office.postboxes[0]),
+  ).toThrow();
+});
+
+test("bulk actions set rather than toggle flags, preserve other marks and reject excess atomically", () => {
+  let p = toggleMark(emptyPreferences(), "one", STAR | 0);
+  p = setMarks(p, ["one", "two"], READ, true);
+  expect(p.marks).toEqual([
+    ["one", READ | STAR],
+    ["two", READ],
+  ]);
+  expect(setMarks(p, ["one", "two"], READ, true)).toEqual(p);
+  expect(setMarks(p, ["one", "two"], READ, false).marks).toEqual([
+    ["one", STAR],
+  ]);
+  expect(() =>
+    setMarks(
+      p,
+      Array.from({ length: 513 }, (_, i) => `mail-${i}`),
+      ARCHIVE,
+      true,
+    ),
+  ).toThrow();
+  expect(p.marks).toHaveLength(2);
+  expect(() => setMarks(p, ["x"], 8, true)).toThrow();
+});
+test("legacy settings accept favourites defaults while damaged or excess contacts are rejected", () => {
+  expect(preferences(emptyPreferences()).favourites).toEqual([]);
+  const p = toggleFavourite(emptyPreferences(), "__proto__");
+  expect(p.favourites).toEqual(["__proto__"]);
+  expect(toggleFavourite(p, "__proto__").favourites).toEqual([]);
+  for (const favourites of [
+    ["same", "same"],
+    [""],
+    [3],
+    "friend",
+    Array.from({ length: 129 }, (_, i) => `friend-${i}`),
+  ])
+    expect(() => preferences({ ...p, favourites })).toThrow();
 });

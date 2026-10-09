@@ -2,7 +2,13 @@ import { useEffect, useRef, useState } from "react";
 import type { Envelope, Letter, Postbox } from "../core/types";
 import { useChainMailbox, type MailboxAccess } from "./useChainMailbox";
 import { hasSentCopy } from "../core/sent-mail";
-import { READ, STAR, ARCHIVE } from "../core/mailbox-state";
+import { recipientGroups } from "../core/contacts";
+import {
+  READ,
+  STAR,
+  ARCHIVE,
+  type MailboxPreferences,
+} from "../core/mailbox-state";
 import { AmountInput } from "./AmountInput";
 import { tari } from "./AmountInput";
 
@@ -36,8 +42,14 @@ export function MailboxWorkspace({
   onUnlock,
   onReaderTarget,
   stateAccess,
+  boxes,
+  onContact,
+  onPreferences,
 }: {
   stateAccess?: MailboxAccess;
+  boxes: Postbox[];
+  onContact: (id: string) => void;
+  onPreferences: (id: string, p: MailboxPreferences) => void;
   box: Postbox;
   letters: Envelope[];
   plain: ReadonlyMap<string, Letter>;
@@ -54,6 +66,13 @@ export function MailboxWorkspace({
 }) {
   const state = useChainMailbox(box, stateAccess);
   const marks = new Map(state.draft.marks);
+  const [checked, setChecked] = useState<string[]>([]);
+  const [contactQuery, setContactQuery] = useState("");
+  useEffect(() => {
+    if (state.saved) onPreferences(box.id, state.saved);
+  }, [box.id, state.saved, onPreferences]);
+  const contacts = recipientGroups(boxes, letters, box, state.draft.favourites);
+
   const availableFolders = state.loaded
     ? [
         ...folders,
@@ -64,6 +83,9 @@ export function MailboxWorkspace({
     : folders;
   const [folder, setFolder] = useState<Folder>("inbox");
   const [query, setQuery] = useState("");
+  useEffect(() => {
+    setChecked([]);
+  }, [folder, query, box.id, state.loaded]);
   const [localSort, setSort] = useState("chain");
   const sort = state.loaded ? state.draft.sort : localSort;
   useEffect(() => {
@@ -242,6 +264,59 @@ export function MailboxWorkspace({
             )}
           </div>
         )}
+        <details className="mailbox-contacts">
+          <summary>Contacts & favourite postboxes</summary>
+          <label>
+            Find a contact
+            <input
+              type="search"
+              value={contactQuery}
+              maxLength={160}
+              onChange={(e) => setContactQuery(e.target.value)}
+            />
+          </label>
+          {!state.loaded && (
+            <p>Load mailbox settings to recover or save favourites.</p>
+          )}
+          {contacts.map((group) => (
+            <section key={group.label} aria-label={group.label}>
+              <h3>{group.label}</h3>
+              {group.boxes
+                .filter((p) =>
+                  `${p.nickname} ${p.id}`
+                    .toLowerCase()
+                    .includes(contactQuery.toLowerCase()),
+                )
+                .map((p) => (
+                  <div className="mailbox-contact" key={p.id}>
+                    <button
+                      disabled={busy}
+                      onClick={() => onContact(p.id)}
+                      title={p.id}
+                    >
+                      {p.nickname}
+                      <small>{p.id}</small>
+                    </button>
+                    {state.loaded && (
+                      <button
+                        disabled={busy}
+                        aria-label={`Favourite ${p.nickname}`}
+                        aria-pressed={!!state.draft.favourites?.includes(p.id)}
+                        onClick={() => state.favourite(p.id)}
+                      >
+                        ☆
+                      </button>
+                    )}
+                  </div>
+                ))}
+              {!group.boxes.length && <p>None yet</p>}
+            </section>
+          ))}
+          <p>
+            Names can be shared by strangers. Verify the postbox ID with your
+            friend.
+          </p>
+        </details>
         <p className="mailbox-device-note">
           Mail and gift states come from Ootle. Reconnect the same Sapient
           wallet on another device to recover your postboxes.
@@ -314,6 +389,63 @@ export function MailboxWorkspace({
             delivery details only.
           </p>
         )}
+        {state.loaded && folder !== "sent" && (
+          <div className="mailbox-bulk" aria-label="Bulk message actions">
+            <label>
+              <input
+                type="checkbox"
+                checked={
+                  !!visible.length &&
+                  visible.every((e) => checked.includes(e.id))
+                }
+                disabled={busy || !visible.length}
+                onChange={(event) =>
+                  setChecked(
+                    event.target.checked
+                      ? [...new Set([...checked, ...visible.map((e) => e.id)])]
+                      : checked.filter(
+                          (id) => !visible.some((e) => e.id === id),
+                        ),
+                  )
+                }
+              />{" "}
+              Select this page
+            </label>
+            <span role="status">{checked.length} selected</span>
+            {!!checked.length && (
+              <>
+                {[
+                  ["Mark selected read", READ, true],
+                  ["Mark selected unread", READ, false],
+                  ["Star selected", STAR, true],
+                  ["Unstar selected", STAR, false],
+                  ["Archive selected", ARCHIVE, true],
+                  ["Move selected to inbox", ARCHIVE, false],
+                ].map(([label, bit, enabled]) => (
+                  <button
+                    key={String(label)}
+                    disabled={busy}
+                    onClick={() => {
+                      state.markMany(
+                        checked.filter((id) => found.some((e) => e.id === id)),
+                        Number(bit),
+                        Boolean(enabled),
+                      );
+                      setChecked([]);
+                      onClose();
+                    }}
+                  >
+                    {String(label)}
+                  </button>
+                ))}
+                <button onClick={() => setChecked([])}>Clear selection</button>
+              </>
+            )}
+            <small>
+              Changes stay pending until you save mailbox changes on Ootle.
+            </small>
+          </div>
+        )}
         <p className="mailbox-range" ref={range} tabIndex={-1} role="status">
           {found.length
             ? `${(currentPage - 1) * 12 + 1}–${Math.min(currentPage * 12, found.length)} of ${found.length} loaded letters`
@@ -328,6 +460,23 @@ export function MailboxWorkspace({
                 className={`mailbox-message ${isSelected ? "selected" : ""}`}
                 key={e.id}
               >
+                {state.loaded && folder !== "sent" && (
+                  <label className="mailbox-select">
+                    <input
+                      type="checkbox"
+                      disabled={busy}
+                      checked={checked.includes(e.id)}
+                      aria-label={`Select letter ${e.id}`}
+                      onChange={(event) =>
+                        setChecked(
+                          event.target.checked
+                            ? [...checked, e.id]
+                            : checked.filter((id) => id !== e.id),
+                        )
+                      }
+                    />
+                  </label>
+                )}
                 <button
                   className="mailbox-message-open"
                   data-envelope-id={e.id}
