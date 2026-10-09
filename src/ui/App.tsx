@@ -1201,7 +1201,7 @@ export function App() {
       .map((e) => [e.id, sampleLetter(e.id)!.subject]),
   );
   return (
-    <div className="app-shell">
+    <div className={`app-shell ${view === "postboxes" ? "inbox-layout" : ""}`}>
       <div className="haunting" aria-hidden="true">
         <div className="haunting-mist" />
         <span className="haunting-mote" />

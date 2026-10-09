@@ -315,6 +315,7 @@ async function connect(page: Page) {
   ).toHaveValue("home");
 }
 async function unlock(page: Page) {
+  await page.locator(".mailbox-view-access > summary").click();
   await page
     .getByRole("checkbox", {
       name: "I understand the account-wide private view permission",
@@ -368,6 +369,21 @@ test("chain-backed mailbox handles 27 letters, gift folders, search, sent scope 
   const writes = await mailboxFixture(page);
   await page.goto("./#/postboxes");
   await connect(page);
+  const viewport = page.viewportSize()!;
+  const workspace = await page.locator(".mailbox-workspace").boundingBox();
+  expect(workspace).not.toBeNull();
+  expect(workspace!.width).toBeGreaterThan(viewport.width - 70);
+  if (viewport.width > 900) {
+    expect(workspace!.y).toBeLessThan(viewport.height * 0.35);
+    expect(workspace!.height).toBeGreaterThan(viewport.height * 0.7);
+  }
+  await expect(page.locator(".mailbox-view-access")).not.toHaveAttribute(
+    "open",
+    "",
+  );
+  await page.screenshot({
+    path: test.info().outputPath("inbox-full-page.png"),
+  });
   const folders = page.getByRole("navigation", { name: "Mailbox folders" });
   await expect(folders.getByRole("button", { name: /Inbox/ })).toContainText(
     "27",

@@ -1,6 +1,6 @@
 # Your wallet-controlled mailbox
 
-My inbox now gives each owned Sapient postbox a folder sidebar, searchable letter list and reading pane. It uses the existing on-chain post office; there is no GhostDrop account server or mailbox database.
+My inbox gives each owned Sapient postbox a full-width mail workspace with a folder sidebar, searchable letter list and reading pane. A compact toolbar keeps postbox selection, refresh and editing near the top; address details sit below the mail. Desktop folders, message rows and reading pane scroll independently. It uses the existing on-chain post office; there is no GhostDrop account server or mailbox database.
 
 ## What follows you to another device
 
@@ -12,7 +12,7 @@ Sent includes loaded on-chain letters whose sender is the postbox controller and
 
 ## Reading and writing
 
-Approve postbox view access before unlocking previews. The existing permission covers the connected account's private output summaries, including other amounts and memos; it does not expose seed or signing keys. Unlocking reads existing recovery state and decrypts loaded letters. It sends no transaction. Subjects and body previews stay in application memory for the wallet session, and are cleared on disconnect, account change or post office change. They are not written to localStorage, sessionStorage or the delivery journal. Another device decrypts its own copy after permission approval.
+Expand Unlock private mail and approve postbox view access before unlocking previews. Setup and rotation keep that consent panel open. The existing permission covers the connected account's private output summaries, including other amounts and memos; it does not expose seed or signing keys. Unlocking reads existing recovery state and decrypts loaded letters. It sends no transaction. Subjects and body previews stay in application memory for the wallet session, and are cleared on disconnect, account change or post office change. They are not written to localStorage, sessionStorage or the delivery journal. Another device decrypts its own copy after permission approval.
 
 Search matches public IDs, sender/routing keys and the subjects and bodies unlocked in the current session. It cannot search ciphertext. Sort by registry order, unlocked subject or original gift amount. Lists show twelve matching letters per page.
 

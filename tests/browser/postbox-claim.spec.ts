@@ -172,6 +172,7 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
       await page
         .getByRole("combobox", { name: "My postboxes", exact: true })
         .selectOption("box");
+      await page.locator(".mailbox-view-access > summary").click();
       await expect(
         page.getByText("Opening a letter does not send a transaction.", {
           exact: false,

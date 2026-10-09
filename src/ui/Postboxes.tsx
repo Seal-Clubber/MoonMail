@@ -317,15 +317,21 @@ export function Postboxes({
     onActivity();
   }
   return (
-    <section className="page-panel inbox-page">
-      <span className="kicker">YOUR PRIVATE POST OFFICE</span>
-      <h1>
-        Your <em>haunted inbox.</em>
-      </h1>
-      <p>
-        A quiet place for letters meant just for you. Your Sapient wallet
-        unlocks your postboxes, even when you reconnect on another device.
-      </p>
+    <section
+      className={`page-panel inbox-page ${box && !editing ? "mailbox-open" : ""}`}
+    >
+      <header className="inbox-heading">
+        <span className="kicker">YOUR PRIVATE POST OFFICE</span>
+        <h1>
+          Your <em>haunted inbox.</em>
+        </h1>
+      </header>
+      {(!box || editing) && (
+        <p>
+          A quiet place for letters meant just for you. Your Sapient wallet
+          unlocks your postboxes, even when you reconnect on another device.
+        </p>
+      )}
       {!wallet ? (
         <div className="inbox-welcome">
           <div className="welcome-ghost" aria-hidden="true">
@@ -345,23 +351,44 @@ export function Postboxes({
         </div>
       ) : (
         <>
-          {owned.length > 0 && (
-            <label>
-              My postboxes
-              <select
+          <div className="inbox-toolbar">
+            {owned.length > 0 && (
+              <label>
+                My postboxes
+                <select
+                  disabled={busy}
+                  value={selected}
+                  onChange={(e) => choose(e.target.value)}
+                >
+                  <option value="">Select a postbox</option>
+                  {owned.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nickname} · {p.id}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
+            <div className="actions">
+              <button
+                onClick={() => {
+                  choose("");
+                  setEditing(true);
+                }}
                 disabled={busy}
-                value={selected}
-                onChange={(e) => choose(e.target.value)}
               >
-                <option value="">Select a postbox</option>
-                {owned.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nickname} · {p.id}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
+                {owned.length ? "Create another postbox" : "Create my postbox"}
+              </button>
+              <button onClick={() => void task(onRefresh)} disabled={busy}>
+                Refresh postboxes & inbox
+              </button>
+              {box && (
+                <button onClick={() => setEditing(true)} disabled={busy}>
+                  Edit selected postbox
+                </button>
+              )}
+            </div>
+          </div>
           {!owned.length && !editing && (
             <div className="info">
               <h2>Your first postbox awaits.</h2>
@@ -372,77 +399,61 @@ export function Postboxes({
               </p>
             </div>
           )}
-          <div className="actions">
-            <button
-              onClick={() => {
-                choose("");
-                setEditing(true);
-              }}
-              disabled={busy}
-            >
-              {owned.length ? "Create another postbox" : "Create my postbox"}
-            </button>
-            <button onClick={() => void task(onRefresh)} disabled={busy}>
-              Refresh postboxes & inbox
-            </button>
-            {box && (
-              <button onClick={() => setEditing(true)} disabled={busy}>
-                Edit selected postbox
-              </button>
-            )}
-          </div>
           {wallet instanceof SapientSession &&
             (editing || box || prepared) &&
             !viewApproved && (
-              <div className="info">
-                <h3>Let Sapient unlock your letters</h3>
-                <p>
-                  Postbox recovery needs your permission. This lets GhostDrop
-                  read the connected account's private output summaries,
-                  including amounts and memos for other resources. It does not
-                  reveal your wallet seed or signing keys.{" "}
-                  {editing && (!box || rotating)
-                    ? "This permission comes before the two transaction approvals."
-                    : "Approve this permission to read your private mail. Opening a letter does not send a transaction."}
-                </p>
-                <label className="checkbox">
-                  <input
-                    type="checkbox"
-                    checked={viewAcknowledged}
-                    disabled={busy}
-                    onChange={(e) => setViewAcknowledged(e.target.checked)}
-                  />
-                  I understand the account-wide private view permission
-                </label>
-                <button
-                  disabled={
-                    busy ||
-                    !viewAcknowledged ||
-                    !(
-                      enabled ||
-                      prepared?.capsule?.descriptor.recovery ===
-                        "sapient-capsule-1" ||
-                      (box &&
-                        inbox.some(
-                          (e) =>
-                            "recovery" in e.payload &&
-                            e.payload.recovery === "sapient-capsule-1",
-                        ))
-                    )
-                  }
-                  onClick={() =>
-                    void task(async () => {
-                      await wallet.requestPostboxViewAccess();
-                      setViewApproved(true);
-                      onStatus(
-                        "Sapient private view access approved. Disconnect to revoke this site's wallet access.",
-                      );
-                    })
-                  }
-                >
-                  Approve postbox view access
-                </button>
-              </div>
+              <details className="mailbox-view-access" open={editing || !box}>
+                <summary>Unlock private mail · permission required</summary>
+                <div className="info">
+                  <h3>Let Sapient unlock your letters</h3>
+                  <p>
+                    Postbox recovery needs your permission. This lets GhostDrop
+                    read the connected account's private output summaries,
+                    including amounts and memos for other resources. It does not
+                    reveal your wallet seed or signing keys.{" "}
+                    {editing && (!box || rotating)
+                      ? "This permission comes before the two transaction approvals."
+                      : "Approve this permission to read your private mail. Opening a letter does not send a transaction."}
+                  </p>
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={viewAcknowledged}
+                      disabled={busy}
+                      onChange={(e) => setViewAcknowledged(e.target.checked)}
+                    />
+                    I understand the account-wide private view permission
+                  </label>
+                  <button
+                    disabled={
+                      busy ||
+                      !viewAcknowledged ||
+                      !(
+                        enabled ||
+                        prepared?.capsule?.descriptor.recovery ===
+                          "sapient-capsule-1" ||
+                        (box &&
+                          inbox.some(
+                            (e) =>
+                              "recovery" in e.payload &&
+                              e.payload.recovery === "sapient-capsule-1",
+                          ))
+                      )
+                    }
+                    onClick={() =>
+                      void task(async () => {
+                        await wallet.requestPostboxViewAccess();
+                        setViewApproved(true);
+                        onStatus(
+                          "Sapient private view access approved. Disconnect to revoke this site's wallet access.",
+                        );
+                      })
+                    }
+                  >
+                    Approve postbox view access
+                  </button>
+                </div>
+              </details>
             )}
           {!editing && recoverySetups.length > 0 && (
             <div>
@@ -684,47 +695,6 @@ export function Postboxes({
             </form>
           )}
           {box && (
-            <details className="mailbox-address-settings">
-              <summary>Postbox address & settings</summary>
-              <article className="postbox">
-                <h2>{box.nickname}</h2>
-                <CopyField
-                  label="My postbox ID"
-                  buttonLabel="Copy my postbox ID"
-                  copiedMessage="Postbox ID copied. Share it with a friend so they can write to you."
-                  value={box.id}
-                />
-                {invitationLink && (
-                  <CopyField
-                    label="My postbox invitation"
-                    buttonLabel="Copy postbox invitation"
-                    copiedMessage="Postbox invitation copied. Send it to a friend so they can choose you as their recipient."
-                    value={invitationLink}
-                    multiline
-                  />
-                )}
-                <p className="fine-print">
-                  Share this public address with a friend. It lets them write to
-                  you, including when your postbox is unlisted; it gives no
-                  access to your wallet or inbox.
-                </p>
-                <p>
-                  {box.discoverable ? "Visible in the directory" : "Unlisted"} ·
-                  Controlling account {account?.account.name}
-                </p>
-                <details className="advanced">
-                  <summary>About key rotation</summary>
-                  <p className="fine-print">
-                    Rotation affects new mail. Historical key versions remain
-                    recoverable through their original recovery route. Rotation
-                    changes only the encryption key; save nickname and listing
-                    changes separately.
-                  </p>
-                </details>
-              </article>
-            </details>
-          )}
-          {box && (
             <>
               <MailReadNotice
                 ids={unavailableLetterIds}
@@ -780,6 +750,47 @@ export function Postboxes({
                 </button>
               )}
             </>
+          )}
+          {box && (
+            <details className="mailbox-address-settings">
+              <summary>Postbox address & settings</summary>
+              <article className="postbox">
+                <h2>{box.nickname}</h2>
+                <CopyField
+                  label="My postbox ID"
+                  buttonLabel="Copy my postbox ID"
+                  copiedMessage="Postbox ID copied. Share it with a friend so they can write to you."
+                  value={box.id}
+                />
+                {invitationLink && (
+                  <CopyField
+                    label="My postbox invitation"
+                    buttonLabel="Copy postbox invitation"
+                    copiedMessage="Postbox invitation copied. Send it to a friend so they can choose you as their recipient."
+                    value={invitationLink}
+                    multiline
+                  />
+                )}
+                <p className="fine-print">
+                  Share this public address with a friend. It lets them write to
+                  you, including when your postbox is unlisted; it gives no
+                  access to your wallet or inbox.
+                </p>
+                <p>
+                  {box.discoverable ? "Visible in the directory" : "Unlisted"} ·
+                  Controlling account {account?.account.name}
+                </p>
+                <details className="advanced">
+                  <summary>About key rotation</summary>
+                  <p className="fine-print">
+                    Rotation affects new mail. Historical key versions remain
+                    recoverable through their original recovery route. Rotation
+                    changes only the encryption key; save nickname and listing
+                    changes separately.
+                  </p>
+                </details>
+              </article>
+            </details>
           )}
         </>
       )}
