@@ -12,6 +12,8 @@ import { browserStorage } from "../core/browser-storage";
 import { CopyField } from "./CopyField";
 import { MailReadNotice } from "./MailReadNotice";
 import { postboxNameError, POSTBOX_NAME_LIMIT } from "../core/postbox-name";
+import { MailboxWorkspace } from "./MailboxWorkspace";
+import type { Letter } from "../core/types";
 import { createPostboxLink } from "../core/postbox-links";
 
 export function Postboxes({
@@ -26,6 +28,12 @@ export function Postboxes({
   onConnect,
   onActivity,
   onOpen,
+  onClose,
+  onCompose,
+  onRead,
+  plain,
+  activeId,
+  onReaderTarget,
   onRefresh,
   onMore,
   unavailableLetterIds,
@@ -44,6 +52,12 @@ export function Postboxes({
   onConnect: () => void;
   onActivity: () => void;
   onOpen: (letter: Envelope) => void;
+  onClose: () => void;
+  onCompose: (box: Postbox) => void;
+  onRead: (letter: Envelope) => Promise<Letter>;
+  plain: Record<string, Letter>;
+  activeId?: string;
+  onReaderTarget: (target: HTMLDivElement | null) => void;
   onRefresh: () => Promise<void>;
   onMore: () => Promise<void>;
   hasMore: boolean;
@@ -164,6 +178,7 @@ export function Postboxes({
     );
   });
   function choose(id: string) {
+    onClose();
     setSelected(id);
     const p = owned.find((p) => p.id === id);
     setNickname(p?.nickname || "");
@@ -303,7 +318,7 @@ export function Postboxes({
   }
   return (
     <section className="page-panel inbox-page">
-      <span className="kicker">YOUR PRIVATE CORNER</span>
+      <span className="kicker">YOUR PRIVATE POST OFFICE</span>
       <h1>
         Your <em>haunted inbox.</em>
       </h1>
@@ -669,76 +684,84 @@ export function Postboxes({
             </form>
           )}
           {box && (
-            <article className="postbox">
-              <h2>{box.nickname}</h2>
-              <CopyField
-                label="My postbox ID"
-                buttonLabel="Copy my postbox ID"
-                copiedMessage="Postbox ID copied. Share it with a friend so they can write to you."
-                value={box.id}
-              />
-              {invitationLink && (
+            <details className="mailbox-address-settings">
+              <summary>Postbox address & settings</summary>
+              <article className="postbox">
+                <h2>{box.nickname}</h2>
                 <CopyField
-                  label="My postbox invitation"
-                  buttonLabel="Copy postbox invitation"
-                  copiedMessage="Postbox invitation copied. Send it to a friend so they can choose you as their recipient."
-                  value={invitationLink}
-                  multiline
+                  label="My postbox ID"
+                  buttonLabel="Copy my postbox ID"
+                  copiedMessage="Postbox ID copied. Share it with a friend so they can write to you."
+                  value={box.id}
                 />
-              )}
-              <p className="fine-print">
-                Share this public address with a friend. It lets them write to
-                you, including when your postbox is unlisted; it gives no access
-                to your wallet or inbox.
-              </p>
-              <p>
-                {box.discoverable ? "Visible in the directory" : "Unlisted"} ·
-                Controlling account {account?.account.name}
-              </p>
-              <details className="advanced">
-                <summary>About key rotation</summary>
+                {invitationLink && (
+                  <CopyField
+                    label="My postbox invitation"
+                    buttonLabel="Copy postbox invitation"
+                    copiedMessage="Postbox invitation copied. Send it to a friend so they can choose you as their recipient."
+                    value={invitationLink}
+                    multiline
+                  />
+                )}
                 <p className="fine-print">
-                  Rotation affects new mail. Historical key versions remain
-                  recoverable through their original recovery route. Rotation
-                  changes only the encryption key; save nickname and listing
-                  changes separately.
+                  Share this public address with a friend. It lets them write to
+                  you, including when your postbox is unlisted; it gives no
+                  access to your wallet or inbox.
                 </p>
-              </details>
-            </article>
+                <p>
+                  {box.discoverable ? "Visible in the directory" : "Unlisted"} ·
+                  Controlling account {account?.account.name}
+                </p>
+                <details className="advanced">
+                  <summary>About key rotation</summary>
+                  <p className="fine-print">
+                    Rotation affects new mail. Historical key versions remain
+                    recoverable through their original recovery route. Rotation
+                    changes only the encryption key; save nickname and listing
+                    changes separately.
+                  </p>
+                </details>
+              </article>
+            </details>
           )}
           {box && (
             <>
-              <h2>Private inbox</h2>
               <MailReadNotice
                 ids={unavailableLetterIds}
                 busy={busy || loadingMore}
                 onRetry={() => void task(onRefresh)}
               />
-              {inbox.length ? (
-                inbox.map((e) => (
-                  <button
-                    className="postbox"
-                    key={e.id}
-                    onClick={() => onOpen(e)}
-                    disabled={busy}
-                  >
-                    <span aria-hidden="true">✉</span> Sealed letter ·{" "}
-                    {e.id.length > 18 ? e.id.slice(0, 8) + "…" : e.id}
-                    <small>
-                      {e.claimed
-                        ? "Gift collected"
-                        : BigInt(e.gift) > 0n
-                          ? `${tari(e.gift)} TARI gift inside`
-                          : "A private note"}
-                    </small>
-                  </button>
-                ))
-              ) : (
-                <p className="quiet-state">
-                  No private letters on this page yet. Copy your postbox
-                  invitation and invite a friend to write.
-                </p>
-              )}
+              <MailboxWorkspace
+                key={JSON.stringify([
+                  deployment.network,
+                  deployment.registry,
+                  deployment.template,
+                  box.id,
+                  box.controller,
+                ])}
+                box={box}
+                letters={letters}
+                plain={plain}
+                activeId={activeId}
+                busy={busy}
+                canUnlock={!(wallet instanceof SapientSession) || viewApproved}
+                onOpen={onOpen}
+                onClose={onClose}
+                onCompose={() => onCompose(box)}
+                onUnlock={(mail) =>
+                  void task(async () => {
+                    let opened = 0;
+                    for (const e of mail) {
+                      await onRead(e);
+                      opened++;
+                    }
+                    onStatus(
+                      `${opened} letters unlocked for this wallet session. No transaction was sent.`,
+                    );
+                  })
+                }
+                onReaderTarget={onReaderTarget}
+              />
               {hasMore && (
                 <button
                   disabled={busy || loadingMore}

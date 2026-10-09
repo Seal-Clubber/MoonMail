@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { GhostMark } from "./GhostMark";
 import { ActivityBook } from "./ActivityBook";
 import {
@@ -101,8 +102,17 @@ export function App() {
     [active, setActive] = useState<Envelope>(),
     [plain, setPlain] = useState<Letter>(),
     [ghost, setGhost] = useState(false);
+  const [mailboxPlain, setMailboxPlain] = useState<Record<string, Letter>>({});
+  const [mailboxReaderTarget, setMailboxReaderTarget] =
+    useState<HTMLDivElement | null>(null);
+  const inlinePostboxReader =
+    view === "postboxes" && active?.mode === "postbox";
   const activeSample = !!active && sampleMail.includes(active);
   const [showSampleActivity, setShowSampleActivity] = useState(false);
+  useEffect(() => {
+    setMailboxPlain({});
+  }, [wallet, d.network, d.registry, d.template]);
+
   const [mode, setMode] = useState<MailMode>("link"),
     [subject, setSubject] = useState(""),
     [body, setBody] = useState(""),
@@ -562,9 +572,12 @@ export function App() {
     claimReviewWasOpen.current = !!claimReview;
   }, [claimReview]);
   useEffect(() => {
-    if (plain && active?.mode === "postbox" && !connect)
-      document.getElementById("letter-title")?.focus({ preventScroll: true });
-  }, [plain, active?.id, active?.mode, connect]);
+    if (plain && active?.mode === "postbox" && !connect) {
+      const title = document.getElementById("letter-title");
+      title?.focus({ preventScroll: true });
+      if (inlinePostboxReader) title?.scrollIntoView({ block: "nearest" });
+    }
+  }, [plain, active?.id, active?.mode, connect, inlinePostboxReader]);
   useEffect(
     () => () => {
       secret.current?.fill(0);
@@ -572,7 +585,7 @@ export function App() {
     [],
   );
   useEffect(() => {
-    if (!connect && !active) {
+    if (!connect && (!active || inlinePostboxReader)) {
       modalReturnFocus.current = null;
       return;
     }
@@ -650,7 +663,53 @@ export function App() {
         previous.focus();
       else document.getElementById("main-content")?.focus();
     };
-  }, [connect, active?.id]);
+  }, [connect, active?.id, inlinePostboxReader]);
+  useEffect(() => {
+    if (!inlinePostboxReader || connect) return;
+    const escape = (event: KeyboardEvent) => {
+      // Keep keyboard focus with an approval in progress, while ordinary reading
+      // leaves the folder sidebar and message list freely reachable.
+      if (event.key === "Tab" && modalBusy.current && claimReview) {
+        const reader = document.querySelector<HTMLElement>(".mailbox-letter");
+        if (!reader) return;
+        const controls = Array.from(
+          reader.querySelectorAll<HTMLElement>(
+            "button:not(:disabled),a[href],summary,[tabindex]",
+          ),
+        ).filter((el) => el.tabIndex >= 0 && el.getClientRects().length > 0);
+        const first = controls[0],
+          last = controls.at(-1);
+        if (!first) {
+          event.preventDefault();
+          reader.focus();
+        } else if (!reader.contains(document.activeElement)) {
+          event.preventDefault();
+          (event.shiftKey ? last : first)?.focus();
+        } else if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+      if (event.key === "Escape" && !modalBusy.current) {
+        event.preventDefault();
+        const id = active?.id;
+        closeLetter();
+        requestAnimationFrame(() => {
+          const row = Array.from(
+            document.querySelectorAll<HTMLButtonElement>(
+              ".mailbox-message-open",
+            ),
+          ).find((button) => button.dataset.envelopeId === id);
+          row?.focus();
+        });
+      }
+    };
+    document.addEventListener("keydown", escape);
+    return () => document.removeEventListener("keydown", escape);
+  }, [inlinePostboxReader, connect, active?.id, !!claimReview]);
   function changeDeployment(
     change: Partial<Deployment>,
     reviewedProfile = false,
@@ -678,6 +737,7 @@ export function App() {
     setChain(undefined);
     setReadState("idle");
     setLetters([]);
+    setMailboxPlain({});
     setUnavailableLetterIds([]);
     setBoxes([]);
     setCursor("");
@@ -872,10 +932,9 @@ export function App() {
       if (sequence === readSequence.current) setLoadingMore(false);
     }
   }
-  async function openPostbox(envelope: Envelope) {
-    closeLetter();
-    setActive(envelope);
-    const sequence = openSequence.current;
+  async function readPostbox(envelope: Envelope): Promise<Letter> {
+    const session = connectionSequence.current;
+    const deployment = deploymentRevision.current;
     const owner = wallet?.accounts.find(
       (a) => a.account.owner_public_key === envelope.claimAuthority,
     );
@@ -906,7 +965,44 @@ export function App() {
             envelope.id,
             payload,
           );
+    if (
+      session !== connectionSequence.current ||
+      deployment !== deploymentRevision.current
+    )
+      throw new Error(
+        "Wallet session changed. Reconnect before unlocking your mail.",
+      );
+    setMailboxPlain((previous) => ({ ...previous, [envelope.id]: letter }));
+    return letter;
+  }
+  async function openPostbox(envelope: Envelope) {
+    closeLetter();
+    setActive(envelope);
+    const sequence = openSequence.current;
+    if (mailboxPlain[envelope.id]) {
+      setPlain(mailboxPlain[envelope.id]);
+      return;
+    }
+    const letter = await readPostbox(envelope);
     if (openSequence.current === sequence) setPlain(letter);
+  }
+  function composeFromPostbox(box: Postbox) {
+    const owner = wallet?.accounts.findIndex(
+      (a) => a.account.owner_public_key === box.controller,
+    );
+    if (owner === undefined || owner < 0) return;
+    draftSequence.current += 1;
+    closeLetter();
+    setAccount(owner);
+    setMode("postbox");
+    setReply(box.id);
+    setPrepared(undefined);
+    setLinkSaved(false);
+    focusAddressedDraft.current = true;
+    navigate("compose");
+    setStatus(
+      `Writing from ${box.nickname}. Your draft is kept; choose the recipient and review before sending. Your reply postbox ID will be public.`,
+    );
   }
   const hallLetters = preview
     ? sampleMail
@@ -952,6 +1048,7 @@ export function App() {
     openSequence.current += 1;
     if (revoke) wallet?.disconnect();
     setWallet(undefined);
+    setMailboxPlain({});
     setClaimReview(undefined);
     secret.current?.fill(0);
     secret.current = undefined;
@@ -2110,6 +2207,12 @@ export function App() {
             onActivity={() => navigate("activity")}
             writeBlocked={writeBlocked}
             onOpen={(e) => void task(() => openPostbox(e))}
+            onClose={closeLetter}
+            onCompose={composeFromPostbox}
+            onRead={readPostbox}
+            plain={mailboxPlain}
+            activeId={active?.mode === "postbox" ? active.id : undefined}
+            onReaderTarget={setMailboxReaderTarget}
             onRefresh={refresh}
             onMore={loadMore}
             unavailableLetterIds={unavailableLetterIds}
@@ -2611,476 +2714,516 @@ export function App() {
           </section>
         </div>
       )}
-      {active && !connect && (
-        <div className="modal-backdrop">
-          <section
-            className="modal letter-modal"
-            role="dialog"
-            aria-modal="true"
-            tabIndex={-1}
-            aria-labelledby="letter-title"
-          >
-            <button
-              className="close"
-              aria-label="Close letter"
-              disabled={busy}
-              onClick={closeLetter}
+      {active &&
+        !connect &&
+        (!inlinePostboxReader || mailboxReaderTarget) &&
+        (() => {
+          const reader = (
+            <div
+              className={
+                inlinePostboxReader ? "mailbox-reader-frame" : "modal-backdrop"
+              }
             >
-              ×
-            </button>
-            <span className="kicker">
-              {activeSample
-                ? "VISUAL PREVIEW"
-                : active.mode === "public"
-                  ? "PUBLIC LETTER"
-                  : "SEALED INVITATION"}
-            </span>
-            <h2 id="letter-title" tabIndex={-1}>
-              {plain?.subject || "A sealed little secret"}
-            </h2>
-            {plain ? (
-              <p className="letter-body">{plain.body}</p>
-            ) : (
-              <div className="sealed-state">
-                <span>⌘</span>
-                <p>
-                  {active.mode === "postbox"
-                    ? "This letter is sealed to its postbox. Connect the controlling wallet and use its account-scoped decrypt permission to open it."
-                    : "This letter is sealed. Only its complete private link can unlock its subject and contents."}
-                </p>
-                {active.mode === "postbox" &&
-                  wallet?.accounts.some(
-                    (account) =>
-                      account.account.owner_public_key ===
-                      active.claimAuthority,
-                  ) && (
-                    <>
-                      <button
-                        ref={inboxFocus.ref}
-                        aria-describedby={error ? "letter-error" : undefined}
-                        disabled={busy || !chain}
-                        onClick={() =>
-                          void task(() => {
-                            const opening = openPostbox(active);
-                            inboxFocus.remember();
-                            return opening;
-                          })
-                        }
-                      >
-                        {busy ? "Opening your letter…" : "Retry opening letter"}
-                      </button>
-                      <p className="fine-print">
-                        If Sapient needs view permission, close this letter and
-                        approve postbox view access in My inbox first.
-                      </p>
-                    </>
-                  )}
-              </div>
-            )}
-            {active.replyPostbox &&
-              boxes.some((p) => p.id === active.replyPostbox) && (
+              <section
+                className={`letter-modal ${inlinePostboxReader ? "mailbox-letter" : "modal"}`}
+                role={inlinePostboxReader ? "region" : "dialog"}
+                aria-modal={inlinePostboxReader ? undefined : true}
+                tabIndex={-1}
+                aria-labelledby="letter-title"
+              >
                 <button
+                  className="close"
+                  aria-label="Close letter"
                   disabled={busy}
-                  onClick={() =>
-                    beginAddressedDraft(
-                      active.replyPostbox!,
-                      plain?.subject || "Your letter",
-                    )
-                  }
+                  onClick={closeLetter}
                 >
-                  Reply to this spirit ↗
+                  ×
                 </button>
-              )}
-            <button aria-pressed={ghost} onClick={() => setGhost(!ghost)}>
-              ◈ Ghost View
-            </button>
-            {ghost && (
-              <div className="ghost-view">
-                <h3>
-                  {activeSample ? "Example payload" : "Stored chain payload"}
-                </h3>
-                <pre>{JSON.stringify(active.payload, null, 2)}</pre>
-                <p>
-                  Encryption hides the subject and body of sealed mail. This
-                  implementation uses revealed test TARI: amounts,
-                  sender/controller keys, timing and routing remain observable.
-                  Ghost View does not provide payment anonymity.
-                </p>
-              </div>
-            )}
-            {!activeSample && active.mode === "public" && (
-              <PublicLetterShare envelope={active} />
-            )}
-            {privateLink && (
-              <CopyField
-                label="Private link for this letter"
-                buttonLabel="Copy private link"
-                copiedMessage="Private link copied. Anyone with it can open this letter and collect an available gift."
-                multiline
-                value={privateLink}
-              />
-            )}
-            {!activeSample && BigInt(active.gift) > 0n && (
-              <div className="claim-panel">
-                {busy && claimReview && (
-                  <p role="status">
-                    {active.mode === "postbox"
-                      ? "Check Sapient for an approval request."
-                      : "Submitting gift collection."}{" "}
-                    Keep this letter open until the outcome is clear.
-                  </p>
-                )}
-                <h3>
-                  {active.claimed
-                    ? "Gift collected"
-                    : collectionPending && !busy
-                      ? "Collection pending"
-                      : "Collect the gift"}
-                </h3>
-                <p>
-                  {active.claimed || collectionPending
-                    ? "Gift amount:"
-                    : "You receive"}{" "}
-                  {tari(active.gift)} TARI. The sender set aside{" "}
-                  {tari(active.reserve)} TARI for collection fees.
-                </p>
-                {active.claimed && (
-                  <p role="status" className="fine-print">
-                    This gift has already been collected. You can still read the
-                    letter.
-                  </p>
-                )}
-                {collectionPending && !busy && (
-                  <div role="status" className="info">
-                    <p>Your collection is awaiting confirmation.</p>
-                    <p className="fine-print">
-                      A collected gift alone cannot confirm which account
-                      received it. Check the original transaction in Activity
-                      and your receiving account’s history before trying again.
+                <span className="kicker">
+                  {activeSample
+                    ? "VISUAL PREVIEW"
+                    : active.mode === "public"
+                      ? "PUBLIC LETTER"
+                      : active.mode === "postbox"
+                        ? "PRIVATE POSTBOX LETTER"
+                        : "SEALED INVITATION"}
+                </span>
+                <h2 id="letter-title" tabIndex={-1}>
+                  {plain?.subject || "A sealed little secret"}
+                </h2>
+                {plain ? (
+                  <p className="letter-body">{plain.body}</p>
+                ) : (
+                  <div className="sealed-state">
+                    <span>⌘</span>
+                    <p>
+                      {active.mode === "postbox"
+                        ? "This letter is sealed to its postbox. Connect the controlling wallet and use its account-scoped decrypt permission to open it."
+                        : "This letter is sealed. Only its complete private link can unlock its subject and contents."}
                     </p>
-                    <button
-                      onClick={() => {
-                        focusActivity.current = true;
-                        closeLetter();
-                        navigate("activity");
-                      }}
-                    >
-                      Check collection in Activity
-                    </button>
-                  </div>
-                )}
-                {!active.claimed && (!collectionPending || busy) && (
-                  <>
-                    {!wallet && (
-                      <div className="info">
-                        <p>
-                          Have Sapient? Connect to choose your receiving account
-                          automatically. You can also collect using a compatible
-                          address below.
-                        </p>
-                        <button
-                          disabled={busy || !!claimReview}
-                          onClick={() => setConnect(true)}
-                        >
-                          Connect Sapient to receive
-                        </button>
-                      </div>
-                    )}
-                    <div className="mode-switch">
-                      <button
-                        disabled={busy || !!claimReview}
-                        aria-pressed={destMode === "manual"}
-                        onClick={() => {
-                          setDestMode("manual");
-                          setAddress("");
-                          setDestination("");
-                        }}
-                      >
-                        Use another address
-                      </button>
-                      <button
-                        disabled={busy || !!claimReview || !wallet}
-                        aria-pressed={destMode === "wallet"}
-                        onClick={() => {
-                          setDestMode("wallet");
-                          setCreateAccount(false);
-                          if (current) {
-                            setAddress(current.address);
-                            setDestination(current.account.component_address);
-                          }
-                        }}
-                      >
-                        Choose from connected wallet
-                      </button>
-                    </div>
-                    {destMode === "wallet" &&
-                      wallet &&
-                      wallet.accounts.length > 1 && (
-                        <label>
-                          Receiving account
-                          <select
-                            disabled={busy || !!claimReview}
-                            onChange={(e) => {
-                              const a = wallet.accounts[Number(e.target.value)];
-                              setAddress(a.address);
-                              setDestination(a.account.component_address);
-                            }}
-                            defaultValue={account}
-                          >
-                            {wallet.accounts.map((a, i) => (
-                              <option key={i} value={i}>
-                                {a.account.name}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      )}
-                    {destMode === "wallet" && wallet?.accounts.length === 1 && (
-                      <div className="receiving-account">
-                        <p>Receiving in your connected Sapient account</p>
-                        <code>{address}</code>
-                      </div>
-                    )}
-                    {destMode === "manual" && (
-                      <>
-                        <label>
-                          Ootle receiving address
-                          <input
-                            disabled={busy || !!claimReview}
-                            value={address}
-                            onChange={(e) => setAddress(e.target.value)}
-                          />
-                        </label>
-                        {active.mode !== "postbox" && (
-                          <label className="check">
-                            <input
-                              type="checkbox"
-                              checked={createAccount}
-                              disabled={
-                                busy || !!claimReview || !claimsReady(d, true)
-                              }
-                              onChange={(e) => {
-                                setCreateAccount(e.target.checked);
-                                setDestination("");
-                              }}
-                            />
-                            Create a new receiving account
-                          </label>
-                        )}
-                        {!createAccount && (
-                          <label>
-                            Existing built-in account component
-                            <input
-                              disabled={busy || !!claimReview}
-                              value={destination}
-                              onChange={(e) => setDestination(e.target.value)}
-                            />
-                          </label>
-                        )}
-                      </>
-                    )}
-                    <p className="fine-print">
-                      {active.mode === "postbox" &&
-                      wallet?.kind === "sapient" &&
-                      active.claimProtocol === "sapient-proof-1" &&
-                      postboxClaimsReady(d, "sapient")
-                        ? `Sapient will ask you to approve a proof for this gift and destination. GhostDrop then submits the claim. You receive ${tari(active.gift)} TARI; collection fees come from the funded reserve of up to ${tari(active.reserve)} TARI. Your wallet needs no coins for this claim. The approval expires after at most 10 network epochs.`
-                        : active.mode === "postbox" &&
-                            wallet?.kind === "sapient"
-                          ? "Postbox collection is not enabled for this deployment. Your connected wallet must control this postbox."
-                          : createAccount
-                            ? "Use an Ootle address whose built-in account does not exist yet. The gift reserve pays account creation and collection fees; your receiving keys stay in your wallet."
-                            : "Guests may use an existing compatible account without connecting its wallet. L1 XTM addresses, raw keys and arbitrary components are unsupported."}
-                    </p>
-                    {!claimReview && (
-                      <button
-                        ref={claimReviewTrigger}
-                        className="primary"
-                        disabled={
-                          busy ||
-                          !chain ||
-                          !address ||
-                          writeBlocked ||
-                          (!createAccount && !destination) ||
-                          !(active.mode === "postbox"
-                            ? postboxClaimsReady(d, wallet?.kind ?? "sapient")
-                            : claimsReady(d, createAccount)) ||
-                          (active.mode === "postbox" &&
-                            !wallet?.accounts.some(
-                              (a) =>
-                                a.account.owner_public_key ===
-                                active.claimAuthority,
-                            )) ||
-                          (active.mode === "link" && !secret.current)
-                        }
-                        onClick={() =>
-                          void task(async () => {
-                            if (!chain) return;
-                            const sequence = openSequence.current;
-                            const reviewed = {
-                              address: address.trim(),
-                              destination: destination.trim(),
-                              createAccount,
-                            };
-                            setCheckingGift(true);
-                            try {
-                              let latest: Envelope;
-                              try {
-                                latest = await chain.readLetter(
-                                  active.id,
-                                  active.component,
-                                );
-                              } catch {
-                                if (sequence !== openSequence.current) return;
-                                throw new Error(
-                                  "Could not check this gift right now. Your letter and destination are still here; try Review gift collection again.",
-                                );
-                              }
-                              if (sequence !== openSequence.current) return;
-                              setActive(latest);
-                              setLetters((loaded) =>
-                                loaded.map((letter) =>
-                                  letter.id === latest.id &&
-                                  letter.component === latest.component
-                                    ? latest
-                                    : letter,
-                                ),
-                              );
-                              if (!latest.claimed) setClaimReview(reviewed);
-                            } finally {
-                              setCheckingGift(false);
-                            }
-                          })
-                        }
-                      >
-                        {checkingGift
-                          ? "Checking gift…"
-                          : "Review gift collection"}
-                      </button>
-                    )}
-                    {claimReview && (
-                      <section
-                        className="collection-review"
-                        aria-labelledby="collection-review-title"
-                      >
-                        <span className="kicker">ONE LAST LOOK</span>
-                        <h3 id="collection-review-title" tabIndex={-1}>
-                          Send this gift to your wallet?
-                        </h3>
-                        <dl>
-                          <dt>You receive</dt>
-                          <dd>{tari(active.gift)} test TARI</dd>
-                          <dt>Collection fee limit</dt>
-                          <dd>
-                            {tari(active.reserve)} TARI, from the sender’s
-                            reserve
-                          </dd>
-                          <dt>Network</dt>
-                          <dd>
-                            {d.network === 38
-                              ? "Esmeralda testnet"
-                              : `Test network ${d.network}`}
-                          </dd>
-                          <dt>Receiving address</dt>
-                          <dd>
-                            <code>{claimReview.address}</code>
-                          </dd>
-                          <dt>Receiving account</dt>
-                          <dd>
-                            {claimReview.createAccount ? (
-                              "Create a new built-in account for this address"
-                            ) : (
-                              <code>{claimReview.destination}</code>
-                            )}
-                          </dd>
-                        </dl>
-                        <p className="fine-print">
-                          {active.mode === "postbox"
-                            ? "Confirming asks Sapient to approve a proof for this gift and destination. Only then can GhostDrop submit the collection."
-                            : "Confirming submits the collection using this destination. No wallet connection or extra signature is required."}{" "}
-                          The gift goes to the address shown above. Check it
-                          carefully before confirming.
-                        </p>
-                        <div className="collection-actions">
+                    {active.mode === "postbox" &&
+                      wallet?.accounts.some(
+                        (account) =>
+                          account.account.owner_public_key ===
+                          active.claimAuthority,
+                      ) && (
+                        <>
                           <button
-                            disabled={busy}
-                            onClick={() => setClaimReview(undefined)}
-                          >
-                            Change destination
-                          </button>
-                          <button
-                            ref={collectionFocus.ref}
+                            ref={inboxFocus.ref}
                             aria-describedby={
                               error ? "letter-error" : undefined
                             }
-                            className="primary"
-                            disabled={
-                              busy || writeBlocked || !chain || active.claimed
-                            }
+                            disabled={busy || !chain}
                             onClick={() =>
-                              void task(async () => {
-                                collectionFocus.remember();
-                                const reviewed = claimReview;
-                                if (!chain || !reviewed) return;
-                                const owner = wallet?.accounts.find(
-                                  (a) =>
-                                    a.account.owner_public_key ===
-                                    active.claimAuthority,
-                                );
-                                const id =
-                                  active.mode === "postbox" && wallet && owner
-                                    ? await chain.claimPostbox(
-                                        wallet,
-                                        owner,
-                                        active,
-                                        reviewed.address,
-                                        reviewed.destination,
-                                        browserStorage,
-                                      )
-                                    : await chain.claim(
-                                        active,
-                                        reviewed.address,
-                                        reviewed.destination,
-                                        secret.current,
-                                        browserStorage,
-                                        reviewed.createAccount,
-                                      );
-                                setClaimReview(undefined);
-                                setStatus(
-                                  `Gift collection submitted. Close this letter and check Activity for confirmation. Transaction: ${id}.`,
-                                );
+                              void task(() => {
+                                const opening = openPostbox(active);
+                                inboxFocus.remember();
+                                return opening;
                               })
                             }
                           >
-                            {busy ? "Collecting…" : "Confirm & collect gift"}
+                            {busy
+                              ? "Opening your letter…"
+                              : "Retry opening letter"}
+                          </button>
+                          <p className="fine-print">
+                            If Sapient needs view permission, close this letter
+                            and approve postbox view access in My inbox first.
+                          </p>
+                        </>
+                      )}
+                  </div>
+                )}
+                {active.replyPostbox &&
+                  boxes.some((p) => p.id === active.replyPostbox) && (
+                    <button
+                      disabled={busy}
+                      onClick={() =>
+                        beginAddressedDraft(
+                          active.replyPostbox!,
+                          plain?.subject || "Your letter",
+                        )
+                      }
+                    >
+                      Reply to this spirit ↗
+                    </button>
+                  )}
+                <button aria-pressed={ghost} onClick={() => setGhost(!ghost)}>
+                  ◈ Ghost View
+                </button>
+                {ghost && (
+                  <div className="ghost-view">
+                    <h3>
+                      {activeSample
+                        ? "Example payload"
+                        : "Stored chain payload"}
+                    </h3>
+                    <pre>{JSON.stringify(active.payload, null, 2)}</pre>
+                    <p>
+                      Encryption hides the subject and body of sealed mail. This
+                      implementation uses revealed test TARI: amounts,
+                      sender/controller keys, timing and routing remain
+                      observable. Ghost View does not provide payment anonymity.
+                    </p>
+                  </div>
+                )}
+                {!activeSample && active.mode === "public" && (
+                  <PublicLetterShare envelope={active} />
+                )}
+                {privateLink && (
+                  <CopyField
+                    label="Private link for this letter"
+                    buttonLabel="Copy private link"
+                    copiedMessage="Private link copied. Anyone with it can open this letter and collect an available gift."
+                    multiline
+                    value={privateLink}
+                  />
+                )}
+                {!activeSample && BigInt(active.gift) > 0n && (
+                  <div className="claim-panel">
+                    {busy && claimReview && (
+                      <p role="status">
+                        {active.mode === "postbox"
+                          ? "Check Sapient for an approval request."
+                          : "Submitting gift collection."}{" "}
+                        Keep this letter open until the outcome is clear.
+                      </p>
+                    )}
+                    <h3>
+                      {active.claimed
+                        ? "Gift collected"
+                        : collectionPending && !busy
+                          ? "Collection pending"
+                          : "Collect the gift"}
+                    </h3>
+                    <p>
+                      {active.claimed || collectionPending
+                        ? "Gift amount:"
+                        : "You receive"}{" "}
+                      {tari(active.gift)} TARI. The sender set aside{" "}
+                      {tari(active.reserve)} TARI for collection fees.
+                    </p>
+                    {active.claimed && (
+                      <p role="status" className="fine-print">
+                        This gift has already been collected. You can still read
+                        the letter.
+                      </p>
+                    )}
+                    {collectionPending && !busy && (
+                      <div role="status" className="info">
+                        <p>Your collection is awaiting confirmation.</p>
+                        <p className="fine-print">
+                          A collected gift alone cannot confirm which account
+                          received it. Check the original transaction in
+                          Activity and your receiving account’s history before
+                          trying again.
+                        </p>
+                        <button
+                          onClick={() => {
+                            focusActivity.current = true;
+                            closeLetter();
+                            navigate("activity");
+                          }}
+                        >
+                          Check collection in Activity
+                        </button>
+                      </div>
+                    )}
+                    {!active.claimed && (!collectionPending || busy) && (
+                      <>
+                        {!wallet && (
+                          <div className="info">
+                            <p>
+                              Have Sapient? Connect to choose your receiving
+                              account automatically. You can also collect using
+                              a compatible address below.
+                            </p>
+                            <button
+                              disabled={busy || !!claimReview}
+                              onClick={() => setConnect(true)}
+                            >
+                              Connect Sapient to receive
+                            </button>
+                          </div>
+                        )}
+                        <div className="mode-switch">
+                          <button
+                            disabled={busy || !!claimReview}
+                            aria-pressed={destMode === "manual"}
+                            onClick={() => {
+                              setDestMode("manual");
+                              setAddress("");
+                              setDestination("");
+                            }}
+                          >
+                            Use another address
+                          </button>
+                          <button
+                            disabled={busy || !!claimReview || !wallet}
+                            aria-pressed={destMode === "wallet"}
+                            onClick={() => {
+                              setDestMode("wallet");
+                              setCreateAccount(false);
+                              if (current) {
+                                setAddress(current.address);
+                                setDestination(
+                                  current.account.component_address,
+                                );
+                              }
+                            }}
+                          >
+                            Choose from connected wallet
                           </button>
                         </div>
-                      </section>
+                        {destMode === "wallet" &&
+                          wallet &&
+                          wallet.accounts.length > 1 && (
+                            <label>
+                              Receiving account
+                              <select
+                                disabled={busy || !!claimReview}
+                                onChange={(e) => {
+                                  const a =
+                                    wallet.accounts[Number(e.target.value)];
+                                  setAddress(a.address);
+                                  setDestination(a.account.component_address);
+                                }}
+                                defaultValue={account}
+                              >
+                                {wallet.accounts.map((a, i) => (
+                                  <option key={i} value={i}>
+                                    {a.account.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          )}
+                        {destMode === "wallet" &&
+                          wallet?.accounts.length === 1 && (
+                            <div className="receiving-account">
+                              <p>Receiving in your connected Sapient account</p>
+                              <code>{address}</code>
+                            </div>
+                          )}
+                        {destMode === "manual" && (
+                          <>
+                            <label>
+                              Ootle receiving address
+                              <input
+                                disabled={busy || !!claimReview}
+                                value={address}
+                                onChange={(e) => setAddress(e.target.value)}
+                              />
+                            </label>
+                            {active.mode !== "postbox" && (
+                              <label className="check">
+                                <input
+                                  type="checkbox"
+                                  checked={createAccount}
+                                  disabled={
+                                    busy ||
+                                    !!claimReview ||
+                                    !claimsReady(d, true)
+                                  }
+                                  onChange={(e) => {
+                                    setCreateAccount(e.target.checked);
+                                    setDestination("");
+                                  }}
+                                />
+                                Create a new receiving account
+                              </label>
+                            )}
+                            {!createAccount && (
+                              <label>
+                                Existing built-in account component
+                                <input
+                                  disabled={busy || !!claimReview}
+                                  value={destination}
+                                  onChange={(e) =>
+                                    setDestination(e.target.value)
+                                  }
+                                />
+                              </label>
+                            )}
+                          </>
+                        )}
+                        <p className="fine-print">
+                          {active.mode === "postbox" &&
+                          wallet?.kind === "sapient" &&
+                          active.claimProtocol === "sapient-proof-1" &&
+                          postboxClaimsReady(d, "sapient")
+                            ? `Sapient will ask you to approve a proof for this gift and destination. GhostDrop then submits the claim. You receive ${tari(active.gift)} TARI; collection fees come from the funded reserve of up to ${tari(active.reserve)} TARI. Your wallet needs no coins for this claim. The approval expires after at most 10 network epochs.`
+                            : active.mode === "postbox" &&
+                                wallet?.kind === "sapient"
+                              ? "Postbox collection is not enabled for this deployment. Your connected wallet must control this postbox."
+                              : createAccount
+                                ? "Use an Ootle address whose built-in account does not exist yet. The gift reserve pays account creation and collection fees; your receiving keys stay in your wallet."
+                                : "Guests may use an existing compatible account without connecting its wallet. L1 XTM addresses, raw keys and arbitrary components are unsupported."}
+                        </p>
+                        {!claimReview && (
+                          <button
+                            ref={claimReviewTrigger}
+                            className="primary"
+                            disabled={
+                              busy ||
+                              !chain ||
+                              !address ||
+                              writeBlocked ||
+                              (!createAccount && !destination) ||
+                              !(active.mode === "postbox"
+                                ? postboxClaimsReady(
+                                    d,
+                                    wallet?.kind ?? "sapient",
+                                  )
+                                : claimsReady(d, createAccount)) ||
+                              (active.mode === "postbox" &&
+                                !wallet?.accounts.some(
+                                  (a) =>
+                                    a.account.owner_public_key ===
+                                    active.claimAuthority,
+                                )) ||
+                              (active.mode === "link" && !secret.current)
+                            }
+                            onClick={() =>
+                              void task(async () => {
+                                if (!chain) return;
+                                const sequence = openSequence.current;
+                                const reviewed = {
+                                  address: address.trim(),
+                                  destination: destination.trim(),
+                                  createAccount,
+                                };
+                                setCheckingGift(true);
+                                try {
+                                  let latest: Envelope;
+                                  try {
+                                    latest = await chain.readLetter(
+                                      active.id,
+                                      active.component,
+                                    );
+                                  } catch {
+                                    if (sequence !== openSequence.current)
+                                      return;
+                                    throw new Error(
+                                      "Could not check this gift right now. Your letter and destination are still here; try Review gift collection again.",
+                                    );
+                                  }
+                                  if (sequence !== openSequence.current) return;
+                                  setActive(latest);
+                                  setLetters((loaded) =>
+                                    loaded.map((letter) =>
+                                      letter.id === latest.id &&
+                                      letter.component === latest.component
+                                        ? latest
+                                        : letter,
+                                    ),
+                                  );
+                                  if (!latest.claimed) setClaimReview(reviewed);
+                                } finally {
+                                  setCheckingGift(false);
+                                }
+                              })
+                            }
+                          >
+                            {checkingGift
+                              ? "Checking gift…"
+                              : "Review gift collection"}
+                          </button>
+                        )}
+                        {claimReview && (
+                          <section
+                            className="collection-review"
+                            aria-labelledby="collection-review-title"
+                          >
+                            <span className="kicker">ONE LAST LOOK</span>
+                            <h3 id="collection-review-title" tabIndex={-1}>
+                              Send this gift to your wallet?
+                            </h3>
+                            <dl>
+                              <dt>You receive</dt>
+                              <dd>{tari(active.gift)} test TARI</dd>
+                              <dt>Collection fee limit</dt>
+                              <dd>
+                                {tari(active.reserve)} TARI, from the sender’s
+                                reserve
+                              </dd>
+                              <dt>Network</dt>
+                              <dd>
+                                {d.network === 38
+                                  ? "Esmeralda testnet"
+                                  : `Test network ${d.network}`}
+                              </dd>
+                              <dt>Receiving address</dt>
+                              <dd>
+                                <code>{claimReview.address}</code>
+                              </dd>
+                              <dt>Receiving account</dt>
+                              <dd>
+                                {claimReview.createAccount ? (
+                                  "Create a new built-in account for this address"
+                                ) : (
+                                  <code>{claimReview.destination}</code>
+                                )}
+                              </dd>
+                            </dl>
+                            <p className="fine-print">
+                              {active.mode === "postbox"
+                                ? "Confirming asks Sapient to approve a proof for this gift and destination. Only then can GhostDrop submit the collection."
+                                : "Confirming submits the collection using this destination. No wallet connection or extra signature is required."}{" "}
+                              The gift goes to the address shown above. Check it
+                              carefully before confirming.
+                            </p>
+                            <div className="collection-actions">
+                              <button
+                                disabled={busy}
+                                onClick={() => setClaimReview(undefined)}
+                              >
+                                Change destination
+                              </button>
+                              <button
+                                ref={collectionFocus.ref}
+                                aria-describedby={
+                                  error ? "letter-error" : undefined
+                                }
+                                className="primary"
+                                disabled={
+                                  busy ||
+                                  writeBlocked ||
+                                  !chain ||
+                                  active.claimed
+                                }
+                                onClick={() =>
+                                  void task(async () => {
+                                    collectionFocus.remember();
+                                    const reviewed = claimReview;
+                                    if (!chain || !reviewed) return;
+                                    const owner = wallet?.accounts.find(
+                                      (a) =>
+                                        a.account.owner_public_key ===
+                                        active.claimAuthority,
+                                    );
+                                    const id =
+                                      active.mode === "postbox" &&
+                                      wallet &&
+                                      owner
+                                        ? await chain.claimPostbox(
+                                            wallet,
+                                            owner,
+                                            active,
+                                            reviewed.address,
+                                            reviewed.destination,
+                                            browserStorage,
+                                          )
+                                        : await chain.claim(
+                                            active,
+                                            reviewed.address,
+                                            reviewed.destination,
+                                            secret.current,
+                                            browserStorage,
+                                            reviewed.createAccount,
+                                          );
+                                    setClaimReview(undefined);
+                                    setStatus(
+                                      `Gift collection submitted. Close this letter and check Activity for confirmation. Transaction: ${id}.`,
+                                    );
+                                  })
+                                }
+                              >
+                                {busy
+                                  ? "Collecting…"
+                                  : "Confirm & collect gift"}
+                              </button>
+                            </div>
+                          </section>
+                        )}
+                      </>
                     )}
-                  </>
+                  </div>
                 )}
-              </div>
-            )}
-            {status.startsWith("Gift collection submitted") && (
-              <p className="fine-print">{status}</p>
-            )}
-            {error && (
-              <p id="letter-error" role="alert" className="error">
-                {error}
-              </p>
-            )}
-            <button
-              disabled={busy}
-              onClick={() => {
-                closeLetter();
-                navigate("activity");
-              }}
-            >
-              View delivery activity ↗
-            </button>
-          </section>
-        </div>
-      )}
+                {status.startsWith("Gift collection submitted") && (
+                  <p className="fine-print">{status}</p>
+                )}
+                {error && (
+                  <p id="letter-error" role="alert" className="error">
+                    {error}
+                  </p>
+                )}
+                <button
+                  disabled={busy}
+                  onClick={() => {
+                    closeLetter();
+                    navigate("activity");
+                  }}
+                >
+                  View delivery activity ↗
+                </button>
+              </section>
+            </div>
+          );
+          return inlinePostboxReader && mailboxReaderTarget
+            ? createPortal(reader, mailboxReaderTarget)
+            : reader;
+        })()}
     </div>
   );
 }

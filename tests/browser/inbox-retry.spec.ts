@@ -170,7 +170,7 @@ test("a stalled private inbox read can retry in its letter without signing or lo
   await page
     .getByRole("button", { name: /Sealed letter · private-note/ })
     .click();
-  const dialog = page.getByRole("dialog");
+  const dialog = page.locator(".mailbox-letter[role=region]");
   await requested;
   await page.clock.runFor(15_001);
   await expect(dialog.getByRole("alert")).toContainText("read timed out");

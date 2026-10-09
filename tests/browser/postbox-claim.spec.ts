@@ -206,7 +206,7 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
         .getByRole("combobox", { name: "My postboxes", exact: true })
         .selectOption("box");
       await page.getByRole("button", { name: /Sealed letter · gift/ }).click();
-      const dialog = page.getByRole("dialog", {
+      const dialog = page.getByRole("region", {
         name: "A sealed little secret",
       });
       await expect(dialog).toBeVisible();

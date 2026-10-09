@@ -294,6 +294,7 @@ test("the owner can copy an unlisted public invitation without private view or f
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
+  await page.locator(".mailbox-address-settings > summary").click();
   const input = page.getByLabel("My postbox invitation", { exact: true });
   await expect(input).toBeVisible();
   const value = await input.inputValue();

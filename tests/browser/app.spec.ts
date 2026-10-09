@@ -394,7 +394,7 @@ test("postbox private view access requires explicit account-wide consent and nev
     .check();
   await expect(approval).toBeEnabled();
   await approval.click();
-  await expect(page.getByRole("status")).toContainText(
+  await expect(page.locator(".message[role=status]")).toContainText(
     "private view access approved",
   );
   await expect(
