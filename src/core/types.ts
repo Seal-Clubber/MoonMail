@@ -4,7 +4,13 @@ export interface Context {
   registry: string;
   template: string;
 }
+export interface ReplyThread {
+  version: "gd-thread-1";
+  root: string;
+  parent: string;
+}
 export interface Letter {
+  thread?: ReplyThread;
   subject: string;
   body: string;
 }

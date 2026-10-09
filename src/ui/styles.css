@@ -3893,3 +3893,62 @@ footer {
 .mailbox-contact button[aria-pressed="true"] {
   color: #ffd78b;
 }
+
+.mailbox-conversation {
+  padding: 20px;
+  border-top: 1px solid var(--line);
+}
+.mailbox-conversation > p {
+  color: var(--muted);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+.mailbox-conversation details {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+.mailbox-conversation summary {
+  cursor: pointer;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.mailbox-conversation small {
+  display: block;
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.reply-context {
+  grid-column: 1 / -1;
+  padding: 12px;
+  border: 1px solid var(--line);
+  line-height: 1.6;
+}
+.reply-context button {
+  font-size: 0.8rem;
+}
+
+.mailbox-bulk label {
+  margin: 0;
+  white-space: nowrap;
+  min-height: 36px;
+}
+.mailbox-bulk input[type="checkbox"],
+.mailbox-select input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  flex: none;
+  accent-color: var(--gold);
+}
+.mailbox-select {
+  margin: 0;
+  top: 0;
+  left: 0;
+  width: 36px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

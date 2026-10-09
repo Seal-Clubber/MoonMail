@@ -46,6 +46,11 @@ function actor(id: string, controller: string) {
 const letter = {
   subject: "A recovered sent message",
   body: '👻 café\n"The sender can read this too."',
+  thread: {
+    version: "gd-thread-1" as const,
+    root: "prior-root",
+    parent: "prior-letter",
+  },
 };
 async function fixture(mode: "link" | "postbox") {
   const sender = actor("sender-box", "3".repeat(64)),

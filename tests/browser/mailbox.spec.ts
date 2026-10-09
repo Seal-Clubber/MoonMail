@@ -25,6 +25,7 @@ async function mailboxFixture(
   unified = false,
   damaged = false,
   encryptedSent = false,
+  threaded = false,
 ) {
   const owner = generateKeypair(),
     view = generateKeypair(),
@@ -86,6 +87,15 @@ async function mailboxFixture(
     const payload = await sealMailbox(
       {
         subject: i === 1 ? "A quiet midnight hello" : `Letter ${i}`,
+        ...(threaded && i === 3
+          ? {
+              thread: {
+                version: "gd-thread-1" as const,
+                root: firstId,
+                parent: "thread-reply",
+              },
+            }
+          : {}),
         body:
           i === 1
             ? "A private note for your eyes only."
@@ -105,8 +115,8 @@ async function mailboxFixture(
       i <= 2,
       controller,
       "home",
-      "",
-      "f".repeat(64),
+      threaded && i <= 3 ? "foreign" : "",
+      threaded && i <= 3 ? "7".repeat(64) : "f".repeat(64),
       "",
     ];
   }
@@ -218,6 +228,64 @@ async function mailboxFixture(
         "",
       ];
     }
+  }
+  if (threaded) {
+    const id = "thread-reply",
+      component = `component_${"41".repeat(32)}`;
+    const letter = {
+      subject: "Re: A quiet midnight hello",
+      body: "My reply, recovered from Sent.",
+      thread: {
+        version: "gd-thread-1" as const,
+        root: firstId,
+        parent: firstId,
+      },
+    };
+    const primary = await sealMailbox(
+      letter,
+      { ...d, postbox: "foreign", controller: "7".repeat(64), keyVersion: 1 },
+      id,
+      descriptor,
+      32768,
+    );
+    const saved = await addSentCopy(
+      {
+        id,
+        mode: "postbox",
+        context: d,
+        payload: primary,
+        sender: controller,
+        replyPostbox: "home",
+        recipientPostbox: "foreign",
+        claimAuthority: "7".repeat(64),
+        gift: "0",
+        reserve: "0",
+        claimed: false,
+      },
+      letter,
+      {
+        id: "home",
+        controller,
+        nickname: "Moonlit home",
+        encryptionKey: JSON.stringify(descriptor),
+        discoverable: true,
+      },
+    );
+    references[id] = component;
+    states[component] = [
+      38,
+      id,
+      2,
+      JSON.stringify(saved.payload),
+      "0",
+      "0",
+      false,
+      "7".repeat(64),
+      "foreign",
+      "home",
+      controller,
+      "",
+    ];
   }
   const stateComponent = `component_${"6".repeat(64)}`;
   const savedState = unified
@@ -952,5 +1020,66 @@ test("favourites recover encrypted, stage edits and lead the recipient picker", 
   await expect(
     page.locator("#recipient-postbox optgroup").first(),
   ).toHaveAttribute("label", "Favourite postboxes");
+  await assertReadOnly(page, writes);
+});
+
+test("encrypted Inbox and Sent replies form a verified conversation and reply keeps its parent", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(
+    page,
+    "note-01",
+    true,
+    false,
+    false,
+    true,
+  );
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page);
+
+  const folders = page.getByRole("navigation", { name: "Mailbox folders" });
+  await folders.getByRole("button", { name: /Sent/ }).click();
+  await page
+    .getByRole("button", { name: "Unlock 1 loaded letter", exact: true })
+    .click();
+  await page
+    .getByRole("button", {
+      name: "Open letter: Re: A quiet midnight hello",
+      exact: true,
+    })
+    .click();
+  const conversation = page.getByRole("region", {
+    name: "Reply conversation",
+    exact: true,
+  });
+  await expect(conversation).toContainText("3 unlocked letters");
+  await expect(conversation.locator("summary")).toHaveText([
+    "Someone else · A quiet midnight hello",
+    "You · Re: A quiet midnight hello",
+    "Someone else · Letter 3",
+  ]);
+  await conversation.locator("summary").last().click();
+  await conversation
+    .getByRole("button", { name: "Reply to this message", exact: true })
+    .last()
+    .click();
+  await expect(
+    page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
+  ).toHaveValue("foreign");
+  await expect(
+    page.getByRole("combobox", {
+      name: "Verified owned reply postbox",
+      exact: true,
+    }),
+  ).toHaveValue("home");
+  await expect(page.locator(".reply-context")).toContainText("note-03");
+  await expect(
+    page.getByRole("textbox", { name: "Subject", exact: true }),
+  ).toHaveValue("Re: Letter 3");
+  await page
+    .getByRole("button", { name: "Start a separate conversation", exact: true })
+    .click();
+  await expect(page.locator(".reply-context")).toHaveCount(0);
   await assertReadOnly(page, writes);
 });

@@ -29,6 +29,8 @@ import type { ConnectedWallet } from "../core/wallet";
 import { SapientSession, sapientProvider } from "../core/sapient";
 import { PostOfficeClient } from "../core/chain";
 import { sealLetter, openLetter, assertEnvelopeSize } from "../core/crypto";
+import { replyThread } from "../core/threads";
+import type { ReplyThread } from "../core/types";
 import { recipientGroups } from "../core/contacts";
 import type { MailboxPreferences } from "../core/mailbox-state";
 import { draftEnvelopeSize } from "../core/letter-size";
@@ -130,12 +132,14 @@ export function App() {
   useEffect(() => {
     setMailboxPlain(new Map());
     setSentPlain(new Map());
+    setThread(undefined);
     setMailboxPreferences(new Map());
   }, [wallet, d.network, d.registry, d.template]);
 
   const [mode, setMode] = useState<MailMode>("link"),
     [subject, setSubject] = useState(""),
     [body, setBody] = useState(""),
+    [thread, setThread] = useState<ReplyThread>(),
     [gift, setGift] = useState("0"),
     [reserve, setReserve] = useState("0"),
     [fee, setFee] = useState("100000"),
@@ -760,6 +764,7 @@ export function App() {
     setLetters([]);
     setMailboxPlain(new Map());
     setSentPlain(new Map());
+    setThread(undefined);
     setMailboxPreferences(new Map());
     setUnavailableLetterIds([]);
     setBoxes([]);
@@ -823,7 +828,12 @@ export function App() {
     history.pushState(null, "", `${location.pathname}#/${v}`);
     window.scrollTo(0, 0);
   }
-  function beginAddressedDraft(id: string, replyTitle?: string) {
+  function beginAddressedDraft(
+    id: string,
+    replyTitle?: string,
+    original?: Envelope,
+    originalPlain?: Letter,
+  ) {
     const postbox = boxes.find((p) => p.id === id);
     if (!postbox) return;
     const keptDraft = !!(subject || body || (gift && gift !== "0"));
@@ -832,8 +842,31 @@ export function App() {
     closeLetter();
     setMode("postbox");
     setRecipient(id);
+    setThread(original ? replyThread(original, originalPlain) : undefined);
+    if (original?.recipientPostbox) {
+      const home = boxes.find(
+        (p) =>
+          p.id === original.recipientPostbox &&
+          wallet?.accounts.some(
+            (a) => a.account.owner_public_key === p.controller,
+          ),
+      );
+      if (home) {
+        setReply(home.id);
+        setAccount(
+          wallet!.accounts.findIndex(
+            (a) => a.account.owner_public_key === home.controller,
+          ),
+        );
+      }
+    }
     if (replyTitle && !subject.trim())
-      setSubject(`Re: ${replyTitle}`.slice(0, 120));
+      setSubject(
+        (/^re:/i.test(replyTitle) ? replyTitle : `Re: ${replyTitle}`).slice(
+          0,
+          120,
+        ),
+      );
     setPrepared(undefined);
     setLinkSaved(false);
     navigate("compose");
@@ -1064,6 +1097,7 @@ export function App() {
     setAccount(owner);
     setMode("postbox");
     setReply(box.id);
+    setThread(undefined);
     setPrepared(undefined);
     setLinkSaved(false);
     focusAddressedDraft.current = true;
@@ -1111,6 +1145,11 @@ export function App() {
   }
   const includeSent =
     mode !== "public" && saveSent && !!sentDescriptor && !!sendingBox;
+  const draftLetter: Letter = {
+    subject,
+    body,
+    ...(mode === "postbox" && thread ? { thread } : {}),
+  };
   const draftMetadata = {
     mode,
     context: d,
@@ -1126,7 +1165,7 @@ export function App() {
   try {
     if (mode !== "postbox" || draftPostbox)
       draftSize = draftEnvelopeSize(
-        { subject, body },
+        draftLetter,
         { ...draftMetadata, id: "0".repeat(36) },
         draftPostbox ? mailboxKey(draftPostbox.encryptionKey) : undefined,
         includeSent
@@ -1150,6 +1189,7 @@ export function App() {
     setWallet(undefined);
     setMailboxPlain(new Map());
     setSentPlain(new Map());
+    setThread(undefined);
     setMailboxPreferences(new Map());
     setClaimReview(undefined);
     secret.current?.fill(0);
@@ -1195,13 +1235,13 @@ export function App() {
     const id = crypto.randomUUID();
     const sealed =
       mode === "link"
-        ? await sealLetter({ subject, body }, d, id, letterLimit(d))
+        ? await sealLetter(draftLetter, d, id, letterLimit(d))
         : undefined;
     const key = postbox ? mailboxKey(postbox.encryptionKey) : undefined;
     const addressed =
       postbox && key
         ? await sealMailbox(
-            { subject, body },
+            draftLetter,
             {
               ...d,
               postbox: postbox.id,
@@ -1216,10 +1256,10 @@ export function App() {
     let envelope: Envelope = {
       ...draftMetadata,
       id,
-      payload: addressed || sealed?.payload || { subject, body },
+      payload: addressed || sealed?.payload || draftLetter,
     };
     if (includeSent)
-      envelope = await addSentCopy(envelope, { subject, body }, sendingBox!);
+      envelope = await addSentCopy(envelope, draftLetter, sendingBox!);
     assertEnvelopeSize(envelope, letterLimit(d));
     if (draftSequence.current !== sequence) return;
     setLinkSaved(false);
@@ -1887,6 +1927,7 @@ export function App() {
                   onClick={() => {
                     draftSequence.current += 1;
                     setMode(m);
+                    setThread(undefined);
                     setReview(false);
                     setPrepared(undefined);
                   }}
@@ -1989,6 +2030,22 @@ export function App() {
               </div>
               {mode === "postbox" && (
                 <div className="recipient-choice">
+                  {thread && (
+                    <p className="reply-context">
+                      Replying to letter {short(thread.parent)} · conversation
+                      links are encrypted with your message.{" "}
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                          setThread(undefined);
+                          setReview(false);
+                        }}
+                      >
+                        Start a separate conversation
+                      </button>
+                    </p>
+                  )}
                   <label htmlFor="recipient-postbox">Recipient postbox</label>
                   <button
                     type="button"
@@ -2003,6 +2060,7 @@ export function App() {
                     disabled={busy}
                     onChange={(e) => {
                       setRecipient(e.target.value);
+                      setThread(undefined);
                       setReview(false);
                     }}
                   >
@@ -2038,6 +2096,7 @@ export function App() {
                     value={recipient}
                     onChange={(e) => {
                       setRecipient(e.target.value);
+                      setThread(undefined);
                       setReview(false);
                     }}
                     placeholder="Or paste a registered ID, including an unlisted postbox"
@@ -2367,6 +2426,10 @@ export function App() {
             onOpen={(e) => void task(() => openPostbox(e))}
             onClose={closeLetter}
             onCompose={composeFromPostbox}
+            onReply={(e, letter) => {
+              if (e.replyPostbox)
+                beginAddressedDraft(e.replyPostbox, letter.subject, e, letter);
+            }}
             onPreferences={rememberPreferences}
             onContact={(id, box) => {
               composeFromPostbox(box);
@@ -2967,6 +3030,8 @@ export function App() {
                         beginAddressedDraft(
                           active.replyPostbox!,
                           plain?.subject || "Your letter",
+                          active,
+                          plain,
                         )
                       }
                     >

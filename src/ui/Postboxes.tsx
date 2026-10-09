@@ -31,6 +31,7 @@ export function Postboxes({
   onOpen,
   onClose,
   onCompose,
+  onReply,
   onContact,
   onPreferences,
   onRead,
@@ -59,6 +60,7 @@ export function Postboxes({
   onOpen: (letter: Envelope) => void;
   onClose: () => void;
   onCompose: (box: Postbox) => void;
+  onReply: (e: Envelope, letter: Letter) => void;
   onContact: (id: string, box: Postbox) => void;
   onPreferences: (id: string, p: MailboxPreferences) => void;
   onRead: (letter: Envelope) => Promise<Letter>;
@@ -720,6 +722,7 @@ export function Postboxes({
                 ])}
                 box={box}
                 boxes={boxes}
+                onReply={onReply}
                 onContact={(id) => onContact(id, box)}
                 onPreferences={onPreferences}
                 stateAccess={{

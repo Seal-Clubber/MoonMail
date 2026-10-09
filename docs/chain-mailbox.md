@@ -34,3 +34,6 @@ Sent copies are separate AES-GCM ciphertext bound to the office, original letter
 
 
 Mailbox settings also save up to 128 favourite postbox IDs, encrypted with the same recovery capsule. Older saved settings load with no favourites. Contacts show favourites, verified previous correspondents from loaded mail, then listed postboxes. Names are not unique; check IDs. Selection applies read/unread, star/unstar and archive/inbox actions to multiple received messages. Actions are staged in memory; one approved mailbox save persists the batch on Ootle. Discard restores the loaded snapshot. No drafts are saved.
+
+
+Reply conversations use optional `gd-thread-1` parent/root IDs inside the encrypted letter and its encrypted Sent copy. The app joins only direct decrypted reply links between the same verified pair of postboxes. It never groups by subject alone. Missing/locked messages remain outside the loaded conversation; unlock Inbox and Sent and load more mail for a fuller view. Cycles, malformed metadata and different correspondents do not join. Parent-first ordering reflects reply relationships; the app does not invent email timestamps or read receipts. Old mail can start new threads when replied to; encrypted thread metadata adds to the existing32KiB combined payload limit.

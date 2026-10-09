@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Envelope, Letter, Postbox } from "../core/types";
 import { useChainMailbox, type MailboxAccess } from "./useChainMailbox";
 import { hasSentCopy } from "../core/sent-mail";
+import { conversation } from "../core/threads";
 import { recipientGroups } from "../core/contacts";
 import {
   READ,
@@ -44,11 +45,13 @@ export function MailboxWorkspace({
   stateAccess,
   boxes,
   onContact,
+  onReply,
   onPreferences,
 }: {
   stateAccess?: MailboxAccess;
   boxes: Postbox[];
   onContact: (id: string) => void;
+  onReply: (e: Envelope, letter: Letter) => void;
   onPreferences: (id: string, p: MailboxPreferences) => void;
   box: Postbox;
   letters: Envelope[];
@@ -117,6 +120,11 @@ export function MailboxWorkspace({
     folder === "sent"
       ? sent.find((e) => e.id === sentId)
       : inbox.find((e) => e.id === activeId);
+  const conversationText = new Map(sentPlain);
+  for (const [id, letter] of plain) conversationText.set(id, letter);
+  const threadLetters = selected
+    ? conversation(selected, letters, conversationText, boxes)
+    : [];
   function content(e: Envelope) {
     return folder !== "sent"
       ? plain.get(e.id)
@@ -672,6 +680,44 @@ export function MailboxWorkspace({
               gift does not identify its recipient here.
             </p>
           </article>
+        )}
+        {selected && threadLetters.length > 1 && (
+          <section
+            className="mailbox-conversation"
+            aria-label="Reply conversation"
+          >
+            <h3>Conversation · {threadLetters.length} unlocked letters</h3>
+            <p>
+              Loaded replies from these two verified postboxes. Unlock Inbox and
+              Sent, and load more mail to see additional messages.
+            </p>
+            {threadLetters.map((e) => (
+              <details key={e.id} open={e.id === selected.id}>
+                <summary>
+                  {e.sender === box.controller
+                    ? "You"
+                    : boxes.find((p) => p.id === e.replyPostbox)?.nickname ||
+                      "Correspondent"}{" "}
+                  · {conversationText.get(e.id)?.subject}
+                </summary>
+                <p className="letter-body">
+                  {conversationText.get(e.id)?.body}
+                </p>
+                <small>
+                  Letter {e.id}
+                  {e.id === selected.id ? " · Currently open" : ""}
+                </small>
+                {e.sender !== box.controller && e.replyPostbox && (
+                  <button
+                    disabled={busy}
+                    onClick={() => onReply(e, conversationText.get(e.id)!)}
+                  >
+                    Reply to this message
+                  </button>
+                )}
+              </details>
+            ))}
+          </section>
         )}
         {!selected && (
           <div className="mailbox-reading-empty">
