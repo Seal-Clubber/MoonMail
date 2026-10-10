@@ -99,3 +99,5 @@ The Pages workflow automatically publishes pushes to `main` after its client tes
 MIT licensed. Tari libraries retain their upstream licenses. The visual scene is CSS and original text; no external artwork is required.
 
 The email workspace now includes recoverable encrypted Sent copies, private reply conversations, multi-select read/unread/star/archive actions, and encrypted favourite postboxes. Recipient choices show favourites, verified previous correspondents, then the public directory. No draft folder or saved drafts. [Mailbox behaviour and limits](docs/chain-mailbox.md) and [real Esmeralda verification](docs/email-mailbox-evidence.json) describe the current release.
+
+Mailbox UX now restores an already-authorized Sapient connection on same-tab reload, reuses the wallet's real private grant, loads encrypted settings automatically, stages read marks only on successful opening, and keeps selection actions and favourites beside clear save controls. [Read-only stock Sapient/Esmeralda verification](docs/mailbox-ux-evidence.json) confirms actual reload and recovery without financial requests.

@@ -1,0 +1,96 @@
+{
+  "checkedAt": "2026-10-10T03:40:27.107Z",
+  "stockSapientVersion": "0.6.6",
+  "reviewedFrontendCommit": "15c12e258e97cfa659dd61f4a0dcaaa04b8667b1",
+  "localBuildOnPagesHttpsOrigin": true,
+  "ledgerResponsesOverridden": false,
+  "financialBroadcasts": 0,
+  "financialRequestsBlocked": 0,
+  "checks": [
+    {
+      "automaticRealSettingsLoaded": true,
+      "spacing": "comfortable",
+      "sorting": "chain"
+    },
+    {
+      "realReloadRestoredWallet": true,
+      "realPrivateGrantReused": true,
+      "repeatPermissionRequests": 0,
+      "automaticSettingsRecovered": true
+    },
+    {
+      "actualEncryptedLetterOpened": true,
+      "viewportChecks": [
+        {
+          "width": 1440,
+          "noOverflow": true
+        },
+        {
+          "width": 390,
+          "noOverflow": true
+        }
+      ]
+    },
+    {
+      "actualEncryptedFavouritesInComposer": true
+    }
+  ],
+  "existingPrivateGrantAtStart": true,
+  "completed": true,
+  "deployment": {
+    "network": 38,
+    "registry": "component_bc15e50d664440dbdfb1a310fb316c35ab22f964d485c222024a402b4cad4f99",
+    "template": "260d6982a415b7053ca2e1ae2c302b3b717b9b6ca525a85572f011ec81cc3794",
+    "contractProtocol": "unified-1"
+  },
+  "verificationScope": "Reviewed local production assets served on the real Pages HTTPS origin; actual stock wallet and actual Esmeralda ledger responses. No GitHub push or Pages publication.",
+  "buildAssets": [
+    {
+      "path": "deployment-v2.json",
+      "sha256": "22066229b71d1aa9afb75ddb4445f62ff5a9dfed9158af1dadfb38472341743f"
+    },
+    {
+      "path": "deployment.json",
+      "sha256": "22066229b71d1aa9afb75ddb4445f62ff5a9dfed9158af1dadfb38472341743f"
+    },
+    {
+      "path": "favicon.svg",
+      "sha256": "32cc54bf2ebec8c90c82fa5004c6a82fcc53d03b5a7b785ffc515903ed279ecd"
+    },
+    {
+      "path": "index.html",
+      "sha256": "89c3075bc960b2828e47860a29553867a1bce503587577d0c8cf44636dc791dd"
+    },
+    {
+      "path": "assets/index-DEcnhV32.css",
+      "sha256": "c7a38b67fa2d4e12e7ee445b5e0da2fc26856c5f252e1b6d6918590b6ac97911"
+    },
+    {
+      "path": "assets/index-Dt-G0ZyJ.js",
+      "sha256": "47f0492227ee262e272fd982210386556db38c0acae7f709a36725fdd5b55a28"
+    },
+    {
+      "path": "assets/ootle_wasm-CLPAruJ_.js",
+      "sha256": "e490145dfae574781fe74c176955b03a51d16d8170cbcc7d7a021414595baa56"
+    },
+    {
+      "path": "assets/ootle_wasm-DixGV7PA.js",
+      "sha256": "e0dfe02134916f3202e8e84cc8b522bcbeb210fcffb31c900325288d27335810"
+    },
+    {
+      "path": "assets/ootle_wasm_bg-Dvm5bzZ4.wasm",
+      "sha256": "d3969f2f738a70cf3199992d52c3e766000b5f31b859427849ed4171395897f1"
+    }
+  ],
+  "localValidation": {
+    "unitTests": 211,
+    "unitFiles": 24,
+    "browserTests": 258,
+    "viewports": ["desktop", "mobile"],
+    "strictTypescript": true,
+    "productionPagesBaseBuild": true,
+    "formattingAndDiff": true,
+    "fixturePrivacyChecks": true,
+    "newPublicTransactions": 0
+  }
+}
