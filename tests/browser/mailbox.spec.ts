@@ -418,7 +418,11 @@ async function mailboxFixture(
           if (method === "tari_getCapabilities")
             return { transactionRequests: true, walletAddress: true };
           if (method === "tari_requestViewAccess") {
-            granted = true;
+            if (w.delayMailboxGrant)
+              await new Promise<void>((resolve) => {
+                w.releaseMailboxGrant = resolve;
+              });
+            granted = !w.declineMailboxGrant;
             return { granted };
           }
           if (method === "tari_getViewAccess") return { granted };
@@ -457,17 +461,13 @@ async function connect(page: Page) {
   await expect(
     page.getByRole("combobox", { name: "My postboxes", exact: true }),
   ).toHaveValue("home");
+  await page.getByRole("button", { name: "Not now", exact: true }).click();
 }
 async function unlock(page: Page) {
-  await page.locator(".mailbox-view-access > summary").click();
   await page
-    .getByRole("checkbox", {
-      name: "I understand the account-wide private view permission",
-    })
-    .check();
-  await page
-    .getByRole("button", { name: "Approve postbox view access" })
+    .getByRole("button", { name: "Unlock private inbox", exact: true })
     .click();
+  await page.getByRole("button", { name: "Continue in Sapient" }).click();
   await page
     .getByRole("button", { name: "Unlock 27 loaded letters", exact: true })
     .click();
@@ -521,10 +521,9 @@ test("chain-backed mailbox handles 27 letters, gift folders, search, sent scope 
     expect(workspace!.y).toBeLessThan(viewport.height * 0.35);
     expect(workspace!.height).toBeGreaterThan(viewport.height * 0.7);
   }
-  await expect(page.locator(".mailbox-view-access")).not.toHaveAttribute(
-    "open",
-    "",
-  );
+  await expect(
+    page.getByRole("dialog", { name: "Unlock your private inbox" }),
+  ).not.toBeVisible();
   await page.screenshot({
     path: test.info().outputPath("inbox-full-page.png"),
   });
@@ -831,14 +830,11 @@ test("encrypted Sent recovers addressed and link mail in a fresh wallet session 
     "3",
   );
   const grant = async () => {
-    await page.locator(".mailbox-view-access > summary").click();
     await page
-      .getByRole("checkbox", {
-        name: "I understand the account-wide private view permission",
-      })
-      .check();
+      .getByRole("button", { name: "Unlock private inbox", exact: true })
+      .click();
     await page
-      .getByRole("button", { name: "Approve postbox view access", exact: true })
+      .getByRole("button", { name: "Continue in Sapient", exact: true })
       .click();
   };
   await expect(
@@ -1091,15 +1087,10 @@ test("bulk selection keeps messages reachable in a short desktop window", async 
   const writes = await mailboxFixture(page, "note-01", true);
   await page.goto("./#/postboxes");
   await connect(page);
-  await page.locator(".mailbox-view-access > summary").click();
   await page
-    .getByRole("checkbox", {
-      name: "I understand the account-wide private view permission",
-    })
-    .check();
-  await page
-    .getByRole("button", { name: "Approve postbox view access" })
+    .getByRole("button", { name: "Unlock private inbox", exact: true })
     .click();
+  await page.getByRole("button", { name: "Continue in Sapient" }).click();
   await page
     .getByRole("button", { name: "Load mailbox settings", exact: true })
     .click();
@@ -1113,5 +1104,95 @@ test("bulk selection keeps messages reachable in a short desktop window", async 
     .getByRole("button", { name: "Mark selected read", exact: true })
     .click();
   await expect(page.getByText("0 selected", { exact: true })).toBeVisible();
+  await assertReadOnly(page, writes);
+});
+
+test("guided private inbox permission is explicit, dismissible and retryable", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(page);
+  await page.goto("./#/postboxes");
+  await connect(page); // The helper dismisses the automatic explanation with Not now.
+  const dialog = page.getByRole("dialog", {
+    name: "Unlock your private inbox",
+  });
+  await expect(dialog).not.toBeVisible();
+  expect(
+    await page.evaluate(() =>
+      (window as any).mailboxMethods.includes("tari_requestViewAccess"),
+    ),
+  ).toBe(false);
+  await page
+    .getByRole("button", { name: "Unlock private inbox", exact: true })
+    .click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText(
+    "including amounts and memos for other resources",
+  );
+  await page.screenshot({ path: test.info().outputPath("guided-unlock.png") });
+  await expect(
+    dialog.getByRole("button", { name: "Continue in Sapient", exact: true }),
+  ).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(dialog).not.toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Unlock private inbox", exact: true }),
+  ).toBeFocused();
+  await page
+    .getByRole("button", { name: "Unlock private inbox", exact: true })
+    .click();
+  await page.evaluate(() => {
+    (window as any).declineMailboxGrant = true;
+  });
+  await dialog
+    .getByRole("button", { name: "Continue in Sapient", exact: true })
+    .click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Your inbox is still locked",
+  );
+  await page.evaluate(() => {
+    (window as any).declineMailboxGrant = false;
+  });
+  await dialog
+    .getByRole("button", { name: "Continue in Sapient", exact: true })
+    .click();
+  await expect(dialog).not.toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Unlock 27 loaded letters", exact: true }),
+  ).toBeEnabled();
+  await assertReadOnly(page, writes);
+});
+
+test("dismissing a pending wallet permission ignores its late success", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(page);
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await page.evaluate(() => {
+    (window as any).delayMailboxGrant = true;
+  });
+  await page
+    .getByRole("button", { name: "Unlock private inbox", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog", {
+    name: "Unlock your private inbox",
+  });
+  await dialog
+    .getByRole("button", { name: "Continue in Sapient", exact: true })
+    .click();
+  await expect
+    .poll(() => page.evaluate(() => typeof (window as any).releaseMailboxGrant))
+    .toBe("function");
+  await dialog.getByRole("button", { name: "Not now", exact: true }).click();
+  await page.evaluate(() => {
+    (window as any).releaseMailboxGrant();
+  });
+  await expect(
+    page.getByRole("button", { name: "Unlock private inbox", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Unlock 27 loaded letters", exact: true }),
+  ).toBeDisabled();
   await assertReadOnly(page, writes);
 });

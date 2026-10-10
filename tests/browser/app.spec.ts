@@ -374,9 +374,9 @@ test("postbox private view access requires explicit account-wide consent and nev
     .click();
   await page.getByRole("button", { name: /privacy-lab · key/ }).click();
   const approval = page.getByRole("button", {
-    name: "Approve postbox view access",
+    name: "Continue in Sapient",
   });
-  await expect(approval).toBeDisabled();
+  await expect(approval).toBeEnabled();
   await expect(
     page.getByText("including amounts and memos for other resources", {
       exact: false,
@@ -387,11 +387,6 @@ test("postbox private view access requires explicit account-wide consent and nev
       (window as any).capsuleMethods.includes("tari_requestViewAccess"),
     ),
   ).toBe(false);
-  await page
-    .getByRole("checkbox", {
-      name: "I understand the account-wide private view permission",
-    })
-    .check();
   await expect(approval).toBeEnabled();
   await approval.click();
   await expect(page.locator(".message[role=status]")).toContainText(

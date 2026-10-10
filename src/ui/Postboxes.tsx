@@ -6,6 +6,7 @@ import { mailboxKey } from "../core/mailbox";
 import { writesReady } from "../core/config";
 import { readPending, savePending, type Pending } from "../core/pending";
 import { SapientSession } from "../core/sapient";
+import { PrivateInboxAccess } from "./PrivateInboxAccess";
 import { AmountInput, tari } from "./AmountInput";
 import { readDelivery } from "../core/delivery";
 import { browserStorage } from "../core/browser-storage";
@@ -86,7 +87,6 @@ export function Postboxes({
     [draftId, setDraftId] = useState<string>(() => crypto.randomUUID()),
     [rotating, setRotating] = useState(false),
     [prepared, setPrepared] = useState<Pending>(),
-    [viewAcknowledged, setViewAcknowledged] = useState(false),
     [viewApproved, setViewApproved] = useState(false);
 
   const nameError = postboxNameError(nickname);
@@ -100,9 +100,13 @@ export function Postboxes({
         )
       : wallet?.accounts[controller];
   useEffect(() => {
-    setViewAcknowledged(false);
     setViewApproved(false);
-  }, [wallet, account?.account.component_address]);
+  }, [
+    wallet,
+    account?.account.component_address,
+    deployment.network,
+    deployment.registry,
+  ]);
   useEffect(() => {
     if (!editing && !owned.some((p) => p.id === selected) && owned.length)
       choose(owned[0].id);
@@ -413,58 +417,20 @@ export function Postboxes({
           {wallet instanceof SapientSession &&
             (editing || box || prepared) &&
             !viewApproved && (
-              <details className="mailbox-view-access" open={editing || !box}>
-                <summary>Unlock private mail · permission required</summary>
-                <div className="info">
-                  <h3>Let Sapient unlock your letters</h3>
-                  <p>
-                    Postbox recovery needs your permission. This lets GhostDrop
-                    read the connected account's private output summaries,
-                    including amounts and memos for other resources. It does not
-                    reveal your wallet seed or signing keys.{" "}
-                    {editing && (!box || rotating)
-                      ? "This permission comes before the two transaction approvals."
-                      : "Approve this permission to read your private mail. Opening a letter does not send a transaction."}
-                  </p>
-                  <label className="checkbox">
-                    <input
-                      type="checkbox"
-                      checked={viewAcknowledged}
-                      disabled={busy}
-                      onChange={(e) => setViewAcknowledged(e.target.checked)}
-                    />
-                    I understand the account-wide private view permission
-                  </label>
-                  <button
-                    disabled={
-                      busy ||
-                      !viewAcknowledged ||
-                      !(
-                        enabled ||
-                        prepared?.capsule?.descriptor.recovery ===
-                          "sapient-capsule-1" ||
-                        (box &&
-                          inbox.some(
-                            (e) =>
-                              "recovery" in e.payload &&
-                              e.payload.recovery === "sapient-capsule-1",
-                          ))
-                      )
-                    }
-                    onClick={() =>
-                      void task(async () => {
-                        await wallet.requestPostboxViewAccess();
-                        setViewApproved(true);
-                        onStatus(
-                          "Sapient private view access approved. Disconnect to revoke this site's wallet access.",
-                        );
-                      })
-                    }
-                  >
-                    Approve postbox view access
-                  </button>
-                </div>
-              </details>
+              <PrivateInboxAccess
+                key={`${account?.account.component_address}:${deployment.network}:${deployment.registry}`}
+                wallet={wallet}
+                scope={`${account?.account.component_address}:${deployment.network}:${deployment.registry}`}
+                setup={editing && (!box || rotating)}
+                busy={busy}
+                task={task}
+                onGranted={() => {
+                  setViewApproved(true);
+                  onStatus(
+                    "Sapient private view access approved. Disconnect to revoke this site's wallet access.",
+                  );
+                }}
+              />
             )}
           {!editing && recoverySetups.length > 0 && (
             <div>

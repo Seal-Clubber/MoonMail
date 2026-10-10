@@ -169,10 +169,9 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
       await page
         .getByRole("button", { name: "Connect Sapient", exact: true })
         .click();
-      await page
-        .getByRole("combobox", { name: "My postboxes", exact: true })
-        .selectOption("box");
-      await page.locator(".mailbox-view-access > summary").click();
+      await expect(
+        page.getByRole("dialog", { name: "Unlock your private inbox" }),
+      ).toBeVisible();
       await expect(
         page.getByText("Opening a letter does not send a transaction.", {
           exact: false,
@@ -182,10 +181,11 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
         page.getByText(
           "This permission comes before the two transaction approvals.",
           {
-            exact: false,
+            exact: true,
           },
         ),
       ).toHaveCount(0);
+      await page.getByRole("button", { name: "Not now", exact: true }).click();
       await page.getByRole("button", { name: "Edit selected postbox" }).click();
       await expect(page.locator(".setup-steps")).toHaveCount(0);
       await page
@@ -199,7 +199,7 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
         page.getByText(
           "This permission comes before the two transaction approvals.",
           {
-            exact: false,
+            exact: true,
           },
         ),
       ).toBeVisible();

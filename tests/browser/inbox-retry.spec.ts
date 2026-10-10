@@ -166,6 +166,7 @@ test("a stalled private inbox read can retry in its letter without signing or lo
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
+  await page.getByRole("button", { name: "Not now", exact: true }).click();
   await page.clock.install();
   await page
     .getByRole("button", { name: /Sealed letter · private-note/ })

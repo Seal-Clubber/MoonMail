@@ -494,14 +494,9 @@ test("saved postbox backup confirms read-only; opening needs separate view conse
   ).toBeDisabled();
   expect(receipts).toBe(1);
   const approval = page.getByRole("button", {
-    name: "Approve postbox view access",
+    name: "Continue in Sapient",
   });
-  await expect(approval).toBeDisabled();
-  await page
-    .getByRole("checkbox", {
-      name: "I understand the account-wide private view permission",
-    })
-    .check();
+  await expect(approval).toBeEnabled();
   await approval.click();
   await expect(
     page.getByRole("button", { name: "2 of 2 · Open my postbox", exact: true }),
@@ -1055,14 +1050,7 @@ test("postbox names respect the chain byte limit before the first backup approva
   await page
     .getByRole("button", { name: "Create my postbox", exact: true })
     .click();
-  await page
-    .getByRole("checkbox", {
-      name: "I understand the account-wide private view permission",
-    })
-    .check();
-  await page
-    .getByRole("button", { name: "Approve postbox view access" })
-    .click();
+  await page.getByRole("button", { name: "Continue in Sapient" }).click();
   const name = page.getByLabel("Postbox name", { exact: true }),
     backup = page.getByRole("button", {
       name: "1 of 2 · Save recovery backup",
