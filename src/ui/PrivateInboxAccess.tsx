@@ -24,12 +24,29 @@ export function PrivateInboxAccess({
   const trigger = useRef<HTMLButtonElement>(null);
   const current = useRef<object | null>(null);
   const requestVersion = useRef(0);
+  const grantedCallback = useRef(onGranted);
+  grantedCallback.current = onGranted;
+  const [checking, setChecking] = useState(true);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => {
     const token = {};
     current.current = token;
-    if (!explained.get(wallet)?.has(scope)) dialog.current?.showModal();
+    setChecking(true);
+    void wallet
+      .hasPostboxViewAccess()
+      .then((granted) => {
+        if (current.current !== token) return;
+        setChecking(false);
+        if (granted) grantedCallback.current();
+        else if (!explained.get(wallet)?.has(scope))
+          dialog.current?.showModal();
+      })
+      .catch(() => {
+        if (current.current !== token) return;
+        setChecking(false);
+        if (!explained.get(wallet)?.has(scope)) dialog.current?.showModal();
+      });
     return () => {
       current.current = null;
       dialog.current?.close();
@@ -79,7 +96,11 @@ export function PrivateInboxAccess({
     <>
       <div className="mailbox-view-access">
         <div>
-          <strong>Your private inbox is locked</strong>
+          <strong>
+            {checking
+              ? "Checking Sapient private access…"
+              : "Your private inbox is locked"}
+          </strong>
           <p>
             {setup
               ? "This permission comes before the two transaction approvals."
@@ -88,7 +109,7 @@ export function PrivateInboxAccess({
         </div>
         <button
           ref={trigger}
-          disabled={busy || pending}
+          disabled={busy || pending || checking}
           onClick={() => dialog.current?.showModal()}
         >
           Unlock private inbox
@@ -141,7 +162,7 @@ export function PrivateInboxAccess({
         <div className="private-inbox-actions">
           <button
             autoFocus
-            disabled={busy || pending}
+            disabled={busy || pending || checking}
             onClick={() => void approve()}
           >
             {pending ? "Waiting for Sapient�" : "Continue in Sapient"}

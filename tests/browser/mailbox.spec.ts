@@ -26,6 +26,7 @@ async function mailboxFixture(
   damaged = false,
   encryptedSent = false,
   threaded = false,
+  persistentGrant = false,
 ) {
   const owner = generateKeypair(),
     view = generateKeypair(),
@@ -394,11 +395,14 @@ async function mailboxFixture(
     });
   });
   await page.addInitScript(
-    ({ account, address, resource, commitment, memo }) => {
+    ({ account, address, resource, commitment, memo, persistentGrant }) => {
       const w = window as any;
       w.mailboxMethods = [];
-      let connected = false,
-        granted = false;
+      let connected =
+          persistentGrant &&
+          sessionStorage.getItem("fixture:connected") === "1",
+        granted =
+          persistentGrant && sessionStorage.getItem("fixture:granted") === "1";
       w.tari = {
         isTariWallet: true,
         info: {
@@ -411,6 +415,8 @@ async function mailboxFixture(
           if (method === "tari_getNetwork") return "esmeralda";
           if (method === "tari_requestAccounts") {
             connected = true;
+            if (persistentGrant)
+              sessionStorage.setItem("fixture:connected", "1");
             return [account];
           }
           if (method === "tari_getAccounts") return connected ? [account] : [];
@@ -423,10 +429,14 @@ async function mailboxFixture(
                 w.releaseMailboxGrant = resolve;
               });
             granted = !w.declineMailboxGrant;
+            if (persistentGrant)
+              sessionStorage.setItem("fixture:granted", granted ? "1" : "0");
             return { granted };
           }
           if (method === "tari_getViewAccess") return { granted };
           if (method === "tari_getShieldedOutputs") {
+            if (w.denyMailboxRead)
+              throw new Error("Private outputs unavailable");
             if (!granted) throw new Error("View access required");
             return [
               { resourceAddress: resource, commitment, amount: "1", memo },
@@ -435,6 +445,8 @@ async function mailboxFixture(
           if (method === "tari_disconnect") {
             connected = false;
             granted = false;
+            sessionStorage.removeItem("fixture:connected");
+            sessionStorage.removeItem("fixture:granted");
             return null;
           }
           throw new Error(`Unexpected wallet method: ${method}`);
@@ -447,6 +459,7 @@ async function mailboxFixture(
       resource,
       commitment: descriptor.capsule.commitment,
       memo: encoded.memo.Message,
+      persistentGrant,
     },
   );
   return () => writes;
@@ -737,9 +750,7 @@ test("unified mailbox recovers encrypted marks and layout after a fresh browser 
   await page.goto("./#/postboxes");
   await connect(page);
   await unlock(page);
-  await page
-    .getByRole("button", { name: "Load mailbox settings", exact: true })
-    .click();
+  await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
   await expect(
     page.getByText("Matches saved Ootle settings", { exact: true }),
   ).toBeVisible();
@@ -765,7 +776,12 @@ test("unified mailbox recovers encrypted marks and layout after a fresh browser 
       exact: true,
     }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Unstar", exact: true }).click();
+  await page
+    .getByRole("checkbox", { name: "Select letter note-01", exact: true })
+    .check();
+  await page
+    .getByRole("combobox", { name: "Actions for selected letters" })
+    .selectOption("2:false");
   await expect(
     page.getByText("Unsaved changes · this session only", { exact: true }),
   ).toBeVisible();
@@ -774,7 +790,7 @@ test("unified mailbox recovers encrypted marks and layout after a fresh browser 
   );
   await page.getByRole("button", { name: "Discard unsaved changes" }).click();
   await expect(
-    page.getByRole("button", { name: "Unstar", exact: true }),
+    page.getByRole("checkbox", { name: "Select letter note-01", exact: true }),
   ).toBeVisible();
   await folders.getByRole("button", { name: /Archive/ }).click();
   await expect(
@@ -784,13 +800,11 @@ test("unified mailbox recovers encrypted marks and layout after a fresh browser 
   await page.reload();
   await connect(page);
   await unlock(page);
-  await page
-    .getByRole("button", { name: "Load mailbox settings", exact: true })
-    .click();
+  await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
   await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
   await folders.getByRole("button", { name: /Starred/ }).click();
   await expect(
-    page.getByRole("button", { name: "Unstar", exact: true }),
+    page.getByRole("checkbox", { name: "Select letter note-01", exact: true }),
   ).toBeVisible();
   await assertReadOnly(page, writes);
 });
@@ -801,11 +815,23 @@ test("damaged encrypted settings do not become an empty editable mailbox", async
   await page.goto("./#/postboxes");
   await connect(page);
   await unlock(page);
+  await expect(
+    page.getByRole("button", {
+      name: "Retry loading mailbox settings",
+      exact: true,
+    }),
+  ).toBeEnabled();
   await page
-    .getByRole("button", { name: "Load mailbox settings", exact: true })
+    .getByRole("button", {
+      name: "Retry loading mailbox settings",
+      exact: true,
+    })
     .click();
   await expect(
-    page.getByRole("button", { name: "Load mailbox settings", exact: true }),
+    page.getByRole("button", {
+      name: "Retry loading mailbox settings",
+      exact: true,
+    }),
   ).toBeEnabled();
   await expect(
     page.getByRole("button", { name: "Save mailbox changes", exact: true }),
@@ -946,9 +972,7 @@ test("bulk selection stages consistent read and archive changes and discard rest
   await page.goto("./#/postboxes");
   await connect(page);
   await unlock(page);
-  await page
-    .getByRole("button", { name: "Load mailbox settings", exact: true })
-    .click();
+  await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
   await page
     .getByRole("checkbox", { name: "Select letter note-10", exact: true })
     .check();
@@ -956,8 +980,11 @@ test("bulk selection stages consistent read and archive changes and discard rest
     .getByRole("checkbox", { name: "Select letter note-11", exact: true })
     .check();
   await page
-    .getByRole("button", { name: "Mark selected read", exact: true })
-    .click();
+    .getByRole("combobox", {
+      name: "Actions for selected letters",
+      exact: true,
+    })
+    .selectOption("1:true");
   const folders = page.getByRole("navigation", { name: "Mailbox folders" });
   await folders.getByRole("button", { name: /Unread/ }).click();
   await expect(
@@ -967,11 +994,17 @@ test("bulk selection stages consistent read and archive changes and discard rest
     .getByRole("checkbox", { name: "Select this page", exact: true })
     .check();
   await expect(
-    page.getByRole("button", { name: "Archive selected", exact: true }),
+    page.getByRole("combobox", {
+      name: "Actions for selected letters",
+      exact: true,
+    }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Archive selected", exact: true })
-    .click();
+    .getByRole("combobox", {
+      name: "Actions for selected letters",
+      exact: true,
+    })
+    .selectOption("4:true");
   await expect(page.getByText("0 selected", { exact: true })).toBeVisible();
   await expect(
     page.getByText("Unsaved changes · this session only", { exact: true }),
@@ -994,8 +1027,10 @@ test("favourites recover encrypted, stage edits and lead the recipient picker", 
   await page.goto("./#/postboxes");
   await connect(page);
   await unlock(page);
+  await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
+  await expect(page.locator(".mailbox-contacts")).toHaveCount(0);
   await page
-    .getByRole("button", { name: "Load mailbox settings", exact: true })
+    .getByRole("button", { name: "Compose letter", exact: false })
     .click();
   await page.locator(".mailbox-contacts summary").click();
   const favourite = page.getByRole("button", {
@@ -1091,9 +1126,7 @@ test("bulk selection keeps messages reachable in a short desktop window", async 
     .getByRole("button", { name: "Unlock private inbox", exact: true })
     .click();
   await page.getByRole("button", { name: "Continue in Sapient" }).click();
-  await page
-    .getByRole("button", { name: "Load mailbox settings", exact: true })
-    .click();
+  await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
   await page
     .getByRole("checkbox", { name: "Select letter note-01", exact: true })
     .check();
@@ -1101,8 +1134,11 @@ test("bulk selection keeps messages reachable in a short desktop window", async 
     .getByRole("checkbox", { name: "Select letter note-10", exact: true })
     .check();
   await page
-    .getByRole("button", { name: "Mark selected read", exact: true })
-    .click();
+    .getByRole("combobox", {
+      name: "Actions for selected letters",
+      exact: true,
+    })
+    .selectOption("1:true");
   await expect(page.getByText("0 selected", { exact: true })).toBeVisible();
   await assertReadOnly(page, writes);
 });
@@ -1194,5 +1230,215 @@ test("dismissing a pending wallet permission ignores its late success", async ({
   await expect(
     page.getByRole("button", { name: "Unlock 27 loaded letters", exact: true }),
   ).toBeDisabled();
+  await assertReadOnly(page, writes);
+});
+
+test("opening decrypted incoming mail stages read once, keeps edits through compose and leaves previews unread", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(page, "note-01", true);
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page);
+  await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
+  await page
+    .getByRole("searchbox", { name: "Search this folder" })
+    .fill("Letter 10");
+  const row = page.locator(".mailbox-message").filter({
+    has: page.getByRole("button", {
+      name: "Open letter: Letter 10",
+      exact: true,
+      includeHidden: true,
+    }),
+  });
+  await expect(row).toHaveClass(/unread/);
+  await readable(row.locator(".mailbox-row-heading strong"));
+  await page
+    .getByRole("combobox", { name: "Message spacing" })
+    .selectOption("comfortable");
+  await readable(row.locator(".mailbox-row-preview"));
+  await page
+    .getByRole("button", { name: "Discard unsaved changes", exact: true })
+    .click();
+  await row
+    .getByRole("button", { name: "Open letter: Letter 10", exact: true })
+    .click();
+  await expect(row).toHaveClass(/read/);
+  await expect(row).not.toHaveClass(/unread/);
+  await readable(page.locator(".mailbox-save-bar strong"));
+  await readable(page.locator(".mailbox-save-bar p").first());
+  await page.screenshot({
+    path: test.info().outputPath("mailbox-open-save-notice.png"),
+    fullPage: true,
+  });
+  await expect(
+    page.getByRole("button", { name: "Save mailbox changes", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Discard unsaved changes", exact: true })
+    .click();
+  await expect(row).toHaveClass(/unread/); // Discard stays discarded while the reader remains open.
+  await page
+    .getByRole("button", { name: "Back to messages", exact: true })
+    .click();
+  await row
+    .getByRole("button", { name: "Open letter: Letter 10", exact: true })
+    .click();
+  await expect(row).toHaveClass(/read/);
+  await page
+    .getByRole("button", { name: "Compose letter", exact: false })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Save mailbox changes", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Discard unsaved changes", exact: true })
+    .click();
+  await assertReadOnly(page, writes);
+});
+test("reload resumes only an existing wallet and private grant without repeat permission", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(
+    page,
+    "note-01",
+    true,
+    false,
+    false,
+    false,
+    true,
+  );
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page);
+  await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
+  await page.reload();
+  await expect(
+    page.getByRole("combobox", { name: "My postboxes", exact: true }),
+  ).toHaveValue("home");
+  await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
+  await expect(
+    page.getByRole("dialog", { name: "Unlock your private inbox" }),
+  ).toHaveCount(0);
+  const methods = await page.evaluate(() => (window as any).mailboxMethods);
+  expect(methods).not.toContain("tari_requestAccounts");
+  expect(methods).not.toContain("tari_requestViewAccess");
+  expect(methods).toContain("tari_getViewAccess");
+  await assertReadOnly(page, writes);
+  await page
+    .getByRole("button", { name: "Disconnect wallet", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Connect wallet", exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: "Connect wallet", exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(() => (window as any).mailboxMethods),
+  ).not.toContain("tari_getAccounts");
+});
+test("removed private grant stays locked after reload and asks again explicitly", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(
+    page,
+    "note-01",
+    true,
+    false,
+    false,
+    false,
+    true,
+  );
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page);
+  await page.evaluate(() => sessionStorage.setItem("fixture:granted", "0"));
+  await page.reload();
+  const dialog = page.getByRole("dialog", {
+    name: "Unlock your private inbox",
+  });
+  await expect(dialog).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Unlock 27 loaded letters", exact: true }),
+  ).toBeDisabled();
+  expect(
+    await page.evaluate(() => (window as any).mailboxMethods),
+  ).not.toContain("tari_requestViewAccess");
+  await dialog.getByRole("button", { name: "Continue in Sapient" }).click();
+  await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
+  await assertReadOnly(page, writes);
+});
+
+test("a failed private letter read never stages a read mark or save transaction", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(page, "note-01", true);
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await page
+    .getByRole("button", { name: "Unlock private inbox", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Continue in Sapient", exact: true })
+    .click();
+  await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
+  await page.evaluate(() => {
+    (window as any).denyMailboxRead = true;
+  });
+  await page
+    .getByRole("searchbox", { name: "Search this folder", exact: true })
+    .fill("note-10");
+  await page
+    .getByRole("button", { name: "Sealed letter · note-10", exact: true })
+    .click();
+  await expect(
+    page
+      .getByRole("navigation", { name: "Mailbox folders" })
+      .getByRole("button", { name: /Unread/ }),
+  ).toContainText("25");
+  await expect(
+    page.getByRole("button", { name: "Save mailbox changes", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.locator('.mailbox-message:has([data-envelope-id="note-10"])'),
+  ).toHaveClass(/unread/);
+  await assertReadOnly(page, writes);
+});
+test("unsaved read changes remain visible on other pages and clear on disconnect", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(page, "note-01", true);
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page);
+  await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
+  await page
+    .getByRole("checkbox", { name: "Select letter note-10", exact: true })
+    .check();
+  await page
+    .getByRole("combobox", {
+      name: "Actions for selected letters",
+      exact: true,
+    })
+    .selectOption("1:true");
+  await page.getByRole("button", { name: "Public mail", exact: true }).click();
+  await expect(
+    page.getByText("1 postbox has unsaved mailbox changes", { exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Return to my inbox to save", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Save mailbox changes", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Discard unsaved changes", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Disconnect wallet", exact: true })
+    .click();
+  await expect(page.locator(".mailbox-save-bar")).toHaveCount(0);
   await assertReadOnly(page, writes);
 });

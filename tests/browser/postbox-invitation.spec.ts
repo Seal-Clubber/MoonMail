@@ -330,7 +330,7 @@ test("the owner can copy an unlisted public invitation without private view or f
   });
   expect(
     (await page.evaluate(() => (window as any).walletCalls)).some((m: string) =>
-      /View|Transaction|Ownership/.test(m),
+      /requestViewAccess|ShieldedOutputs|Transaction|Ownership/.test(m),
     ),
   ).toBe(false);
   expect(

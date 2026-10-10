@@ -3,14 +3,13 @@ import type { Envelope, Letter, Postbox } from "../core/types";
 import { useChainMailbox, type MailboxAccess } from "./useChainMailbox";
 import { hasSentCopy } from "../core/sent-mail";
 import { conversation } from "../core/threads";
-import { recipientGroups } from "../core/contacts";
+import { MailboxSaveBar } from "./MailboxSaveBar";
 import {
   READ,
   STAR,
   ARCHIVE,
   type MailboxPreferences,
 } from "../core/mailbox-state";
-import { AmountInput } from "./AmountInput";
 import { tari } from "./AmountInput";
 
 // Every folder is a view of loaded on-chain state, not a device-only mailbox record.
@@ -44,13 +43,11 @@ export function MailboxWorkspace({
   onReaderTarget,
   stateAccess,
   boxes,
-  onContact,
   onReply,
   onPreferences,
 }: {
   stateAccess?: MailboxAccess;
   boxes: Postbox[];
-  onContact: (id: string) => void;
   onReply: (e: Envelope, letter: Letter) => void;
   onPreferences: (id: string, p: MailboxPreferences) => void;
   box: Postbox;
@@ -70,11 +67,9 @@ export function MailboxWorkspace({
   const state = useChainMailbox(box, stateAccess);
   const marks = new Map(state.draft.marks);
   const [checked, setChecked] = useState<string[]>([]);
-  const [contactQuery, setContactQuery] = useState("");
   useEffect(() => {
-    if (state.saved) onPreferences(box.id, state.saved);
-  }, [box.id, state.saved, onPreferences]);
-  const contacts = recipientGroups(boxes, letters, box, state.draft.favourites);
+    if (state.loaded) onPreferences(box.id, state.draft);
+  }, [box.id, state.loaded, state.draft, onPreferences]);
 
   const availableFolders = state.loaded
     ? [
@@ -120,6 +115,23 @@ export function MailboxWorkspace({
     folder === "sent"
       ? sent.find((e) => e.id === sentId)
       : inbox.find((e) => e.id === activeId);
+  const opened =
+    folder !== "sent" && selected && plain.has(selected.id)
+      ? selected.id
+      : undefined;
+  const lastOpened = useRef<string | undefined>(undefined);
+  const openedRead = opened ? !!((marks.get(opened) || 0) & READ) : false;
+  // Decrypting previews does not mark mail read; only the successfully opened reader does.
+  useEffect(() => {
+    if (!opened) {
+      lastOpened.current = undefined;
+      return;
+    }
+    if (state.loaded && !state.loading && lastOpened.current !== opened) {
+      lastOpened.current = opened;
+      if (!openedRead) state.markMany([opened], READ, true);
+    }
+  }, [state.loaded, state.loading, opened, openedRead]);
   const conversationText = new Map(sentPlain);
   for (const [id, letter] of plain) conversationText.set(id, letter);
   const threadLetters = selected
@@ -173,561 +185,487 @@ export function MailboxWorkspace({
     onClose();
   }
   return (
-    <section
-      className={`mailbox-workspace ${selected ? "reading" : ""} ${state.loaded ? state.draft.density : ""}`}
-      aria-label={`${box.nickname} mailbox`}
-    >
-      <aside className="mailbox-sidebar">
-        <div className="mailbox-identity">
-          <span aria-hidden="true">✉</span>
-          <strong>{box.nickname}</strong>
-          <small>Wallet-controlled postbox</small>
-        </div>
-        <button
-          className="primary mailbox-compose"
-          disabled={busy}
-          onClick={onCompose}
-        >
-          Compose letter <span aria-hidden="true">＋</span>
-        </button>
-        <nav aria-label="Mailbox folders">
-          {availableFolders.map((f) => (
-            <button
-              key={f.id}
-              aria-pressed={folder === f.id}
-              onClick={() => chooseFolder(f.id)}
-              disabled={busy}
-            >
-              <span aria-hidden="true">{f.icon}</span>
-              <span>{f.label}</span>
-              <span className="folder-count">{views[f.id].length}</span>
-            </button>
-          ))}
-        </nav>
-        {state.ready && (
-          <div className="mailbox-state-panel">
-            <h3>Mailbox settings</h3>
-            {!state.loaded ? (
-              <>
-                <p>
-                  Load your encrypted read, star, archive and layout settings
-                  from Ootle.
-                </p>
-                <button
-                  disabled={busy || !stateAccess?.approved}
-                  onClick={state.load}
-                >
-                  Load mailbox settings
-                </button>
-              </>
-            ) : (
-              <>
-                <p role="status">
-                  {state.dirty
-                    ? "Unsaved changes · this session only"
-                    : "Matches saved Ootle settings"}
-                </p>
-                <label>
-                  Message spacing
-                  <select
-                    value={state.draft.density}
-                    disabled={busy}
-                    onChange={(e) =>
-                      state.change({
-                        density: e.target.value as "comfortable" | "compact",
-                      })
-                    }
-                  >
-                    <option value="comfortable">Comfortable</option>
-                    <option value="compact">Compact</option>
-                  </select>
-                </label>
-                <details>
-                  <summary>Save changes on Ootle</summary>
-                  <p>
-                    One Sapient approval saves the batch. Your wallet pays the
-                    fee. Marks are encrypted; approximate size and transaction
-                    timing are public.
-                  </p>
-                  <AmountInput
-                    label="Mailbox save fee cap (TARI)"
-                    value={state.fee}
-                    disabled={busy}
-                    onChange={state.setFee}
-                  />
-                  <button
-                    disabled={busy || !state.dirty || stateAccess?.writeBlocked}
-                    onClick={state.save}
-                  >
-                    Save mailbox changes
-                  </button>
-                </details>
-                <button disabled={busy || !state.dirty} onClick={state.discard}>
-                  Discard unsaved changes
-                </button>
-                <button disabled={busy || state.dirty} onClick={state.reload}>
-                  Reload saved settings
-                </button>
-              </>
-            )}
+    <>
+      <MailboxSaveBar
+        state={state}
+        busy={busy}
+        blocked={stateAccess?.writeBlocked}
+      />
+      <section
+        className={`mailbox-workspace ${selected ? "reading" : ""} ${state.loaded ? state.draft.density : ""}`}
+        aria-label={`${box.nickname} mailbox`}
+      >
+        <aside className="mailbox-sidebar">
+          <div className="mailbox-identity">
+            <span aria-hidden="true">✉</span>
+            <strong>{box.nickname}</strong>
+            <small>Wallet-controlled postbox</small>
           </div>
-        )}
-        <details className="mailbox-contacts">
-          <summary>Contacts & favourite postboxes</summary>
-          <label>
-            Find a contact
+          <button
+            className="primary mailbox-compose"
+            disabled={busy}
+            onClick={onCompose}
+          >
+            Compose letter <span aria-hidden="true">＋</span>
+          </button>
+          <nav aria-label="Mailbox folders">
+            {availableFolders.map((f) => (
+              <button
+                key={f.id}
+                aria-pressed={folder === f.id}
+                onClick={() => chooseFolder(f.id)}
+                disabled={busy}
+              >
+                <span aria-hidden="true">{f.icon}</span>
+                <span>{f.label}</span>
+                <span className="folder-count">{views[f.id].length}</span>
+              </button>
+            ))}
+          </nav>
+          {state.ready && (
+            <div className="mailbox-state-panel">
+              <h3>Mailbox settings</h3>
+              {!state.loaded ? (
+                <>
+                  <p>
+                    {state.loading
+                      ? "Loading encrypted settings from Ootle…"
+                      : state.error
+                        ? "Settings could not load. Retry to recover your saved mailbox."
+                        : "Settings load automatically after Sapient private access is approved."}
+                  </p>
+                  {state.error && <p role="alert">{state.error}</p>}
+                  <button
+                    disabled={busy || state.loading || !stateAccess?.approved}
+                    onClick={state.load}
+                  >
+                    Retry loading mailbox settings
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p role="status">
+                    {state.dirty
+                      ? "Unsaved changes · this session only"
+                      : "Matches saved Ootle settings"}
+                  </p>
+                  <label>
+                    Message spacing
+                    <select
+                      value={state.draft.density}
+                      disabled={busy}
+                      onChange={(e) =>
+                        state.change({
+                          density: e.target.value as "comfortable" | "compact",
+                        })
+                      }
+                    >
+                      <option value="comfortable">Comfortable</option>
+                      <option value="compact">Compact</option>
+                    </select>
+                  </label>
+                  <button disabled={busy || state.dirty} onClick={state.reload}>
+                    Reload saved settings
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+          <p className="mailbox-device-note">
+            Mail and gift states come from Ootle. Reconnect the same Sapient
+            wallet on another device to recover your postboxes.
+          </p>
+        </aside>
+        <div className="mailbox-list-panel">
+          <header className="mailbox-list-header">
+            <div>
+              <span className="kicker">{box.nickname}</span>
+              <h2>{availableFolders.find((f) => f.id === folder)?.label}</h2>
+            </div>
+            <span className="mailbox-mail-count">
+              {views[folder].length} loaded
+            </span>
+          </header>
+          <label className="mailbox-search">
+            Search this folder
             <input
               type="search"
-              value={contactQuery}
+              value={query}
               maxLength={160}
-              onChange={(e) => setContactQuery(e.target.value)}
+              placeholder="Subject, message or letter ID"
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setPage(1);
+              }}
             />
           </label>
-          {!state.loaded && (
-            <p>Load mailbox settings to recover or save favourites.</p>
-          )}
-          {contacts.map((group) => (
-            <section key={group.label} aria-label={group.label}>
-              <h3>{group.label}</h3>
-              {group.boxes
-                .filter((p) =>
-                  `${p.nickname} ${p.id}`
-                    .toLowerCase()
-                    .includes(contactQuery.toLowerCase()),
-                )
-                .map((p) => (
-                  <div className="mailbox-contact" key={p.id}>
-                    <button
-                      disabled={busy}
-                      onClick={() => onContact(p.id)}
-                      title={p.id}
-                    >
-                      {p.nickname}
-                      <small>{p.id}</small>
-                    </button>
-                    {state.loaded && (
-                      <button
-                        disabled={busy}
-                        aria-label={`Favourite ${p.nickname}`}
-                        aria-pressed={!!state.draft.favourites?.includes(p.id)}
-                        onClick={() => state.favourite(p.id)}
-                      >
-                        ☆
-                      </button>
-                    )}
-                  </div>
-                ))}
-              {!group.boxes.length && <p>None yet</p>}
-            </section>
-          ))}
-          <p>
-            Names can be shared by strangers. Verify the postbox ID with your
-            friend.
-          </p>
-        </details>
-        <p className="mailbox-device-note">
-          Mail and gift states come from Ootle. Reconnect the same Sapient
-          wallet on another device to recover your postboxes.
-        </p>
-      </aside>
-      <div className="mailbox-list-panel">
-        <header className="mailbox-list-header">
-          <div>
-            <span className="kicker">{box.nickname}</span>
-            <h2>{availableFolders.find((f) => f.id === folder)?.label}</h2>
-          </div>
-          <span className="mailbox-mail-count">
-            {views[folder].length} loaded
-          </span>
-        </header>
-        <label className="mailbox-search">
-          Search this folder
-          <input
-            type="search"
-            value={query}
-            maxLength={160}
-            placeholder="Subject, message or letter ID"
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setPage(1);
-            }}
-          />
-        </label>
-        <label className="mailbox-sort">
-          Sort letters
-          <select
-            value={sort}
-            onChange={(e) => {
-              if (state.loaded)
-                state.change({
-                  sort: e.target.value as "chain" | "subject" | "gift",
-                });
-              else setSort(e.target.value);
-              setPage(1);
-            }}
-          >
-            <option value="chain">Post office order</option>
-            <option value="subject">Subject A–Z · unlocked first</option>
-            <option value="gift">Gift amount · largest first</option>
-          </select>
-        </label>
-        {locked.length > 0 && (
-          <div className="mailbox-unlock">
-            <button
-              disabled={busy || !canUnlock}
-              onClick={() => onUnlock(locked, folder === "sent")}
+          <label className="mailbox-sort">
+            Sort letters
+            <select
+              value={sort}
+              onChange={(e) => {
+                if (state.loaded)
+                  state.change({
+                    sort: e.target.value as "chain" | "subject" | "gift",
+                  });
+                else setSort(e.target.value);
+                setPage(1);
+              }}
             >
-              {busy
-                ? "Opening your mail…"
-                : `Unlock ${locked.length} loaded ${locked.length === 1 ? "letter" : "letters"}`}
-            </button>
-            <p>
-              Unlock to see subjects and search contents. Previews stay in
-              memory for this wallet session.{" "}
-              {canUnlock
-                ? "No transaction is sent."
-                : "Approve postbox view access above first."}
-            </p>
-          </div>
-        )}
-        {folder === "sent" && (
-          <p className="mailbox-folder-note">
-            Letters sent from this postbox. New encrypted Sent copies unlock
-            with your Sapient wallet. Older letters without a saved copy show
-            delivery details only.
-          </p>
-        )}
-        {state.loaded && folder !== "sent" && (
-          <div className="mailbox-bulk" aria-label="Bulk message actions">
-            <label>
-              <input
-                type="checkbox"
-                checked={
-                  !!visible.length &&
-                  visible.every((e) => checked.includes(e.id))
-                }
-                disabled={busy || !visible.length}
-                onChange={(event) =>
-                  setChecked(
-                    event.target.checked
-                      ? [...new Set([...checked, ...visible.map((e) => e.id)])]
-                      : checked.filter(
-                          (id) => !visible.some((e) => e.id === id),
-                        ),
-                  )
-                }
-              />{" "}
-              Select this page
-            </label>
-            <span role="status">{checked.length} selected</span>
-            {!!checked.length && (
-              <>
-                {[
-                  ["Mark selected read", READ, true],
-                  ["Mark selected unread", READ, false],
-                  ["Star selected", STAR, true],
-                  ["Unstar selected", STAR, false],
-                  ["Archive selected", ARCHIVE, true],
-                  ["Move selected to inbox", ARCHIVE, false],
-                ].map(([label, bit, enabled]) => (
-                  <button
-                    key={String(label)}
-                    disabled={busy}
-                    onClick={() => {
-                      state.markMany(
-                        checked.filter((id) => found.some((e) => e.id === id)),
-                        Number(bit),
-                        Boolean(enabled),
-                      );
-                      setChecked([]);
-                      onClose();
-                    }}
-                  >
-                    {String(label)}
-                  </button>
-                ))}
-                <button onClick={() => setChecked([])}>Clear selection</button>
-              </>
-            )}
-            <small>
-              Changes stay pending until you save mailbox changes on Ootle.
-            </small>
-          </div>
-        )}
-        <p className="mailbox-range" ref={range} tabIndex={-1} role="status">
-          {found.length
-            ? `${(currentPage - 1) * 12 + 1}–${Math.min(currentPage * 12, found.length)} of ${found.length} loaded letters`
-            : "No loaded letters in this view"}
-        </p>
-        <div className="mailbox-message-list" aria-label="Messages">
-          {visible.map((e) => {
-            const text = content(e);
-            const isSelected = selected?.id === e.id;
-            return (
-              <div
-                className={`mailbox-message ${isSelected ? "selected" : ""}`}
-                key={e.id}
+              <option value="chain">Post office order</option>
+              <option value="subject">Subject A–Z · unlocked first</option>
+              <option value="gift">Gift amount · largest first</option>
+            </select>
+          </label>
+          {locked.length > 0 && (
+            <div className="mailbox-unlock">
+              <button
+                disabled={busy || !canUnlock}
+                onClick={() => onUnlock(locked, folder === "sent")}
               >
-                {state.loaded && folder !== "sent" && (
-                  <label className="mailbox-select">
-                    <input
-                      type="checkbox"
-                      disabled={busy}
-                      checked={checked.includes(e.id)}
-                      aria-label={`Select letter ${e.id}`}
-                      onChange={(event) =>
-                        setChecked(
-                          event.target.checked
-                            ? [...checked, e.id]
-                            : checked.filter((id) => id !== e.id),
-                        )
-                      }
-                    />
-                  </label>
-                )}
-                <button
-                  className="mailbox-message-open"
-                  data-envelope-id={e.id}
-                  disabled={busy}
-                  aria-pressed={isSelected}
-                  aria-label={
-                    text
-                      ? `Open letter: ${text.subject}`
-                      : `Sealed letter · ${e.id}`
-                  }
-                  onClick={() => {
-                    if (folder === "sent") {
-                      onClose();
-                      setSentId(e.id);
-                      if (hasSentCopy(e) && canUnlock && !sentPlain.get(e.id))
-                        onOpenSent(e);
-                    } else {
-                      setSentId("");
-                      onOpen(e);
-                    }
-                  }}
-                >
-                  <span className="mailbox-row-heading">
-                    <strong>{text?.subject || "A sealed letter"}</strong>
-                    <span
-                      className="mailbox-seal"
-                      aria-label={
-                        text ? "Unlocked in this session" : "Encrypted contents"
-                      }
-                    >
-                      {text ? "✉" : "◇"}
-                    </span>
-                  </span>
-                  <span className="mailbox-row-preview">
-                    {text
-                      ? text.body.slice(0, 100)
-                      : "Subject and message are encrypted."}
-                  </span>
-                  <span className="mailbox-row-meta">
-                    <span>
-                      {e.id.length > 22
-                        ? `${e.id.slice(0, 10)}…${e.id.slice(-6)}`
-                        : e.id}
-                    </span>
-                    <span>
-                      {e.claimed && BigInt(e.gift) > 0n
-                        ? "Gift collected"
-                        : BigInt(e.gift) > 0n
-                          ? `${tari(e.gift)} TARI gift`
-                          : e.mode === "public"
-                            ? "Public note"
-                            : "Private note"}
-                    </span>
-                  </span>
-                </button>
-                {state.loaded && folder !== "sent" && (
-                  <div className="mailbox-row-actions">
-                    <button
-                      disabled={busy}
-                      aria-pressed={!!((marks.get(e.id) || 0) & READ)}
-                      onClick={() => state.toggle(e.id, READ)}
-                    >
-                      {(marks.get(e.id) || 0) & READ
-                        ? "Mark unread"
-                        : "Mark read"}
-                    </button>
-                    <button
-                      disabled={busy}
-                      aria-pressed={!!((marks.get(e.id) || 0) & STAR)}
-                      onClick={() => state.toggle(e.id, STAR)}
-                    >
-                      {(marks.get(e.id) || 0) & STAR ? "Unstar" : "Star"}
-                    </button>
-                    <button
-                      disabled={busy}
-                      onClick={() => {
-                        state.toggle(e.id, ARCHIVE);
-                        onClose();
-                      }}
-                    >
-                      {(marks.get(e.id) || 0) & ARCHIVE
-                        ? "Move to inbox"
-                        : "Archive"}
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          {!found.length && (
-            <div className="mailbox-empty">
-              <span aria-hidden="true">☾</span>
-              <h3>
-                {query
-                  ? "No matching letters"
-                  : folder === "inbox"
-                    ? "Your inbox is quiet"
-                    : "Nothing here yet"}
-              </h3>
+                {busy
+                  ? "Opening your mail…"
+                  : `Unlock ${locked.length} loaded ${locked.length === 1 ? "letter" : "letters"}`}
+              </button>
               <p>
-                {query
-                  ? "Locked letters can only be found by public IDs and routing details. Unlock your mail to search its contents."
-                  : folder === "inbox"
-                    ? "Share your postbox invitation so a friend can write to you."
-                    : "Choose another folder to find your mail."}
+                Unlock to see subjects and search contents. Previews stay in
+                memory for this wallet session.{" "}
+                {canUnlock
+                  ? "No transaction is sent."
+                  : "Approve postbox view access above first."}
               </p>
             </div>
           )}
-        </div>
-        {pages > 1 && (
-          <div className="mailbox-pagination">
-            <button
-              disabled={currentPage === 1 || busy}
-              onClick={() => {
-                setPage(currentPage - 1);
-                range.current?.focus();
-              }}
-            >
-              Previous
-            </button>
-            <span>
-              Page {currentPage} of {pages}
-            </span>
-            <button
-              disabled={currentPage === pages || busy}
-              onClick={() => {
-                setPage(currentPage + 1);
-                range.current?.focus();
-              }}
-            >
-              Next
-            </button>
-          </div>
-        )}
-      </div>
-      <div className={`mailbox-reading-pane ${selected ? "has-letter" : ""}`}>
-        {selected && (
-          <div className="mailbox-reading-tools">
-            <button
-              disabled={busy}
-              onClick={() => {
-                onClose();
-                setSentId("");
-              }}
-            >
-              Back to messages
-            </button>
-            <span>
-              {folder === "sent"
-                ? "Sent letter"
-                : "Only your wallet unlocks this letter"}
-            </span>
-          </div>
-        )}
-        <div ref={onReaderTarget} className="mailbox-reader-target" />
-        {folder === "sent" && selected && (
-          <article className="mailbox-sent-detail">
-            <span className="kicker">SENT ON OOTLE</span>
-            <h2>{content(selected)?.subject || "Your sealed letter"}</h2>
-            {content(selected) ? (
-              <p className="letter-body">{content(selected)!.body}</p>
-            ) : hasSentCopy(selected) ? (
-              <p>
-                Approve private view access above and unlock Sent to read your
-                encrypted copy. Reading sends no transaction.
-              </p>
-            ) : (
-              <p>
-                This older letter has no saved encrypted sender copy. Its
-                delivery details remain available; a private-link letter still
-                opens with its original secret link.
-              </p>
-            )}
-            <dl>
-              <dt>Letter ID</dt>
-              <dd>{selected.id}</dd>
-              <dt>Recipient postbox</dt>
-              <dd>
-                {selected.recipientPostbox || "Public mail or private link"}
-              </dd>
-              <dt>Original gift</dt>
-              <dd>
-                {tari(selected.gift)} TARI ·{" "}
-                {BigInt(selected.gift) === 0n
-                  ? "No gift attached"
-                  : selected.claimed
-                    ? "Collected"
-                    : "Not collected"}
-              </dd>
-            </dl>
-            <p className="fine-print">
-              A confirmed letter does not prove it has been read. A collected
-              gift does not identify its recipient here.
+          {folder === "sent" && (
+            <p className="mailbox-folder-note">
+              Letters sent from this postbox. New encrypted Sent copies unlock
+              with your Sapient wallet. Older letters without a saved copy show
+              delivery details only.
             </p>
-          </article>
-        )}
-        {selected && threadLetters.length > 1 && (
-          <section
-            className="mailbox-conversation"
-            aria-label="Reply conversation"
-          >
-            <h3>Conversation · {threadLetters.length} unlocked letters</h3>
-            <p>
-              Loaded replies from these two verified postboxes. Unlock Inbox and
-              Sent, and load more mail to see additional messages.
-            </p>
-            {threadLetters.map((e) => (
-              <details key={e.id} open={e.id === selected.id}>
-                <summary>
-                  {e.sender === box.controller
-                    ? "You"
-                    : boxes.find((p) => p.id === e.replyPostbox)?.nickname ||
-                      "Correspondent"}{" "}
-                  · {conversationText.get(e.id)?.subject}
-                </summary>
-                <p className="letter-body">
-                  {conversationText.get(e.id)?.body}
-                </p>
-                <small>
-                  Letter {e.id}
-                  {e.id === selected.id ? " · Currently open" : ""}
-                </small>
-                {e.sender !== box.controller && e.replyPostbox && (
-                  <button
-                    disabled={busy}
-                    onClick={() => onReply(e, conversationText.get(e.id)!)}
-                  >
-                    Reply to this message
+          )}
+          {state.loaded && folder !== "sent" && (
+            <div className="mailbox-bulk" aria-label="Bulk message actions">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={
+                    !!visible.length &&
+                    visible.every((e) => checked.includes(e.id))
+                  }
+                  disabled={busy || !visible.length}
+                  onChange={(event) =>
+                    setChecked(
+                      event.target.checked
+                        ? [
+                            ...new Set([
+                              ...checked,
+                              ...visible.map((e) => e.id),
+                            ]),
+                          ]
+                        : checked.filter(
+                            (id) => !visible.some((e) => e.id === id),
+                          ),
+                    )
+                  }
+                />{" "}
+                Select this page
+              </label>
+              <span role="status">{checked.length} selected</span>
+              {!!checked.length && (
+                <>
+                  <label>
+                    Apply to selected
+                    <select
+                      aria-label="Actions for selected letters"
+                      value=""
+                      disabled={busy}
+                      onChange={(event) => {
+                        const [bit, enabled] = event.target.value.split(":");
+                        if (!bit) return;
+                        state.markMany(
+                          checked.filter((id) =>
+                            inbox.some((e) => e.id === id),
+                          ),
+                          Number(bit),
+                          enabled === "true",
+                        );
+                        setChecked([]);
+                        onClose();
+                      }}
+                    >
+                      <option value="">Choose an action…</option>
+                      <option value="1:true">Mark as read</option>
+                      <option value="1:false">Mark as unread</option>
+                      <option value="2:true">Star</option>
+                      <option value="2:false">Remove star</option>
+                      <option value="4:true">Archive</option>
+                      <option value="4:false">Move to inbox</option>
+                    </select>
+                  </label>
+                  <button onClick={() => setChecked([])}>
+                    Clear selection
                   </button>
-                )}
-              </details>
-            ))}
-          </section>
-        )}
-        {!selected && (
-          <div className="mailbox-reading-empty">
-            <span aria-hidden="true">✉</span>
-            <h2>A quiet place to read.</h2>
-            <p>Choose a letter from your mailbox.</p>
-            <small>Encrypted contents. Public transaction metadata.</small>
+                </>
+              )}
+              <small>
+                Changes stay pending until you save mailbox changes on Ootle.
+              </small>
+            </div>
+          )}
+          <p className="mailbox-range" ref={range} tabIndex={-1} role="status">
+            {found.length
+              ? `${(currentPage - 1) * 12 + 1}–${Math.min(currentPage * 12, found.length)} of ${found.length} loaded letters`
+              : "No loaded letters in this view"}
+          </p>
+          <div className="mailbox-message-list" aria-label="Messages">
+            {visible.map((e) => {
+              const text = content(e);
+              const isSelected = selected?.id === e.id;
+              return (
+                <div
+                  className={`mailbox-message ${isSelected ? "selected" : ""} ${state.loaded && folder !== "sent" ? ((marks.get(e.id) || 0) & READ ? "read" : "unread") : ""}`}
+                  key={e.id}
+                >
+                  {state.loaded && folder !== "sent" && (
+                    <label className="mailbox-select">
+                      <input
+                        type="checkbox"
+                        disabled={busy}
+                        checked={checked.includes(e.id)}
+                        aria-label={`Select letter ${e.id}`}
+                        onChange={(event) =>
+                          setChecked(
+                            event.target.checked
+                              ? [...checked, e.id]
+                              : checked.filter((id) => id !== e.id),
+                          )
+                        }
+                      />
+                    </label>
+                  )}
+                  <button
+                    className="mailbox-message-open"
+                    data-envelope-id={e.id}
+                    disabled={busy}
+                    aria-pressed={isSelected}
+                    aria-label={
+                      text
+                        ? `Open letter: ${text.subject}`
+                        : `Sealed letter · ${e.id}`
+                    }
+                    onClick={() => {
+                      if (folder === "sent") {
+                        onClose();
+                        setSentId(e.id);
+                        if (hasSentCopy(e) && canUnlock && !sentPlain.get(e.id))
+                          onOpenSent(e);
+                      } else {
+                        setSentId("");
+                        onOpen(e);
+                      }
+                    }}
+                  >
+                    <span className="mailbox-row-heading">
+                      <strong>{text?.subject || "A sealed letter"}</strong>
+                      {state.loaded &&
+                        folder !== "sent" &&
+                        !((marks.get(e.id) || 0) & READ) && (
+                          <span className="mailbox-unread-label">Unread</span>
+                        )}
+                      {!!((marks.get(e.id) || 0) & STAR) && (
+                        <span aria-label="Starred">★</span>
+                      )}
+                      <span
+                        className="mailbox-seal"
+                        aria-label={
+                          text
+                            ? "Unlocked in this session"
+                            : "Encrypted contents"
+                        }
+                      >
+                        {text ? "✉" : "◇"}
+                      </span>
+                    </span>
+                    <span className="mailbox-row-preview">
+                      {text
+                        ? text.body.slice(0, 100)
+                        : "Subject and message are encrypted."}
+                    </span>
+                    <span className="mailbox-row-meta">
+                      <span>
+                        {e.id.length > 22
+                          ? `${e.id.slice(0, 10)}…${e.id.slice(-6)}`
+                          : e.id}
+                      </span>
+                      <span>
+                        {e.claimed && BigInt(e.gift) > 0n
+                          ? "Gift collected"
+                          : BigInt(e.gift) > 0n
+                            ? `${tari(e.gift)} TARI gift`
+                            : e.mode === "public"
+                              ? "Public note"
+                              : "Private note"}
+                      </span>
+                    </span>
+                  </button>
+                </div>
+              );
+            })}
+            {!found.length && (
+              <div className="mailbox-empty">
+                <span aria-hidden="true">☾</span>
+                <h3>
+                  {query
+                    ? "No matching letters"
+                    : folder === "inbox"
+                      ? "Your inbox is quiet"
+                      : "Nothing here yet"}
+                </h3>
+                <p>
+                  {query
+                    ? "Locked letters can only be found by public IDs and routing details. Unlock your mail to search its contents."
+                    : folder === "inbox"
+                      ? "Share your postbox invitation so a friend can write to you."
+                      : "Choose another folder to find your mail."}
+                </p>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-    </section>
+          {pages > 1 && (
+            <div className="mailbox-pagination">
+              <button
+                disabled={currentPage === 1 || busy}
+                onClick={() => {
+                  setPage(currentPage - 1);
+                  range.current?.focus();
+                }}
+              >
+                Previous
+              </button>
+              <span>
+                Page {currentPage} of {pages}
+              </span>
+              <button
+                disabled={currentPage === pages || busy}
+                onClick={() => {
+                  setPage(currentPage + 1);
+                  range.current?.focus();
+                }}
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </div>
+        <div className={`mailbox-reading-pane ${selected ? "has-letter" : ""}`}>
+          {selected && (
+            <div className="mailbox-reading-tools">
+              <button
+                disabled={busy}
+                onClick={() => {
+                  onClose();
+                  setSentId("");
+                }}
+              >
+                Back to messages
+              </button>
+              <span>
+                {folder === "sent"
+                  ? "Sent letter"
+                  : "Only your wallet unlocks this letter"}
+              </span>
+            </div>
+          )}
+          <div ref={onReaderTarget} className="mailbox-reader-target" />
+          {folder === "sent" && selected && (
+            <article className="mailbox-sent-detail">
+              <span className="kicker">SENT ON OOTLE</span>
+              <h2>{content(selected)?.subject || "Your sealed letter"}</h2>
+              {content(selected) ? (
+                <p className="letter-body">{content(selected)!.body}</p>
+              ) : hasSentCopy(selected) ? (
+                <p>
+                  Approve private view access above and unlock Sent to read your
+                  encrypted copy. Reading sends no transaction.
+                </p>
+              ) : (
+                <p>
+                  This older letter has no saved encrypted sender copy. Its
+                  delivery details remain available; a private-link letter still
+                  opens with its original secret link.
+                </p>
+              )}
+              <dl>
+                <dt>Letter ID</dt>
+                <dd>{selected.id}</dd>
+                <dt>Recipient postbox</dt>
+                <dd>
+                  {selected.recipientPostbox || "Public mail or private link"}
+                </dd>
+                <dt>Original gift</dt>
+                <dd>
+                  {tari(selected.gift)} TARI ·{" "}
+                  {BigInt(selected.gift) === 0n
+                    ? "No gift attached"
+                    : selected.claimed
+                      ? "Collected"
+                      : "Not collected"}
+                </dd>
+              </dl>
+              <p className="fine-print">
+                A confirmed letter does not prove it has been read. A collected
+                gift does not identify its recipient here.
+              </p>
+            </article>
+          )}
+          {selected && threadLetters.length > 1 && (
+            <section
+              className="mailbox-conversation"
+              aria-label="Reply conversation"
+            >
+              <h3>Conversation · {threadLetters.length} unlocked letters</h3>
+              <p>
+                Loaded replies from these two verified postboxes. Unlock Inbox
+                and Sent, and load more mail to see additional messages.
+              </p>
+              {threadLetters.map((e) => (
+                <details key={e.id} open={e.id === selected.id}>
+                  <summary>
+                    {e.sender === box.controller
+                      ? "You"
+                      : boxes.find((p) => p.id === e.replyPostbox)?.nickname ||
+                        "Correspondent"}{" "}
+                    · {conversationText.get(e.id)?.subject}
+                  </summary>
+                  <p className="letter-body">
+                    {conversationText.get(e.id)?.body}
+                  </p>
+                  <small>
+                    Letter {e.id}
+                    {e.id === selected.id ? " · Currently open" : ""}
+                  </small>
+                  {e.sender !== box.controller && e.replyPostbox && (
+                    <button
+                      disabled={busy}
+                      onClick={() => onReply(e, conversationText.get(e.id)!)}
+                    >
+                      Reply to this message
+                    </button>
+                  )}
+                </details>
+              ))}
+            </section>
+          )}
+          {!selected && (
+            <div className="mailbox-reading-empty">
+              <span aria-hidden="true">✉</span>
+              <h2>A quiet place to read.</h2>
+              <p>Choose a letter from your mailbox.</p>
+              <small>Encrypted contents. Public transaction metadata.</small>
+            </div>
+          )}
+        </div>
+      </section>
+    </>
   );
 }

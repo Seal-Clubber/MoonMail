@@ -870,3 +870,63 @@ test("public funds discard a response when the selected wallet changes during th
   );
   expect(readPending(f.storage)).toEqual([]);
 });
+
+test("authorized Sapient session resumes without permission or transaction requests", async () => {
+  const f = fixture();
+  const wallet = await SapientSession.resumeAuthorized(38, f.provider);
+  expect(wallet?.accounts).toHaveLength(1);
+  expect(f.request.mock.calls.map(([args]) => args.method)).not.toContain(
+    "tari_requestAccounts",
+  );
+  expect(
+    f.request.mock.calls
+      .map(([args]) => args.method)
+      .filter((method) => /Transaction|sign|ViewAccess/.test(method)),
+  ).toEqual([]);
+});
+test("passive resume with no account or wrong network never revokes the wallet grant", async () => {
+  const f = fixture();
+  const provider = {
+    ...f.provider,
+    request: vi.fn(async (args: { method: string }) =>
+      args.method === "tari_getAccounts" ? [] : f.provider.request(args),
+    ),
+  };
+  expect(await SapientSession.resumeAuthorized(38, provider)).toBeUndefined();
+  expect(
+    provider.request.mock.calls.map(([args]) => args.method),
+  ).not.toContain("tari_disconnect");
+  f.setNetwork("igor");
+  await expect(SapientSession.resumeAuthorized(38, f.provider)).rejects.toThrow(
+    "Switch Sapient",
+  );
+  expect(f.request.mock.calls.map(([args]) => args.method)).not.toContain(
+    "tari_disconnect",
+  );
+});
+test("private grant query checks wallet identity before and after and never requests permission", async () => {
+  const f = fixture();
+  let granted = true;
+  let change = false;
+  const provider = {
+    ...f.provider,
+    request: vi.fn(async (args: { method: string }) => {
+      if (args.method === "tari_getViewAccess") {
+        if (change) f.setAccount(`component_${"e".repeat(64)}`);
+        return { granted };
+      }
+      return f.provider.request(args);
+    }),
+  };
+  const wallet = await SapientSession.connect(38, provider);
+  expect(await wallet.hasPostboxViewAccess()).toBe(true);
+  granted = false;
+  expect(await wallet.hasPostboxViewAccess()).toBe(false);
+  expect(
+    provider.request.mock.calls.map(([args]) => args.method),
+  ).not.toContain("tari_requestViewAccess");
+  change = true;
+  await expect(wallet.hasPostboxViewAccess()).rejects.toThrow(
+    "account or network changed",
+  );
+});

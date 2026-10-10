@@ -104,6 +104,18 @@ export class SapientSession {
     }
   }
   static async connect(network: number, provider = sapientProvider()) {
+    return (await this.authorize(network, provider, true))!;
+  }
+  // Restore only an existing site grant. This never opens a permission prompt.
+  static async resumeAuthorized(network: number, provider = sapientProvider()) {
+    if (!provider) return;
+    return this.authorize(network, provider, false);
+  }
+  private static async authorize(
+    network: number,
+    provider: SapientProvider | undefined,
+    request: boolean,
+  ) {
     if (!networkName(network))
       throw new Error(
         "Sapient supports Esmeralda and Igor; choose a supported network",
@@ -121,10 +133,14 @@ export class SapientSession {
       if ((await session.call("tari_getNetwork")) !== networkName(network))
         throw new Error("Switch Sapient to the selected Ootle network");
       const addresses = await session.call(
-        "tari_requestAccounts",
+        request ? "tari_requestAccounts" : "tari_getAccounts",
         undefined,
-        120000,
+        request ? 120000 : 30000,
       );
+      if (!request && Array.isArray(addresses) && addresses.length === 0) {
+        session.invalidate();
+        return;
+      }
       if (
         !Array.isArray(addresses) ||
         addresses.length !== 1 ||
@@ -162,7 +178,8 @@ export class SapientSession {
       await session.assertCurrent();
       return session;
     } catch (error) {
-      session.disconnect();
+      if (request) session.disconnect();
+      else session.invalidate();
       throw error;
     }
   }
@@ -226,6 +243,12 @@ export class SapientSession {
   }
   // Each deployment must record recovery evidence before enabling new setup.
   // The wallet popup explains the grant; the website must also explain its account-wide scope.
+  async hasPostboxViewAccess() {
+    await this.assertCurrent();
+    const result = record(await this.call("tari_getViewAccess"));
+    await this.assertCurrent();
+    return result.granted === true;
+  }
   async requestPostboxViewAccess() {
     await this.assertCurrent();
     const result = record(

@@ -4017,3 +4017,102 @@ footer {
     min-height: 180px;
   }
 }
+
+/* A visible save reminder and distinct unread mail without per-row action clutter. */
+.mailbox-save-bar {
+  padding: 14px 16px;
+  background: #30251c;
+  border: 1px solid #d9aa63;
+  border-left: 5px solid #ffd48a;
+  color: #fff2d9;
+}
+.mailbox-save-bar strong {
+  color: #ffe0a6;
+  font-size: 1rem;
+}
+.mailbox-save-bar p {
+  color: #fff2d9;
+  margin: 6px 0 10px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+.mailbox-save-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.mailbox-save-actions button {
+  font-size: 0.82rem;
+}
+.mailbox-save-actions details {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+}
+.mailbox-save-actions summary {
+  cursor: pointer;
+}
+.mailbox-bulk select {
+  max-width: 100%;
+  margin: 4px 0;
+}
+.mailbox-bulk label {
+  min-width: 0;
+}
+.mailbox-message.unread {
+  background: #183653;
+  border-left: 4px solid #87d9ff;
+}
+.mailbox-message.unread .mailbox-message-open {
+  color: #f5fbff;
+}
+.mailbox-message.unread .mailbox-row-heading strong {
+  color: #f5fbff;
+  font-weight: 800;
+}
+.mailbox-message.unread .mailbox-row-preview {
+  color: #daeaff;
+}
+.mailbox-message.unread .mailbox-row-meta {
+  color: #c4dcef;
+}
+.mailbox-message.read .mailbox-row-heading strong {
+  font-weight: 500;
+}
+.mailbox-message.selected {
+  background: #263b51;
+}
+.mailbox-unread-label {
+  color: #c5eeff;
+  border: 1px solid #75b3d0;
+  padding: 2px 6px;
+  border-radius: 20px;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+.composer-contacts {
+  margin-block: 14px;
+}
+.composer-contacts .mailbox-contacts {
+  padding: 14px;
+  border: 1px solid #496079;
+  border-radius: 10px;
+  background: #111e2c;
+  font-size: 0.9rem;
+}
+.composer-contacts .mailbox-contact small {
+  font-size: 0.75rem;
+  color: #bdd3e8;
+}
+@media (max-width: 600px) {
+  .mailbox-save-actions button {
+    flex: 1 1 130px;
+  }
+}
+
+.mailbox-save-bar {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  margin-block: 12px;
+}

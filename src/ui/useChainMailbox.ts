@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 import type { Deployment, Postbox } from "../core/types";
 import type { ConnectedWallet } from "../core/wallet";
 import type { PostOfficeClient } from "../core/chain";
@@ -28,44 +34,171 @@ export interface MailboxAccess {
   task: (fn: () => Promise<void>) => Promise<void>;
   onStatus: (message: string) => void;
 }
-export function useChainMailbox(box: Postbox, access?: MailboxAccess) {
-  const [loaded, setLoaded] = useState(false),
-    [saved, setSaved] = useState<MailboxPreferences>(),
-    [draft, setDraft] = useState(emptyPreferences),
-    [base, setBase] = useState<{
-      revision: string;
-      ciphertext: string;
-      component?: string;
-    }>(),
-    [fee, setFee] = useState("100000");
-  const generation = useRef(0);
-  useEffect(() => {
-    generation.current++;
-    setLoaded(false);
-    setSaved(undefined);
-    setDraft(emptyPreferences());
-    setBase(undefined);
-    return () => {
-      generation.current++;
+// Private settings stay in memory across Inbox/Compose navigation, scoped to
+// the verified wallet session and office. They are never plaintext disk storage.
+type Snapshot = {
+  loaded: boolean;
+  loading: boolean;
+  saving: boolean;
+  tried: boolean;
+  error: string;
+  saved?: MailboxPreferences;
+  draft: MailboxPreferences;
+  base?: { revision: string; ciphertext: string; component?: string };
+  fee: string;
+};
+type Entry = { value: Snapshot; listeners: Set<() => void>; active: boolean };
+const changes = new Set<() => void>();
+const sessions = new WeakMap<SapientSession, Map<string, Entry>>();
+function entry(wallet: unknown, scope: string): Entry {
+  let entries =
+    wallet instanceof SapientSession ? sessions.get(wallet) : undefined;
+  if (wallet instanceof SapientSession && !entries) {
+    entries = new Map();
+    sessions.set(wallet, entries);
+  }
+  let result = entries?.get(scope);
+  if (!result) {
+    result = {
+      value: {
+        loaded: false,
+        loading: false,
+        saving: false,
+        tried: false,
+        error: "",
+        draft: emptyPreferences(),
+        fee: "100000",
+      },
+      listeners: new Set(),
+      active: true,
     };
-  }, [
-    access?.wallet,
-    access?.chain,
+    entries?.set(scope, result);
+  }
+  return result;
+}
+export function clearMailboxSession(
+  wallet: ConnectedWallet | undefined,
+  deployment: Deployment,
+) {
+  if (!(wallet instanceof SapientSession)) return;
+  const entries = sessions.get(wallet);
+  for (const [scope, store] of entries || []) {
+    const [network, registry, template] = JSON.parse(scope);
+    if (
+      network !== deployment.network ||
+      registry !== deployment.registry ||
+      template !== deployment.template
+    )
+      continue;
+    store.active = false;
+    store.value = {
+      loaded: false,
+      loading: false,
+      saving: false,
+      tried: false,
+      error: "",
+      draft: emptyPreferences(),
+      fee: "100000",
+    };
+    entries!.delete(scope);
+    store.listeners.forEach((listener) => listener());
+  }
+  changes.forEach((listener) => listener());
+}
+export function usePendingMailboxChanges(
+  wallet: ConnectedWallet | undefined,
+  deployment: Deployment,
+) {
+  const ids = useSyncExternalStore(
+    useCallback((listener: () => void) => {
+      changes.add(listener);
+      return () => {
+        changes.delete(listener);
+      };
+    }, []),
+    () => {
+      const entries =
+        wallet instanceof SapientSession ? sessions.get(wallet) : undefined;
+      return JSON.stringify(
+        [...(entries?.entries() || [])]
+          .filter(([scope, entry]) => {
+            const [network, registry, template] = JSON.parse(scope);
+            return (
+              network === deployment.network &&
+              registry === deployment.registry &&
+              template === deployment.template &&
+              entry.value.loaded &&
+              JSON.stringify(entry.value.saved) !==
+                JSON.stringify(entry.value.draft)
+            );
+          })
+          .map(([scope]) => JSON.parse(scope)[3]),
+      );
+    },
+  );
+  const pending = JSON.parse(ids) as string[];
+  useEffect(() => {
+    if (!pending.length) return;
+    const leaving = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", leaving);
+    return () => window.removeEventListener("beforeunload", leaving);
+  }, [ids]);
+  return pending;
+}
+export function useChainMailbox(box: Postbox, access?: MailboxAccess) {
+  const scope = JSON.stringify([
+    access?.deployment.network,
     access?.deployment.registry,
     access?.deployment.template,
     box.id,
     box.controller,
   ]);
+  const store = useMemo(
+    () => entry(access?.wallet, scope),
+    [access?.wallet, scope],
+  );
+  const state = useSyncExternalStore(
+    useCallback(
+      (listener: () => void) => {
+        store.listeners.add(listener);
+        return () => {
+          store.listeners.delete(listener);
+        };
+      },
+      [store],
+    ),
+    () => store.value,
+  );
+  const { loaded, saved, draft, base, fee } = state;
+  function update(patch: Partial<Snapshot>) {
+    if (!store.active) return;
+    store.value = { ...store.value, ...patch };
+    store.listeners.forEach((listener) => listener());
+    changes.forEach((listener) => listener());
+  }
+  const generation = useRef(0);
+  useEffect(() => {
+    generation.current++;
+    return () => {
+      generation.current++;
+    };
+  }, [store]);
   const ready =
-    !!access &&
+    !!access?.chain &&
     mailboxStateReady(access.deployment) &&
     access.wallet instanceof SapientSession &&
     access.wallet.accounts[0].account.owner_public_key === box.controller;
   const dirty = loaded && JSON.stringify(saved) !== JSON.stringify(draft);
   function run(fn: () => Promise<void>) {
-    if (access) void access.task(fn);
+    if (access && !store.value.loading) void access.task(fn);
   }
-  async function read(expectedGeneration: number) {
+  async function read(
+    expectedGeneration: number,
+    submitted?: MailboxPreferences,
+  ) {
     if (
       !access?.approved ||
       !ready ||
@@ -73,8 +206,12 @@ export function useChainMailbox(box: Postbox, access?: MailboxAccess) {
       !(access.wallet instanceof SapientSession)
     )
       throw new Error("Approve Sapient postbox view access first");
-    const wallet = access.wallet,
-      latest = await access.chain.readMailbox(box);
+    const wallet = access.wallet;
+    if (!(await wallet.hasPostboxViewAccess()))
+      throw new Error(
+        "Sapient private access was removed. Unlock private mail again.",
+      );
+    const latest = await access.chain.readMailbox(box);
     let value = emptyPreferences();
     if (latest.revision !== "0") {
       const payload = statePayload(latest.ciphertext),
@@ -110,11 +247,45 @@ export function useChainMailbox(box: Postbox, access?: MailboxAccess) {
       }
       await wallet.assertCurrent();
     }
-    if (generation.current !== expectedGeneration) return;
-    setBase(latest);
-    setSaved(value);
-    setDraft(value);
-    setLoaded(true);
+    await wallet.assertCurrent();
+    update({
+      base: latest,
+      saved: value,
+      loaded: true,
+      draft:
+        submitted && store.value.draft !== submitted
+          ? store.value.draft
+          : value,
+    });
+  }
+  async function load() {
+    if (store.value.loading) return;
+    const g = generation.current;
+    update({ loading: true, tried: true, error: "" });
+    try {
+      await read(g);
+    } catch (error) {
+      update({
+        error:
+          error instanceof Error
+            ? error.message
+            : "Could not load mailbox settings",
+      });
+    } finally {
+      // Release the shared loading latch even if this view was closed.
+      update({ loading: false });
+    }
+  }
+  useEffect(() => {
+    if (ready && access?.approved && !state.loaded && !state.tried) void load();
+  }, [store, ready, access?.approved, state.loaded, state.tried]);
+  function edit(fn: (value: MailboxPreferences) => MailboxPreferences) {
+    if (!store.value.loaded || store.value.loading) return;
+    try {
+      update({ draft: fn(store.value.draft) });
+    } catch (error) {
+      access?.onStatus((error as Error).message);
+    }
   }
   return {
     ready,
@@ -123,106 +294,91 @@ export function useChainMailbox(box: Postbox, access?: MailboxAccess) {
     draft,
     saved,
     fee,
-    setFee,
-    load: () =>
-      run(async () => {
-        const g = generation.current;
-        await read(g);
-        if (g === generation.current)
-          access!.onStatus(
-            "Mailbox settings loaded from Ootle. Reading sent no transaction.",
-          );
-      }),
-    reload: () =>
-      run(async () => {
-        if (dirty) throw new Error("Discard unsaved changes before reloading");
-        await read(generation.current);
-      }),
+    loading: state.loading || state.saving,
+    error: state.error,
+    setFee: (value: string) => update({ fee: value }),
+    load: () => {
+      void load();
+    },
+    reload: () => {
+      if (!dirty) void load();
+    },
     discard: () => {
-      if (saved) setDraft(saved);
+      if (store.value.saved && !store.value.loading)
+        update({ draft: store.value.saved });
     },
-    toggle: (id: string, bit: number) => {
-      if (loaded) {
-        try {
-          setDraft(toggleMark(draft, id, bit));
-        } catch (error) {
-          access?.onStatus((error as Error).message);
-        }
-      }
-    },
-    markMany: (ids: string[], bit: number, enabled: boolean) => {
-      if (!loaded) return;
-      try {
-        setDraft(setMarks(draft, ids, bit, enabled));
-      } catch (error) {
-        access?.onStatus((error as Error).message);
-      }
-    },
-    favourite: (id: string) => {
-      if (!loaded) return;
-      try {
-        setDraft(toggleFavourite(draft, id));
-      } catch (error) {
-        access?.onStatus((error as Error).message);
-      }
-    },
-    change: (patch: Partial<Pick<MailboxPreferences, "sort" | "density">>) => {
-      if (loaded) setDraft((p) => preferences({ ...p, ...patch }));
-    },
-    save: () =>
+    toggle: (id: string, bit: number) => edit((p) => toggleMark(p, id, bit)),
+    markMany: (ids: string[], bit: number, enabled: boolean) =>
+      edit((p) => setMarks(p, ids, bit, enabled)),
+    favourite: (id: string) => edit((p) => toggleFavourite(p, id)),
+    change: (patch: Partial<Pick<MailboxPreferences, "sort" | "density">>) =>
+      edit((p) => preferences({ ...p, ...patch })),
+    save: () => {
+      if (store.value.saving || store.value.loading) return;
+      update({ saving: true });
       run(async () => {
-        if (
-          !ready ||
-          !access?.approved ||
-          access.writeBlocked ||
-          !(access.wallet instanceof SapientSession) ||
-          !access.chain ||
-          !base ||
-          !loaded ||
-          !dirty
-        )
-          throw new Error("Load verified mailbox settings before saving");
-        const g = generation.current,
-          wallet = access.wallet,
-          descriptor = mailboxKey(box.encryptionKey),
-          context = {
-            ...access.deployment,
-            postbox: box.id,
-            controller: box.controller,
-            keyVersion: descriptor.keyVersion,
-          };
-        const ciphertext = await sealPreferences(
-          draft,
-          context,
-          (BigInt(base.revision) + 1n).toString(),
-          descriptor,
-        );
-        await wallet.assertCurrent();
-        if (g !== generation.current)
-          throw new Error("Wallet changed before saving");
-        const id = await access.chain.saveMailbox(
-          wallet,
-          wallet.accounts[0],
-          box,
-          base,
-          ciphertext,
-          fee,
-          browserStorage,
-        );
-        const pending = readPending(browserStorage).find((p) => p.id === id);
-        if (!pending)
-          throw new Error("Keep the original mailbox submission in Activity");
-        const result = await readDelivery(access.chain, pending);
-        savePending(browserStorage, result);
-        if (result.state !== "confirmed")
-          throw new Error(
-            "Mailbox save awaits its original receipt. Check Activity; do not send a replacement.",
+        try {
+          if (
+            !ready ||
+            !access?.approved ||
+            access.writeBlocked ||
+            !(access.wallet instanceof SapientSession) ||
+            !access.chain ||
+            !base ||
+            !loaded ||
+            !dirty
+          )
+            throw new Error("Load verified mailbox settings before saving");
+          const submitted = store.value.draft;
+          const g = generation.current,
+            wallet = access.wallet,
+            descriptor = mailboxKey(box.encryptionKey),
+            context = {
+              ...access.deployment,
+              postbox: box.id,
+              controller: box.controller,
+              keyVersion: descriptor.keyVersion,
+            };
+          if (!(await wallet.hasPostboxViewAccess()))
+            throw new Error(
+              "Sapient private access was removed. Unlock private mail again.",
+            );
+          const ciphertext = await sealPreferences(
+            submitted,
+            context,
+            (BigInt(base.revision) + 1n).toString(),
+            descriptor,
           );
-        if (g !== generation.current) return;
-        await read(g);
-        access.onStatus(
-          "Mailbox settings confirmed on Ootle. The same wallet can recover them on another device.",
-        );
-      }),
+          await wallet.assertCurrent();
+          if (g !== generation.current || !store.active)
+            throw new Error("Wallet or post office changed before saving");
+          const id = await access.chain.saveMailbox(
+            wallet,
+            wallet.accounts[0],
+            box,
+            base,
+            ciphertext,
+            fee,
+            browserStorage,
+          );
+          const pending = readPending(browserStorage).find((p) => p.id === id);
+          if (!pending)
+            throw new Error("Keep the original mailbox submission in Activity");
+          const result = await readDelivery(access.chain, pending);
+          savePending(browserStorage, result);
+          if (result.state !== "confirmed")
+            throw new Error(
+              "Mailbox save awaits its original receipt. Check Activity; do not send a replacement.",
+            );
+          if (g !== generation.current) return;
+          await read(g, submitted);
+          access.onStatus(
+            "Mailbox settings confirmed on Ootle. The same wallet can recover them on another device.",
+          );
+        } finally {
+          update({ saving: false });
+        }
+      });
+    },
   };
 }

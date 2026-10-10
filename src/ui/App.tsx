@@ -63,6 +63,11 @@ import {
   sentPurpose,
 } from "../core/sent-mail";
 import { Postboxes } from "./Postboxes";
+import { ComposerContacts } from "./ComposerContacts";
+import {
+  usePendingMailboxChanges,
+  clearMailboxSession,
+} from "./useChainMailbox";
 import { AmountInput, tari } from "./AmountInput";
 import { CopyField } from "./CopyField";
 import { WalletFunds } from "./WalletFunds";
@@ -81,6 +86,7 @@ import { useActionFocus } from "./useActionFocus";
 const short = (v: string) =>
   v.length > 20 ? `${v.slice(0, 10)}…${v.slice(-6)}` : v;
 export function App() {
+  const restoreBlocked = useRef(false);
   const [officeLoadError, setOfficeLoadError] = useState(false);
   const hallRange = useRef<HTMLParagraphElement>(null);
   const deploymentRevision = useRef(0);
@@ -102,6 +108,11 @@ export function App() {
     [account, setAccount] = useState(0),
     [connect, setConnect] = useState(false),
     [sapientAvailable, setSapientAvailable] = useState(!!sapientProvider());
+  const pendingMailboxChanges = usePendingMailboxChanges(wallet, d);
+  useEffect(
+    () => () => clearMailboxSession(wallet, d),
+    [wallet, d.network, d.registry, d.template],
+  );
   const [error, setError] = useState(""),
     [status, setStatus] = useState(""),
     [taskBusy, setBusy] = useState(false),
@@ -264,6 +275,39 @@ export function App() {
       window.removeEventListener("tari:announceProvider", detected);
     };
   }, []);
+  useEffect(() => {
+    if (wallet || !sapientAvailable || restoreBlocked.current) return;
+    try {
+      if (
+        sessionStorage.getItem("ghostdrop:sapient-resume:v1") !==
+        String(d.network)
+      )
+        return;
+    } catch {
+      return;
+    }
+    let cancelled = false;
+    const sequence = connectionSequence.current;
+    void SapientSession.resumeAuthorized(d.network)
+      .then((restored) => {
+        if (!restored) return;
+        if (cancelled || sequence !== connectionSequence.current) {
+          restored.invalidate();
+          return;
+        }
+        setWallet(restored);
+        setAccount(0);
+        setStatus(
+          "Sapient connection restored. Your wallet still approves every transaction.",
+        );
+      })
+      .catch(() => {
+        // Locked wallets and removed grants remain disconnected; reconnect explicitly.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [d.network, sapientAvailable, wallet]);
   useEffect(() => {
     if (!(wallet instanceof SapientSession)) return;
     const changed = () => {
@@ -1182,6 +1226,12 @@ export function App() {
   const draftTooLarge = draftSize !== undefined && draftSize > letterLimit(d);
 
   function clearWallet(revoke: boolean) {
+    restoreBlocked.current = true;
+    try {
+      sessionStorage.removeItem("ghostdrop:sapient-resume:v1");
+    } catch {
+      /* Optional reload convenience. */
+    }
     connectionSequence.current += 1;
     draftSequence.current += 1;
     openSequence.current += 1;
@@ -1400,6 +1450,25 @@ export function App() {
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
+        {!!pendingMailboxChanges.length &&
+          view !== "postboxes" &&
+          view !== "compose" && (
+            <div className="mailbox-save-bar" role="status">
+              <strong>
+                {pendingMailboxChanges.length} postbox
+                {pendingMailboxChanges.length === 1 ? " has" : "es have"}{" "}
+                unsaved mailbox changes
+              </strong>
+              <p>
+                Your read status, archive and favourites stay in this session
+                until saved to Ootle.
+              </p>
+              <button disabled={busy} onClick={() => navigate("postboxes")}>
+                Return to my inbox to save
+              </button>
+            </div>
+          )}
+
         {officeLoadError && (
           <div role="alert" className="message error">
             <p>
@@ -2046,6 +2115,30 @@ export function App() {
                       </button>
                     </p>
                   )}
+                  {contactHome && wallet instanceof SapientSession && (
+                    <ComposerContacts
+                      key={`${d.network}:${d.registry}:${contactHome.id}:${current?.account.component_address}`}
+                      box={contactHome}
+                      boxes={boxes}
+                      letters={letters}
+                      busy={busy}
+                      access={{
+                        wallet,
+                        chain,
+                        deployment: d,
+                        approved: false,
+                        writeBlocked,
+                        task,
+                        onStatus: setStatus,
+                      }}
+                      onPreferences={rememberPreferences}
+                      onContact={(id) => {
+                        setRecipient(id);
+                        setThread(undefined);
+                        setReview(false);
+                      }}
+                    />
+                  )}
                   <label htmlFor="recipient-postbox">Recipient postbox</label>
                   <button
                     type="button"
@@ -2431,10 +2524,6 @@ export function App() {
                 beginAddressedDraft(e.replyPostbox, letter.subject, e, letter);
             }}
             onPreferences={rememberPreferences}
-            onContact={(id, box) => {
-              composeFromPostbox(box);
-              beginAddressedDraft(id);
-            }}
             onRead={readPostbox}
             onReadSent={readSent}
             sentPlain={sentPlain}
@@ -2900,6 +2989,15 @@ export function App() {
                       }
                       if (wallet instanceof SapientSession) wallet.invalidate();
                       else wallet?.disconnect();
+                      restoreBlocked.current = false;
+                      try {
+                        sessionStorage.setItem(
+                          "ghostdrop:sapient-resume:v1",
+                          String(d.network),
+                        );
+                      } catch {
+                        /* Reconnect manually if storage is unavailable. */
+                      }
                       setWallet(w);
                       setAccount(0);
                       setConnect(false);
