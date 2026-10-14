@@ -779,7 +779,7 @@ export function Postboxes({
       {!writesReady(deployment, "postbox", "sapient") && (
         <p className="info">
           Postbox writes await verified Sapient key recovery. Connecting a
-          wallet for signing does not give GhostDrop a recoverable mail
+          wallet for signing does not give MoonMail a recoverable mail
           decryption key. Existing postbox keys are preserved; no extra bridge
           is required.
         </p>

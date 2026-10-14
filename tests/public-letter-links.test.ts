@@ -10,9 +10,9 @@ const context = {
 };
 it("public letter links preserve frontend paths, carry only public context and round-trip escaped IDs", () => {
   for (const base of [
-    "https://example.com/GhostDrop/?old=1#/old",
+    "https://example.com/MoonMail/?old=1#/old",
     "https://mirror.example/subpath",
-    "http://127.0.0.1:4173/GhostDrop/",
+    "http://127.0.0.1:4173/MoonMail/",
   ]) {
     const u = new URL(
       createPublicLetterLink(base, { id: "public /?#&", context }),
@@ -49,7 +49,7 @@ it("public link creation rejects insecure or credential-bearing frontend bases",
   for (const base of [
     "http://untrusted.example/",
     "https://user:pass@example.com/",
-    "file:///GhostDrop/",
+    "file:///MoonMail/",
   ])
     expect(() =>
       createPublicLetterLink(base, { id: "public", context }),

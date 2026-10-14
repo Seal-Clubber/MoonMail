@@ -126,7 +126,7 @@ export class SapientSession {
       provider.info?.rdns !== "mw.tari.sapient"
     )
       throw new Error(
-        "Sapient was not detected. Open GhostDrop in the browser where Sapient is installed, then try again.",
+        "Sapient was not detected. Open MoonMail in the browser where Sapient is installed, then try again.",
       );
     const session = new SapientSession(provider, [], network);
     try {
@@ -520,7 +520,7 @@ export class SapientSession {
       if (r.status === "rejected") {
         savePending(storage, { ...pending, state: "rejected" });
         throw new Error(
-          "Transaction rejected in Sapient; nothing submitted by GhostDrop",
+          "Transaction rejected in Sapient; nothing submitted by MoonMail",
         );
       }
       if (r.status === "failed")

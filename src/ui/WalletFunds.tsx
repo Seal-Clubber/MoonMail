@@ -36,8 +36,8 @@ export function WalletFunds({
     }
   }
   return (
-    <section className="wallet-funds" aria-label="Funds for GhostDrop">
-      <h3>Funds for GhostDrop</h3>
+    <section className="wallet-funds" aria-label="Funds for MoonMail">
+      <h3>Funds for MoonMail</h3>
       <p className="fine-print">
         Sending and postbox setup use public test TARI. Sapient shows private
         funds separately.
@@ -85,13 +85,13 @@ export function WalletFunds({
           it does not send another one.
         </p>
         <p className="fine-print">
-          To use private TARI for GhostDrop sending or postbox setup, choose
-          Unshield in Sapient and review its amount and fee there. GhostDrop
+          To use private TARI for MoonMail sending or postbox setup, choose
+          Unshield in Sapient and review its amount and fee there. MoonMail
           never asks for your seed or private keys.
         </p>
       </details>
       <p className="fine-print">
-        Collecting a funded GhostDrop gift uses the sender’s collection reserve
+        Collecting a funded MoonMail gift uses the sender’s collection reserve
         and needs no recipient coins.
       </p>
     </section>

@@ -124,7 +124,7 @@ test("theme keeps utility, parchment and nested dark text readable", async ({
   expect(writes).toBe(0);
 });
 
-test("GhostDrop brand stays left with a centered icon and no overflow", async ({
+test("MoonMail brand stays left with a centered icon and no overflow", async ({
   page,
 }) => {
   await page.goto("./");

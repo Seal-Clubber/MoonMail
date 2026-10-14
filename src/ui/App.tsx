@@ -1409,7 +1409,7 @@ export function App() {
             <GhostMark />
           </span>
           <span>
-            GHOSTDROP<small>THE HAUNTED POST OFFICE</small>
+            MOONMAIL<small>THE HAUNTED POST OFFICE</small>
           </span>
         </a>
         <nav aria-label="Main navigation">
@@ -2423,7 +2423,7 @@ export function App() {
                     <p>
                       Save this complete link before sending. It opens after
                       delivery confirms. Anyone with it can open the letter and
-                      collect its gift; GhostDrop cannot recover it for you.
+                      collect its gift; MoonMail cannot recover it for you.
                     </p>
                     <CopyField
                       label="Private link to save"
@@ -2619,7 +2619,7 @@ export function App() {
             </h1>
             <p>
               Static hosting, a replaceable Ootle indexer, and your Sapient
-              wallet. No GhostDrop server.
+              wallet. No MoonMail server.
             </p>
             <div className="info">
               You’re using the Sapient post office on Esmeralda. These are test
@@ -2695,7 +2695,7 @@ export function App() {
               {indexerStatus && <p role="status">{indexerStatus}</p>}
               {!d.registry && (
                 <p className="info">
-                  Public network settings are ready to check. GhostDrop still
+                  Public network settings are ready to check. MoonMail still
                   needs its own deployed registry and two template addresses
                   before live mail can load. Addresses from a local test chain
                   do not work on the public testnet.
@@ -2732,7 +2732,7 @@ export function App() {
                 />
               </label>
               <p className="info">
-                The indexer supplies public mail data. GhostDrop checks contract
+                The indexer supplies public mail data. MoonMail checks contract
                 identities but does not verify consensus proofs. Keep wallet
                 secrets and private links out of these settings.
               </p>
@@ -2881,7 +2881,7 @@ export function App() {
         )}
       </main>
       <footer>
-        <span className="footer-brand">✦ GHOSTDROP</span>
+        <span className="footer-brand">✦ MOONMAIL</span>
         <p>Made for the generous souls among us.</p>
         <button onClick={() => navigate("network")}>Settings ↗</button>
         <span className="footer-note">ESMERALDA TESTNET · SAPIENT</span>
@@ -2964,17 +2964,17 @@ export function App() {
                 <details>
                   <summary>What do I need?</summary>
                   <p className="fine-print">
-                    Sapient is the wallet itself. Open GhostDrop in the browser
+                    Sapient is the wallet itself. Open MoonMail in the browser
                     where you use Sapient, unlock it, and choose your Ootle
-                    account. There is no separate GhostDrop bridge or background
+                    account. There is no separate MoonMail bridge or background
                     program.
                   </p>
                   <p className="fine-print">
                     Public mail and private links open without a wallet. Sending
                     needs public test TARI for fees and gift funding. If your
                     TARI is private, use Unshield in Sapient first. Your postbox
-                    needs a separate privacy permission, which GhostDrop
-                    explains before asking.
+                    needs a separate privacy permission, which MoonMail explains
+                    before asking.
                   </p>
                 </details>
                 <form
@@ -3340,7 +3340,7 @@ export function App() {
                           wallet?.kind === "sapient" &&
                           active.claimProtocol === "sapient-proof-1" &&
                           postboxClaimsReady(d, "sapient")
-                            ? `Sapient will ask you to approve a proof for this gift and destination. GhostDrop then submits the claim. You receive ${tari(active.gift)} TARI; collection fees come from the funded reserve of up to ${tari(active.reserve)} TARI. Your wallet needs no coins for this claim. The approval expires after at most 10 network epochs.`
+                            ? `Sapient will ask you to approve a proof for this gift and destination. MoonMail then submits the claim. You receive ${tari(active.gift)} TARI; collection fees come from the funded reserve of up to ${tari(active.reserve)} TARI. Your wallet needs no coins for this claim. The approval expires after at most 10 network epochs.`
                             : active.mode === "postbox" &&
                                 wallet?.kind === "sapient"
                               ? "Postbox collection is not enabled for this deployment. Your connected wallet must control this postbox."
@@ -3456,7 +3456,7 @@ export function App() {
                             </dl>
                             <p className="fine-print">
                               {active.mode === "postbox"
-                                ? "Confirming asks Sapient to approve a proof for this gift and destination. Only then can GhostDrop submit the collection."
+                                ? "Confirming asks Sapient to approve a proof for this gift and destination. Only then can MoonMail submit the collection."
                                 : "Confirming submits the collection using this destination. No wallet connection or extra signature is required."}{" "}
                               The gift goes to the address shown above. Check it
                               carefully before confirming.

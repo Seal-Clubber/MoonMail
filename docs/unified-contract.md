@@ -1,6 +1,6 @@
-# One GhostDrop mail template
+# One MoonMail mail template
 
-`contracts/ghostdrop-v3` builds one published WASM template, `GhostDrop`. It includes the post office, public letters, private-link letters, addressed Sapient mail, gift vaults and claim rules, permanent recovery capsules and encrypted mailbox preferences. A single template can instantiate many components. The root keeps small directory references; separate letter and mailbox components keep payloads out of the shared directory. This is one mail application template, not one ever-growing ledger record. There is no GhostDrop backend.
+`contracts/ghostdrop-v3` builds one published WASM template, `GhostDrop`. It includes the post office, public letters, private-link letters, addressed Sapient mail, gift vaults and claim rules, permanent recovery capsules and encrypted mailbox preferences. A single template can instantiate many components. The root keeps small directory references; separate letter and mailbox components keep payloads out of the shared directory. This is one mail application template, not one ever-growing ledger record. There is no MoonMail backend.
 
 ## Deployment status
 

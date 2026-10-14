@@ -78,7 +78,7 @@ function ledger(url: string, mode = 0) {
 }
 const hash = (context = d, letter = id) =>
   new URL(
-    createPublicLetterLink("https://example.com/GhostDrop/", {
+    createPublicLetterLink("https://example.com/MoonMail/", {
       id: letter,
       context,
     }),
@@ -128,7 +128,7 @@ test("a public permalink opens the exact verified letter and gift without signin
     .getByLabel("Public link for this letter", { exact: true })
     .inputValue();
   const u = new URL(link);
-  expect(u.pathname).toBe("/GhostDrop/");
+  expect(u.pathname).toBe("/MoonMail/");
   expect(u.search).toBe("");
   expect(u.hash).toBe(hash());
   expect(link).not.toContain(subject);

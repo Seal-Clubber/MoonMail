@@ -1,6 +1,6 @@
 # Ootle v0.46 compatibility
 
-GhostDrop targets [Tari Ootle v0.46.0](https://github.com/tari-project/tari-ootle/releases/tag/v0.46.0), released on 13 October 2026 as a prerelease. The public Esmeralda indexer was verified at v0.46.0, epoch 12243, past the Protocol V2 activation at epoch 12220. The static site continues to use Sapient, with no GhostDrop backend or visitor bridge.
+MoonMail targets [Tari Ootle v0.46.0](https://github.com/tari-project/tari-ootle/releases/tag/v0.46.0), released on 13 October 2026 as a prerelease. The public Esmeralda indexer was verified at v0.46.0, epoch 12243, past the Protocol V2 activation at epoch 12220. The static site continues to use Sapient, with no MoonMail backend or visitor bridge.
 
 ## Pinned dependencies
 
@@ -18,7 +18,7 @@ SDK package numbers differ from the node release number. The pnpm lockfile was g
 
 ## Receipt and contract compatibility
 
-Ootle 0.46 no longer puts template return values in transaction results. Production GhostDrop already reads letters, postboxes and mailbox revisions from component state, and confirms original transaction IDs using finalized decisions. It does not discover deployments or confirm mail from returned function values. New receipt regressions verify full commit, fee-only uncertainty and rejection when return-value fields are absent.
+Ootle 0.46 no longer puts template return values in transaction results. Production MoonMail already reads letters, postboxes and mailbox revisions from component state, and confirms original transaction IDs using finalized decisions. It does not discover deployments or confirm mail from returned function values. New receipt regressions verify full commit, fee-only uncertainty and rejection when return-value fields are absent.
 
 Engine helpers use the official test-only `TemplateTest.expect_return` capture API. That is harness instrumentation, not a production receipt API. The historical 0.33 template and the 0.34 test host have separate Rust address types; historical payout assertions compare full canonical component identities and parse that identity before reading destination balances. Financial assertions are retained.
 

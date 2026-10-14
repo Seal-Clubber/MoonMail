@@ -6,14 +6,14 @@ const context = {
   template: "b".repeat(64),
 };
 const route = { id: "a-friend", context };
-const hash = new URL(createPostboxLink("https://example.com/GhostDrop/", route))
+const hash = new URL(createPostboxLink("https://example.com/MoonMail/", route))
   .hash;
 describe("public postbox invitations", () => {
   it("preserves a Pages or mirror path and uses only the fragment for the recipient and context", () => {
     for (const base of [
-      "https://example.com/GhostDrop/?discard=1#/old",
+      "https://example.com/MoonMail/?discard=1#/old",
       "https://mirror.example/subpath",
-      "http://127.0.0.1:4173/GhostDrop/",
+      "http://127.0.0.1:4173/MoonMail/",
     ]) {
       const u = new URL(createPostboxLink(base, route));
       expect(u.search).toBe("");

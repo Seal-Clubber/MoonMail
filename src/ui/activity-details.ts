@@ -59,7 +59,7 @@ export function activityDetails(p: Pending) {
     explanation =
       p.operation === "claim"
         ? "No transaction receipt identifies your payout. A collected gift alone cannot prove that your receiving account was paid."
-        : `GhostDrop saved the original attempt for ${subject}, but has not received its transaction ID. The action may already have reached the wallet or network.`;
+        : `MoonMail saved the original attempt for ${subject}, but has not received its transaction ID. The action may already have reached the wallet or network.`;
     nextStep = p.walletRequest
       ? "Resume the same saved Sapient approval if available, then check its original receipt. Do not send a replacement."
       : "Inspect the receiving account or Sapient transaction history. Do not send a replacement while this outcome is unresolved.";

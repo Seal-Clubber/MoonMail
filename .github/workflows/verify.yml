@@ -1,4 +1,4 @@
-name: Verify GhostDrop
+name: Verify MoonMail
 on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read

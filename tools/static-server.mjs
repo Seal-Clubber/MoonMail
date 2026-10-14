@@ -2,7 +2,7 @@
 import http from "node:http";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-const base = "/GhostDrop/",
+const base = "/MoonMail/",
   root = path.resolve("dist");
 const mime = {
   ".html": "text/html",

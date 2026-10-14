@@ -764,7 +764,7 @@ for (const throughPublicLink of [false, true]) {
     await page.getByLabel("Set aside for collection fees").fill("0.1");
     if (throughPublicLink) {
       const hash = new URL(
-        createPublicLetterLink("https://example.com/GhostDrop/", {
+        createPublicLetterLink("https://example.com/MoonMail/", {
           id: "recovered",
           context: deployment,
         }),

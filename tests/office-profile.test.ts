@@ -36,7 +36,7 @@ test("a stalled JSON body times out after headers and cannot replace that failed
   const body = new Promise((r) => (release = r));
   const fetch = vi.fn(async () => ({ ok: true, json: () => body }));
   vi.stubGlobal("fetch", fetch);
-  const result = loadOfficeProfile("/GhostDrop/deployment.json");
+  const result = loadOfficeProfile("/MoonMail/deployment.json");
   const failed = expect(result).rejects.toThrow("timed out");
   await vi.advanceTimersByTimeAsync(15_000);
   await failed;
@@ -52,7 +52,7 @@ test("an HTTP failure preserves an explicit error without parsing its body", asy
     "fetch",
     vi.fn(async () => ({ ok: false, json })),
   );
-  await expect(loadOfficeProfile("/GhostDrop/deployment.json")).rejects.toThrow(
+  await expect(loadOfficeProfile("/MoonMail/deployment.json")).rejects.toThrow(
     "unavailable",
   );
   expect(json).not.toHaveBeenCalled();

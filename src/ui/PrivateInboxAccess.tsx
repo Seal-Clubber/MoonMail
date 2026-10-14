@@ -129,13 +129,13 @@ export function PrivateInboxAccess({
         <p className="eyebrow">Your letters, behind the veil</p>
         <h2 id="private-inbox-title">Unlock your private inbox</h2>
         <p>
-          Sapient keeps your letters encrypted. Give GhostDrop permission to
-          find your postbox backup and open your mail.
+          Sapient keeps your letters encrypted. Give MoonMail permission to find
+          your postbox backup and open your mail.
         </p>
         <div className="private-inbox-disclosure" id="private-inbox-scope">
           <strong>This permission covers your whole connected account.</strong>
           <p>
-            GhostDrop can read its private output summaries, including amounts
+            MoonMail can read its private output summaries, including amounts
             and memos for other resources. It does not reveal your wallet seed
             or signing keys.
           </p>

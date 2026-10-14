@@ -80,7 +80,7 @@ export class WalletSession {
     if (result.error || result.result === undefined) {
       throw new Error(
         result.error?.code === -32601
-          ? "This daemon needs the GhostDrop wallet extension for recoverable postbox keys"
+          ? "Legacy postbox recovery needs the archived wallet extension"
           : "Postbox operation failed: verify controller, key version, context and the account-scoped postbox permission",
       );
     }

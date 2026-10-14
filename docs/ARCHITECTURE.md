@@ -1,6 +1,6 @@
 # Architecture and threat model
 
-GhostDrop is a static React application. GitHub Pages serves HTML/CSS/JS and the official Tari crypto WASM. There is no required GhostDrop server. The website connects directly to Sapient's injected browser provider; indexer reads and guest transaction submissions go directly to replaceable infrastructure. Optional donor/deployment tools and preserved historical recovery code retain their daemon adapter.
+MoonMail is a static React application. GitHub Pages serves HTML/CSS/JS and the official Tari crypto WASM. There is no required MoonMail server. The website connects directly to Sapient's injected browser provider; indexer reads and guest transaction submissions go directly to replaceable infrastructure. Optional donor/deployment tools and preserved historical recovery code retain their daemon adapter.
 
 ## Authority and data
 
@@ -24,7 +24,7 @@ Engine tests validate these checkpoints. Separate isolated-network probes verifi
 
 ## Receiving and wallet credentials
 
-The current website uses [Sapient](SAPIENT.md). Its origin/account grant exposes public metadata; each real transaction requires wallet approval. Network/account/address are rechecked, and changes clear private page state. No API key or financial seed is entered into GhostDrop. Persisted wallet request IDs allow approval/status recovery after reload without repeating request creation. The wallet owns fee construction and may internally retry rejected input/version attempts; a per-transaction fee cap does not bound aggregate wallet retry fees.
+The current website uses [Sapient](SAPIENT.md). Its origin/account grant exposes public metadata; each real transaction requires wallet approval. Network/account/address are rechecked, and changes clear private page state. No API key or financial seed is entered into MoonMail. Persisted wallet request IDs allow approval/status recovery after reload without repeating request creation. The wallet owns fee construction and may internally retry rejected input/version attempts; a per-transaction fee cap does not bound aggregate wallet retry fees.
 
 Guest claims keep their original prepaid fee-checkpoint transaction, independent of Sapient's funding instructions. Sapient is optional for receiving; its public address/account can fill the destination form. Gift-funded new-account creation has independent engine and Esmeralda proof. The following daemon credential details describe the preserved tool/historical adapter, not the visitor connection.
 
@@ -36,7 +36,7 @@ The wallet adapter uses official `authenticateWithApiKey`, disables reauthentica
 
 **Current Sapient status:** postbox writes, addressed mail and addressed claims remain disabled. The stock provider has not proved permanent memo carrier creation or historical key recovery; the following native-memo and legacy-extension evidence is preserved without claiming Sapient compatibility. See [the precise blocker](SAPIENT.md#postbox-recovery-remains-incomplete).
 
-New keys use the [standard-wallet memo adapter](STANDARD-WALLET-POSTBOXES.md). The browser generates a random mailbox key and sends it to its controlling wallet in an ordinary encrypted native memo on a script-only `DenyAll` output worth 1 µTARI. The financial seed and private view key stay in the daemon. Account-scoped `stealth_utxos.list` returns decrypted memos, including the mailbox key, to page memory. GhostDrop verifies the output is on chain, has the exact script-only condition root and value, and matches the complete context and published public key. The key never enters browser storage. That permission can also reveal other private payment memos within the granted account.
+New keys use the [standard-wallet memo adapter](STANDARD-WALLET-POSTBOXES.md). The browser generates a random mailbox key and sends it to its controlling wallet in an ordinary encrypted native memo on a script-only `DenyAll` output worth 1 µTARI. The financial seed and private view key stay in the daemon. Account-scoped `stealth_utxos.list` returns decrypted memos, including the mailbox key, to page memory. MoonMail verifies the output is on chain, has the exact script-only condition root and value, and matches the complete context and published public key. The key never enters browser storage. That permission can also reveal other private payment memos within the granted account.
 
 Sender encryption combines official Tari ephemeral Ristretto DH, domain-separated HKDF-SHA256 and AES-256-GCM; authenticated metadata binds network, registry, template, postbox, controller, key version, envelope ID and both public keys. Complete subject/body ciphertext remains on chain. The optional `recovery: native-memo-1` descriptor/payload field selects the adapter; it does not replace authenticated context or key verification. Unmarked historical keys retain the [legacy extension](../wallet-extension/README.md) path rather than silently changing secrets.
 

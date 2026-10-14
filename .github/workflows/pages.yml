@@ -1,4 +1,4 @@
-name: Publish reviewed GhostDrop to GitHub Pages
+name: Publish reviewed MoonMail to GitHub Pages
 on:
   push:
     branches: [main]
@@ -8,7 +8,7 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: ghostdrop-pages
+  group: moonmail-pages
   cancel-in-progress: false
 jobs:
   build:
@@ -23,7 +23,7 @@ jobs:
       - run: pnpm test
       - run: pnpm build
         env:
-          GHOSTDROP_BASE: /${{ github.event.repository.name }}/
+          MOONMAIL_BASE: /${{ github.event.repository.name }}/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with: { path: dist }

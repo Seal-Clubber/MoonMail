@@ -46,7 +46,7 @@ async function configure(page: Page) {
 }
 const invitationHash = (context = d, postbox = id) =>
   new URL(
-    createPostboxLink("https://example.com/GhostDrop/", {
+    createPostboxLink("https://example.com/MoonMail/", {
       id: postbox,
       context,
     }),
@@ -300,7 +300,7 @@ test("the owner can copy an unlisted public invitation without private view or f
   await expect(input).toBeVisible();
   const value = await input.inputValue();
   const u = new URL(value);
-  expect(u.pathname).toBe("/GhostDrop/");
+  expect(u.pathname).toBe("/MoonMail/");
   expect(parsePostboxLink(u.hash)).toEqual({
     id,
     context: { network: d.network, registry: d.registry, template: d.template },
