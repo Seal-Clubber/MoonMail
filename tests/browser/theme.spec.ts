@@ -12,7 +12,7 @@ test.beforeEach(async ({ page }) => {
 test("theme keeps utility, parchment and nested dark text readable", async ({
   page,
 }) => {
-  await page.goto("./");
+  await page.goto("./#/hall");
   for (const selector of [
     ".hero-rule",
     ".mode-legend",
@@ -21,7 +21,7 @@ test("theme keeps utility, parchment and nested dark text readable", async ({
   ])
     await readable(page.locator(selector).first());
   await page
-    .getByRole("button", { name: "Write a letter", exact: true })
+    .getByRole("button", { name: "Compose", exact: true })
     .first()
     .click();
   await readable(
@@ -127,7 +127,7 @@ test("theme keeps utility, parchment and nested dark text readable", async ({
 test("MoonMail brand stays left with a centered icon and no overflow", async ({
   page,
 }) => {
-  await page.goto("./");
+  await page.goto("./#/hall");
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     const brand = page.locator(".topbar .brand");
@@ -194,7 +194,7 @@ test("reduced motion freezes atmospheric layers and envelope artwork", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("./");
+  await page.goto("./#/hall");
   await page.getByRole("button", { name: "Explore preview" }).click();
   for (const selector of [
     ".haunting-mist",
@@ -220,7 +220,7 @@ test("reduced motion freezes atmospheric layers and envelope artwork", async ({
 test("busy lists and Activity keep small text, gift funding and every status readable", async ({
   page,
 }) => {
-  await page.goto("./");
+  await page.goto("./#/hall");
   await page
     .getByRole("button", { name: "Explore preview", exact: true })
     .click();

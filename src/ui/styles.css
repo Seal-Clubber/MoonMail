@@ -4116,3 +4116,236 @@ footer {
   z-index: 3;
   margin-block: 12px;
 }
+
+/* MoonMail's entry and everyday mailbox keep the night theme, with clear hierarchy. */
+.topbar .nav-compose {
+  background: #284d75;
+  color: #f2f8ff;
+  border: 1px solid #739abe;
+  border-radius: 24px;
+}
+.privacy-shortcut {
+  text-align: right;
+  padding: 8px 5% 0;
+}
+.moonmail-landing {
+  max-width: 1220px;
+  margin: auto;
+  padding: 65px 5% 40px;
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  align-items: center;
+  gap: 45px;
+}
+.landing-copy h1 {
+  font-size: clamp(3.8rem, 7vw, 6.4rem);
+  margin: 18px 0 8px;
+  color: #eff6ff;
+  letter-spacing: -0.045em;
+}
+.landing-tagline {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  color: #cce3ff;
+  font-style: italic;
+  margin: 0 0 25px;
+}
+.landing-intro {
+  color: #c2d0e2;
+  font:
+    1rem/1.8 system-ui,
+    sans-serif;
+  max-width: 540px;
+}
+.landing-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 28px 0 16px;
+}
+.landing-actions button {
+  font-size: 0.95rem;
+  padding: 15px 22px;
+}
+.landing-note {
+  color: #b7c8dd;
+  font:
+    0.8rem/1.7 system-ui,
+    sans-serif;
+}
+.landing-moon {
+  position: relative;
+  aspect-ratio: 1;
+  max-width: 430px;
+  width: 100%;
+  justify-self: center;
+}
+.moon-disc {
+  position: absolute;
+  width: 60%;
+  height: 60%;
+  top: 16%;
+  left: 23%;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, #d6e9ff, #7497bd 65%, #345377);
+  box-shadow:
+    0 0 75px #719aca33,
+    inset -18px -10px 35px #1c385f66;
+}
+.moon-orbit {
+  position: absolute;
+  inset: 5%;
+  border: 1px solid #9cbbdf24;
+  border-radius: 50%;
+}
+.moon-messenger {
+  position: absolute;
+  width: 55%;
+  bottom: 6%;
+  left: 0;
+  filter: drop-shadow(0 15px 24px #030916aa);
+  animation: moon-mail-drift 8s ease-in-out infinite;
+}
+.moon-messenger svg {
+  width: 100%;
+  height: auto;
+}
+.moon-star {
+  position: absolute;
+  color: #d8eaff;
+  font-size: 26px;
+}
+.star-one {
+  top: 8%;
+  left: 10%;
+}
+.star-two {
+  bottom: 16%;
+  right: 4%;
+  font-size: 38px;
+}
+.landing-features {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  padding-top: 20px;
+}
+.landing-features article {
+  padding: 24px;
+  background: #132236;
+  border: 1px solid #3a516d;
+  border-radius: 16px;
+}
+.landing-features article > span {
+  color: #c4ddff;
+  font-size: 28px;
+}
+.landing-features h2 {
+  color: #ebf3ff;
+  font-size: 1.2rem;
+}
+.landing-features p {
+  color: #c2d0e2;
+  font:
+    0.9rem/1.7 system-ui,
+    sans-serif;
+}
+.privacy-disclosure {
+  padding: 16px 20px;
+  margin: 20px 0;
+  border: 1px solid #557497;
+  background: #132338;
+  border-radius: 12px;
+  color: #d6e5f8;
+  font:
+    0.88rem/1.7 system-ui,
+    sans-serif;
+}
+.privacy-disclosure summary {
+  cursor: pointer;
+  color: #dfedff;
+  font-weight: 600;
+}
+.privacy-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.privacy-columns section {
+  min-width: 0;
+}
+.privacy-columns ul {
+  padding-left: 22px;
+}
+.privacy-columns li {
+  margin: 10px 0;
+}
+.privacy-page {
+  max-width: 1050px;
+  font-family: system-ui, sans-serif;
+}
+.privacy-page p,
+.privacy-page li {
+  line-height: 1.8;
+  color: #d0def0;
+}
+.privacy-boundary {
+  border-left: 3px solid #e3bc77;
+  padding: 10px 16px;
+  background: #243044;
+}
+.public-warning,
+.public-consent {
+  color: #ffebc4;
+  background: #342c22;
+  border: 1px solid #cba56a;
+  border-radius: 8px;
+  padding: 16px;
+  line-height: 1.7;
+}
+.public-consent {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 18px 0;
+  font-family: system-ui, sans-serif;
+}
+.public-consent input {
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+@keyframes moon-mail-drift {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(2deg);
+  }
+}
+@media (max-width: 760px) {
+  .moonmail-landing {
+    grid-template-columns: 1fr;
+    padding-top: 35px;
+    gap: 18px;
+  }
+  .landing-moon {
+    max-width: 260px;
+  }
+  .landing-features,
+  .privacy-columns {
+    grid-template-columns: 1fr;
+  }
+  .landing-features {
+    gap: 12px;
+  }
+  .brand small {
+    max-width: 210px;
+    letter-spacing: 0.1em;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .moon-messenger {
+    animation: none;
+  }
+}

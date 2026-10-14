@@ -39,6 +39,7 @@ export interface SapientProvider {
   info: { name: string; rdns: string; embedded: boolean };
   request(args: { method: string; params?: unknown }): Promise<unknown>;
 }
+export type SapientPostage = "transparent" | "private";
 type WalletWindow = Window & {
   tari?: SapientProvider;
   tariProviders?: SapientProvider[];
@@ -70,6 +71,7 @@ const networkName = (network: number) =>
 export class SapientSession {
   readonly kind = "sapient" as const;
   readonly version = "Sapient injected provider";
+  privateFeeCapable = false;
   private active = true;
   private constructor(
     private provider: SapientProvider,
@@ -168,6 +170,7 @@ export class SapientSession {
         parsed.free();
       }
       const capabilities = record(await session.call("tari_getCapabilities"));
+      session.privateFeeCapable = capabilities.supportsPrivateFees === true;
       if (
         capabilities.transactionRequests !== true ||
         capabilities.walletAddress !== true
@@ -322,12 +325,13 @@ export class SapientSession {
     feeCap: string,
     storage: Storage,
     context: Omit<Pending, "id" | "state" | "walletRequest">,
+    postage: SapientPostage = "transparent",
   ) {
     if (context.operation === "claim" || context.operation === "capsule")
       throw new Error(
         "Sapient cannot replace prepaid fee instructions or native key recovery",
       );
-    return this.submitInstructions(tx, feeCap, storage, context);
+    return this.submitInstructions(tx, feeCap, storage, context, postage);
   }
   private unusedCapsule(storage: Storage, context: MailboxContext) {
     const identity = capsuleIdentity(context);
@@ -396,6 +400,7 @@ export class SapientSession {
     feeCap: string,
     storage: Storage,
     context: Omit<Pending, "id" | "state" | "walletRequest">,
+    postage: SapientPostage = "transparent",
   ) {
     if (
       context.operation === "capsule" &&
@@ -412,6 +417,16 @@ export class SapientSession {
     if (money(feeCap) <= 0n)
       throw new Error("A positive transaction fee cap is required");
     await this.assertCurrent();
+    if (postage !== "private" && postage !== "transparent")
+      throw new Error("Choose a supported postage source");
+    if (postage === "private") {
+      const capabilities = record(await this.call("tari_getCapabilities"));
+      if (capabilities.supportsPrivateFees !== true)
+        throw new Error(
+          "This Sapient account cannot pay private postage. No public fallback was requested.",
+        );
+      await this.assertCurrent();
+    }
     if (context.operation === "capsule")
       this.unusedCapsule(storage, context.capsule!.context);
     const params = {
@@ -419,22 +434,27 @@ export class SapientSession {
       inputs: tx.inputs,
       maxFee: feeCap,
     };
-    const dry = record(
-      await this.call("tari_signAndSubmitTransaction", {
-        ...params,
-        dryRun: true,
-      }),
-    );
-    const execution = record(dry.result),
-      finalize = record(execution.finalize),
-      outcome = record(finalize.result);
-    if (
-      !("Accept" in outcome) ||
-      money(String(finalize.total_fees_required)) > money(feeCap)
-    )
-      throw new Error(
-        "Sapient simulation rejected or exceeded the fee cap; nothing submitted",
+    // Stock 0.6.6's legacy dry-run API always pays a transparent fee. It cannot
+    // simulate private postage; do not silently reveal funds to satisfy it.
+    // The native wallet constructs private fee proofs under the user's approval.
+    if (postage === "transparent") {
+      const dry = record(
+        await this.call("tari_signAndSubmitTransaction", {
+          ...params,
+          dryRun: true,
+        }),
       );
+      const execution = record(dry.result),
+        finalize = record(execution.finalize),
+        outcome = record(finalize.result);
+      if (
+        !("Accept" in outcome) ||
+        money(String(finalize.total_fees_required)) > money(feeCap)
+      )
+        throw new Error(
+          "Sapient simulation rejected or exceeded the fee cap; nothing submitted",
+        );
+    }
     await this.assertCurrent();
     if (context.operation === "capsule")
       this.unusedCapsule(storage, context.capsule!.context);
@@ -452,7 +472,7 @@ export class SapientSession {
       await this.call("tari_createTransactionRequest", {
         kind: "instructions",
         ...params,
-        feeType: "transparent",
+        feeType: postage,
         enforceFeeType: true,
       }),
     );

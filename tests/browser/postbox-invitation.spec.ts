@@ -97,11 +97,11 @@ test("an unlisted invitation verifies its full ID and asks before starting a dra
     }),
   ).toHaveCount(1);
   await expect(
-    page.getByRole("button", { name: "▥ To a postbox" }),
+    page.getByRole("button", { name: "▥ Private mail" }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(invitation).toHaveCount(0);
   await expect(
-    page.getByRole("heading", { name: "Send something unexpected." }),
+    page.getByRole("heading", { name: "Compose a letter." }),
   ).toBeFocused();
   await page.reload();
   await expect(
@@ -117,6 +117,9 @@ test("opening, dismissing and accepting an invitation preserve the existing subj
   await configure(page);
   await page.route(`${d.indexerUrl}**`, (r) => r.fulfill({ json: ledger() }));
   await page.goto("./#/compose");
+  await page
+    .getByRole("button", { name: "⌘ Private link", exact: true })
+    .click();
   await page.getByLabel("Subject", { exact: true }).fill("My unsent letter");
   await page.getByLabel("Your letter").fill("This text must stay here.");
   await page.getByLabel("Gift amount (optional)").fill("2.5");

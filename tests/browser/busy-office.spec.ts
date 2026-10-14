@@ -78,7 +78,7 @@ test("36 sample letters paginate, filter and read in list view without any gift 
 }) => {
   await unconfigured(page);
   const inspect = await noWrites(page);
-  await page.goto("./");
+  await page.goto("./#/hall");
   await page
     .getByRole("button", { name: "Explore preview", exact: true })
     .click();
@@ -165,7 +165,7 @@ test("a real office finishing its read cannot turn an open sample gift into a li
     await r.fulfill({ json: ledger(r.request().url()) });
   });
   const inspect = await noWrites(page);
-  await page.goto("./");
+  await page.goto("./#/hall");
   await requested;
   await page
     .getByRole("button", { name: "Try sample mail", exact: true })

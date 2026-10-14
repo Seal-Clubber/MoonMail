@@ -11,10 +11,8 @@ test("hash links and browser Back keep the selected page in sync", async ({
   await page.route("**/deployment.json", (r) =>
     r.fulfill({ json: emptyDeployment }),
   );
-  await page.goto("./");
-  await page
-    .getByRole("button", { name: "Write a letter", exact: true })
-    .click();
+  await page.goto("./#/hall");
+  await page.getByRole("button", { name: "Compose", exact: true }).click();
   await expect(page.locator(".compose")).toBeVisible();
   await page.getByRole("button", { name: "Activity", exact: true }).click();
   await page.goBack();
@@ -100,7 +98,7 @@ test("honest guest hall and reduced-motion visual preview", async ({
   page,
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("./");
+  await page.goto("./#/hall");
   await expect(
     page.getByRole("heading", {
       name: "A little mystery. A little generosity.",
@@ -150,6 +148,9 @@ test("wallet dialog traps keyboard focus, closes on Escape and restores focus", 
   page,
 }) => {
   await page.goto("./#/compose");
+  await page
+    .getByRole("button", { name: "⌘ Private link", exact: true })
+    .click();
   const trigger = page.getByRole("button", { name: "Connect to send" });
   await trigger.click();
   const dialog = page.getByRole("dialog");
@@ -186,6 +187,9 @@ test("real browser WASM encrypts subject locally; send stays disabled; drafts su
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("./#/compose");
+  await page
+    .getByRole("button", { name: "⌘ Private link", exact: true })
+    .click();
   await page.getByLabel("Subject", { exact: true }).fill("A private thought");
   await page.getByLabel("Your letter").fill("Do not put this on a server");
   await page.getByRole("button", { name: "Review letter" }).click();
@@ -193,7 +197,9 @@ test("real browser WASM encrypts subject locally; send stays disabled; drafts su
     page.getByRole("heading", { name: "Sealed on this device" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Fund & publish letter" }),
+    page.getByRole("button", {
+      name: /Send encrypted letter|Publish publicly/,
+    }),
   ).toBeDisabled();
   await page.getByRole("button", { name: "Connect to send" }).click();
   await expect(
@@ -230,7 +236,10 @@ test("addressed mail explains Sapient recovery and remains gated", async ({
   page,
 }) => {
   await page.goto("./#/compose");
-  await page.getByRole("button", { name: "▥ To a postbox" }).click();
+  await page
+    .getByRole("button", { name: "⌘ Private link", exact: true })
+    .click();
+  await page.getByRole("button", { name: "▥ Private mail" }).click();
   await expect(
     page.getByText("A private letter for a Sapient postbox.", {
       exact: false,
@@ -407,7 +416,7 @@ test("postbox private view access requires explicit account-wide consent and nev
 test("everyday Sapient inbox and Activity have honest empty states", async ({
   page,
 }) => {
-  await page.goto("./");
+  await page.goto("./#/hall");
   await page
     .getByRole("button", { name: "Open my inbox", exact: false })
     .click();
@@ -435,6 +444,9 @@ test("TARI gift input reviews exact micro amounts and resets collection funds fo
   page,
 }) => {
   await page.goto("./#/compose");
+  await page
+    .getByRole("button", { name: "⌘ Private link", exact: true })
+    .click();
   await page.getByLabel("Subject", { exact: true }).fill("A little kindness");
   await page.getByLabel("Your letter").fill("Keep the exact tiny amount.");
   await page.getByLabel("Gift amount (optional)").fill("1.234567");

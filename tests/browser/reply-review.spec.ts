@@ -99,6 +99,9 @@ async function connectFixture(page: Page) {
   );
   await page.goto("./#/compose");
   await page
+    .getByRole("button", { name: "⌘ Private link", exact: true })
+    .click();
+  await page
     .getByRole("button", { name: "Connect wallet", exact: true })
     .click();
   await page
@@ -131,7 +134,9 @@ for (const initialReply of [false, true]) {
       saved = page.getByRole("checkbox", {
         name: "I saved my private link somewhere safe",
       }),
-      publish = page.getByRole("button", { name: "Fund & publish letter" });
+      publish = page.getByRole("button", {
+        name: /Send encrypted letter|Publish publicly/,
+      });
     await reviewButton.click();
     await expect(review).toBeVisible();
     const originalLink = await page
@@ -243,7 +248,9 @@ test("disconnect clears the wallet-bound reply choice and keeps the written draf
     }),
   ).not.toBeChecked();
   await expect(
-    page.getByRole("button", { name: "Fund & publish letter" }),
+    page.getByRole("button", {
+      name: /Send encrypted letter|Publish publicly/,
+    }),
   ).toBeDisabled();
   await expectNoSpending(page, fixture.writes);
 });
@@ -259,9 +266,7 @@ test("changing offices clears old reply routing even when the new office has the
   await page.getByText("Advanced connection settings", { exact: true }).click();
   const registry = `component_${"e".repeat(64)}`;
   await page.getByLabel("Registry component", { exact: true }).fill(registry);
-  await page
-    .getByRole("button", { name: "Write a letter", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Compose", exact: true }).click();
   await expect(fixture.toggle).toBeEnabled();
   await expect(fixture.toggle).not.toBeChecked();
   await expect(

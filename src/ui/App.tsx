@@ -2,6 +2,8 @@ import { letterLimit } from "../core/config";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { GhostMark } from "./GhostMark";
+import { Landing } from "./Landing";
+import { PrivacyView } from "./PrivacyView";
 import { ActivityBook } from "./ActivityBook";
 import {
   sampleMail,
@@ -91,7 +93,7 @@ export function App() {
   const hallRange = useRef<HTMLParagraphElement>(null);
   const deploymentRevision = useRef(0);
   const initialOfficePending = useRef(true);
-  const [view, setView] = useState("hall"),
+  const [view, setView] = useState("welcome"),
     [d, setD] = useState<Deployment>(() => networkPreset(38)),
     [chain, setChain] = useState<PostOfficeClient>();
   const [letters, setLetters] = useState<Envelope[]>([]),
@@ -126,6 +128,17 @@ export function App() {
     () => new Map(),
   );
   const [saveSent, setSaveSent] = useState(true);
+  const [postage, setPostage] = useState<"private" | "transparent">(
+    "transparent",
+  );
+  useEffect(() => {
+    setPostage(
+      wallet instanceof SapientSession && wallet.privateFeeCapable
+        ? "private"
+        : "transparent",
+    );
+    setReview(false);
+  }, [wallet]);
   const [mailboxPreferences, setMailboxPreferences] = useState<
     Map<string, MailboxPreferences>
   >(() => new Map());
@@ -147,7 +160,7 @@ export function App() {
     setMailboxPreferences(new Map());
   }, [wallet, d.network, d.registry, d.template]);
 
-  const [mode, setMode] = useState<MailMode>("link"),
+  const [mode, setMode] = useState<MailMode>("postbox"),
     [subject, setSubject] = useState(""),
     [body, setBody] = useState(""),
     [thread, setThread] = useState<ReplyThread>(),
@@ -159,6 +172,11 @@ export function App() {
     [directoryQuery, setDirectoryQuery] = useState("");
   const [mailQuery, setMailQuery] = useState(""),
     [mailFilter, setMailFilter] = useState<SampleMailFilter>("all");
+  const [publicConfirmed, setPublicConfirmed] = useState(false);
+  useEffect(
+    () => setPublicConfirmed(false),
+    [mode, subject, body, gift, reserve, recipient, reply],
+  );
   const [review, setReview] = useState(false),
     [prepared, setPrepared] = useState<{
       envelope: Envelope;
@@ -372,9 +390,11 @@ export function App() {
             setPublicLetterRoute(publicLink);
             return;
           }
-          const initialView = hash.slice(2);
+          const initialView = hash.slice(2) || "welcome";
           if (
             [
+              "welcome",
+              "privacy",
               "hall",
               "compose",
               "postboxes",
@@ -1399,31 +1419,39 @@ export function App() {
       <header className="topbar">
         <a
           className="brand"
-          href="#/hall"
+          href="#/welcome"
           onClick={(e) => {
             e.preventDefault();
-            navigate("hall");
+            navigate("welcome");
           }}
         >
           <span className="brand-icon" aria-hidden="true">
             <GhostMark />
           </span>
           <span>
-            MOONMAIL<small>THE HAUNTED POST OFFICE</small>
+            MOONMAIL<small>YOUR WORDS, UNDER COVER OF NIGHT</small>
           </span>
         </a>
         <nav aria-label="Main navigation">
           {[
-            ["hall", "Public mail"],
-            ["compose", "Write a letter"],
             ["postboxes", "My inbox"],
+            ["compose", "Compose"],
+            ["hall", "Public mail"],
             ["activity", "Activity"],
           ].map(([v, label]) => (
             <button
               key={v}
-              className={view === v ? "nav-active" : ""}
+              className={`${view === v ? "nav-active" : ""} ${v === "compose" ? "nav-compose" : ""}`}
               aria-current={view === v ? "page" : undefined}
-              onClick={() => navigate(v)}
+              onClick={() =>
+                v === "compose" &&
+                owned.length &&
+                !subject &&
+                !body &&
+                gift === "0"
+                  ? composeFromPostbox(owned[0])
+                  : navigate(v)
+              }
             >
               {label}
             </button>
@@ -1450,6 +1478,13 @@ export function App() {
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
+        {view !== "welcome" && view !== "privacy" && (
+          <div className="privacy-shortcut">
+            <button className="text-button" onClick={() => navigate("privacy")}>
+              What can others see?
+            </button>
+          </div>
+        )}
         {!!pendingMailboxChanges.length &&
           view !== "postboxes" &&
           view !== "compose" && (
@@ -1592,6 +1627,14 @@ export function App() {
               : "IGOR"}{" "}
           TESTNET · TEST TARI ONLY <span />
         </div>
+        {view === "welcome" && (
+          <Landing
+            onOpen={() => navigate("postboxes")}
+            onPublic={() => navigate("hall")}
+            onPrivacy={() => navigate("privacy")}
+          />
+        )}
+        {view === "privacy" && <PrivacyView />}
         {view === "hall" && (
           <>
             <section className="hero">
@@ -1984,11 +2027,14 @@ export function App() {
           <section className="page-panel compose">
             <span className="kicker">THE WRITING DESK</span>
             <h1 id="writing-desk-title" tabIndex={-1}>
-              Send something <em>unexpected.</em>
+              Compose <em>a letter.</em>
             </h1>
-            <p>Choose who can open it. A few words can make someone’s night.</p>
+            <p>
+              Encrypted private mail by default. Choose a recipient and write
+              your letter.
+            </p>
             <div className="mode-switch" role="group" aria-label="Mail mode">
-              {(["public", "link", "postbox"] as const).map((m) => (
+              {(["postbox", "link", "public"] as const).map((m) => (
                 <button
                   aria-pressed={mode === m}
                   disabled={busy}
@@ -2006,10 +2052,18 @@ export function App() {
                     ? "✧ Public mail"
                     : m === "link"
                       ? "⌘ Private link"
-                      : "▥ To a postbox"}
+                      : "▥ Private mail"}
                 </button>
               ))}
             </div>
+            <PrivacyView mode={mode} compact />
+            {mode === "public" && (
+              <p className="public-warning" role="status">
+                Public publishing: your subject and full message will be
+                permanently readable by anyone. Choose Private mail to keep the
+                content encrypted.
+              </p>
+            )}
             {mode === "link" && (
               <p className="info">
                 Only people with your complete link can open this letter. Anyone
@@ -2309,6 +2363,29 @@ export function App() {
               )}
               <details className="advanced">
                 <summary>Sending fee limit</summary>
+                {wallet instanceof SapientSession &&
+                  wallet.privateFeeCapable && (
+                    <label>
+                      Postage source
+                      <select
+                        value={postage}
+                        disabled={busy}
+                        onChange={(e) => {
+                          setPostage(
+                            e.target.value as "private" | "transparent",
+                          );
+                          setReview(false);
+                        }}
+                      >
+                        <option value="private">
+                          Private TARI · native Sapient postage
+                        </option>
+                        <option value="transparent">
+                          Public TARI · visible account funding
+                        </option>
+                      </select>
+                    </label>
+                  )}
                 <AmountInput
                   label="Maximum sending fee per attempt"
                   value={fee}
@@ -2414,6 +2491,11 @@ export function App() {
                   the subject. Private gift amounts and routing metadata remain
                   visible on chain.
                 </p>
+                <p className="info">
+                  {postage === "private"
+                    ? "Postage uses private TARI in Sapient, with no automatic public fallback. The wallet builds the fee proof after you approve; its stock API cannot privately simulate this custom letter in advance. A rejected transaction may still pay fees. Attached gifts still use the public gift vault."
+                    : "Postage and attached gifts use public TARI. Sapient simulates this letter before asking you to approve."}
+                </p>
                 {prepared.capability && d.registry && (
                   <section
                     className="secret-link-save"
@@ -2451,9 +2533,22 @@ export function App() {
                     </label>
                   </section>
                 )}
+                {mode === "public" && (
+                  <label className="public-consent">
+                    <input
+                      type="checkbox"
+                      checked={publicConfirmed}
+                      disabled={busy}
+                      onChange={(e) => setPublicConfirmed(e.target.checked)}
+                    />
+                    I choose to publish this subject, message and any gift
+                    publicly on Ootle.
+                  </label>
+                )}
                 <button
                   className="primary"
                   disabled={
+                    (mode === "public" && !publicConfirmed) ||
                     !wallet ||
                     !chain ||
                     !writesReady(d, mode, "sapient") ||
@@ -2464,12 +2559,20 @@ export function App() {
                   onClick={() =>
                     void task(async () => {
                       if (!wallet || !chain || !current) return;
+                      if (
+                        prepared.envelope.mode === "public" &&
+                        !publicConfirmed
+                      )
+                        throw new Error(
+                          "Choose public publication explicitly before continuing",
+                        );
                       const id = await chain.publish(
                         wallet,
                         current,
                         prepared.envelope,
                         fee,
                         browserStorage,
+                        postage,
                       );
                       navigate("activity");
                       setStatus(
@@ -2478,7 +2581,9 @@ export function App() {
                     })
                   }
                 >
-                  Fund & publish letter
+                  {mode === "public"
+                    ? "Publish publicly"
+                    : "Send encrypted letter"}
                 </button>
                 {!wallet && (
                   <button onClick={() => setConnect(true)} disabled={busy}>

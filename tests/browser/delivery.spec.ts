@@ -147,6 +147,9 @@ test("private link must be saved before one approved publication; confirmation r
   });
   await page.goto("./#/compose");
   await page
+    .getByRole("button", { name: "⌘ Private link", exact: true })
+    .click();
+  await page
     .getByRole("button", { name: "Connect wallet", exact: true })
     .click();
   await page
@@ -162,7 +165,9 @@ test("private link must be saved before one approved publication; confirmation r
   const link = await page
     .getByLabel("Private link to save", { exact: true })
     .inputValue();
-  const publish = page.getByRole("button", { name: "Fund & publish letter" });
+  const publish = page.getByRole("button", {
+    name: /Send encrypted letter|Publish publicly/,
+  });
   await expect(publish).toBeDisabled();
   expect(
     await page.evaluate(() =>
@@ -266,9 +271,7 @@ test("damaged delivery history is retained, explained and cannot authorize sendi
   await expect(
     page.getByRole("heading", { name: "No deliveries yet." }),
   ).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "Write a letter", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Compose", exact: true }).click();
   await page
     .getByRole("button", { name: "✧ Public mail", exact: true })
     .click();
@@ -286,7 +289,9 @@ test("damaged delivery history is retained, explained and cannot authorize sendi
     .getByRole("button", { name: "Review letter", exact: false })
     .click();
   await expect(
-    page.getByRole("button", { name: "Fund & publish letter" }),
+    page.getByRole("button", {
+      name: /Send encrypted letter|Publish publicly/,
+    }),
   ).toBeDisabled();
   expect(
     await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
@@ -560,6 +565,9 @@ test("private-link copying has a manual fallback and never acknowledges saving a
   });
   await page.goto("./#/compose");
   await page
+    .getByRole("button", { name: "⌘ Private link", exact: true })
+    .click();
+  await page
     .getByRole("button", { name: "Connect wallet", exact: true })
     .click();
   await page
@@ -575,7 +583,9 @@ test("private-link copying has a manual fallback and never acknowledges saving a
   const save = page.getByRole("checkbox", {
     name: "I saved my private link somewhere safe",
   });
-  const publish = page.getByRole("button", { name: "Fund & publish letter" });
+  const publish = page.getByRole("button", {
+    name: /Send encrypted letter|Publish publicly/,
+  });
   await page.getByRole("button", { name: "Copy secret link" }).click();
   await expect(page.locator(".copy-field")).toContainText("copy it manually");
   await expect(field).toBeFocused();
@@ -663,7 +673,7 @@ for (const denied of ["getter", "writes"] as const) {
       },
       { denied, records },
     );
-    await page.goto("./");
+    await page.goto("./#/hall");
     await expect(
       page.getByRole("heading", {
         name: "A little mystery. A little generosity.",
@@ -677,9 +687,7 @@ for (const denied of ["getter", "writes"] as const) {
         .getByRole("alert")
         .filter({ hasText: "Browser storage needs permission" }),
     ).toBeVisible();
-    await page
-      .getByRole("button", { name: "Write a letter", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Compose", exact: true }).click();
     await page
       .getByRole("button", { name: "Connect wallet", exact: true })
       .click();
@@ -692,8 +700,9 @@ for (const denied of ["getter", "writes"] as const) {
     });
     if (denied === "writes") await expect(resume).toBeDisabled();
     else await expect(resume).toHaveCount(0);
+    await page.getByRole("button", { name: "Compose", exact: true }).click();
     await page
-      .getByRole("button", { name: "Write a letter", exact: true })
+      .getByRole("button", { name: "⌘ Private link", exact: true })
       .click();
     await page.getByLabel("Subject", { exact: true }).fill("A fixture letter");
     await page.getByLabel("Your letter").fill("Read without writable storage");
@@ -703,7 +712,9 @@ for (const denied of ["getter", "writes"] as const) {
     await page
       .getByRole("checkbox", { name: "I saved my private link somewhere safe" })
       .check();
-    const publish = page.getByRole("button", { name: "Fund & publish letter" });
+    const publish = page.getByRole("button", {
+      name: /Send encrypted letter|Publish publicly/,
+    });
     await expect(publish).toBeDisabled();
     await page.evaluate(() => {
       (window as any).storageAllowed = true;
@@ -758,7 +769,7 @@ test("Activity notices delivery journal changes from another tab without submitt
     await other.route("**/deployment.json", (r) =>
       r.fulfill({ json: emptyDeployment }),
     );
-    await other.goto("./");
+    await other.goto("./#/hall");
     await other.evaluate(
       (records) =>
         localStorage.setItem(
@@ -790,6 +801,9 @@ test("wallet details expose only public receiving information without requesting
     return route.fulfill({ json: ledger(route.request().url()) });
   });
   await page.goto("./#/compose");
+  await page
+    .getByRole("button", { name: "⌘ Private link", exact: true })
+    .click();
   await page
     .getByLabel("Subject", { exact: true })
     .fill("A draft stays at the writing desk");
@@ -865,6 +879,9 @@ async function openWalletFunds(page: Page) {
       : route.abort(),
   );
   await page.goto("./#/compose");
+  await page
+    .getByRole("button", { name: "⌘ Private link", exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Connect wallet", exact: true })
     .click();

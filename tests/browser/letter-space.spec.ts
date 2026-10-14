@@ -61,13 +61,16 @@ for (const mode of ["public", "link", "postbox"] as const) {
     });
     await page.goto("./#/compose");
     await page
+      .getByRole("button", { name: "⌘ Private link", exact: true })
+      .click();
+    await page
       .getByRole("button", {
         name:
           mode === "public"
             ? "✧ Public mail"
             : mode === "link"
               ? "⌘ Private link"
-              : "▥ To a postbox",
+              : "▥ Private mail",
         exact: true,
       })
       .click();
@@ -109,7 +112,9 @@ for (const mode of ["public", "link", "postbox"] as const) {
       .click();
     await expect(page.locator(".review")).toBeVisible();
     await expect(
-      page.getByRole("button", { name: "Fund & publish letter" }),
+      page.getByRole("button", {
+        name: /Send encrypted letter|Publish publicly/,
+      }),
     ).toBeDisabled();
     await expect(body).toHaveValue("A little kindness 👻");
     expect(writes).toBe(0);

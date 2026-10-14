@@ -158,7 +158,7 @@ test("the hall supplies a shareable public link and clipboard refusal keeps the 
     if (r.request().method() !== "GET") writes++;
     return r.fulfill({ json: ledger(r.request().url()) });
   });
-  await page.goto("./");
+  await page.goto("./#/hall");
   await page.getByRole("button", { name: subject, exact: false }).click();
   const dialog = page.getByRole("dialog", { name: subject }),
     field = dialog.getByLabel("Public link for this letter", { exact: true });

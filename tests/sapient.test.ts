@@ -70,6 +70,7 @@ function fixture() {
     submitError = false,
     createError = false,
     balances: unknown = [];
+  let privateFees = false;
   const request = vi.fn(
     async ({
       method,
@@ -89,7 +90,11 @@ function fixture() {
         case "tari_getBalances":
           return balances;
         case "tari_getCapabilities":
-          return { transactionRequests: true, walletAddress: true };
+          return {
+            transactionRequests: true,
+            walletAddress: true,
+            supportsPrivateFees: privateFees,
+          };
         case "tari_disconnect":
           return null;
         case "tari_signAndSubmitTransaction":
@@ -185,6 +190,9 @@ function fixture() {
     setBalances: (value: unknown) => {
       balances = value;
     },
+    setPrivateFees: (value: boolean) => {
+      privateFees = value;
+    },
     setNetwork: (v: string) => {
       network = v;
     },
@@ -236,6 +244,63 @@ test("Sapient simulates, persists a wallet request and submits only its approved
     walletRequest: { id: f.id },
   });
   expect(JSON.stringify(readPending(f.storage))).not.toContain("world");
+});
+
+test("native private postage is enforced without a transparent dry run or private read permission", async () => {
+  const f = fixture();
+  f.setPrivateFees(true);
+  const wallet = await SapientSession.connect(38, f.provider);
+  await wallet.submitOperation(f.tx, "100", f.storage, f.context, "private");
+  const calls = f.request.mock.calls.map(([a]) => a);
+  expect(
+    calls.find((a) => a.method === "tari_createTransactionRequest")?.params,
+  ).toMatchObject({ feeType: "private", enforceFeeType: true, maxFee: "100" });
+  expect(
+    calls.some((a) =>
+      [
+        "tari_requestViewAccess",
+        "tari_getPrivateBalances",
+        "tari_getShieldedOutputs",
+        "tari_signAndSubmitTransaction",
+      ].includes(a.method),
+    ),
+  ).toBe(false);
+  expect(readPending(f.storage)[0].walletRequest?.id).toBe(f.id);
+});
+
+test("private postage fails closed if capabilities change, with no public fallback or journal attempt", async () => {
+  const f = fixture();
+  f.setPrivateFees(true);
+  const wallet = await SapientSession.connect(38, f.provider);
+  f.setPrivateFees(false);
+  await expect(
+    wallet.submitOperation(f.tx, "100", f.storage, f.context, "private"),
+  ).rejects.toThrow("No public fallback");
+  expect(
+    f.request.mock.calls.some(([a]) => a.method.includes("Transaction")),
+  ).toBe(false);
+  expect(readPending(f.storage)).toEqual([]);
+});
+
+test("private postage rejection preserves the original request without retrying as public", async () => {
+  const f = fixture();
+  f.setPrivateFees(true);
+  f.setStatus("rejected");
+  const wallet = await SapientSession.connect(38, f.provider);
+  await expect(
+    wallet.submitOperation(f.tx, "100", f.storage, f.context, "private"),
+  ).rejects.toThrow();
+  expect(readPending(f.storage)[0].state).toBe("rejected");
+  expect(
+    f.request.mock.calls.filter(
+      ([a]) => a.method === "tari_createTransactionRequest",
+    ),
+  ).toHaveLength(1);
+  expect(
+    f.request.mock.calls.some(
+      ([a]) => a.method === "tari_submitTransactionRequest",
+    ),
+  ).toBe(false);
 });
 test("lost submit response is recovered from the same persisted wallet request after reconnect", async () => {
   const f = fixture(),

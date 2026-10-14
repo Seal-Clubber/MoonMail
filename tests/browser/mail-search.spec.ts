@@ -119,7 +119,7 @@ test("hall search filters public contents, keeps sealed contents private and res
   page,
 }) => {
   const fixture = await setup(page);
-  await page.goto("./");
+  await page.goto("./#/hall");
   const search = page.getByLabel("Find public mail", { exact: true });
   const filter = page.getByLabel("Show mail", { exact: true });
   await expect(search).toBeVisible();
@@ -160,7 +160,7 @@ test("loading another chain page extends local search without signing", async ({
   page,
 }) => {
   const fixture = await setup(page);
-  await page.goto("./");
+  await page.goto("./#/hall");
   const search = page.getByLabel("Find public mail", { exact: true });
   await search.fill("letter-100");
   await expect(page.locator(".envelope-card")).toHaveCount(0);
@@ -182,7 +182,7 @@ test("a late pagination response cannot import letters after switching networks"
   page,
 }) => {
   const fixture = await setup(page, true);
-  await page.goto("./");
+  await page.goto("./#/hall");
   await page.getByRole("button", { name: "Load more chain mail" }).click();
   await fixture.requested;
   await page.getByRole("button", { name: "Settings", exact: false }).click();
@@ -203,7 +203,7 @@ test("retry includes unreadable letters on previously loaded later pages", async
   page,
 }) => {
   const fixture = await setup(page, false, true);
-  await page.goto("./");
+  await page.goto("./#/hall");
   await expect(
     page.getByLabel("Find public mail", { exact: true }),
   ).toBeVisible();

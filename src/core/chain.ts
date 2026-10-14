@@ -457,6 +457,7 @@ export class PostOfficeClient {
     envelope: Envelope,
     fee: string,
     storage: Storage,
+    postage: "transparent" | "private" = "transparent",
   ) {
     if (
       wallet instanceof SapientSession &&
@@ -516,12 +517,18 @@ export class PostOfficeClient {
         ).values(),
       );
       tx.inputs = await readWithTimeout(this.provider.resolveInputs(tx.inputs));
-      return wallet.submitOperation(tx, fee, storage, {
-        network: this.deployment.network,
-        registry: this.deployment.registry,
-        operation: "publish",
-        envelopeId: envelope.id,
-      });
+      return wallet.submitOperation(
+        tx,
+        fee,
+        storage,
+        {
+          network: this.deployment.network,
+          registry: this.deployment.registry,
+          operation: "publish",
+          envelopeId: envelope.id,
+        },
+        postage,
+      );
     }
     if (!account.account.owner_key_id)
       throw new Error("Account has no signing key");

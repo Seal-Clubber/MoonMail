@@ -84,7 +84,7 @@ test("configured public reader retries an initial outage without a page reload",
       ? route.fulfill({ status: 503, body: "Temporary outage" })
       : route.fulfill({ json: state(route.request().url()) }),
   );
-  await page.goto("./");
+  await page.goto("./#/hall");
   await expect(page.getByRole("alert")).toContainText("Could not read");
   await expect(
     page.getByText("The spirits could not reach the post office."),
@@ -128,7 +128,7 @@ test("a delayed initial read cannot load letters after the selected network chan
     }
     await route.fulfill({ json: state(route.request().url()) });
   });
-  await page.goto("./");
+  await page.goto("./#/hall");
   await requested;
   await page.getByRole("button", { name: "Settings", exact: false }).click();
   await page.getByText("Advanced connection settings", { exact: true }).click();
@@ -238,6 +238,9 @@ test("directory searches names, excludes unlisted postboxes and starts an addres
     }),
   );
   await page.goto("./#/compose");
+  await page
+    .getByRole("button", { name: "⌘ Private link", exact: true })
+    .click();
   await page.getByLabel("Subject", { exact: true }).fill("A directory draft");
   await page.getByLabel("Your letter").fill("These words stay with the draft.");
   await page.getByLabel("Gift amount (optional)").fill("1.5");
@@ -263,10 +266,12 @@ test("directory searches names, excludes unlisted postboxes and starts an addres
   await page.getByRole("button", { name: "Write to Moonlit Friend" }).click();
   await expect(page.getByLabel("Recipient postbox ID")).toHaveValue("friendly");
   await expect(
-    page.getByRole("button", { name: "▥ To a postbox" }),
+    page.getByRole("button", { name: "▥ Private mail" }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(
-    page.getByRole("button", { name: "Fund & publish letter" }),
+    page.getByRole("button", {
+      name: /Send encrypted letter|Publish publicly/,
+    }),
   ).toHaveCount(0);
   await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(
     "A directory draft",
@@ -276,7 +281,7 @@ test("directory searches names, excludes unlisted postboxes and starts an addres
   );
   await expect(page.getByLabel("Gift amount (optional)")).toHaveValue("1.5");
   await expect(
-    page.getByRole("heading", { name: "Send something unexpected." }),
+    page.getByRole("heading", { name: "Compose a letter." }),
   ).toBeFocused();
 });
 
@@ -318,7 +323,7 @@ test("guest gift review requires a separate confirmation and forgets abandoned d
       },
     };
   });
-  await page.goto("./");
+  await page.goto("./#/hall");
   const letter = page.getByRole("button", { name: subject, exact: false });
   await expect(letter).toHaveCSS("animation-name", "none");
   if (test.info().project.name === "mobile") {
@@ -420,7 +425,7 @@ for (const problem of ["unavailable", "malformed"] as const) {
       }
       return r.fulfill({ json: state(url) });
     });
-    await page.goto("./");
+    await page.goto("./#/hall");
     await expect(
       page.getByRole("button", { name: subject, exact: false }),
     ).toBeVisible();
@@ -468,7 +473,7 @@ test("all unreadable letters show a retry state rather than an empty post office
       ? route.fulfill({ status: 503, body: "Fixture outage" })
       : route.fulfill({ json: state(url) });
   });
-  await page.goto("./");
+  await page.goto("./#/hall");
   await expect(
     page.getByText("Some mail is waiting for another read."),
   ).toBeVisible();
@@ -500,7 +505,7 @@ test("a failed refresh keeps loaded mail visible with an honest retry notice", a
       ? route.fulfill({ status: 503, body: "Fixture outage" })
       : route.fulfill({ json: state(route.request().url()) });
   });
-  await page.goto("./");
+  await page.goto("./#/hall");
   const letter = page.getByRole("button", { name: subject, exact: false });
   await expect(letter).toBeVisible();
   failing = true;
@@ -685,7 +690,7 @@ test("optional Sapient connection returns to the same public gift and restores i
     }
     return r.fulfill({ json: response });
   });
-  await page.goto("./");
+  await page.goto("./#/hall");
   const trigger = page.getByRole("button", { name: subject, exact: false });
   await trigger.click();
   const letter = page.getByRole("dialog", { name: subject, exact: true });
@@ -756,6 +761,9 @@ for (const throughPublicLink of [false, true]) {
   }) => {
     const noWrites = await configureReply(page);
     await page.goto("./#/compose");
+    await page
+      .getByRole("button", { name: "⌘ Private link", exact: true })
+      .click();
     await page.getByLabel("Subject", { exact: true }).fill("My unsent subject");
     await page
       .getByLabel("Your letter")
@@ -796,10 +804,12 @@ for (const throughPublicLink of [false, true]) {
       page.getByLabel("Recipient postbox", { exact: true }),
     ).toHaveValue("reply-spirit");
     await expect(
-      page.getByRole("heading", { name: "Send something unexpected." }),
+      page.getByRole("heading", { name: "Compose a letter." }),
     ).toBeFocused();
     await expect(
-      page.getByRole("button", { name: "Fund & publish letter" }),
+      page.getByRole("button", {
+        name: /Send encrypted letter|Publish publicly/,
+      }),
     ).toHaveCount(0);
     await noWrites();
   });
@@ -809,7 +819,7 @@ test("an empty writing desk receives a suggested reply subject without a gift or
   page,
 }) => {
   const noWrites = await configureReply(page);
-  await page.goto("./");
+  await page.goto("./#/hall");
   await page.getByRole("button", { name: subject, exact: false }).click();
   await page.getByRole("button", { name: "Reply to this spirit" }).click();
   await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(
@@ -821,7 +831,7 @@ test("an empty writing desk receives a suggested reply subject without a gift or
     "reply-spirit",
   );
   await expect(
-    page.getByRole("heading", { name: "Send something unexpected." }),
+    page.getByRole("heading", { name: "Compose a letter." }),
   ).toBeFocused();
   await noWrites();
 });
@@ -830,7 +840,7 @@ test("an unknown reply postbox offers no recipient shortcut", async ({
   page,
 }) => {
   const noWrites = await configureReply(page, false);
-  await page.goto("./");
+  await page.goto("./#/hall");
   await page.getByRole("button", { name: subject, exact: false }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
   await expect(
@@ -863,7 +873,7 @@ for (const target of ["identity", "registry"] as const)
       }
       await r.fulfill({ json: state(r.request().url()) });
     });
-    await page.goto("./");
+    await page.goto("./#/hall");
     await requested;
     await page.clock.runFor(15_001);
     await expect(page.getByRole("alert")).toContainText(
@@ -913,7 +923,7 @@ test("a stalled hall refresh retains previously verified mail and releases its r
     }
     await r.fulfill({ json: state(r.request().url()) });
   });
-  await page.goto("./");
+  await page.goto("./#/hall");
   const letter = page.getByRole("button", { name: subject, exact: false }),
     retry = page.getByRole("button", { name: "↻ Refresh", exact: true });
   await expect(letter).toBeVisible();
@@ -982,9 +992,7 @@ for (const damage of ["context", "identifier", "path"] as const)
       "complete private link",
     );
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await page
-      .getByRole("button", { name: "Write a letter", exact: true })
-      .click();
+    await page.getByRole("button", { name: "Compose", exact: true }).click();
     await page.goBack();
     expect(page.url().includes(sealed.capability)).toBe(false);
     await page.reload();
@@ -1047,7 +1055,7 @@ test("a stalled initial settings download offers an explicit retry and ignores i
   await page.route(`${deployment.indexerUrl}**`, (r) =>
     r.fulfill({ json: state(r.request().url()) }),
   );
-  await page.goto("./");
+  await page.goto("./#/hall");
   await expect.poll(() => attempts).toBe(1);
   await page.clock.runFor(15_100);
   const retry = page.getByRole("button", { name: "Retry loading post office" });
@@ -1120,7 +1128,7 @@ test("a malformed settings profile leaves the site usable for an explicit retry"
   );
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("./");
+  await page.goto("./#/hall");
   const retry = page.getByRole("button", { name: "Retry loading post office" });
   await expect(retry).toBeEnabled();
   malformed = false;
@@ -1247,7 +1255,7 @@ for (const movedFocus of [false, true])
       }
       return r.fulfill({ json: response });
     });
-    await page.goto("./");
+    await page.goto("./#/hall");
     await page.getByRole("button", { name: subject, exact: false }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Ootle receiving address").fill(address);
@@ -1416,7 +1424,7 @@ test("a known pending claim offers its original Activity receipt instead of anot
     }
     return r.fulfill({ json: response });
   });
-  await page.goto("./");
+  await page.goto("./#/hall");
   await page.getByRole("button", { name: subject, exact: false }).click();
   const dialog = page.getByRole("dialog");
   await expect(dialog).toContainText(
@@ -1473,7 +1481,7 @@ test("long unbroken public letters wrap without clipping the hall or reading con
       });
     return route.fulfill({ json: data });
   });
-  await page.goto("./");
+  await page.goto("./#/hall");
   for (const width of [320, 390, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     const card = page.getByRole("button", { name: title, exact: false });
