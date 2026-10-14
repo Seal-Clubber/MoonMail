@@ -56,6 +56,8 @@ Letters/ciphertext, postboxes and gift rules live on Ootle. The static React app
 
 [Current unified-office mail batch](docs/mail-batch-esmeralda-evidence.json) records 30 additional confirmed Esmeralda letters: 18 public, 12 encrypted for the requested postbox, four small gifts and three private reply conversations. The new public mail is already readable on hosted Pages; private mail needs the controlling Sapient wallet.
 
+The client and all engine harnesses now target **Ootle v0.46.0**, with SDK 0.9.0 and crypto WASM 0.46.0. Existing deployed identities and mail are retained. [Upgrade details and verification](docs/ootle-v046-upgrade.md) cover Protocol V2, receipt return-value removal, the current-engine financial checks and read-only stock Sapient acceptance.
+
 ## Run
 
 Node 24.19+ and pnpm 11.19.0:
@@ -73,7 +75,7 @@ Open the local URL printed by Vite. Guests enter immediately. Assets, fonts and 
 
 ## Contracts
 
-Rust 1.97.1 and `wasm32-unknown-unknown` are pinned in `rust-toolchain.toml`. Run the real engine on Linux/Ubuntu WSL; upstream Wasmer 7.4 Cranelift does not support Windows.
+Rust 1.97.1 and `wasm32-unknown-unknown` are pinned in `rust-toolchain.toml`. Run the real engine on Linux/Ubuntu WSL; upstream Wasmer 7.5 Cranelift does not support Windows.
 
 ```sh
 cargo test --manifest-path contracts/envelope/Cargo.toml --locked

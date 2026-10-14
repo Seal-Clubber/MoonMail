@@ -1,0 +1,134 @@
+{
+  "scope": "Ootle 0.46 upgrade of the client and three engine harnesses; local static assets on real Pages HTTPS origin, actual stock Sapient and Esmeralda responses. No publication or financial broadcasts.",
+  "release": "https://github.com/tari-project/tari-ootle/releases/tag/v0.46.0",
+  "releasePublishedAt": "2026-10-13T10:47:46Z",
+  "packages": {
+    "@tari-project/ootle": "0.9.0",
+    "@tari-project/ootle-indexer": "0.9.0",
+    "@tari-project/ootle-secret-key-wallet": "0.9.0",
+    "@tari-project/ootle-wasm": "0.46.0",
+    "@tari-project/wallet_jrpc_client": "1.25.0"
+  },
+  "rust": {
+    "tari_template_test_tooling": "0.46.0",
+    "tari_engine_types": "0.46.0",
+    "host_tari_template_lib": "0.34.0",
+    "publishedContractSourceChanged": false
+  },
+  "localChecks": {
+    "typescript": true,
+    "unitTests": 214,
+    "unitFiles": 24,
+    "browserTests": 258,
+    "postboxAndUnifiedEngineTests": 35,
+    "historicalEngineTestsIncludingSdkBridge": 13,
+    "capsuleEngineTests": 1,
+    "ignoredEngineCasesExplicitlyIncluded": true,
+    "pagesBaseBuild": true
+  },
+  "actualNetworkRead": {
+    "checkedAt": "2026-10-14T03:19:25.605Z",
+    "indexer": {
+      "network": "esmeralda",
+      "epoch": 12243,
+      "version": "0.46.0",
+      "symbol": "tTARI"
+    },
+    "registry": "component_bc15e50d664440dbdfb1a310fb316c35ab22f964d485c222024a402b4cad4f99",
+    "template": "260d6982a415b7053ca2e1ae2c302b3b717b9b6ca525a85572f011ec81cc3794",
+    "totalLoadedLetters": 38,
+    "publicLetters": 19,
+    "postboxes": 2,
+    "allLoadedPublicBodiesDecoded": true,
+    "financialTransactions": 0,
+    "readOnly": true,
+    "sdk": "0.9.0",
+    "wasm": "0.46.0"
+  },
+  "actualSapientRead": {
+    "checkedAt": "2026-10-14T03:25:02.261Z",
+    "stockSapientVersion": "0.6.6",
+    "reviewedFrontendCommit": "f7e9b5318aa03c12a56e71c35d378abd3eebd490",
+    "localBuildOnPagesHttpsOrigin": true,
+    "ledgerResponsesOverridden": false,
+    "financialBroadcasts": 0,
+    "financialRequestsBlocked": 0,
+    "checks": [
+      {
+        "automaticRealSettingsLoaded": true,
+        "spacing": "comfortable",
+        "sorting": "chain"
+      },
+      {
+        "realReloadRestoredWallet": true,
+        "realPrivateGrantReused": true,
+        "repeatPermissionRequests": 0,
+        "automaticSettingsRecovered": true
+      },
+      {
+        "actualEncryptedLetterOpened": true,
+        "viewportChecks": [
+          {
+            "width": 1440,
+            "noOverflow": true
+          },
+          {
+            "width": 390,
+            "noOverflow": true
+          }
+        ]
+      },
+      {
+        "actualEncryptedFavouritesInComposer": true
+      }
+    ],
+    "existingPrivateGrantAtStart": true,
+    "completed": true
+  },
+  "reviewedBuildAssets": [
+    {
+      "path": "deployment-v2.json",
+      "sha256": "22066229b71d1aa9afb75ddb4445f62ff5a9dfed9158af1dadfb38472341743f"
+    },
+    {
+      "path": "deployment.json",
+      "sha256": "22066229b71d1aa9afb75ddb4445f62ff5a9dfed9158af1dadfb38472341743f"
+    },
+    {
+      "path": "favicon.svg",
+      "sha256": "32cc54bf2ebec8c90c82fa5004c6a82fcc53d03b5a7b785ffc515903ed279ecd"
+    },
+    {
+      "path": "index.html",
+      "sha256": "58c850950227a7fd9023b537d47298db76b650ab0ace082d89d0ae3ab946146b"
+    },
+    {
+      "path": "assets/index-DEcnhV32.css",
+      "sha256": "c7a38b67fa2d4e12e7ee445b5e0da2fc26856c5f252e1b6d6918590b6ac97911"
+    },
+    {
+      "path": "assets/index-X4U9iGat.js",
+      "sha256": "1049029faf2d0290033fc71d8f92d76f38ff6aa397226441b29283016dc0521b"
+    },
+    {
+      "path": "assets/ootle_wasm-BV-zbrpz.js",
+      "sha256": "78b2a380a20403e8d0c12336de9d96808099f55de4150c21b9c18b12b26278f6"
+    },
+    {
+      "path": "assets/ootle_wasm-CnbFdtE_.js",
+      "sha256": "4f20cc5265ff5070e25d95b5a01770e44c73d31c116171a821a5bb07c7c70450"
+    },
+    {
+      "path": "assets/ootle_wasm_bg-8nI6dVGr.wasm",
+      "sha256": "2856d86b688959fc6620ac8cf2cb4629ee554c94bd81a6baaa2a71a7e7a393f2"
+    }
+  ],
+  "existingRegistryRetained": true,
+  "existingTemplatesRetained": true,
+  "publicTransactions": 0,
+  "limitations": [
+    "No new funded live publication or gift payout was attempted; current-engine tests include real SDK/WASM signing and execution.",
+    "Local reviewed assets were served on the actual Pages HTTPS origin for wallet acceptance; this is not a newly published site.",
+    "One historical transaction result returned HTTP404 on the selected indexer. This does not mean the transaction failed; existing component state and on-chain mail remain readable."
+  ]
+}

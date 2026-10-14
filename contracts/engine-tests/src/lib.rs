@@ -132,7 +132,11 @@ mod tests {
         t.execute_expect_success(tx, vec![]);
         let e = letter(&mut t, office, "gift");
         assert!(e.claimed);
-        assert_eq!(e.destination, Some(destination));
+        // The archived template uses lib_types 0.33; compare the full canonical identity.
+        assert_eq!(
+            e.destination.map(|address| address.to_string()),
+            Some(destination.to_string())
+        );
         assert_eq!(balance(&t, destination), Amount::from(1_000_000u64));
         let tx = claim(&mut t, office, "gift", destination, 16, None, false);
         t.execute_expect_failure(tx, vec![]);
@@ -171,7 +175,11 @@ mod tests {
         t.execute_expect_success(tx, vec![]);
         let e = letter(&mut t, office, "private");
         assert!(e.claimed);
-        assert_eq!(e.destination, Some(destination));
+        // The archived template uses lib_types 0.33; compare the full canonical identity.
+        assert_eq!(
+            e.destination.map(|address| address.to_string()),
+            Some(destination.to_string())
+        );
         let tx = claim(&mut t, office, "private", destination, 16, Some(&sk), false);
         t.execute_expect_failure(tx, vec![]);
     }
@@ -440,7 +448,7 @@ mod tests {
         let e = letter(&mut t, office, "gift");
         assert!(e.claimed);
         assert_eq!(
-            balance(&t, e.destination.unwrap()),
+            balance(&t, e.destination.unwrap().to_string().parse().unwrap()),
             Amount::from(1_000_000u64)
         );
     }

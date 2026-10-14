@@ -1,3 +1,4 @@
+import { PostOfficeClient } from "../src/core/chain";
 import { expect, it, vi } from "vitest";
 import { readDelivery } from "../src/core/delivery";
 import {
@@ -73,7 +74,6 @@ it("distinguishes a corrupt journal from an empty history without deleting spend
   expect(inspectPending({ getItem: () => null })).toEqual({ records: [] });
 });
 
-import { PostOfficeClient } from "../src/core/chain";
 it.each([
   ["Accept", "confirmed"],
   ["AcceptFeeRejectRest", "unknown"],

@@ -47,7 +47,7 @@ The [public lab record](sapient-capsule-lab-evidence.json) distinguishes engine 
 - Private output reads were denied before the separate view grant and after origin disconnection.
 - The standalone engine test accepted a valid official-SDK output and rejected six unsafe store statements. Both attempted spending paths failed: key path has no spend key; the native script path denies access. Rejections left the carrier present.
 
-Run `pnpm install --frozen-lockfile`, then `cargo test --manifest-path contracts/capsule-tests/Cargo.toml --locked`. The new Verify job runs this test with the locked 0.45 engine. Existing mail contracts and their separate 0.43 CI harness are unchanged. `tools/capsule-engine-fixture.ts` emits encrypted/public test data only; it accepts no wallet credentials. Operational browser helpers and wallet profiles remain outside the repository.
+Run `pnpm install --frozen-lockfile`, then `cargo test --manifest-path contracts/capsule-tests/Cargo.toml --locked`. The Verify job now runs this test with the locked 0.46 engine. Historical mail contract sources are retained; all three engine harnesses have been upgraded to 0.46. See the [current upgrade verification](ootle-v046-upgrade.md); the lab evidence above remains the original 0.45 result. `tools/capsule-engine-fixture.ts` emits encrypted/public test data only; it accepts no wallet credentials. Operational browser helpers and wallet profiles remain outside the repository.
 
 ## Remaining boundaries
 
