@@ -13,3 +13,7 @@ Cryptographic domain strings such as `GhostDrop` and protocol identifiers such a
 Existing `ghostdrop:pending:v1` and `ghostdrop:sapient-resume:v1` storage keys remain in use. This preserves uncertain-transaction reconciliation and the already-approved tab connection on the same origin. Brand changes do not rewrite or clear financial journals. Older donor/deployment and engine bridge environment names remain compatible operational identifiers.
 
 Historical evidence records, archived wallet-extension files, the `ghostdrop-v2` backup branch and already-published letter contents retain their original names. They describe what was actually deployed or sent; they are not current website branding. No old mail is republished or edited by this rename.
+
+## Verification
+
+[Branding verification](moonmail-branding-evidence.json) records the MoonMail masthead, footer, browser title and new Pages base, 214 unit and 258 browser checks, and actual stock Sapient recovery of older encrypted letters/settings/favourites on the new path. Crypto/proof/journal/deployment source bytes match the pre-rename checkpoint. The real-wallet check served reviewed local assets on the actual MoonMail HTTPS origin; it is not a newly published build. No transaction was broadcast.

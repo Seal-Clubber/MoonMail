@@ -1,0 +1,127 @@
+{
+  "checkedAt": "2026-10-14T03:55:48.409Z",
+  "stockSapientVersion": "0.6.6",
+  "reviewedFrontendCommit": "ba5b9b3ee0a0a8b6d2478439bf42e55e88d0de1e",
+  "localBuildOnPagesHttpsOrigin": true,
+  "ledgerResponsesOverridden": false,
+  "financialBroadcasts": 0,
+  "financialRequestsBlocked": 0,
+  "checks": [
+    {
+      "moonMailTitleMastheadFooter": true,
+      "newPagesBase": "/MoonMail/"
+    },
+    {
+      "automaticRealSettingsLoaded": true,
+      "spacing": "comfortable",
+      "sorting": "chain"
+    },
+    {
+      "realReloadRestoredWallet": true,
+      "realPrivateGrantReused": true,
+      "repeatPermissionRequests": 0,
+      "automaticSettingsRecovered": true
+    },
+    {
+      "actualEncryptedLetterOpened": true,
+      "viewportChecks": [
+        {
+          "width": 1440,
+          "noOverflow": true
+        },
+        {
+          "width": 390,
+          "noOverflow": true
+        }
+      ]
+    },
+    {
+      "actualEncryptedFavouritesInComposer": true
+    }
+  ],
+  "existingPrivateGrantAtStart": true,
+  "completed": true,
+  "scope": "MoonMail presentation and Pages-base rename; local reviewed production assets served on actual MoonMail Pages HTTPS origin, with stock Sapient and real Esmeralda responses. No GitHub push or public transaction.",
+  "localChecks": {
+    "strictTypescript": true,
+    "unitTests": 214,
+    "browserTests": 258,
+    "productionBase": "/MoonMail/",
+    "formattingAndDiff": true
+  },
+  "compatibilitySources": [
+    {
+      "path": "src/core/crypto.ts",
+      "sha256": "29f3b483ffd028d6975a4863c40bae423241e87633d2276573ef29dc169efa8c",
+      "unchangedFromBeforeBrandRename": true
+    },
+    {
+      "path": "src/core/mailbox.ts",
+      "sha256": "44da32bdc17bfc960a114aacffd25873b30b8078563449a2aea8d563674f2d1a",
+      "unchangedFromBeforeBrandRename": true
+    },
+    {
+      "path": "src/core/sent-mail.ts",
+      "sha256": "8047286f24c9b919f41559f1ffedcf44b75eeed734dd1ba2bf1a5ed959ac12ad",
+      "unchangedFromBeforeBrandRename": true
+    },
+    {
+      "path": "src/core/mailbox-state.ts",
+      "sha256": "fedb5be04fe61085bccc31ced74d50f5ca3888fe357631632766da1d3faa93f2",
+      "unchangedFromBeforeBrandRename": true
+    },
+    {
+      "path": "src/core/postbox-claim.ts",
+      "sha256": "ec4621b168c6a3b5a0fdfb5a89ac6f7895c4b749ec2009797873a7de42565129",
+      "unchangedFromBeforeBrandRename": true
+    },
+    {
+      "path": "src/core/pending.ts",
+      "sha256": "008e939e32ed5a97eaed4fbe2d221869f9a7f227e9bd2cebfa925768d06eb706",
+      "unchangedFromBeforeBrandRename": true
+    },
+    {
+      "path": "public/deployment.json",
+      "sha256": "22066229b71d1aa9afb75ddb4445f62ff5a9dfed9158af1dadfb38472341743f",
+      "unchangedFromBeforeBrandRename": true
+    }
+  ],
+  "reviewedBuildAssets": [
+    {
+      "path": "deployment-v2.json",
+      "sha256": "22066229b71d1aa9afb75ddb4445f62ff5a9dfed9158af1dadfb38472341743f"
+    },
+    {
+      "path": "deployment.json",
+      "sha256": "22066229b71d1aa9afb75ddb4445f62ff5a9dfed9158af1dadfb38472341743f"
+    },
+    {
+      "path": "favicon.svg",
+      "sha256": "32cc54bf2ebec8c90c82fa5004c6a82fcc53d03b5a7b785ffc515903ed279ecd"
+    },
+    {
+      "path": "index.html",
+      "sha256": "c9a7605029ff959490fa493a174dfc2e2baf3127ef83a39095c92acb85d49ff1"
+    },
+    {
+      "path": "assets/index-BmBXwypQ.js",
+      "sha256": "65849ea799d3020d58a45ca81351ee8af267345f182842d75fa163aa08d9cc2d"
+    },
+    {
+      "path": "assets/index-DEcnhV32.css",
+      "sha256": "c7a38b67fa2d4e12e7ee445b5e0da2fc26856c5f252e1b6d6918590b6ac97911"
+    },
+    {
+      "path": "assets/ootle_wasm-DEKHLH8E.js",
+      "sha256": "5a1d1731282460783530d4849963ddc10f35d2c180f9d9d938c0c59398fa02fa"
+    },
+    {
+      "path": "assets/ootle_wasm-n1KAxUxM.js",
+      "sha256": "52cbef608ed1da5f8838994d75ccb0a5c69a0e0ce1099f34662518f13b836a2f"
+    },
+    {
+      "path": "assets/ootle_wasm_bg-8nI6dVGr.wasm",
+      "sha256": "2856d86b688959fc6620ac8cf2cb4629ee554c94bd81a6baaa2a71a7e7a393f2"
+    }
+  ]
+}
