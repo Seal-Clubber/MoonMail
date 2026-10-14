@@ -16,6 +16,188 @@ fn fixture() -> (TemplateTest, ComponentAddress) {
 fn payload() -> String {
     serde_json::json!({"version":"mm-sealed-1","ephemeralPublicKey":"01".repeat(32),"iv":"A".repeat(16),"ciphertext":"A".repeat(1387)}).to_string()
 }
+fn payload2() -> String {
+    let mut value: serde_json::Value = serde_json::from_str(&payload()).unwrap();
+    value["version"] = serde_json::json!("mm-sealed-2");
+    value["slots"] = serde_json::json!([
+        {"iv":"A".repeat(16),"wrappedKey":"B".repeat(64)},
+        {"iv":"C".repeat(16),"wrappedKey":"D".repeat(64)}
+    ]);
+    value.to_string()
+}
+#[test]
+fn postbox_rotation_preserves_bounded_on_chain_history_and_rejects_other_controllers() {
+    use moonmail_v4::moonmail_v4::Postbox;
+    let (mut t, office) = fixture();
+    let resource: ResourceAddress = t.call_method(office, "resource", args![], vec![]);
+    let key = |version: u64| {
+        serde_json::json!({"version":"gd-postbox-1","keyVersion":version,"publicKey":format!("{:064x}",version),"recovery":"sapient-capsule-1","capsule":{"resource":resource.to_string(),"commitment":format!("{:064x}",version+100)}}).to_string()
+    };
+    t.call_method::<()>(
+        office,
+        "create_postbox",
+        args!["home".to_string(), "Home".to_string(), key(1), true],
+        vec![],
+    );
+    let foreign = t.new_key_pair(78).0;
+    t.execute_expect_failure(
+        t.transaction()
+            .call_method(
+                office,
+                "rotate_postbox_key",
+                args!["home".to_string(), key(2)],
+            )
+            .build_and_seal(&foreign),
+        vec![],
+    );
+    t.execute_expect_failure(
+        t.transaction()
+            .call_method(
+                office,
+                "rotate_postbox_key",
+                args!["home".to_string(), key(3)],
+            )
+            .build_and_seal(t.secret_key()),
+        vec![],
+    );
+    for version in 2..=16u64 {
+        t.call_method::<()>(
+            office,
+            "rotate_postbox_key",
+            args!["home".to_string(), key(version)],
+            vec![],
+        );
+    }
+    t.execute_expect_failure(
+        t.transaction()
+            .call_method(
+                office,
+                "rotate_postbox_key",
+                args!["home".to_string(), key(17)],
+            )
+            .build_and_seal(t.secret_key()),
+        vec![],
+    );
+    t.execute_expect_success(
+        t.transaction()
+            .call_method(office, "list_postboxes", args![String::new(), 50u32])
+            .build_and_seal(t.secret_key()),
+        vec![],
+    );
+    let boxes: Vec<Postbox> = t.expect_return(0);
+    assert_eq!(boxes.len(), 1);
+    assert_eq!(boxes[0].encryption_key, key(16));
+    assert_eq!(
+        boxes[0].encryption_history,
+        (1..=15u64).map(key).collect::<Vec<_>>()
+    );
+}
+#[test]
+fn encrypted_sent_slots_have_no_public_roles_or_mailbox_keys_and_are_strictly_bounded() {
+    let (mut t, office) = fixture();
+    let original: serde_json::Value = serde_json::from_str(&payload2()).unwrap();
+    let mut cases = Vec::new();
+    for extra in ["postbox", "role", "recipientKey", "capsule", "conversation"] {
+        let mut v = original.clone();
+        v["slots"][0][extra] = serde_json::json!("exposed");
+        cases.push(v);
+    }
+    for slots in [
+        serde_json::json!([]),
+        serde_json::json!([original["slots"][0]]),
+        serde_json::json!([
+            original["slots"][0],
+            original["slots"][1],
+            original["slots"][0]
+        ]),
+    ] {
+        let mut v = original.clone();
+        v["slots"] = slots;
+        cases.push(v);
+    }
+    let mut short = original.clone();
+    short["slots"][0]["wrappedKey"] = serde_json::json!("short");
+    cases.push(short);
+    for value in cases {
+        t.execute_expect_failure(
+            t.transaction()
+                .call_method(
+                    office,
+                    "publish_sealed",
+                    args!["ab".repeat(32), value.to_string()],
+                )
+                .build_and_seal(t.secret_key()),
+            vec![],
+        );
+    }
+    let list: Vec<(String, ComponentAddress)> = t.call_method(
+        office,
+        "list_sealed_letters",
+        args![String::new(), 50u32],
+        vec![],
+    );
+    assert!(list.is_empty());
+    t.call_method::<()>(
+        office,
+        "publish_sealed",
+        args!["ab".repeat(32), payload2()],
+        vec![],
+    );
+}
+#[test]
+fn largest_padded_browser_mail_restores_inbox_and_sent_through_actual_v4_state_codecs() {
+    let (mut t, office) = fixture();
+    let id = "ef".repeat(32);
+    let context = serde_json::json!({"network":16,"registry":office.to_string(),"template":t.get_template_address("MoonMail").to_string(),"senderPublicKey":t.to_public_key_bytes().to_string()});
+    let payload = crypto_fixture("create2", serde_json::json!({"context":context,"id":id}));
+    for marker in [
+        "private-engine-inbox",
+        "private-engine-sent",
+        "Native sealed delivery",
+        "recipientKey",
+        "capsule",
+    ] {
+        assert!(!payload.contains(marker));
+    }
+    t.call_method::<()>(office, "publish_sealed", args![id.clone(), payload], vec![]);
+    let child: ComponentAddress = t.call_method(office, "sealed_letter", args![id.clone()], vec![]);
+    let state = sealed_state(&mut t, child);
+    let resource: ResourceAddress = t.call_method(office, "resource", args![], vec![]);
+    let root_state = t.read_only_state_store().get_component(office).unwrap();
+    let child_state = t.read_only_state_store().get_component(child).unwrap();
+    let result = crypto_fixture(
+        "codec2",
+        serde_json::json!({"context":context,"id":id,"payload":serde_json::from_str::<serde_json::Value>(&state.payload).unwrap(),"root":root_state,"child":child_state,"component":child.to_string(),"recoveryResource":resource.to_string()}),
+    );
+    let report: serde_json::Value = serde_json::from_str(&result).unwrap();
+    assert_eq!(report["recovered"], true);
+    assert_eq!(report["sent"], true);
+}
+#[test]
+fn copied_two_slot_ciphertext_cannot_impersonate_the_engine_recorded_signer() {
+    let (mut t, office) = fixture();
+    let id = "ef".repeat(32);
+    let mut context = serde_json::json!({"network":16,"registry":office.to_string(),"template":t.get_template_address("MoonMail").to_string(),"senderPublicKey":t.to_public_key_bytes().to_string()});
+    let payload = crypto_fixture("create2", serde_json::json!({"context":context,"id":id}));
+    let foreign = t.new_key_pair(77).0;
+    t.execute_expect_success(
+        t.transaction()
+            .call_method(office, "publish_sealed", args![id.clone(), payload])
+            .build_and_seal(&foreign),
+        vec![],
+    );
+    let child: ComponentAddress = t.call_method(office, "sealed_letter", args![id.clone()], vec![]);
+    let state = sealed_state(&mut t, child);
+    context["senderPublicKey"] = serde_json::json!(state.sender.to_string());
+    let report = crypto_fixture(
+        "reject2",
+        serde_json::json!({"context":context,"id":id,"payload":serde_json::from_str::<serde_json::Value>(&state.payload).unwrap()}),
+    );
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&report).unwrap()["rejected"],
+        true
+    );
+}
 #[test]
 fn opaque_sealed_delivery_persists_without_recipient_or_conversation_fields() {
     let (mut t, office) = fixture();

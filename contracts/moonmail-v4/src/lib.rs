@@ -40,6 +40,7 @@ pub mod moonmail_v4 {
         pub controller: RistrettoPublicKeyBytes,
         pub encryption_key: String,
         pub discoverable: bool,
+        pub encryption_history: Vec<String>,
     }
     #[derive(Clone)]
     pub struct MailboxState {
@@ -67,6 +68,64 @@ pub mod moonmail_v4 {
         }
         fn office(&self) {
             assert_eq!(self.kind, 0, "Post office only");
+        }
+        fn key_version(&self, key: &str) -> u64 {
+            assert!(key.len() <= 512, "Encryption key too large");
+            let v: serde_json::Value = serde_json::from_str(key).expect("Invalid Sapient key JSON");
+            let o = v.as_object().expect("Sapient key object required");
+            assert!(
+                o.len() == 5
+                    && ["version", "keyVersion", "publicKey", "recovery", "capsule"]
+                        .iter()
+                        .all(|k| o.contains_key(*k)),
+                "Unsupported Sapient key fields"
+            );
+            assert_eq!(
+                o["version"].as_str(),
+                Some("gd-postbox-1"),
+                "Unsupported postbox key version"
+            );
+            assert_eq!(
+                o["recovery"].as_str(),
+                Some("sapient-capsule-1"),
+                "Sapient recovery required"
+            );
+            let version = o["keyVersion"]
+                .as_u64()
+                .expect("Integer key version required");
+            assert!((1..=1_000_000).contains(&version), "Invalid key version");
+            let canonical_key = |v: &serde_json::Value| {
+                let s = v
+                    .as_str()
+                    .expect("Canonical public key or commitment required");
+                assert!(
+                    s.len() == 64
+                        && s.bytes()
+                            .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
+                        && s.bytes().any(|c| c != b'0'),
+                    "Invalid public key or commitment"
+                );
+            };
+            canonical_key(&o["publicKey"]);
+            let capsule = o["capsule"].as_object().expect("Recovery capsule required");
+            assert!(
+                capsule.len() == 2
+                    && capsule.contains_key("resource")
+                    && capsule.contains_key("commitment"),
+                "Unsupported recovery locator"
+            );
+            assert_eq!(
+                capsule["resource"].as_str(),
+                Some(
+                    self.recovery_resource
+                        .expect("Missing recovery resource")
+                        .to_string()
+                        .as_str()
+                ),
+                "Use this office's recovery resource"
+            );
+            canonical_key(&capsule["commitment"]);
+            version
         }
         pub fn new(network: u8, template: TemplateAddress) -> Component<Self> {
             assert!([16, 36, 38].contains(&network), "Test networks only");
@@ -153,6 +212,11 @@ pub mod moonmail_v4 {
                 "Invalid encryption key"
             );
             assert!(self.postboxes.len() < 512, "Postbox directory full");
+            assert_eq!(
+                self.key_version(&encryption_key),
+                1,
+                "Initial postbox key version must be one"
+            );
             let controller = CallerContext::transaction_signer_public_key();
             self.postboxes.insert(
                 id.clone(),
@@ -162,6 +226,7 @@ pub mod moonmail_v4 {
                     controller,
                     encryption_key,
                     discoverable,
+                    encryption_history: Vec::new(),
                 },
             );
         }
@@ -183,9 +248,42 @@ pub mod moonmail_v4 {
                 !encryption_key.is_empty() && encryption_key.len() <= 512,
                 "Invalid encryption key"
             );
+            let next = self.key_version(&encryption_key);
+            let existing = self.postboxes.get(&id).expect("Unknown postbox");
+            assert_eq!(
+                next,
+                self.key_version(&existing.encryption_key) + 1,
+                "Key versions must increase by one"
+            );
+            assert!(
+                existing.encryption_history.len() < 15,
+                "Sixteen recoverable key versions maximum"
+            );
+            let old: serde_json::Value = serde_json::from_str(&existing.encryption_key).unwrap();
+            let new: serde_json::Value = serde_json::from_str(&encryption_key).unwrap();
+            assert!(
+                old["publicKey"] != new["publicKey"],
+                "Rotation needs a fresh key"
+            );
+            for previous in &existing.encryption_history {
+                let previous: serde_json::Value = serde_json::from_str(previous).unwrap();
+                assert!(
+                    previous["publicKey"] != new["publicKey"],
+                    "Do not reuse historical mailbox keys"
+                );
+                assert!(
+                    previous["capsule"]["commitment"] != new["capsule"]["commitment"],
+                    "Do not reuse recovery capsules"
+                );
+            }
+            assert!(
+                old["capsule"]["commitment"] != new["capsule"]["commitment"],
+                "Rotation needs a fresh recovery capsule"
+            );
             let p = self.postboxes.get_mut(&id).expect("Unknown postbox");
             let proof = CallerContext::get_signer_proof_for_public_key(p.controller);
             proof.drop();
+            p.encryption_history.push(p.encryption_key.clone());
             p.encryption_key = encryption_key;
         }
         pub fn publish(
@@ -279,17 +377,18 @@ pub mod moonmail_v4 {
             let value: serde_json::Value =
                 serde_json::from_str(&payload).expect("Invalid sealed JSON");
             let object = value.as_object().expect("Sealed object required");
+            let two_slots = match object.get("version").and_then(|v| v.as_str()) {
+                Some("mm-sealed-1") => false,
+                Some("mm-sealed-2") => true,
+                _ => panic!("Unsupported sealed version"),
+            };
             assert!(
-                object.len() == 4
+                object.len() == if two_slots { 5 } else { 4 }
                     && ["version", "ephemeralPublicKey", "iv", "ciphertext"]
                         .iter()
-                        .all(|key| object.contains_key(*key)),
+                        .all(|key| object.contains_key(*key))
+                    && (!two_slots || object.contains_key("slots")),
                 "No public routing fields"
-            );
-            assert_eq!(
-                object["version"].as_str(),
-                Some("mm-sealed-1"),
-                "Unsupported sealed version"
             );
             let ephemeral = object["ephemeralPublicKey"]
                 .as_str()
@@ -311,6 +410,33 @@ pub mod moonmail_v4 {
                     && ciphertext.bytes().all(url_char),
                 "Padded ciphertext required"
             );
+            if two_slots {
+                let slots = object["slots"]
+                    .as_array()
+                    .expect("Encrypted access slots required");
+                assert_eq!(slots.len(), 2, "Recipient and Sent slots required");
+                for value in slots {
+                    let slot = value.as_object().expect("Access slot object required");
+                    assert!(
+                        slot.len() == 2
+                            && slot.contains_key("iv")
+                            && slot.contains_key("wrappedKey"),
+                        "No public access-slot routing fields"
+                    );
+                    let nonce = slot["iv"].as_str().expect("Access nonce required");
+                    let wrapped = slot["wrappedKey"]
+                        .as_str()
+                        .expect("Wrapped content key required");
+                    assert!(
+                        nonce.len() == 16 && nonce.bytes().all(url_char),
+                        "Invalid access nonce"
+                    );
+                    assert!(
+                        wrapped.len() == 64 && wrapped.bytes().all(url_char),
+                        "Invalid wrapped content key"
+                    );
+                }
+            }
             let mut child = Self::blank(self.network, self.envelope_template, 3);
             child.sealed_letter = Some(SealedLetter {
                 id: id.clone(),
