@@ -304,7 +304,7 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
                 d.resource,
                 "1000000",
                 "100000",
-                110,
+                109,
               ]),
             },
           },
