@@ -1,0 +1,48 @@
+{
+  "checkedAt": "2026-10-14T05:20:33.585Z",
+  "reviewedFrontendCommit": "974cfdd25262e23eca021eeb9db48ed1189ea3dc",
+  "typeScript": "passed",
+  "productionBuildBase": "/MoonMail/",
+  "unitChecks": 224,
+  "unitFiles": 25,
+  "browserChecks": 268,
+  "browserVerification": {
+    "fullSuite": {
+      "passed": 266,
+      "initialFailures": 2,
+      "failureReason": "Expected proof expiry110 was stale after the intentional consensus-safe change to109."
+    },
+    "allFourPostboxCasesRetested": {
+      "passed": 4,
+      "failed": 0
+    },
+    "otherSourceChangesAfterFullSuite": false
+  },
+  "newPrototypeEngineChecks": 6,
+  "prototypeEngineVersion": "0.46.0",
+  "prototypeDeployed": false,
+  "historicalEngineBaseline": {
+    "passed": 49,
+    "deployedContractsChanged": false
+  },
+  "stockSapientVersion": "0.6.6",
+  "realLedgerResponses": true,
+  "reviewedLocalAssetsOnActualPagesHttpsOrigin": true,
+  "githubPushOrPublishedFrontend": false,
+  "readonlyFinancialRequests": 0,
+  "readonlyFinancialBroadcasts": 0,
+  "realWalletRecovery": [
+    "Old encrypted private mail",
+    "Saved encrypted settings",
+    "Contacts/favourites",
+    "Reload without repeated connect/view prompts"
+  ],
+  "viewportsNoOverflow": [1440, 390],
+  "nativeFinancialEvidence": "native-privacy-evidence.json",
+  "privacyClaims": [
+    "Content encrypted",
+    "Current routing and gift metadata public",
+    "No anonymity claim",
+    "Sealed addressing and conversation reply keys remain prototypes"
+  ]
+}
