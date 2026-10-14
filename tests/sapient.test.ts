@@ -250,6 +250,16 @@ test("native private postage is enforced without a transparent dry run or privat
   const f = fixture();
   f.setPrivateFees(true);
   const wallet = await SapientSession.connect(38, f.provider);
+  f.tx.inputs.push({
+    substate_id: `resource_${"01".repeat(32)}`,
+    version: 7,
+    is_write: false,
+  });
+  f.tx.inputs.push({
+    substate_id: `component_${"e".repeat(64)}`,
+    version: 2,
+    is_write: true,
+  });
   await wallet.submitOperation(f.tx, "100", f.storage, f.context, "private");
   const calls = f.request.mock.calls.map(([a]) => a);
   expect(
@@ -266,6 +276,20 @@ test("native private postage is enforced without a transparent dry run or privat
     ),
   ).toBe(false);
   expect(readPending(f.storage)[0].walletRequest?.id).toBe(f.id);
+  const request = calls.find(
+    (a) => a.method === "tari_createTransactionRequest",
+  )?.params as { inputs: typeof f.tx.inputs };
+  expect(
+    request.inputs.some((i) => i.substate_id === `resource_${"01".repeat(32)}`),
+  ).toBe(false);
+  expect(request.inputs).toContainEqual({
+    substate_id: `component_${"e".repeat(64)}`,
+    version: 2,
+    is_write: true,
+  });
+  expect(
+    f.tx.inputs.some((i) => i.substate_id === `resource_${"01".repeat(32)}`),
+  ).toBe(true);
 });
 
 test("private postage fails closed if capabilities change, with no public fallback or journal attempt", async () => {

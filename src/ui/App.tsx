@@ -133,12 +133,14 @@ export function App() {
   );
   useEffect(() => {
     setPostage(
-      wallet instanceof SapientSession && wallet.privateFeeCapable
+      wallet instanceof SapientSession &&
+        wallet.privateFeeCapable &&
+        d.evidence.nativePrivatePostage === true
         ? "private"
         : "transparent",
     );
     setReview(false);
-  }, [wallet]);
+  }, [wallet, d.evidence.nativePrivatePostage]);
   const [mailboxPreferences, setMailboxPreferences] = useState<
     Map<string, MailboxPreferences>
   >(() => new Map());
@@ -2364,7 +2366,8 @@ export function App() {
               <details className="advanced">
                 <summary>Sending fee limit</summary>
                 {wallet instanceof SapientSession &&
-                  wallet.privateFeeCapable && (
+                  wallet.privateFeeCapable &&
+                  d.evidence.nativePrivatePostage === true && (
                     <label>
                       Postage source
                       <select

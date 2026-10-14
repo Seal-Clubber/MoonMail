@@ -28,6 +28,7 @@ export function officeProfile(value: unknown): Deployment {
       "sapientWallet",
       "postboxClaims",
       "mailboxState",
+      "nativePrivatePostage",
     ].some(
       (key) =>
         evidence[key] !== undefined && typeof evidence[key] !== "boolean",

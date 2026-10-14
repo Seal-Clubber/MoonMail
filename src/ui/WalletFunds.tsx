@@ -39,9 +39,9 @@ export function WalletFunds({
     <section className="wallet-funds" aria-label="Funds for MoonMail">
       <h3>Funds for MoonMail</h3>
       <p className="fine-print">
-        Letters can pay native private postage with a supported Sapient account.
-        Attached gift vaults and postbox setup currently use public test TARI.
-        Sapient shows private funds separately.
+        Sending, attached gift vaults and postbox setup currently use public
+        test TARI. Native private postage is paused after a stock Sapient
+        signing failure. Sapient shows private funds separately.
       </p>
       <button
         type="button"
@@ -68,8 +68,6 @@ export function WalletFunds({
           No public TARI is available in this account. If your funds are
           private, use Unshield in Sapient for the amount you want to spend,
           including any gift, collection reserve and public transaction fees.
-          For a letter without a gift, private postage can use private TARI
-          directly.
         </p>
       )}
       {state === "ready" && balance !== "0" && (

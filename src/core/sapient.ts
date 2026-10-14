@@ -431,7 +431,16 @@ export class SapientSession {
       this.unusedCapsule(storage, context.capsule!.context);
     const params = {
       instructions: tx.instructions,
-      inputs: tx.inputs,
+      // Stock Sapient appends the native TARI resource itself when constructing
+      // private fees. A duplicate resource input makes its WASM decoder reject
+      // the transaction. Leave that dependency to the wallet, preserving all
+      // other explicit dependencies and the transparent path unchanged.
+      inputs:
+        postage === "private"
+          ? tx.inputs.filter(
+              (i) => i.substate_id !== `resource_${"01".repeat(32)}`,
+            )
+          : tx.inputs,
       maxFee: feeCap,
     };
     // Stock 0.6.6's legacy dry-run API always pays a transparent fee. It cannot

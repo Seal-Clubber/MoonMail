@@ -460,6 +460,13 @@ export class PostOfficeClient {
     postage: "transparent" | "private" = "transparent",
   ) {
     if (
+      postage === "private" &&
+      this.deployment.evidence.nativePrivatePostage !== true
+    )
+      throw new Error(
+        "Native private postage is not verified for this deployment and stock wallet. No public fallback was requested.",
+      );
+    if (
       wallet instanceof SapientSession &&
       envelope.mode === "postbox" &&
       BigInt(envelope.gift) > 0n &&

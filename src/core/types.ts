@@ -102,5 +102,6 @@ export interface Deployment extends Context {
     sapientWallet?: boolean;
     postboxClaims?: boolean;
     mailboxState?: boolean;
+    nativePrivatePostage?: boolean;
   };
 }
