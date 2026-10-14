@@ -165,13 +165,14 @@ mod unified_claims {
     }
     fn state(f: &mut Fixture) -> EnvelopeV2 {
         f.t.disable_fees();
-        let result = f.t.execute_expect_success(
+        f.t.execute_expect_success(
             f.t.transaction()
                 .call_method(f.envelope, "get", args![])
                 .build_and_seal(f.t.secret_key()),
             vec![],
         );
-        result.finalize.execution_results[0].decode().unwrap()
+        // Test-only capture; production confirmation uses committed state/receipts.
+        f.t.expect_return(0)
     }
     fn balance(f: &Fixture, d: ComponentAddress) -> Amount {
         f.t.read_only_state_store()

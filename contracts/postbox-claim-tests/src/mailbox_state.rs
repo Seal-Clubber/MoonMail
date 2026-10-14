@@ -202,13 +202,13 @@ fn mailbox_state_checks_directory_identity_separates_postboxes_and_accepts_bound
 }
 
 fn state(t: &mut TemplateTest, component: ComponentAddress) -> MailboxState {
-    let result = t.execute_expect_success(
+    t.execute_expect_success(
         t.transaction()
             .call_method(component, "get_mailbox", args![])
             .build_and_seal(t.secret_key()),
         vec![],
     );
-    result.finalize.execution_results[0].decode().unwrap()
+    t.expect_return(0)
 }
 
 #[test]
@@ -266,14 +266,13 @@ fn unified_letters_allow_long_messages_but_enforce_complete_component_size_and_k
     }
     let child: ComponentAddress =
         t.call_method(office, "letter", args!["long".to_string()], vec![]);
-    let result = t.execute_expect_success(
+    t.execute_expect_success(
         t.transaction()
             .call_method(child, "get", args![])
             .build_and_seal(t.secret_key()),
         vec![],
     );
-    let letter: ghostdrop_v3::letter::letter::Envelope =
-        result.finalize.execution_results[0].decode().unwrap();
+    let letter: ghostdrop_v3::letter::letter::Envelope = t.expect_return(0);
     assert_eq!(letter.payload.len(), 16000);
     let error = t.execute_expect_failure(
         t.transaction()

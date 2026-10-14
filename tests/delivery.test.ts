@@ -72,3 +72,38 @@ it("distinguishes a corrupt journal from an empty history without deleting spend
   ).toThrow("spending is blocked");
   expect(inspectPending({ getItem: () => null })).toEqual({ records: [] });
 });
+
+import { PostOfficeClient } from "../src/core/chain";
+it.each([
+  ["Accept", "confirmed"],
+  ["AcceptFeeRejectRest", "unknown"],
+  ["Reject", "rejected"],
+])(
+  "classifies Ootle 0.46 %s receipts without template return values",
+  async (outcome, state) => {
+    const finalized =
+      outcome === "Accept"
+        ? { Accept: {} }
+        : outcome === "AcceptFeeRejectRest"
+          ? { AcceptFeeRejectRest: [{}, "main failed"] }
+          : { Reject: "rejected" };
+    const provider = {
+      getTransactionResult: vi.fn().mockResolvedValue({
+        result: {
+          Finalized: {
+            final_decision:
+              outcome === "Accept" ? "Commit" : { Abort: "execution failed" },
+            execution_result: { finalize: { result: finalized } },
+          },
+        },
+      }),
+    };
+    const reader = {
+      reconcile: PostOfficeClient.prototype.reconcile.bind({ provider }),
+    };
+    expect(await readDelivery(reader, pending)).toMatchObject({ state });
+    expect(provider.getTransactionResult).toHaveBeenCalledExactlyOnceWith(
+      pending.id,
+    );
+  },
+);

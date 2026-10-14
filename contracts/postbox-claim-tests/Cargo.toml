@@ -4,8 +4,8 @@ version = "0.2.0"
 edition = "2024"
 license = "MIT"
 [dependencies]
-tari_template_test_tooling = "=0.45.0"
-tari_engine_types = "=0.45.0"
+tari_template_test_tooling = "=0.46.0"
+tari_engine_types = "=0.46.0"
 tari_template_lib = "=0.34.0"
 ghostdrop_envelope_v2 = { path = "../envelope-v2" }
 ghostdrop_template_v2 = { path = "../ghostdrop-v2" }

@@ -81,13 +81,14 @@ mod tests {
         args: Vec<tari_template_test_tooling::transaction::builder::named_args::NamedArg>,
     ) -> T {
         t.disable_fees();
-        let r = t.execute_expect_success(
+        t.execute_expect_success(
             t.transaction()
                 .call_method(address, method, args)
                 .build_and_seal(t.secret_key()),
             vec![],
         );
-        r.finalize.execution_results[0].decode().unwrap()
+        // Ootle 0.46 receipts omit return values. Only the test harness captures them.
+        t.expect_return(0)
     }
     fn letter(t: &mut TemplateTest, office: ComponentAddress, id: &str) -> Envelope {
         let c = child(t, office, id);

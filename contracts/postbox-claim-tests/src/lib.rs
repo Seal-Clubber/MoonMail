@@ -164,13 +164,14 @@ mod tests {
     }
     fn state(f: &mut Fixture) -> EnvelopeV2 {
         f.t.disable_fees();
-        let result = f.t.execute_expect_success(
+        f.t.execute_expect_success(
             f.t.transaction()
                 .call_method(f.envelope, "get", args![])
                 .build_and_seal(f.t.secret_key()),
             vec![],
         );
-        result.finalize.execution_results[0].decode().unwrap()
+        // Test-only capture; production confirmation uses committed state/receipts.
+        f.t.expect_return(0)
     }
     fn balance(f: &Fixture, d: ComponentAddress) -> Amount {
         f.t.read_only_state_store()
@@ -460,7 +461,7 @@ mod tests {
             );
             f.t.call_method(f.office, "letter", args![id.to_string()], vec![])
         } else {
-            let result = f.t.execute_expect_success(
+            f.t.execute_expect_success(
                 tx.call_function(
                     f.t.get_template_address("EnvelopeV2"),
                     "new",
@@ -483,13 +484,7 @@ mod tests {
                 .build_and_seal(&sk),
                 vec![proof],
             );
-            result
-                .finalize
-                .execution_results
-                .last()
-                .unwrap()
-                .decode()
-                .unwrap()
+            f.t.expect_return(f.t.return_values().len() - 1)
         }
     }
     #[test]
