@@ -31,6 +31,7 @@ pub mod moonmail_v4 {
         pub network: u8,
         pub registry: ComponentAddress,
         pub payload: String,
+        pub sender: RistrettoPublicKeyBytes,
     }
     #[derive(Clone)]
     pub struct Postbox {
@@ -316,6 +317,7 @@ pub mod moonmail_v4 {
                 network: self.network,
                 registry: CallerContext::current_component_address(),
                 payload,
+                sender: CallerContext::transaction_signer_public_key(),
             });
             assert!(
                 tari_bor::encode(&child)

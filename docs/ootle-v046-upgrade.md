@@ -49,3 +49,7 @@ cargo test --manifest-path contracts/capsule-tests/Cargo.toml --locked
 ```
 
 Node and the installed JS packages must be reachable from the engine host. In Windows/WSL, set `GHOSTDROP_TEST_NODE` to the Windows Node executable's `/mnt/c/.../node.exe` path and `GHOSTDROP_TEST_LOADER` to the `file:///C:/.../node_modules/tsx/dist/loader.mjs` URI. Bridge scripts use Windows absolute paths: `GHOSTDROP_TEST_SIGNER` → `tools/sign-engine-claim.ts`, `GHOSTDROP_TEST_POSTBOX_SIGNER` → `tools/sign-postbox-engine-claim.ts`, `GHOSTDROP_MAILBOX_SIGNER` → `tools/sign-mailbox-engine-update.ts`, `GHOSTDROP_CAPSULE_FIXTURE` → `tools/capsule-engine-fixture.ts`. Their defaults work when Node runs natively on the engine host.
+
+## Funded follow-up: epoch boundary
+
+Real stock Sapient acceptance found that a proof expiry at reported epoch +10 can exceed the contract limit when Ootle0.46 dry-run execution uses consensus one epoch earlier. The frontend now uses +9; challenge domains and deployed contracts are unchanged. Noncommitting simulations rejected the original expiry before any claim broadcast. The corrected real prepaid claim committed on Esmeralda. This follows the upstream [ConsensusEpoch clamp](https://github.com/tari-project/tari-ootle/blob/v0.46.0/applications/tari_indexer/src/network_state_sync/consensus_epoch.rs) and [dry-run processor](https://github.com/tari-project/tari-ootle/blob/v0.46.0/applications/tari_indexer/src/dry_run/processor.rs). See [native privacy evidence](native-privacy-evidence.json).

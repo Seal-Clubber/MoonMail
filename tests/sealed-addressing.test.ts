@@ -9,6 +9,7 @@ import {
   type SealedRoute,
 } from "../src/core/sealed-addressing";
 const context = {
+    senderPublicKey: "12".repeat(32),
     network: 38,
     registry: `component_${"a".repeat(64)}`,
     template: "b".repeat(64),
@@ -75,10 +76,22 @@ test("bounded discovery separates recipients and key versions without accepting 
       "e".repeat(64),
     );
     const page = [
-      { id, payload: first },
-      { id: "d".repeat(64), payload: other },
-      { id: "e".repeat(64), payload: forged },
-      { id: "f".repeat(64), payload: { ...first, ciphertext: "broken" } },
+      { id, senderPublicKey: context.senderPublicKey, payload: first },
+      {
+        id: "d".repeat(64),
+        senderPublicKey: context.senderPublicKey,
+        payload: other,
+      },
+      {
+        id: "e".repeat(64),
+        senderPublicKey: context.senderPublicKey,
+        payload: forged,
+      },
+      {
+        id: "f".repeat(64),
+        senderPublicKey: context.senderPublicKey,
+        payload: { ...first, ciphertext: "broken" },
+      },
     ];
     const result = await discoverSealedPage(
       page,
@@ -172,6 +185,7 @@ test("wrong key, network, registry, template, letter ID and ciphertext tampering
     ).rejects.toThrow();
     for (const c of [
       { ...context, network: 36 },
+      { ...context, senderPublicKey: "34".repeat(32) },
       { ...context, registry: `component_${"d".repeat(64)}` },
       { ...context, template: "e".repeat(64) },
     ])

@@ -47,7 +47,22 @@ try {
     if (JSON.stringify(opened) !== JSON.stringify(letter))
       throw new Error("Native engine payload did not recover its exact route");
     process.stdout.write(JSON.stringify({ recovered: true }));
-  } else throw new Error("Choose create or open");
+  } else if (command === "reject") {
+    let rejected = false;
+    try {
+      await openAddressedRoute(
+        value.payload as SealedAddressEnvelope,
+        secret,
+        value.context,
+        value.id,
+      );
+    } catch {
+      rejected = true;
+    }
+    if (!rejected)
+      throw new Error("Ciphertext opened under a different transaction sender");
+    process.stdout.write(JSON.stringify({ rejected: true }));
+  } else throw new Error("Choose create, open or reject");
 } finally {
   secret.fill(0);
 }

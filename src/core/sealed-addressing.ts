@@ -4,6 +4,9 @@
 import type { Context, Letter } from "./types";
 import { base64url, fromBase64url, hex, unhex } from "./crypto";
 
+export interface SealedDeliveryContext extends Context {
+  senderPublicKey: string;
+}
 export interface SealedRoute {
   version: "mm-route-1";
   recipientPostbox: string;
@@ -25,7 +28,11 @@ function publicKey(value: string) {
   if (!/^[a-f0-9]{64}$/.test(value) || /^0+$/.test(value))
     throw new Error("Invalid sealed route key");
 }
-function associated(context: Context, id: string, ephemeral: string) {
+function associated(
+  context: SealedDeliveryContext,
+  id: string,
+  ephemeral: string,
+) {
   if (
     ![16, 36, 38].includes(context.network) ||
     !/^component_[a-f0-9]{64}$/.test(context.registry) ||
@@ -34,6 +41,7 @@ function associated(context: Context, id: string, ephemeral: string) {
   )
     throw new Error("Invalid sealed delivery context");
   publicKey(ephemeral);
+  publicKey(context.senderPublicKey);
   return encode([
     "MoonMail",
     "mm-sealed-1",
@@ -42,6 +50,7 @@ function associated(context: Context, id: string, ephemeral: string) {
     context.template,
     id,
     ephemeral,
+    context.senderPublicKey,
   ]);
 }
 async function key(shared: Uint8Array, aad: Uint8Array) {
@@ -90,7 +99,7 @@ function route(value: unknown): SealedRoute {
 export async function sealAddressedRoute(
   value: SealedRoute,
   recipientPublicKey: string,
-  context: Context,
+  context: SealedDeliveryContext,
   id: string,
 ): Promise<SealedAddressEnvelope> {
   publicKey(recipientPublicKey);
@@ -137,7 +146,7 @@ export async function sealAddressedRoute(
 export async function openAddressedRoute(
   envelope: SealedAddressEnvelope,
   recipientSecret: Uint8Array,
-  context: Context,
+  context: SealedDeliveryContext,
   id: string,
 ): Promise<SealedRoute> {
   if (
@@ -192,7 +201,11 @@ export async function openAddressedRoute(
 }
 
 export async function discoverSealedPage(
-  entries: readonly { id: string; payload: SealedAddressEnvelope }[],
+  entries: readonly {
+    id: string;
+    senderPublicKey: string;
+    payload: SealedAddressEnvelope;
+  }[],
   keys: readonly { postbox: string; keyVersion: number; secret: Uint8Array }[],
   context: Context,
   signal?: AbortSignal,
@@ -222,7 +235,7 @@ export async function discoverSealedPage(
         const opened = await openAddressedRoute(
           entry.payload,
           key.secret,
-          context,
+          { ...context, senderPublicKey: entry.senderPublicKey },
           entry.id,
         );
         signal?.throwIfAborted();
@@ -254,7 +267,11 @@ export async function conversationReplyKey(
   if (mailboxSecret.length !== 32 || !/^[a-f0-9]{64}$/.test(conversation))
     throw new Error("Invalid reply identity");
   const { publicKeyFromSecretKey } = await import("@tari-project/ootle-wasm");
-  associated(context, conversation, "01".repeat(32));
+  associated(
+    { ...context, senderPublicKey: hex(publicKeyFromSecretKey(mailboxSecret)) },
+    conversation,
+    "01".repeat(32),
+  );
   const salt = new Uint8Array(
     await crypto.subtle.digest(
       "SHA-256",

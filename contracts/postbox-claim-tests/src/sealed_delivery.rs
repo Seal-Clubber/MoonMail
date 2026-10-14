@@ -31,6 +31,7 @@ fn opaque_sealed_delivery_persists_without_recipient_or_conversation_fields() {
     assert_eq!(state.id, id);
     assert_eq!(state.registry, office);
     assert_eq!(state.network, 16);
+    assert_eq!(state.sender, t.to_public_key_bytes());
     assert_eq!(state.payload, payload());
     let list: Vec<(String, ComponentAddress)> = t.call_method(
         office,
@@ -162,7 +163,7 @@ fn sealed_state(t: &mut TemplateTest, child: ComponentAddress) -> SealedLetter {
 fn upgraded_browser_crypto_recovers_a_real_engine_persisted_sealed_route() {
     let (mut t, office) = fixture();
     let id = "ef".repeat(32);
-    let context = serde_json::json!({"network":16,"registry":office.to_string(),"template":t.get_template_address("MoonMail").to_string()});
+    let context = serde_json::json!({"network":16,"registry":office.to_string(),"template":t.get_template_address("MoonMail").to_string(),"senderPublicKey":t.to_public_key_bytes().to_string()});
     let payload = crypto_fixture("create", serde_json::json!({"context":context,"id":id}));
     for marker in [
         "private-engine-inbox",
@@ -217,4 +218,31 @@ fn crypto_fixture(command: &str, value: serde_json::Value) -> String {
         String::from_utf8_lossy(&output.stderr)
     );
     String::from_utf8(output.stdout).unwrap()
+}
+
+#[test]
+fn copied_ciphertext_cannot_impersonate_the_original_transaction_sender() {
+    let (mut t, office) = fixture();
+    let id = "ef".repeat(32);
+    let mut context = serde_json::json!({"network":16,"registry":office.to_string(),"template":t.get_template_address("MoonMail").to_string(),"senderPublicKey":t.to_public_key_bytes().to_string()});
+    let payload = crypto_fixture("create", serde_json::json!({"context":context,"id":id}));
+    let foreign = t.new_key_pair(77).0;
+    t.execute_expect_success(
+        t.transaction()
+            .call_method(office, "publish_sealed", args![id.clone(), payload])
+            .build_and_seal(&foreign),
+        vec![],
+    );
+    let child: ComponentAddress = t.call_method(office, "sealed_letter", args![id.clone()], vec![]);
+    let state = sealed_state(&mut t, child);
+    assert_ne!(state.sender, t.to_public_key_bytes());
+    context["senderPublicKey"] = serde_json::json!(state.sender.to_string());
+    let result = crypto_fixture(
+        "reject",
+        serde_json::json!({"context":context,"id":id,"payload":serde_json::from_str::<serde_json::Value>(&state.payload).unwrap()}),
+    );
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&result).unwrap()["rejected"],
+        true
+    );
 }

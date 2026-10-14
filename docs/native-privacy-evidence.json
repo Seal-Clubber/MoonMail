@@ -44,5 +44,23 @@
     "Sealed addressing",
     "Conversation-specific reply identities",
     "Atomic attached private payments"
-  ]
+  ],
+  "mixedFundingGift": {
+    "publicationTransactionId": "f5551b324c6ef0fc573d9c53426a61043023c2b2bd6eb866a87355f46ef3021d",
+    "claimTransactionId": "7cf606c0061c527d4a85fda9617927400463e035886674a33daea188474ea42f",
+    "decisions": ["Commit", "Commit"],
+    "postage": "native private TARI",
+    "giftFunding": "public TARI vault",
+    "giftMicroTari": "10000",
+    "reserveMicroTari": "50000",
+    "claimUsesSenderReserve": true,
+    "broadcastAttempts": 2,
+    "priorClaimSimulations": "Noncommitting rejection before broadcast: expiry at reported+10 exceeded consensus+10; fixed to reported+9."
+  },
+  "prototypeEngineTests": {
+    "count": 6,
+    "ootleVersion": "0.46.0",
+    "unpublished": true,
+    "copiedCiphertextCannotImpersonateAnotherSender": true
+  }
 }
