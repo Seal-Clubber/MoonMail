@@ -194,10 +194,18 @@ fn crypto_fixture(command: &str, value: serde_json::Value) -> String {
         io::Write,
         process::{Command, Stdio},
     };
-    let node = std::env::var("GHOSTDROP_TEST_NODE")
-        .expect("Set GHOSTDROP_TEST_NODE for the browser crypto bridge");
-    let loader = std::env::var("GHOSTDROP_TEST_LOADER").expect("Set GHOSTDROP_TEST_LOADER");
-    let helper = std::env::var("MOONMAIL_SEALED_FIXTURE").expect("Set MOONMAIL_SEALED_FIXTURE");
+    let node = std::env::var("GHOSTDROP_TEST_NODE").unwrap_or_else(|_| "node".to_string());
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let loader = std::env::var("GHOSTDROP_TEST_LOADER").unwrap_or_else(|_| {
+        root.join("node_modules/tsx/dist/loader.mjs")
+            .to_string_lossy()
+            .into_owned()
+    });
+    let helper = std::env::var("MOONMAIL_SEALED_FIXTURE").unwrap_or_else(|_| {
+        root.join("tools/sealed-engine-fixture.ts")
+            .to_string_lossy()
+            .into_owned()
+    });
     let mut child = Command::new(node)
         .args(["--import", &loader, &helper, command])
         .stdin(Stdio::piped())
