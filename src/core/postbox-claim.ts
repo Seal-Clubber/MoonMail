@@ -13,6 +13,18 @@ export interface WalletOwnershipProof {
   signature: string;
 }
 export const nativeTari = `resource_${"01".repeat(32)}`;
+export function postboxClaimExpiry(epoch: number) {
+  if (
+    !Number.isSafeInteger(epoch) ||
+    epoch < 0 ||
+    epoch > Number.MAX_SAFE_INTEGER - 10
+  )
+    throw new Error("Invalid claim epoch");
+  // Ootle 0.46 dry runs clamp the observed consensus epoch to [reported-1,
+  // reported]. Leave one epoch of headroom inside the contract's ten-epoch
+  // maximum, so a synced indexer one ahead of consensus still accepts the proof.
+  return epoch + 9;
+}
 export function postboxClaimChallenge(
   envelope: Envelope,
   destination: string,

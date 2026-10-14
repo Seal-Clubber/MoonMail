@@ -24,7 +24,10 @@ import {
   mailboxStateReady,
   endpoint,
 } from "./config";
-import { postboxProofClaimTransaction } from "./postbox-claim";
+import {
+  postboxProofClaimTransaction,
+  postboxClaimExpiry,
+} from "./postbox-claim";
 import { hex } from "./crypto";
 import {
   claimTransaction,
@@ -1011,7 +1014,7 @@ export class PostOfficeClient {
       epoch > Number.MAX_SAFE_INTEGER - 10
     )
       throw new Error("Invalid claim epoch");
-    const expiry = epoch + 10;
+    const expiry = postboxClaimExpiry(epoch);
     const proof = await wallet.authorizePostboxClaim(
       latest,
       destination,

@@ -9,6 +9,7 @@ import {
   postboxClaimChallenge,
   postboxProofClaimTransaction,
   nativeTari,
+  postboxClaimExpiry,
 } from "../src/core/postbox-claim";
 import { SapientSession, type SapientProvider } from "../src/core/sapient";
 import { emptyDeployment, postboxClaimsReady } from "../src/core/config";
@@ -22,6 +23,18 @@ import {
 import type { Envelope } from "../src/core/types";
 
 const simulation = vi.hoisted(() => vi.fn());
+test("claim expiry fits both Ootle 0.46 reported and one-behind consensus epochs", () => {
+  for (const epoch of [0, 1, 100, 12247]) {
+    const expiry = postboxClaimExpiry(epoch);
+    expect(expiry).toBe(epoch + 9);
+    for (const execution of [epoch, Math.max(0, epoch - 1)]) {
+      expect(expiry).toBeGreaterThanOrEqual(execution);
+      expect(expiry).toBeLessThanOrEqual(execution + 10);
+    }
+  }
+  for (const epoch of [-1, 1.5, NaN, Infinity, Number.MAX_SAFE_INTEGER])
+    expect(() => postboxClaimExpiry(epoch)).toThrow("Invalid claim epoch");
+});
 vi.mock("@tari-project/ootle", async (original) => ({
   ...(await original<typeof import("@tari-project/ootle")>()),
   getVaultIdsForAccount: vi.fn(async (_provider, account: string) => [
