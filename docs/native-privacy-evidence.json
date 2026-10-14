@@ -1,0 +1,48 @@
+{
+  "verifiedAt": "2026-10-14T04:40:29.971Z",
+  "network": "Esmeralda",
+  "ootleVersion": "0.46.0",
+  "stockSapientVersion": "0.6.6",
+  "websiteAndStockWalletOnly": true,
+  "localReviewedAssetsOnPagesHttpsOrigin": true,
+  "githubPushOrPublishedFrontend": false,
+  "ledgerResponsesOverridden": false,
+  "nativePrivatePostage": {
+    "transactionId": "d85f406832068f6eed8a8885fe87dc78c091af2a81171d5e71a7895c8a263338",
+    "decision": "Commit",
+    "broadcastAttempts": 1,
+    "encryptedLetterRecovered": true,
+    "gift": "0",
+    "publicRoutingStillVisible": true,
+    "fix": "Omit the duplicate native TARI resource supplied by stock private-fee construction."
+  },
+  "nativePrivateTransfer": {
+    "transactionId": "114d1d667294e1c7e00e664fbd3fe195d6afa331e8b16769abe22f986853f198",
+    "decision": "Commit",
+    "broadcastAttempts": 1,
+    "minimumValuePromise": "0",
+    "exactAmountRecovered": true,
+    "selfTransferOnly": true,
+    "attachedMoonMailPayment": false
+  },
+  "priorAttempts": {
+    "feeOnlyShieldRejection": {
+      "transactionId": "aedceb0c3edb832a7a037f779813ceafdd17c4953029812944f91b38e6b718a8",
+      "totalFeesPaidMicroTari": "1183",
+      "privateOutputCreated": false
+    },
+    "successfulShield": {
+      "transactionId": "ee118c3ba7798cad6e115280b52bd90a152faaef4fdb19e46ac234ee106e9354",
+      "decision": "Commit"
+    },
+    "duplicateInputFailure": {
+      "beforeBroadcast": true,
+      "originalRequestPreserved": true
+    }
+  },
+  "prototypeNotDeployed": [
+    "Sealed addressing",
+    "Conversation-specific reply identities",
+    "Atomic attached private payments"
+  ]
+}

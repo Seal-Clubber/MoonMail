@@ -620,3 +620,6 @@ mod unified_capsules;
 
 #[cfg(test)]
 mod persistent_optional;
+
+#[cfg(test)]
+mod sealed_delivery;

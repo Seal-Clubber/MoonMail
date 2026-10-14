@@ -4082,6 +4082,20 @@ footer {
 .mailbox-message.selected {
   background: #263b51;
 }
+.mailbox-correspondent {
+  display: block;
+  color: #c9daef;
+  font-size: 0.78rem;
+  margin-bottom: 5px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.mailbox-message.unread .mailbox-correspondent {
+  color: #e5f2ff;
+}
+.mailbox-message-open {
+  text-align: left;
+}
 .mailbox-unread-label {
   color: #c5eeff;
   border: 1px solid #75b3d0;

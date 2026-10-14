@@ -357,6 +357,7 @@ export function App() {
     const readHash = () => {
       closeLetter();
       setError("");
+      setPublicConfirmed(false);
       setPostboxInvitation(undefined);
       const hash = location.hash;
       const privateLink = hash === "#/letter" || hash.startsWith("#/letter/");
@@ -890,6 +891,7 @@ export function App() {
       setMailFilter("all");
     }
     setError("");
+    setPublicConfirmed(false);
     setReview(false);
     history.pushState(null, "", `${location.pathname}#/${v}`);
     window.scrollTo(0, 0);
@@ -2087,72 +2089,6 @@ export function App() {
                 void task(prepare);
               }}
             >
-              <label>
-                Subject
-                <input
-                  value={subject}
-                  disabled={busy}
-                  maxLength={120}
-                  onChange={(e) => {
-                    setSubject(e.target.value);
-                    setReview(false);
-                  }}
-                  placeholder="A small thought from the other side"
-                  required
-                />
-              </label>
-              <label className="letter-body-label" htmlFor="letter-body">
-                Your letter
-              </label>
-              <textarea
-                id="letter-body"
-                value={body}
-                disabled={busy}
-                maxLength={d.contractProtocol === "unified-1" ? 16000 : 2600}
-                aria-describedby="letter-space"
-                aria-invalid={draftTooLarge}
-                onChange={(e) => {
-                  setBody(e.target.value);
-                  setReview(false);
-                }}
-                placeholder="Dear wandering soul…"
-                rows={7}
-                required
-              />
-              <div
-                id="letter-space"
-                className={`letter-space ${draftTooLarge ? "letter-full" : ""}`}
-              >
-                {draftSize !== undefined ? (
-                  <>
-                    <div>
-                      <span>Letter space</span>
-                      <strong>
-                        {draftTooLarge
-                          ? "Letter is full"
-                          : `${Math.max(0, Math.floor((1 - draftSize / letterLimit(d)) * 100))}% remaining`}
-                      </strong>
-                    </div>
-                    <progress
-                      aria-label="Letter space used"
-                      aria-valuetext={`${Math.min(100, Math.ceil((draftSize / letterLimit(d)) * 100))}% used`}
-                      max={letterLimit(d)}
-                      value={Math.min(draftSize, letterLimit(d))}
-                    />
-                    <p role={draftTooLarge ? "alert" : undefined}>
-                      {draftTooLarge
-                        ? "Shorten your subject or message before reviewing. Your text stays here."
-                        : mode === "public"
-                          ? "Addressing and gift details also need room in the letter."
-                          : "Sealed letters also need room for encryption, addressing and gift details."}
-                    </p>
-                  </>
-                ) : (
-                  <p>
-                    Choose a registered postbox to check available letter space.
-                  </p>
-                )}
-              </div>
               {mode === "postbox" && (
                 <div className="recipient-choice">
                   {thread && (
@@ -2253,6 +2189,72 @@ export function App() {
                   />
                 </div>
               )}
+              <label>
+                Subject
+                <input
+                  value={subject}
+                  disabled={busy}
+                  maxLength={120}
+                  onChange={(e) => {
+                    setSubject(e.target.value);
+                    setReview(false);
+                  }}
+                  placeholder="A small thought from the other side"
+                  required
+                />
+              </label>
+              <label className="letter-body-label" htmlFor="letter-body">
+                Your letter
+              </label>
+              <textarea
+                id="letter-body"
+                value={body}
+                disabled={busy}
+                maxLength={d.contractProtocol === "unified-1" ? 16000 : 2600}
+                aria-describedby="letter-space"
+                aria-invalid={draftTooLarge}
+                onChange={(e) => {
+                  setBody(e.target.value);
+                  setReview(false);
+                }}
+                placeholder="Dear wandering soul…"
+                rows={7}
+                required
+              />
+              <div
+                id="letter-space"
+                className={`letter-space ${draftTooLarge ? "letter-full" : ""}`}
+              >
+                {draftSize !== undefined ? (
+                  <>
+                    <div>
+                      <span>Letter space</span>
+                      <strong>
+                        {draftTooLarge
+                          ? "Letter is full"
+                          : `${Math.max(0, Math.floor((1 - draftSize / letterLimit(d)) * 100))}% remaining`}
+                      </strong>
+                    </div>
+                    <progress
+                      aria-label="Letter space used"
+                      aria-valuetext={`${Math.min(100, Math.ceil((draftSize / letterLimit(d)) * 100))}% used`}
+                      max={letterLimit(d)}
+                      value={Math.min(draftSize, letterLimit(d))}
+                    />
+                    <p role={draftTooLarge ? "alert" : undefined}>
+                      {draftTooLarge
+                        ? "Shorten your subject or message before reviewing. Your text stays here."
+                        : mode === "public"
+                          ? "Addressing and gift details also need room in the letter."
+                          : "Sealed letters also need room for encryption, addressing and gift details."}
+                    </p>
+                  </>
+                ) : (
+                  <p>
+                    Choose a registered postbox to check available letter space.
+                  </p>
+                )}
+              </div>
               <div className="form-row">
                 <AmountInput
                   label="Gift amount (optional)"
@@ -2363,32 +2365,30 @@ export function App() {
                   </select>
                 </label>
               )}
+              {wallet instanceof SapientSession &&
+                wallet.privateFeeCapable &&
+                d.evidence.nativePrivatePostage === true && (
+                  <label>
+                    Postage source
+                    <select
+                      value={postage}
+                      disabled={busy}
+                      onChange={(e) => {
+                        setPostage(e.target.value as "private" | "transparent");
+                        setReview(false);
+                      }}
+                    >
+                      <option value="private">
+                        Private TARI · native Sapient postage
+                      </option>
+                      <option value="transparent">
+                        Public TARI · visible account funding
+                      </option>
+                    </select>
+                  </label>
+                )}
               <details className="advanced">
                 <summary>Sending fee limit</summary>
-                {wallet instanceof SapientSession &&
-                  wallet.privateFeeCapable &&
-                  d.evidence.nativePrivatePostage === true && (
-                    <label>
-                      Postage source
-                      <select
-                        value={postage}
-                        disabled={busy}
-                        onChange={(e) => {
-                          setPostage(
-                            e.target.value as "private" | "transparent",
-                          );
-                          setReview(false);
-                        }}
-                      >
-                        <option value="private">
-                          Private TARI · native Sapient postage
-                        </option>
-                        <option value="transparent">
-                          Public TARI · visible account funding
-                        </option>
-                      </select>
-                    </label>
-                  )}
                 <AmountInput
                   label="Maximum sending fee per attempt"
                   value={fee}

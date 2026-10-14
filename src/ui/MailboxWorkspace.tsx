@@ -144,6 +144,26 @@ export function MailboxWorkspace({
         ? (e.payload as Letter)
         : sentPlain.get(e.id);
   }
+  function correspondent(e: Envelope) {
+    if (folder === "sent") {
+      const recipient = boxes.find(
+        (b) => b.id === e.recipientPostbox && b.controller === e.claimAuthority,
+      );
+      return recipient
+        ? `To ${recipient.nickname}`
+        : e.mode === "link"
+          ? "Private-link recipient"
+          : e.mode === "public"
+            ? "Public audience"
+            : "Recipient postbox";
+    }
+    const reply = boxes.find(
+      (b) => b.id === e.replyPostbox && b.controller === e.sender,
+    );
+    return (
+      reply?.nickname || `Wallet ${e.sender.slice(0, 8)}…${e.sender.slice(-6)}`
+    );
+  }
   const found = views[folder].filter((e) =>
     [
       e.id,
@@ -465,6 +485,9 @@ export function MailboxWorkspace({
                       }
                     }}
                   >
+                    <span className="mailbox-correspondent">
+                      {correspondent(e)}
+                    </span>
                     <span className="mailbox-row-heading">
                       <strong>{text?.subject || "A sealed letter"}</strong>
                       {state.loaded &&

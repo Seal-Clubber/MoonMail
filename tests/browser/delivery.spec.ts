@@ -50,7 +50,7 @@ function ledger(url: string) {
 async function configure(page: Page) {
   await page.route("**/deployment.json", (r) => r.fulfill({ json: d }));
 }
-async function connectFixture(page: Page) {
+async function connectFixture(page: Page, privateFees = false) {
   const owner = generateKeypair(),
     view = generateKeypair();
   const address = generateOotleAddress(owner.public_key, view.public_key, 38);
@@ -58,7 +58,7 @@ async function connectFixture(page: Page) {
   owner.free();
   view.free();
   await page.addInitScript(
-    ({ address, account, transaction }) => {
+    ({ address, account, transaction, privateFees }) => {
       const state = window as any;
       state.walletCalls = [];
       let connected = false,
@@ -90,7 +90,11 @@ async function connectFixture(page: Page) {
             return result;
           }
           if (method === "tari_getCapabilities")
-            return { transactionRequests: true, walletAddress: true };
+            return {
+              transactionRequests: true,
+              walletAddress: true,
+              supportsPrivateFees: privateFees,
+            };
           if (method === "tari_signAndSubmitTransaction") {
             if (!params.dryRun)
               throw new Error("Fixture forbids direct broadcasts");
@@ -119,10 +123,108 @@ async function connectFixture(page: Page) {
         },
       };
     },
-    { address, account, transaction },
+    { address, account, transaction, privateFees },
   );
   return { controller, address };
 }
+
+for (const verified of [false, true])
+  test(`native postage requires deployment evidence (${verified}) and never requests mail-read permission`, async ({
+    page,
+  }) => {
+    await connectFixture(page, true);
+    await page.route("**/deployment.json", (r) =>
+      r.fulfill({
+        json: {
+          ...d,
+          evidence: { ...d.evidence, nativePrivatePostage: verified },
+        },
+      }),
+    );
+    await page.route(`${d.indexerUrl}**`, (r) =>
+      r.fulfill({ json: ledger(r.request().url()) }),
+    );
+    await page.goto("./#/compose");
+    await page
+      .getByRole("button", { name: "Connect wallet", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Connect Sapient", exact: true })
+      .click();
+    const source = page.getByRole("combobox", {
+      name: "Postage source",
+      exact: true,
+    });
+    if (verified) {
+      await expect(source).toHaveValue("private");
+      await source.selectOption("transparent");
+      await expect(source).toHaveValue("transparent");
+    } else await expect(source).toHaveCount(0);
+    expect(
+      (await page.evaluate(() => (window as any).walletCalls)).some((c: any) =>
+        [
+          "tari_requestViewAccess",
+          "tari_getPrivateBalances",
+          "tari_getShieldedOutputs",
+          "tari_createTransactionRequest",
+          "tari_submitTransactionRequest",
+        ].includes(c.method),
+      ),
+    ).toBe(false);
+  });
+
+test("a connected funded public review stays gated until explicit publication choice and resets after navigation", async ({
+  page,
+}) => {
+  await configure(page);
+  await connectFixture(page);
+  let writes = 0;
+  await page.route(`${d.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") {
+      writes++;
+      return r.abort();
+    }
+    return r.fulfill({ json: ledger(r.request().url()) });
+  });
+  await page.goto("./#/compose");
+  await page
+    .getByRole("button", { name: "Connect wallet", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Connect Sapient", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "✧ Public mail", exact: true })
+    .click();
+  await page
+    .getByLabel("Subject", { exact: true })
+    .fill("Deliberate public publication");
+  await page
+    .getByLabel("Your letter", { exact: true })
+    .fill("A public review must be an explicit choice.");
+  await page.getByRole("button", { name: "Review letter" }).click();
+  const publish = page.getByRole("button", {
+      name: "Publish publicly",
+      exact: true,
+    }),
+    consent = page.getByRole("checkbox", {
+      name: "I choose to publish this subject",
+    });
+  await expect(publish).toBeDisabled();
+  await consent.check();
+  await expect(publish).toBeEnabled();
+  await page.getByRole("button", { name: "Activity", exact: true }).click();
+  await page.getByRole("button", { name: "Compose", exact: true }).click();
+  await page.getByRole("button", { name: "Review letter" }).click();
+  await expect(consent).not.toBeChecked();
+  await expect(publish).toBeDisabled();
+  expect(
+    (await page.evaluate(() => (window as any).walletCalls)).some((c: any) =>
+      c.method.includes("Transaction"),
+    ),
+  ).toBe(false);
+  expect(writes).toBe(0);
+});
 test("private link must be saved before one approved publication; confirmation reveals the same link", async ({
   page,
 }) => {

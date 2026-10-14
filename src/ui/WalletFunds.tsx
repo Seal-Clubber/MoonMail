@@ -67,7 +67,8 @@ export function WalletFunds({
         <p className="info">
           No public TARI is available in this account. If your funds are
           private, use Unshield in Sapient for the amount you want to spend,
-          including any gift, collection reserve and public transaction fees.
+          including any gift, collection reserve and public transaction fees. A
+          letter without a gift can use private postage without unshielding.
         </p>
       )}
       {state === "ready" && balance !== "0" && (

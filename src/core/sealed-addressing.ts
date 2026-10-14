@@ -144,6 +144,9 @@ export async function openAddressedRoute(
     !envelope ||
     envelope.version !== "mm-sealed-1" ||
     recipientSecret.length !== 32 ||
+    typeof envelope.iv !== "string" ||
+    typeof envelope.ciphertext !== "string" ||
+    envelope.ciphertext.length > 21867 ||
     Object.keys(envelope).sort().join() !==
       "ciphertext,ephemeralPublicKey,iv,version"
   )
@@ -186,6 +189,59 @@ export async function openAddressedRoute(
     plain?.fill(0);
     shared.fill(0);
   }
+}
+
+export async function discoverSealedPage(
+  entries: readonly { id: string; payload: SealedAddressEnvelope }[],
+  keys: readonly { postbox: string; keyVersion: number; secret: Uint8Array }[],
+  context: Context,
+  signal?: AbortSignal,
+) {
+  if (
+    entries.length > 50 ||
+    keys.length > 16 ||
+    keys.some(
+      (k) =>
+        !/^[A-Za-z0-9_-]{1,64}$/.test(k.postbox) ||
+        !Number.isSafeInteger(k.keyVersion) ||
+        k.keyVersion < 1 ||
+        k.secret.length !== 32,
+    )
+  )
+    throw new Error(
+      "Sealed discovery requires a bounded page and recovered keys",
+    );
+  const matches: { id: string; route: SealedRoute }[] = [];
+  let skipped = 0;
+  for (const entry of entries) {
+    signal?.throwIfAborted();
+    let found = false;
+    for (const key of keys) {
+      signal?.throwIfAborted();
+      try {
+        const opened = await openAddressedRoute(
+          entry.payload,
+          key.secret,
+          context,
+          entry.id,
+        );
+        signal?.throwIfAborted();
+        if (
+          opened.recipientPostbox !== key.postbox ||
+          opened.keyVersion !== key.keyVersion
+        )
+          continue;
+        matches.push({ id: entry.id, route: opened });
+        found = true;
+        break;
+      } catch (error) {
+        if (signal?.aborted) throw error;
+      }
+    }
+    if (!found) skipped++;
+  }
+  signal?.throwIfAborted();
+  return { matches, skipped };
 }
 
 // Reply keys derive from the recovered mailbox secret and a random, encrypted

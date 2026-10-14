@@ -21,6 +21,7 @@
     "sapientWallet": true,
     "mailboxRecovery": true,
     "postboxClaims": true,
-    "mailboxState": true
+    "mailboxState": true,
+    "nativePrivatePostage": true
   }
 }
