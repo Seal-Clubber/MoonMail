@@ -188,6 +188,11 @@ export function privatePaymentClient(
         payer.controller,
       );
       const transactionHistoryAvailable = await verifyReceipt(verified);
+      verifyLivePaymentOutput(
+        await readWithTimeout(
+          chain.provider.getSubstate(paymentOutputId(verified)),
+        ),
+      );
       await assertCurrent();
       return {
         ...(await wallet.importPrivatePayment(verified)),

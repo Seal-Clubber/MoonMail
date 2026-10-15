@@ -1312,7 +1312,7 @@ export function App() {
     )
       throw new Error("Payment session changed");
     setPaymentNotice(
-      `Verified and imported ${tari(result.amount)} test TARI into Sapient. No transaction or spending approval was needed.${result.transactionHistoryAvailable ? "" : " The indexer no longer retains the transaction receipt; the current unspent output, ownership, amount and memo were verified instead."}`,
+      `Verified ${tari(result.amount)} test TARI ${result.alreadyImported ? "already available in your private Sapient balance" : "and imported it into Sapient"}. No transaction or spending approval was needed.${result.transactionHistoryAvailable ? "" : " The indexer no longer retains the transaction receipt; the current unspent output, ownership, amount and memo were verified instead."}`,
     );
   }
   async function discoverSealed(box: Postbox, refresh = false) {

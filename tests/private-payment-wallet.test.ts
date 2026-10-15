@@ -22,7 +22,8 @@ async function fixture() {
     privateScan = true,
     memo = paymentMemo("3".repeat(64)),
     amount = "10000",
-    selected = `component_${"a".repeat(64)}`;
+    selected = `component_${"a".repeat(64)}`,
+    alreadyImported = false;
   const request = vi.fn(
     async ({ method, params }: { method: string; params?: any }) => {
       if (method === "tari_getNetwork") return "esmeralda";
@@ -47,7 +48,20 @@ async function fixture() {
           transactionId: "4".repeat(64),
           recipientCommitment: "5".repeat(64),
         };
-      if (method === "tari_claimPrivatePayment") return { amount, memo };
+      if (method === "tari_claimPrivatePayment") {
+        if (alreadyImported)
+          throw Error("You've already claimed this payment.");
+        return { amount, memo };
+      }
+      if (method === "tari_getShieldedOutputs")
+        return [
+          {
+            resourceAddress: privateTari,
+            commitment: "5".repeat(64),
+            amount,
+            memo,
+          },
+        ];
       throw Error("Unexpected wallet method");
     },
   );
@@ -74,6 +88,9 @@ async function fixture() {
       commitment: "5".repeat(64),
     };
   return {
+    setAlreadyImported: () => {
+      alreadyImported = true;
+    },
     wallet,
     request,
     invoice,
@@ -137,6 +154,7 @@ test("import requires the existing private grant, exact wallet, amount and memo 
   const f = await fixture();
   await expect(f.wallet.importPrivatePayment(f.receipt)).resolves.toEqual({
     amount: "10000",
+    alreadyImported: false,
   });
   f.setGrant(false);
   await expect(f.wallet.importPrivatePayment(f.receipt)).rejects.toThrow(
@@ -155,6 +173,23 @@ test("import requires the existing private grant, exact wallet, amount and memo 
   expect(
     f.request.mock.calls.some(([p]) =>
       /createTransaction|submitTransaction|requestView/.test(p.method),
+    ),
+  ).toBe(false);
+});
+test("an automatically discovered payment is accepted only after matching its exact existing private output", async () => {
+  const f = await fixture();
+  f.setAlreadyImported();
+  await expect(f.wallet.importPrivatePayment(f.receipt)).resolves.toEqual({
+    amount: "10000",
+    alreadyImported: true,
+  });
+  f.setMemo("different invoice");
+  await expect(f.wallet.importPrivatePayment(f.receipt)).rejects.toThrow(
+    "memo",
+  );
+  expect(
+    f.request.mock.calls.some(([p]) =>
+      /createTransaction|submitTransaction/.test(p.method),
     ),
   ).toBe(false);
 });

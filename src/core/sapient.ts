@@ -350,12 +350,36 @@ export class SapientSession {
       throw new Error(
         "Approve private view access before importing this payment. Spending permission is separate.",
       );
-    const result = record(
-      await this.call("tari_claimPrivatePayment", {
+    let result: Record<string, unknown>,
+      alreadyImported = false;
+    try {
+      result = record(
+        await this.call("tari_claimPrivatePayment", {
+          resourceAddress: privateTari,
+          commitment: receipt.commitment,
+        }),
+      );
+    } catch (error) {
+      if (!/already claimed this payment/i.test(String(error))) throw error;
+      const rows = await this.call("tari_getShieldedOutputs", {
         resourceAddress: privateTari,
-        commitment: receipt.commitment,
-      }),
-    );
+      });
+      if (!Array.isArray(rows))
+        throw new Error("Sapient did not return its existing private outputs");
+      const found = rows
+        .map(record)
+        .filter(
+          (row) =>
+            row.resourceAddress === privateTari &&
+            row.commitment === receipt.commitment,
+        );
+      if (found.length !== 1)
+        throw new Error(
+          "Sapient reported an earlier import but the exact private output cannot be verified",
+        );
+      result = found[0];
+      alreadyImported = true;
+    }
     await this.assertCurrent();
     if (!(await this.hasPostboxViewAccess()))
       throw new Error("Private view permission was removed during import");
@@ -366,7 +390,7 @@ export class SapientSession {
       throw new Error(
         "Sapient recovered a different amount or payment memo. Do not treat this receipt as paid.",
       );
-    return { amount: receipt.amount };
+    return { amount: receipt.amount, alreadyImported };
   }
   invalidate() {
     this.active = false;
