@@ -2,20 +2,30 @@
   "date": "2026-10-16",
   "restoreTag": "moonmail-pre-gui-overhaul",
   "restoreCommit": "a05d1aa6bb4518e0b375e3168d411cbfef2a0cc4",
-  "reviewedFrontendCommit": "047f82fd6e691852eecc888b4ff8fe6324b79d0c",
-  "unitChecks": { "tests": 269, "files": 32, "passed": true },
+  "reviewedFrontendCommit": "32f8a7e6c4353439044025b3a1335070d738b5ed",
+  "unitChecks": {
+    "tests": 269,
+    "files": 32,
+    "passed": true
+  },
   "typeScript": "passed",
   "pagesBuild": "passed",
   "browserChecks": {
-    "fullSuite": 294,
-    "fullSuiteUiCheckpoint": "e5d330f9522d6fabb78a510813a99d50a679623d",
-    "finalReaderAffectedChecks": 56,
+    "fullSuite": 296,
+    "fullSuiteUiCheckpoint": "32f8a7e6c4353439044025b3a1335070d738b5ed",
     "passed": true,
-    "scope": "The full suite preceded favicon-only alignment. The final reader refinement passed all affected checks; subsequent stock acceptance pins the final build including its favicon.",
+    "scope": "Full desktop/mobile suite passed on the final interface, including bundled fonts, header search, collapsed controls and explicitly fictional concept previews.",
     "incomingMailFixtureCount": 100,
     "additionalPageViewportChecks": 20,
-    "additionalViewportWidths": [320, 390, 768, 1440],
-    "fixturesAreLiveMail": false
+    "additionalViewportWidths": [
+      320,
+      390,
+      768,
+      1440
+    ],
+    "fixturesAreLiveMail": false,
+    "conceptPreviewFixtureCount": 27,
+    "conceptPreviewChecks": 2
   },
   "stockWalletAcceptance": {
     "wallet": "Unmodified Sapient",
@@ -25,8 +35,11 @@
     "actualLedgerResponses": true,
     "reviewedFrontendAssetsOnPagesHttpsOrigin": true,
     "publishedAssetsVerified": false,
-    "reviewedBuildAssetCount": 12,
-    "viewportWidths": [1440, 390],
+    "reviewedBuildAssetCount": 14,
+    "viewportWidths": [
+      1440,
+      390
+    ],
     "restoredIsolatedDevelopmentWallet": true,
     "inboxAndSentRecovered": true,
     "savedSettingsAndFavouritesRecovered": true,
@@ -34,10 +47,19 @@
     "existingPrivateReceiptVerifiedAgainstWallet": true,
     "newFinancialWalletRequests": 0,
     "broadcasts": 0,
-    "completed": true
+    "completed": true,
+    "selfHostedInterLoaded": true
   },
   "contractChanges": false,
   "newTemplateDeployment": false,
   "newPrivatePostboxIdentityFeature": false,
-  "githubPushPerformedForOverhaul": false
+  "agentGithubPushPerformedForOverhaul": false,
+  "userPushedBaselineCommit": "ba1920ca396fe4ca014a2c1156a04707aa1f15ab",
+  "pagesFailureCorrection": {
+    "run": 38819948705,
+    "commit": "5dd5337",
+    "cause": "Random ciphertext contained a short test ID; corrected clear JSON identity assertion and exact outer payload checks.",
+    "productionCryptographyChanged": false,
+    "remoteSuccessClaimed": false
+  }
 }

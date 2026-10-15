@@ -69,4 +69,4 @@ The SDK bridge checks require Node and installed JS dependencies. With Windows N
 
 Keep wallet data, private links, API keys and development credentials out of Git/build variables. [Historical architecture](docs/ARCHITECTURE.md), [earlier evidence](docs/EVIDENCE.md) and [brand/cryptographic naming](docs/branding.md) preserve their original context. Current formats retain domain separation; renaming the app does not rename cryptographic domains.
 
-MIT licensed. Tari libraries retain their upstream licenses. The moonlit scene uses CSS and original text.
+MIT licensed. Tari libraries retain their upstream licenses. The moonlit scene uses local SVG/CSS and original text. The bundled, unmodified Inter variable font is distributed under its included [SIL Open Font License](public/fonts/LICENSE.txt).
