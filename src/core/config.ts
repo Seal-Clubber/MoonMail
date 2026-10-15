@@ -17,6 +17,11 @@ export const emptyDeployment: Deployment = {
     postboxClaims: false,
   },
 };
+export function unifiedOffice(d: Deployment) {
+  return (
+    d.contractProtocol === "unified-1" || d.contractProtocol === "unified-2"
+  );
+}
 function deploymentReady(d: Deployment) {
   return (
     [16, 36, 38].includes(d.network) &&
@@ -47,6 +52,11 @@ export function writesReady(
       : d.evidence.daemonScopes === true && d.evidence.httpsWallet === true) &&
     (mode !== "postbox" ||
       (d.evidence.mailboxRecovery === true &&
+        (d.contractProtocol !== "unified-2" ||
+          (d.sealedDelivery?.engine === true &&
+            d.sealedDelivery.recovery === true &&
+            d.sealedDelivery.stockSapient === true &&
+            d.sealedDelivery.sentAndReplies === true)) &&
         (provider !== "sapient" ||
           (!!d.capsule &&
             /^[a-f0-9]{64}$/.test(d.capsule.template) &&
@@ -86,12 +96,12 @@ export function endpoint(value: string, local = false) {
 
 export function mailboxStateReady(d: Deployment) {
   return (
-    d.contractProtocol === "unified-1" &&
+    unifiedOffice(d) &&
     d.template === d.envelopeTemplate &&
     d.evidence.mailboxState === true &&
     writesReady(d, "postbox", "sapient")
   );
 }
 export function letterLimit(d: Deployment): 4096 | 32768 {
-  return d.contractProtocol === "unified-1" ? 32768 : 4096;
+  return unifiedOffice(d) ? 32768 : 4096;
 }

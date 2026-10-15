@@ -1,5 +1,6 @@
 import type { Deployment } from "./types";
 import { readWithTimeout } from "./read-timeout";
+import { unifiedOffice } from "./config";
 
 // Shape validation prevents a damaged static asset from crashing the UI. This
 // does not establish contract identity or replace the reviewed evidence gates.
@@ -39,7 +40,8 @@ export function officeProfile(value: unknown): Deployment {
     throw new Error("Invalid post office settings");
   if (
     d.contractProtocol !== undefined &&
-    (d.contractProtocol !== "unified-1" || d.template !== d.envelopeTemplate)
+    (!["unified-1", "unified-2"].includes(d.contractProtocol as string) ||
+      d.template !== d.envelopeTemplate)
   )
     throw new Error("Invalid unified post office settings");
   if (d.capsule !== undefined) {
@@ -55,7 +57,7 @@ export function officeProfile(value: unknown): Deployment {
       throw new Error("Invalid post office recovery settings");
   }
   if (
-    d.contractProtocol === "unified-1" &&
+    unifiedOffice(value as Deployment) &&
     (!d.capsule ||
       (d.capsule as Record<string, unknown>).template !== d.template ||
       (d.capsule as Record<string, unknown>).component !== d.registry)
@@ -63,6 +65,19 @@ export function officeProfile(value: unknown): Deployment {
     throw new Error(
       "Unified recovery must use the same post office template and component",
     );
+  if (d.contractProtocol === "unified-2") {
+    const sealed = d.sealedDelivery;
+    if (
+      !sealed ||
+      typeof sealed !== "object" ||
+      Array.isArray(sealed) ||
+      Object.keys(sealed).sort().join() !==
+        "engine,recovery,sentAndReplies,stockSapient" ||
+      Object.values(sealed).some((v) => typeof v !== "boolean")
+    )
+      throw new Error("Invalid sealed delivery evidence");
+  } else if (d.sealedDelivery !== undefined)
+    throw new Error("Sealed evidence requires its separate V4 protocol");
   return value as Deployment;
 }
 

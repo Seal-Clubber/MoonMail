@@ -193,6 +193,25 @@ export function parseSealedMail(value: unknown): SealedMail {
   }
   return JSON.parse(JSON.stringify(e)) as SealedMail;
 }
+export async function sealedPayloadHash(value: SealedMail) {
+  const e = parseSealedMail(value);
+  return hex(
+    new Uint8Array(
+      await crypto.subtle.digest(
+        "SHA-256",
+        bytes(
+          encode([
+            e.version,
+            e.ephemeralPublicKey,
+            e.iv,
+            e.ciphertext,
+            e.slots.map((s) => [s.iv, s.wrappedKey]),
+          ]),
+        ),
+      ),
+    ),
+  );
+}
 async function wrappingKey(shared: Uint8Array, aad: Uint8Array) {
   const material = await crypto.subtle.importKey(
     "raw",

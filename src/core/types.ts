@@ -1,3 +1,4 @@
+import type { SealedMail } from "./sealed-mail";
 export type MailMode = "public" | "link" | "postbox";
 export interface Context {
   network: number;
@@ -62,12 +63,15 @@ export interface MailboxPayload {
   capsule?: CapsuleReference;
 }
 export interface Envelope {
+  deliveryProtocol?: "mm-sealed-2";
+  // Populated only after verified local decryption; never an on-chain locator.
+  localAccess?: { inbox: boolean; sent: boolean };
   claimProtocol?: "sapient-proof-1";
   component?: string;
   id: string;
   mode: MailMode;
   context: Context;
-  payload: Letter | SealedPayload | MailboxPayload;
+  payload: Letter | SealedPayload | MailboxPayload | SealedMail;
   gift: string;
   reserve: string;
   claimed: boolean;
@@ -78,6 +82,7 @@ export interface Envelope {
   sender: string;
 }
 export interface Postbox {
+  keyHistory?: MailboxKey[];
   id: string;
   nickname: string;
   controller: string;
@@ -85,7 +90,13 @@ export interface Postbox {
   discoverable: boolean;
 }
 export interface Deployment extends Context {
-  contractProtocol?: "unified-1";
+  contractProtocol?: "unified-1" | "unified-2";
+  sealedDelivery?: {
+    engine: boolean;
+    recovery: boolean;
+    stockSapient: boolean;
+    sentAndReplies: boolean;
+  };
   postboxClaimProtocol?: "sapient-proof-1";
   capsule?: CapsuleDeployment;
   envelopeTemplate: string;

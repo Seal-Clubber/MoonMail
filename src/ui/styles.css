@@ -4019,6 +4019,21 @@ footer {
 }
 
 /* A visible save reminder and distinct unread mail without per-row action clutter. */
+.sealed-discovery {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1rem;
+  padding: 0.65rem 1rem;
+  font-size: 0.85rem;
+}
+.sealed-discovery p {
+  flex: 1 1 20rem;
+  margin: 0;
+}
+.sealed-discovery button {
+  flex: 0 0 auto;
+}
 .mailbox-save-bar {
   padding: 14px 16px;
   background: #30251c;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { Deployment, Envelope, Postbox } from "../core/types";
 import type { ConnectedWallet } from "../core/wallet";
 import type { PostOfficeClient } from "../core/chain";
@@ -46,6 +46,9 @@ export function Postboxes({
   loadingMore,
   hasMore,
   writeBlocked,
+  onDiscover,
+  discovery,
+  privateAccessRevision = 0,
 }: {
   wallet?: ConnectedWallet;
   chain?: PostOfficeClient;
@@ -74,6 +77,12 @@ export function Postboxes({
   loadingMore: boolean;
   unavailableLetterIds: string[];
   writeBlocked: boolean;
+  onDiscover?: (box: Postbox, refresh?: boolean) => Promise<void>;
+  discovery?: ReadonlyMap<
+    string,
+    { complete: boolean; loaded: number; unavailableIds: string[] }
+  >;
+  privateAccessRevision?: number;
 }) {
   const [selected, setSelected] = useState(""),
     [controller, setController] = useState(0),
@@ -97,13 +106,41 @@ export function Postboxes({
           (a) => a.account.owner_public_key === box.controller,
         )
       : wallet?.accounts[controller];
+  const discoveredScope = useRef("");
+  const sealed = deployment.contractProtocol === "unified-2";
+  const progress = box ? discovery?.get(box.id) : undefined;
+  useEffect(() => {
+    if (!sealed || !box || !viewApproved || busy || !onDiscover) return;
+    const scope = JSON.stringify([
+      account?.account.component_address,
+      deployment.network,
+      deployment.registry,
+      box.id,
+      box.encryptionKey,
+    ]);
+    if (discoveredScope.current === scope) return;
+    discoveredScope.current = scope;
+    void task(() => onDiscover(box));
+  }, [
+    sealed,
+    box?.id,
+    box?.encryptionKey,
+    viewApproved,
+    busy,
+    wallet,
+    deployment.registry,
+    privateAccessRevision,
+    onDiscover,
+  ]);
   useEffect(() => {
     setViewApproved(false);
+    discoveredScope.current = "";
   }, [
     wallet,
     account?.account.component_address,
     deployment.network,
     deployment.registry,
+    privateAccessRevision,
   ]);
   useEffect(() => {
     if (!editing && !owned.some((p) => p.id === selected) && owned.length)
@@ -250,6 +287,14 @@ export function Postboxes({
       throw new Error("Connect the controlling wallet");
     if (!enabled)
       throw new Error("Postbox writes await deployment and recovery evidence");
+    if (
+      operation === "rotate" &&
+      sealed &&
+      (box?.keyHistory?.length ?? 0) >= 15
+    )
+      throw new Error(
+        "This postbox already preserves sixteen key versions. Create another postbox; historical recovery will remain available.",
+      );
     const id = box?.id || draftId;
     let encryptionKey = box?.encryptionKey || "";
     if (operation !== "edit") {
@@ -658,7 +703,9 @@ export function Postboxes({
               {box && !rotating && (
                 <button
                   type="button"
-                  disabled={!enabled}
+                  disabled={
+                    !enabled || (sealed && (box.keyHistory?.length ?? 0) >= 15)
+                  }
                   onClick={() => {
                     setPrepared(undefined);
                     setRotating(true);
@@ -676,6 +723,37 @@ export function Postboxes({
                 busy={busy || loadingMore}
                 onRetry={() => void task(onRefresh)}
               />
+              {sealed && (
+                <div className="info sealed-discovery" role="status">
+                  <p>
+                    {progress
+                      ? `${progress.loaded} sealed deliveries checked. ${progress.complete ? "All current pages checked." : "More pages may contain your mail or recoverable reply identities."}`
+                      : "Unlock this postbox to find your private letters and Sent copies. Reading sends no transaction."}
+                  </p>
+                  <button
+                    disabled={busy || !viewApproved || !onDiscover}
+                    onClick={() =>
+                      void task(() =>
+                        onDiscover!(box, progress?.complete === true),
+                      )
+                    }
+                  >
+                    {busy
+                      ? "Checking private mail…"
+                      : progress?.complete
+                        ? "Refresh private mail"
+                        : progress
+                          ? "Check next private mail page"
+                          : "Find my private mail"}
+                  </button>
+                  {!!progress?.unavailableIds.length && (
+                    <p>
+                      {progress.unavailableIds.length} deliveries could not be
+                      loaded. Refresh to retry these chain reads.
+                    </p>
+                  )}
+                </div>
+              )}
               <MailboxWorkspace
                 key={JSON.stringify([
                   deployment.network,
@@ -711,6 +789,10 @@ export function Postboxes({
                 onCompose={() => onCompose(box)}
                 onUnlock={(mail, sent) =>
                   void task(async () => {
+                    if (sealed && onDiscover) {
+                      await onDiscover(box);
+                      return;
+                    }
                     let opened = 0;
                     for (const e of mail) {
                       await (sent ? onReadSent(e) : onRead(e));
@@ -723,7 +805,7 @@ export function Postboxes({
                 }
                 onReaderTarget={onReaderTarget}
               />
-              {hasMore && (
+              {!sealed && hasMore && (
                 <button
                   disabled={busy || loadingMore}
                   onClick={() => void onMore()}
@@ -769,6 +851,8 @@ export function Postboxes({
                     recoverable through their original recovery route. Rotation
                     changes only the encryption key; save nickname and listing
                     changes separately.
+                    {sealed &&
+                      " This office keeps up to sixteen key versions. When that history is full, create another postbox; older keys are never discarded."}
                   </p>
                 </details>
               </article>

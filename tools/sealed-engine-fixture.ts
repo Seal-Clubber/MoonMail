@@ -11,6 +11,7 @@ import { sealPrivateMail, openPrivateMail } from "../src/core/sealed-mail";
 import {
   decodeSealedOffice,
   decodeSealedLetter,
+  sealedPublishTransaction,
 } from "../src/core/sealed-office";
 const secret = new Uint8Array(32);
 secret[0] = 1;
@@ -32,7 +33,7 @@ const letter = {
   },
 };
 try {
-  if (["create2", "open2", "reject2", "codec2"].includes(command)) {
+  if (["create2", "open2", "reject2", "codec2", "tx2"].includes(command)) {
     const senderSecret = new Uint8Array(32);
     senderSecret[0] = 2;
     try {
@@ -51,7 +52,64 @@ try {
         },
         letter: { subject: "Native sealed delivery", body: "P".repeat(15000) },
       };
-      if (command === "create2")
+      if (command === "tx2") {
+        if (
+          value.context.network !== 16 ||
+          !/^[a-f0-9]{64}$/.test(value.signerSecret)
+        )
+          throw new Error("Local engine only; no live wallet signing");
+        const { Network, signTransaction, sealTransaction } =
+          await import("@tari-project/ootle");
+        const { SecretKeyWallet } =
+          await import("@tari-project/ootle-secret-key-wallet");
+        const signerSecret = new Uint8Array(
+          Buffer.from(value.signerSecret, "hex"),
+        );
+        try {
+          const payload = await sealPrivateMail(
+            message,
+            value.context,
+            value.id,
+          );
+          const profile = {
+            ...value.context,
+            protocol: "moonmail-sealed-1" as const,
+            indexerUrl: "http://127.0.0.1:18200",
+            resource: `resource_${"01".repeat(32)}`,
+            recoveryResource: value.recoveryResource,
+            evidence: {
+              engine: false,
+              recovery: false,
+              stockSapient: false,
+              sentAndReplies: false,
+              nativePrivatePostage: false,
+            },
+          };
+          const tx = sealedPublishTransaction(
+            profile,
+            value.id,
+            payload,
+            value.account,
+            "100000",
+            0,
+          );
+          tx.inputs = value.inputs;
+          const signed = await signTransaction(
+            [SecretKeyWallet.fromSecretKey(signerSecret, Network.LocalNet)],
+            tx,
+          );
+          process.stdout.write(
+            JSON.stringify({
+              bor: Buffer.from(sealTransaction(signed), "base64").toString(
+                "hex",
+              ),
+              payload,
+            }),
+          );
+        } finally {
+          signerSecret.fill(0);
+        }
+      } else if (command === "create2")
         process.stdout.write(
           JSON.stringify(
             await sealPrivateMail(message, value.context, value.id),

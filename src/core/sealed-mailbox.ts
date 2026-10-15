@@ -121,6 +121,9 @@ export class SealedMailboxSession {
     this.external?.signal.removeEventListener("abort", this.external.listener);
     this.external = undefined;
   }
+  get isDisposed() {
+    return this.closed;
+  }
   private async assertAccess() {
     this.abort.signal.throwIfAborted();
     try {
@@ -135,6 +138,19 @@ export class SealedMailboxSession {
   async messages() {
     await this.assertAccess();
     return structuredClone([...this.opened.values()]);
+  }
+  restartDiscovery() {
+    if (this.busy || this.closed)
+      throw new Error("Finish or reopen this mailbox before refreshing");
+    this.cursor = "";
+    this.loaded = false;
+    this.finished = false;
+  }
+  async recoveredEntries() {
+    await this.assertAccess();
+    return structuredClone(
+      [...this.entries.values()].filter((e) => this.opened.has(e.id)),
+    );
   }
   private async scan(entries: SealedMailEntry[]) {
     const result = await discoverPrivateMailPage(

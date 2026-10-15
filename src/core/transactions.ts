@@ -28,6 +28,13 @@ export function publishTransaction(
   epoch: number,
 ) {
   if (
+    envelope.deliveryProtocol === "mm-sealed-2" ||
+    (d.contractProtocol === "unified-2" && envelope.mode === "postbox")
+  )
+    throw new Error(
+      "Use the dedicated sealed publication path; never expose its routing through legacy mail",
+    );
+  if (
     envelope.mode === "postbox" &&
     (!envelope.recipientPostbox ||
       !/^[a-f0-9]{64}$/.test(envelope.claimAuthority || "") ||

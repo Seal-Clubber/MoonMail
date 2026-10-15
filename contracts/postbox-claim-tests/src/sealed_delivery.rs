@@ -199,6 +199,47 @@ fn copied_two_slot_ciphertext_cannot_impersonate_the_engine_recorded_signer() {
     );
 }
 #[test]
+fn exact_browser_sdk_sealed_publication_signs_pays_fees_and_commits_in_the_native_engine() {
+    use tari_template_test_tooling::crypto::{PublicKey, RistrettoPublicKey};
+    use tari_template_test_tooling::transaction::Transaction;
+    let (mut t, office) = fixture();
+    let id = "ef".repeat(32);
+    let (account, proof, key) = t.create_funded_account();
+    let resource: ResourceAddress = t.call_method(office, "resource", args![], vec![]);
+    let public = RistrettoPublicKey::from_secret_key(&key).to_string();
+    let context = serde_json::json!({"network":16,"registry":office.to_string(),"template":t.get_template_address("MoonMail").to_string(),"senderPublicKey":public});
+    let output = crypto_fixture(
+        "tx2",
+        serde_json::json!({"context":context,"id":id,"account":account.to_string(),"signerSecret":key.reveal().to_string(),"recoveryResource":resource.to_string(),"inputs":[]}),
+    );
+    let output: serde_json::Value = serde_json::from_str(&output).unwrap();
+    let bor = output["bor"].as_str().unwrap();
+    let bytes: Vec<u8> = (0..bor.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&bor[i..i + 2], 16).unwrap())
+        .collect();
+    let tx: Transaction = tari_bor::decode(&bytes).unwrap();
+    assert!(tx.verify_all_signatures());
+    t.enable_fees();
+    t.execute_expect_success(tx, vec![proof]);
+    t.disable_fees();
+    let child: ComponentAddress = t.call_method(office, "sealed_letter", args![id.clone()], vec![]);
+    let stored = sealed_state(&mut t, child);
+    assert_eq!(stored.sender.to_string(), public);
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&stored.payload).unwrap(),
+        output["payload"]
+    );
+    let report = crypto_fixture(
+        "open2",
+        serde_json::json!({"context":context,"id":id,"payload":output["payload"]}),
+    );
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(&report).unwrap()["sent"],
+        true
+    );
+}
+#[test]
 fn opaque_sealed_delivery_persists_without_recipient_or_conversation_fields() {
     let (mut t, office) = fixture();
     let id = "ab".repeat(32);

@@ -3,9 +3,11 @@ import type { MailMode } from "../core/types";
 export function PrivacyView({
   mode = "postbox",
   compact = false,
+  sealed = false,
 }: {
   mode?: MailMode;
   compact?: boolean;
+  sealed?: boolean;
 }) {
   const publicMail = mode === "public";
   const content = (
@@ -44,14 +46,20 @@ export function PrivacyView({
             <li>
               Letter ID, transaction timing, network and contract addresses
             </li>
-            <li>Sender identity and any included reply postbox</li>
-            {mode === "postbox" && (
+            <li>
+              {sealed
+                ? "Transaction signer identity and the padded size bucket"
+                : "Sender identity and any included reply postbox"}
+            </li>
+            {mode === "postbox" && !sealed && (
               <li>Recipient postbox ID and its controlling public key</li>
             )}
-            <li>
-              Gift amount, collection reserve, collection status and payout
-              destination
-            </li>
+            {!sealed && (
+              <li>
+                Gift amount, collection reserve, collection status and payout
+                destination
+              </li>
+            )}
             <li>
               Postbox registration, public keys and changes to encrypted mailbox
               state
@@ -60,9 +68,9 @@ export function PrivacyView({
         </section>
       </div>
       <p className="privacy-boundary">
-        MoonMail does not provide anonymity. An unlisted postbox is still on
-        chain. Private postage does not hide the letter’s routing or turn its
-        public gift vault into a private payment.
+        {sealed
+          ? "Recipient and conversation addressing stay encrypted in this sealed office. Public postbox registrations still associate controllers and encryption keys. Private postage does not hide your transaction signer or timing. MoonMail does not provide anonymity."
+          : "MoonMail does not provide anonymity. An unlisted postbox is still on chain. Private postage does not hide the letter’s routing or turn its public gift vault into a private payment."}
       </p>
       <h3>Two separate permissions</h3>
       <p>
@@ -74,9 +82,10 @@ export function PrivacyView({
       </p>
       <p className="fine-print">
         The website host and public indexers can observe connection information,
-        such as your IP address and requests. Sealed addressing and
-        conversation-specific identities are not enabled in this deployed
-        contract.
+        such as your IP address and requests.{" "}
+        {sealed
+          ? "Sealed discovery reads shared pages and tries your recovered keys locally. Native payment attachments are not enabled here."
+          : "Sealed addressing and conversation-specific identities are not enabled in this deployed contract."}
       </p>
     </>
   );

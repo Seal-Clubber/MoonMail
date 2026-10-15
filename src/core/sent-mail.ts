@@ -4,11 +4,14 @@ import type {
   MailboxContext,
   Postbox,
   SentCopy,
+  SealedPayload,
+  MailboxPayload,
 } from "./types";
 import { mailboxKey, sealMailbox } from "./mailbox";
 import { base64url } from "./crypto";
 
 export function sentCopy(envelope: Envelope): SentCopy | undefined {
+  if (envelope.deliveryProtocol === "mm-sealed-2") return;
   if (envelope.mode === "public" || !("sent" in envelope.payload)) return;
   const copy = envelope.payload.sent;
   if (!copy) return;
@@ -34,6 +37,8 @@ export function sentCopy(envelope: Envelope): SentCopy | undefined {
   return copy;
 }
 export function hasSentCopy(envelope: Envelope) {
+  if (envelope.deliveryProtocol === "mm-sealed-2")
+    return envelope.localAccess?.sent === true;
   try {
     return !!sentCopy(envelope);
   } catch {
@@ -53,6 +58,8 @@ function canonical(value: unknown): unknown {
 // Separate purpose binds the copy to the actual primary ciphertext and immutable routing.
 // Changing collected state does not change decryption access.
 export async function sentPurpose(envelope: Envelope) {
+  if (envelope.deliveryProtocol === "mm-sealed-2")
+    throw new Error("Sealed mail has its own encrypted Sent access slot");
   const { sent: _copy, ...primary } =
     envelope.payload as Envelope["payload"] & { sent?: SentCopy };
   const binding = [
@@ -99,6 +106,12 @@ export async function addSentCopy(
   letter: Letter,
   box: Postbox,
 ): Promise<Envelope> {
+  const primary = envelope.payload;
+  if (
+    !("version" in primary) ||
+    !["gd-link-1", "gd-postbox-1"].includes(primary.version)
+  )
+    throw new Error("Use the matching encrypted Sent protocol");
   if (
     envelope.mode === "public" ||
     envelope.replyPostbox !== box.id ||
@@ -124,7 +137,7 @@ export async function addSentCopy(
   return {
     ...envelope,
     payload: {
-      ...envelope.payload,
+      ...(primary as SealedPayload | MailboxPayload),
       sent: {
         version: "gd-sent-1",
         postbox: box.id,

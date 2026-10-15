@@ -14,7 +14,7 @@ import {
   decodeEnvelope,
   decodeMailboxState,
   taggedAddress,
-} from "./chain";
+} from "./state-codecs";
 import { endpoint } from "./config";
 import { emptyDeployment } from "./config";
 import { hex } from "./crypto";
@@ -26,6 +26,7 @@ import { SapientSession, type SapientPostage } from "./sapient";
 import { readWithTimeout } from "./read-timeout";
 import {
   parseSealedMail,
+  sealedPayloadHash,
   type SealedMail,
   type SealedMailEntry,
 } from "./sealed-mail";
@@ -45,6 +46,30 @@ export interface SealedOfficeProfile extends Context {
 }
 export interface SealedPostbox extends Postbox {
   keyHistory: MailboxKey[];
+}
+export function sealedProfileFor(deployment: Deployment): SealedOfficeProfile {
+  if (
+    deployment.contractProtocol !== "unified-2" ||
+    !deployment.capsule ||
+    !deployment.sealedDelivery ||
+    deployment.capsule.component !== deployment.registry ||
+    deployment.capsule.template !== deployment.template ||
+    deployment.envelopeTemplate !== deployment.template
+  )
+    throw new Error("Choose the separate V4 office and evidence profile");
+  return sealedOfficeProfile({
+    protocol: "moonmail-sealed-1",
+    network: deployment.network,
+    registry: deployment.registry,
+    template: deployment.template,
+    indexerUrl: deployment.indexerUrl,
+    resource: deployment.resource,
+    recoveryResource: deployment.capsule.resource,
+    evidence: {
+      ...deployment.sealedDelivery,
+      nativePrivatePostage: deployment.evidence.nativePrivatePostage === true,
+    },
+  });
 }
 const evidenceFields = [
   "engine",
@@ -340,6 +365,9 @@ export class SealedOfficeClient {
       ),
     );
   }
+  static forProvider(deployment: Deployment, provider: IndexerProvider) {
+    return new SealedOfficeClient(sealedProfileFor(deployment), provider);
+  }
   async readOffice() {
     return decodeSealedOffice(
       component(
@@ -510,6 +538,10 @@ export class SealedOfficeClient {
         registry: this.profile.registry,
         envelopeId: review.id,
         operation: "publish",
+        sealedBinding: {
+          sender: account.owner_public_key,
+          payloadHash: await sealedPayloadHash(payload),
+        },
       },
       postage,
     );

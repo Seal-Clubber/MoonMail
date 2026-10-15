@@ -7,6 +7,7 @@ export interface CapsuleRecord {
   deployment?: CapsuleDeployment;
 }
 export interface Pending {
+  sealedBinding?: { sender: string; payloadHash: string };
   id: string;
   network: number;
   registry: string;
@@ -61,6 +62,14 @@ function strictPending(storage: Pick<Storage, "getItem">): Pending[] {
           !["publish", "claim", "postbox", "capsule", "mailbox"].includes(
             p.operation,
           ) ||
+          (p.sealedBinding !== undefined &&
+            (p.operation !== "publish" ||
+              !p.sealedBinding ||
+              Object.keys(p.sealedBinding).sort().join() !==
+                "payloadHash,sender" ||
+              !/^[a-f0-9]{64}$/.test(p.sealedBinding.sender) ||
+              /^0+$/.test(p.sealedBinding.sender) ||
+              !/^[a-f0-9]{64}$/.test(p.sealedBinding.payloadHash))) ||
           (p.createdAt !== undefined &&
             (!Number.isSafeInteger(p.createdAt) ||
               p.createdAt <= 0 ||

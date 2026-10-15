@@ -1,4 +1,4 @@
-import { letterLimit } from "../core/config";
+import { letterLimit, unifiedOffice } from "../core/config";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { GhostMark } from "./GhostMark";
@@ -84,6 +84,13 @@ import { MailReadNotice } from "./MailReadNotice";
 import { networkPreset, checkPublicIndexer } from "../core/networks";
 import { loadOfficeProfile } from "../core/office-profile";
 import { useActionFocus } from "./useActionFocus";
+import { SealedMailboxSession } from "../core/sealed-mailbox";
+import {
+  recoveredSealedEnvelope,
+  preserveSealedViews,
+  verifySealedPublication,
+} from "../core/sealed-view";
+import { PrivateInboxAccess } from "./PrivateInboxAccess";
 
 const short = (v: string) =>
   v.length > 20 ? `${v.slice(0, 10)}…${v.slice(-6)}` : v;
@@ -128,6 +135,28 @@ export function App() {
     () => new Map(),
   );
   const [saveSent, setSaveSent] = useState(true);
+  const sealedSessions = useRef(new Map<string, SealedMailboxSession>());
+  const sealedOpening = useRef(
+    new Map<string, Promise<SealedMailboxSession>>(),
+  );
+  const [sealedProgress, setSealedProgress] = useState(
+    new Map<
+      string,
+      { complete: boolean; loaded: number; unavailableIds: string[] }
+    >(),
+  );
+  const [composeViewApproved, setComposeViewApproved] = useState(false);
+  const [privateAccessRevision, setPrivateAccessRevision] = useState(0);
+  const [privateReplies, setPrivateReplies] = useState(false);
+  useEffect(() => {
+    setComposeViewApproved(false);
+    setSealedProgress(new Map());
+    return () => {
+      for (const session of sealedSessions.current.values()) session.dispose();
+      sealedSessions.current.clear();
+      sealedOpening.current.clear();
+    };
+  }, [wallet, d.network, d.registry, d.template]);
   const [postage, setPostage] = useState<"private" | "transparent">(
     "transparent",
   );
@@ -172,6 +201,18 @@ export function App() {
     [reply, setReply] = useState(""),
     [recipient, setRecipient] = useState(""),
     [directoryQuery, setDirectoryQuery] = useState("");
+  const sealedCompose =
+    d.contractProtocol === "unified-2" && mode === "postbox";
+  useEffect(() => {
+    setComposeViewApproved(false);
+  }, [reply, wallet]);
+  useEffect(() => {
+    if (sealedCompose) {
+      setGift("0");
+      setReserve("0");
+      setReview(false);
+    }
+  }, [sealedCompose]);
   const [mailQuery, setMailQuery] = useState(""),
     [mailFilter, setMailFilter] = useState<SampleMailFilter>("all");
   const [publicConfirmed, setPublicConfirmed] = useState(false);
@@ -183,6 +224,7 @@ export function App() {
     [prepared, setPrepared] = useState<{
       envelope: Envelope;
       capability?: string;
+      sealedReview?: Awaited<ReturnType<SealedMailboxSession["prepare"]>>;
     }>(),
     [privateLink, setPrivateLink] = useState(""),
     [linkSaved, setLinkSaved] = useState(false),
@@ -452,7 +494,7 @@ export function App() {
         if (!cancelled && sequence === readSequence.current) {
           setChain(c);
           setReadState("ready");
-          setLetters(data.letters);
+          setLetters((previous) => preserveSealedViews(previous, data.letters));
           setUnavailableLetterIds(data.unavailableLetterIds);
           setBoxes(data.postboxes);
           setCursor(data.nextCursor);
@@ -849,6 +891,11 @@ export function App() {
         (change.network !== undefined && change.network !== d.network)
           ? change.contractProtocol
           : (change.contractProtocol ?? d.contractProtocol),
+      sealedDelivery:
+        reviewedProfile ||
+        (change.network !== undefined && change.network !== d.network)
+          ? change.sealedDelivery
+          : (change.sealedDelivery ?? d.sealedDelivery),
       postboxClaimProtocol:
         reviewedProfile ||
         (change.network !== undefined && change.network !== d.network)
@@ -1019,7 +1066,7 @@ export function App() {
     setChain(reader);
     setReadState("ready");
     if (!chain) retryReader.current = reader;
-    setLetters(data.letters);
+    setLetters((previous) => preserveSealedViews(previous, data.letters));
     setUnavailableLetterIds(data.unavailableLetterIds);
     setBoxes(data.postboxes);
     setCursor(data.nextCursor);
@@ -1065,7 +1112,174 @@ export function App() {
       if (sequence === readSequence.current) setLoadingMore(false);
     }
   }
+  function lockSealedMail() {
+    setPrivateAccessRevision((revision) => revision + 1);
+    for (const session of sealedSessions.current.values()) session.dispose();
+    sealedSessions.current.clear();
+    sealedOpening.current.clear();
+    setComposeViewApproved(false);
+    setPrepared(undefined);
+    setReview(false);
+    setSealedProgress(new Map());
+    setMailboxPlain(new Map());
+    setSentPlain(new Map());
+    closeLetter();
+    setLetters((old) =>
+      old.map((e) =>
+        e.deliveryProtocol === "mm-sealed-2"
+          ? {
+              ...e,
+              localAccess: undefined,
+              recipientPostbox: undefined,
+              replyPostbox: undefined,
+              claimAuthority: undefined,
+            }
+          : e,
+      ),
+    );
+  }
+  async function sealedSession(postbox: string) {
+    if (
+      !chain ||
+      d.contractProtocol !== "unified-2" ||
+      !(wallet instanceof SapientSession)
+    )
+      throw new Error("Connect Sapient to the sealed post office");
+    const existing = sealedSessions.current.get(postbox);
+    if (existing && !existing.isDisposed) return existing;
+    const pending = sealedOpening.current.get(postbox);
+    if (pending) return pending;
+    const generation = connectionSequence.current,
+      revision = deploymentRevision.current;
+    const opening = SealedMailboxSession.open(
+      chain.sealedOffice(),
+      wallet,
+      postbox,
+    );
+    sealedOpening.current.set(postbox, opening);
+    let session: SealedMailboxSession;
+    try {
+      session = await opening;
+    } finally {
+      if (sealedOpening.current.get(postbox) === opening)
+        sealedOpening.current.delete(postbox);
+    }
+    if (
+      generation !== connectionSequence.current ||
+      revision !== deploymentRevision.current
+    ) {
+      session.dispose();
+      throw new Error("Wallet or post office changed during recovery");
+    }
+    sealedSessions.current.set(postbox, session);
+    return session;
+  }
+  async function discoverSealed(box: Postbox, refresh = false) {
+    const generation = connectionSequence.current,
+      revision = deploymentRevision.current;
+    const session = await sealedSession(box.id);
+    try {
+      if (refresh) session.restartDiscovery();
+      const progress = await session.loadMore(),
+        messages = await session.messages(),
+        entries = new Map(
+          (await session.recoveredEntries()).map((e) => [e.id, e]),
+        );
+      if (
+        generation !== connectionSequence.current ||
+        revision !== deploymentRevision.current
+      ) {
+        session.dispose();
+        return;
+      }
+      const recovered = messages.map((m) =>
+        recoveredSealedEnvelope(entries.get(m.id)!, m, boxes, d),
+      );
+      setLetters((previous) => {
+        const next = new Map(previous.map((e) => [e.id, e]));
+        for (const e of recovered) {
+          const prior = next.get(e.id);
+          next.set(e.id, {
+            ...e,
+            component: e.component ?? prior?.component,
+            localAccess: {
+              inbox: e.localAccess!.inbox || !!prior?.localAccess?.inbox,
+              sent: e.localAccess!.sent || !!prior?.localAccess?.sent,
+            },
+          });
+        }
+        return [...next.values()];
+      });
+      setMailboxPlain((previous) => {
+        const next = new Map(previous);
+        for (const m of messages) if (m.inbox) next.set(m.id, m.message.letter);
+        return next;
+      });
+      setSentPlain((previous) => {
+        const next = new Map(previous);
+        for (const m of messages) if (m.sent) next.set(m.id, m.message.letter);
+        return next;
+      });
+      setSealedProgress((previous) => new Map(previous).set(box.id, progress));
+      setStatus(
+        `${messages.length} private letters recovered from ${progress.loaded} sealed deliveries.${progress.complete ? " All current pages checked." : " Load the next page to find more mail."} Reading sent no transaction.`,
+      );
+    } catch (error) {
+      if (session.isDisposed) lockSealedMail();
+      throw error;
+    }
+  }
+  async function readSealed(
+    envelope: Envelope,
+    sent: boolean,
+  ): Promise<Letter> {
+    const id = sent ? envelope.replyPostbox : envelope.recipientPostbox;
+    if (!id)
+      throw new Error("Unlock the receiving postbox to discover this letter");
+    const session = await sealedSession(id);
+    try {
+      const opened = (await session.messages()).find(
+        (m) => m.id === envelope.id && (sent ? m.sent : m.inbox),
+      );
+      if (!opened)
+        throw new Error(
+          "Discover this postbox's private mail before opening the letter",
+        );
+      return opened.message.letter;
+    } catch (error) {
+      if (session.isDisposed) lockSealedMail();
+      throw error;
+    }
+  }
+  useEffect(() => {
+    if (
+      !(wallet instanceof SapientSession) ||
+      d.contractProtocol !== "unified-2"
+    )
+      return;
+    let active = true;
+    const check = () => {
+      if (document.hidden || !sealedSessions.current.size) return;
+      void wallet
+        .hasPostboxViewAccess()
+        .then((granted) => {
+          if (active && !granted) lockSealedMail();
+        })
+        .catch(() => {
+          if (active) lockSealedMail();
+        });
+    };
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", check);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [wallet, d.network, d.registry, d.template]);
   async function readPostbox(envelope: Envelope): Promise<Letter> {
+    if (envelope.deliveryProtocol === "mm-sealed-2")
+      return readSealed(envelope, false);
     const session = connectionSequence.current;
     const deployment = deploymentRevision.current;
     const owner = wallet?.accounts.find(
@@ -1109,6 +1323,8 @@ export function App() {
     return letter;
   }
   async function readSent(envelope: Envelope): Promise<Letter> {
+    if (envelope.deliveryProtocol === "mm-sealed-2")
+      return readSealed(envelope, true);
     const session = connectionSequence.current,
       deployment = deploymentRevision.current;
     const copy = sentCopy(envelope);
@@ -1148,7 +1364,7 @@ export function App() {
     setActive(envelope);
     const sequence = openSequence.current;
     const cached = mailboxPlain.get(envelope.id);
-    if (cached) {
+    if (cached && envelope.deliveryProtocol !== "mm-sealed-2") {
       setPlain(cached);
       return;
     }
@@ -1171,7 +1387,7 @@ export function App() {
     focusAddressedDraft.current = true;
     navigate("compose");
     setStatus(
-      `Writing from ${box.nickname}. Your draft is kept; choose the recipient and review before sending. Your reply postbox ID will be public.`,
+      `Writing from ${box.nickname}. Your draft is kept; choose the recipient and review before sending.${d.contractProtocol === "unified-2" ? " Reply addressing is encrypted; your transaction signer remains public." : " Your reply postbox ID will be public."}`,
     );
   }
   const hallLetters = preview
@@ -1191,6 +1407,9 @@ export function App() {
   const sendingBox = boxes.find(
     (p) => p.id === reply && p.controller === current?.account.owner_public_key,
   );
+  useEffect(() => {
+    if (sealedCompose && !sendingBox && owned.length) setReply(owned[0].id);
+  }, [sealedCompose, sendingBox?.id, owned.map((p) => p.id).join(",")]);
   const contactHome =
     sendingBox ||
     boxes.find((p) => p.controller === current?.account.owner_public_key);
@@ -1203,10 +1422,7 @@ export function App() {
   let sentDescriptor;
   try {
     const key = sendingBox && mailboxKey(sendingBox.encryptionKey);
-    if (
-      d.contractProtocol === "unified-1" &&
-      key?.recovery === "sapient-capsule-1"
-    )
+    if (unifiedOffice(d) && key?.recovery === "sapient-capsule-1")
       sentDescriptor = key;
   } catch {
     /* A damaged descriptor cannot enable a sent copy. */
@@ -1231,7 +1447,37 @@ export function App() {
   };
   let draftSize: number | undefined;
   try {
-    if (mode !== "postbox" || draftPostbox)
+    if (sealedCompose && sendingBox && draftPostbox) {
+      const senderKey = mailboxKey(sendingBox.encryptionKey),
+        recipientKey = mailboxKey(draftPostbox.encryptionKey);
+      draftSize =
+        new TextEncoder().encode(
+          JSON.stringify({
+            version: "mm-message-1",
+            recipient: {
+              postbox: draftPostbox.id,
+              keyVersion: recipientKey.keyVersion,
+              publicKey: recipientKey.publicKey,
+              ...(thread ? { conversation: "0".repeat(64) } : {}),
+            },
+            sender: {
+              postbox: sendingBox.id,
+              keyVersion: senderKey.keyVersion,
+              publicKey: senderKey.publicKey,
+              controller: sendingBox.controller,
+            },
+            letter: draftLetter,
+            ...(privateReplies
+              ? {
+                  reply: {
+                    conversation: "0".repeat(64),
+                    publicKey: "0".repeat(64),
+                  },
+                }
+              : {}),
+          }),
+        ).length + 4;
+    } else if (mode !== "postbox" || draftPostbox)
       draftSize = draftEnvelopeSize(
         draftLetter,
         { ...draftMetadata, id: "0".repeat(36) },
@@ -1247,7 +1493,8 @@ export function App() {
   } catch {
     /* Invalid postbox keys stay blocked by the existing preparation checks. */
   }
-  const draftTooLarge = draftSize !== undefined && draftSize > letterLimit(d);
+  const composeLimit = sealedCompose ? 16384 : letterLimit(d);
+  const draftTooLarge = draftSize !== undefined && draftSize > composeLimit;
 
   function clearWallet(revoke: boolean) {
     restoreBlocked.current = true;
@@ -1306,6 +1553,48 @@ export function App() {
     const postbox = draftPostbox;
     if (mode === "postbox" && !postbox)
       throw new Error("Choose a registered recipient postbox");
+    if (sealedCompose) {
+      if (
+        !sendingBox ||
+        !(wallet instanceof SapientSession) ||
+        !composeViewApproved
+      )
+        throw new Error(
+          "Choose your sending postbox and unlock private mail access before reviewing",
+        );
+      if (giftAmount !== 0n || collection !== 0n)
+        throw new Error(
+          "Sealed mail does not yet support attached private payments; no public funding fallback is allowed",
+        );
+      const session = await sealedSession(sendingBox.id);
+      const sealedReview = await session.prepare(draftLetter, postbox!.id, {
+        replyTo: thread?.parent,
+        privateReply: privateReplies,
+      });
+      if (draftSequence.current !== sequence) return;
+      const envelope: Envelope = {
+        deliveryProtocol: "mm-sealed-2",
+        localAccess: { inbox: false, sent: true },
+        id: sealedReview.id,
+        mode: "postbox",
+        context: {
+          network: d.network,
+          registry: d.registry,
+          template: d.template,
+        },
+        payload: sealedReview.payload,
+        sender: sendingBox.controller,
+        replyPostbox: sendingBox.id,
+        recipientPostbox: postbox!.id,
+        claimAuthority: postbox!.controller,
+        gift: "0",
+        reserve: "0",
+        claimed: false,
+      };
+      setPrepared({ envelope, sealedReview });
+      setReview(true);
+      return;
+    }
     const id = crypto.randomUUID();
     const sealed =
       mode === "link"
@@ -1363,6 +1652,7 @@ export function App() {
         }
         const e = await chain.readLetter(p.envelopeId);
         if (p.operation === "publish") {
+          await verifySealedPublication(p, e);
           savePending(browserStorage, {
             ...p,
             state: "confirmed",
@@ -1638,7 +1928,9 @@ export function App() {
             onPrivacy={() => navigate("privacy")}
           />
         )}
-        {view === "privacy" && <PrivacyView />}
+        {view === "privacy" && (
+          <PrivacyView sealed={d.contractProtocol === "unified-2"} />
+        )}
         {view === "hall" && (
           <>
             <section className="hero">
@@ -2060,7 +2352,20 @@ export function App() {
                 </button>
               ))}
             </div>
-            <PrivacyView mode={mode} compact />
+            <PrivacyView mode={mode} compact sealed={sealedCompose} />
+            {sealedCompose &&
+              wallet instanceof SapientSession &&
+              sendingBox &&
+              !composeViewApproved && (
+                <PrivateInboxAccess
+                  wallet={wallet}
+                  scope={`${current?.account.component_address}:${d.network}:${d.registry}`}
+                  setup={false}
+                  busy={busy}
+                  task={task}
+                  onGranted={() => setComposeViewApproved(true)}
+                />
+              )}
             {mode === "public" && (
               <p className="public-warning" role="status">
                 Public publishing: your subject and full message will be
@@ -2210,7 +2515,7 @@ export function App() {
                 id="letter-body"
                 value={body}
                 disabled={busy}
-                maxLength={d.contractProtocol === "unified-1" ? 16000 : 2600}
+                maxLength={unifiedOffice(d) ? 16000 : 2600}
                 aria-describedby="letter-space"
                 aria-invalid={draftTooLarge}
                 onChange={(e) => {
@@ -2232,14 +2537,14 @@ export function App() {
                       <strong>
                         {draftTooLarge
                           ? "Letter is full"
-                          : `${Math.max(0, Math.floor((1 - draftSize / letterLimit(d)) * 100))}% remaining`}
+                          : `${Math.max(0, Math.floor((1 - draftSize / composeLimit) * 100))}% remaining`}
                       </strong>
                     </div>
                     <progress
                       aria-label="Letter space used"
-                      aria-valuetext={`${Math.min(100, Math.ceil((draftSize / letterLimit(d)) * 100))}% used`}
-                      max={letterLimit(d)}
-                      value={Math.min(draftSize, letterLimit(d))}
+                      aria-valuetext={`${Math.min(100, Math.ceil((draftSize / composeLimit) * 100))}% used`}
+                      max={composeLimit}
+                      value={Math.min(draftSize, composeLimit)}
                     />
                     <p role={draftTooLarge ? "alert" : undefined}>
                       {draftTooLarge
@@ -2259,7 +2564,7 @@ export function App() {
                 <AmountInput
                   label="Gift amount (optional)"
                   value={gift}
-                  disabled={busy}
+                  disabled={busy || sealedCompose}
                   onChange={(value) => {
                     setGift(value);
                     setReserve(
@@ -2285,27 +2590,31 @@ export function App() {
                 )}
               </div>
               <p className="fine-print">
-                The recipient gets the full gift. You fund collection fees
-                separately. Gifts have no expiry or refunds; unused collection
-                funds stay locked. Use 0 for a letter without a gift.
+                {sealedCompose
+                  ? "Private payment attachments are not enabled in this sealed office yet. This letter does not move a gift or fall back to public funding."
+                  : "The recipient gets the full gift. You fund collection fees separately. Gifts have no expiry or refunds; unused collection funds stay locked. Use 0 for a letter without a gift."}
               </p>
-              <label className="checkbox">
-                <input
-                  type="checkbox"
-                  checked={!!reply}
-                  disabled={busy || !owned.length}
-                  onChange={(e) => {
-                    setReply(e.target.checked ? owned[0]?.id || "" : "");
-                    setReview(false);
-                    setPrepared(undefined);
-                    setLinkSaved(false);
-                  }}
-                />{" "}
-                Include my postbox for replies (optional)
-              </label>
+              {!sealedCompose && (
+                <label className="checkbox">
+                  <input
+                    type="checkbox"
+                    checked={!!reply}
+                    disabled={busy || !owned.length}
+                    onChange={(e) => {
+                      setReply(e.target.checked ? owned[0]?.id || "" : "");
+                      setReview(false);
+                      setPrepared(undefined);
+                      setLinkSaved(false);
+                    }}
+                  />{" "}
+                  Include my postbox for replies (optional)
+                </label>
+              )}
               {reply && (
                 <label>
-                  Verified owned reply postbox
+                  {sealedCompose
+                    ? "Sending postbox"
+                    : "Verified owned reply postbox"}
                   <select
                     value={reply}
                     disabled={busy}
@@ -2322,7 +2631,38 @@ export function App() {
                   </select>
                 </label>
               )}
-              {mode !== "public" && d.contractProtocol === "unified-1" && (
+              {sealedCompose && (
+                <div className="sent-copy-choice">
+                  <p>
+                    Every sealed letter includes recoverable encrypted Sent
+                    access. Sender and recipient postbox addresses stay inside
+                    the encrypted message.
+                  </p>
+                  <label className="checkbox">
+                    <input
+                      type="checkbox"
+                      checked={privateReplies}
+                      disabled={busy}
+                      onChange={(e) => {
+                        setPrivateReplies(e.target.checked);
+                        setReview(false);
+                        setPrepared(undefined);
+                      }}
+                    />
+                    Use a conversation-specific reply key
+                  </label>
+                  <p className="fine-print">
+                    This separates reply encryption keys. Your transaction
+                    signer and timing remain public.
+                  </p>
+                  {!sendingBox && (
+                    <button type="button" onClick={() => navigate("postboxes")}>
+                      Create or choose my sending postbox
+                    </button>
+                  )}
+                </div>
+              )}
+              {mode !== "public" && !sealedCompose && unifiedOffice(d) && (
                 <div className="sent-copy-choice">
                   <label className="checkbox">
                     <input
@@ -2472,32 +2812,38 @@ export function App() {
                     <div>
                       <dt>Sent folder</dt>
                       <dd>
-                        {sentCopy(prepared.envelope)
+                        {prepared.sealedReview || sentCopy(prepared.envelope)
                           ? "Encrypted copy saved with this letter"
                           : "No recoverable sender copy"}
                       </dd>
                     </div>
                   )}
                 </dl>
-                {prepared.envelope.replyPostbox && (
+                {prepared.envelope.replyPostbox && !prepared.sealedReview && (
                   <p className="fine-print">
                     Your included reply postbox ID is public, including on
                     sealed letters.
                   </p>
                 )}
                 <p>
-                  Sapient will show the sending fee before you approve.
-                  Collection works only if the funds you set aside cover it.
+                  Sapient will show the sending fee before you approve.{" "}
+                  {!prepared.sealedReview &&
+                    "Collection works only if the funds you set aside cover it."}
                 </p>
                 <p className="fine-print">
-                  Nothing has been published or funded yet. Encryption includes
-                  the subject. Private gift amounts and routing metadata remain
-                  visible on chain.
+                  {prepared.sealedReview
+                    ? "Nothing has been published yet. Subject, body, recipient and reply addressing are encrypted. The transaction signer, timing, office and size bucket remain public."
+                    : "Nothing has been published or funded yet. Encryption includes the subject. Private gift amounts and routing metadata remain visible on chain."}
                 </p>
                 <p className="info">
                   {postage === "private"
-                    ? "Postage uses private TARI in Sapient, with no automatic public fallback. The wallet builds the fee proof after you approve; its stock API cannot privately simulate this custom letter in advance. A rejected transaction may still pay fees. Attached gifts still use the public gift vault."
-                    : "Postage and attached gifts use public TARI. Sapient simulates this letter before asking you to approve."}
+                    ? "Postage uses private TARI in Sapient, with no automatic public fallback. The wallet builds the fee proof after you approve; its stock API cannot privately simulate this custom letter in advance. A rejected transaction may still pay fees." +
+                      (prepared.sealedReview
+                        ? " This letter has no payment attachment."
+                        : " Attached gifts still use the public gift vault.")
+                    : prepared.sealedReview
+                      ? "Postage uses public TARI. Sapient simulates this letter before asking you to approve. No payment is attached."
+                      : "Postage and attached gifts use public TARI. Sapient simulates this letter before asking you to approve."}
                 </p>
                 {prepared.capability && d.registry && (
                   <section
@@ -2569,14 +2915,26 @@ export function App() {
                         throw new Error(
                           "Choose public publication explicitly before continuing",
                         );
-                      const id = await chain.publish(
-                        wallet,
-                        current,
-                        prepared.envelope,
-                        fee,
-                        browserStorage,
-                        postage,
-                      );
+                      const id =
+                        prepared.sealedReview &&
+                        wallet instanceof SapientSession
+                          ? await chain
+                              .sealedOffice()
+                              .publish(
+                                wallet,
+                                prepared.sealedReview,
+                                fee,
+                                browserStorage,
+                                postage,
+                              )
+                          : await chain.publish(
+                              wallet,
+                              current,
+                              prepared.envelope,
+                              fee,
+                              browserStorage,
+                              postage,
+                            );
                       navigate("activity");
                       setStatus(
                         `Letter submitted. Check its confirmation below before sharing. Transaction: ${id}.`,
@@ -2643,6 +3001,11 @@ export function App() {
             unavailableLetterIds={unavailableLetterIds}
             loadingMore={loadingMore}
             hasMore={!!cursor}
+            onDiscover={
+              d.contractProtocol === "unified-2" ? discoverSealed : undefined
+            }
+            discovery={sealedProgress}
+            privateAccessRevision={privateAccessRevision}
           />
         )}
         {view === "ledger" && (
@@ -3256,10 +3619,9 @@ export function App() {
                     </h3>
                     <pre>{JSON.stringify(active.payload, null, 2)}</pre>
                     <p>
-                      Encryption hides the subject and body of sealed mail. This
-                      implementation uses revealed test TARI: amounts,
-                      sender/controller keys, timing and routing remain
-                      observable. Ghost View does not provide payment anonymity.
+                      {active.deliveryProtocol === "mm-sealed-2"
+                        ? "Subject, body, recipient and reply addressing are encrypted inside this payload. Your transaction signer, timing, office and padded size bucket remain public. Access-slot keys and local decrypted addressing are not published here. This letter carries no payment attachment."
+                        : "Encryption hides the subject and body of sealed mail. The existing gift vault uses revealed test TARI: amounts, sender/controller keys, timing and routing remain observable. Ghost View does not provide payment anonymity."}
                     </p>
                   </div>
                 )}
