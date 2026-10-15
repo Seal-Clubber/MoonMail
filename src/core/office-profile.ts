@@ -30,6 +30,7 @@ export function officeProfile(value: unknown): Deployment {
       "postboxClaims",
       "mailboxState",
       "nativePrivatePostage",
+      "nativePrivatePayments",
     ].some(
       (key) =>
         evidence[key] !== undefined && typeof evidence[key] !== "boolean",

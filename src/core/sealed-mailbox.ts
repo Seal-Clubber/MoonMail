@@ -1,4 +1,4 @@
-// Memory-only recovery and composition for the disabled V4 protocol.
+// Memory-only recovery and composition for the V4 protocol.
 import type { Letter, Postbox } from "./types";
 import { hex } from "./crypto";
 import { mailboxKey } from "./mailbox";
@@ -250,7 +250,7 @@ export class SealedMailboxSession {
   async prepare(
     letter: Letter,
     recipientId: string,
-    options: { replyTo?: string; privateReply?: boolean } = {},
+    options: { replyTo?: string; privateReply?: boolean; id?: string } = {},
   ) {
     await this.assertAccess();
     const office = await this.client.readOffice(),
@@ -264,7 +264,7 @@ export class SealedMailboxSession {
     const senderKey = mailboxKey(sender.encryptionKey),
       recipientKey = mailboxKey(recipient.encryptionKey);
     const message: SealedMessage = {
-      version: "mm-message-1",
+      version: letter.privatePayment ? "mm-message-2" : "mm-message-1",
       sender: {
         postbox: sender.id,
         keyVersion: senderKey.keyVersion,
@@ -340,7 +340,12 @@ export class SealedMailboxSession {
         reply.secret.fill(0);
       }
     }
-    const id = hex(crypto.getRandomValues(new Uint8Array(32))),
+    if (
+      options.id &&
+      (!letter.privatePayment || !/^[a-f0-9]{64}$/.test(options.id))
+    )
+      throw new Error("A fixed ID requires a private payment record");
+    const id = options.id ?? hex(crypto.getRandomValues(new Uint8Array(32))),
       payload = await sealPrivateMail(
         message,
         { ...this.client.profile, senderPublicKey: sender.controller },

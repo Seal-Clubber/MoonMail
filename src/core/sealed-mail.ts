@@ -1,6 +1,7 @@
-// Unpublished V4 protocol. No recipient or sender-mailbox locator is public.
+// V4 protocol. No recipient or sender-mailbox locator is public.
 // Two indistinguishable key slots unlock one padded message: Inbox and Sent.
 import type { Context, Letter } from "./types";
+import { parsePrivatePayment } from "./private-payment";
 import { base64url, fromBase64url, hex, unhex } from "./crypto";
 import {
   conversationReplyKey,
@@ -13,7 +14,7 @@ export interface SealedParty {
   publicKey: string;
 }
 export interface SealedMessage {
-  version: "mm-message-1";
+  version: "mm-message-1" | "mm-message-2";
   recipient: SealedParty & { conversation?: string };
   sender: SealedParty & { controller: string };
   letter: Letter;
@@ -92,7 +93,7 @@ export function parseSealedMessage(
     ["version", "recipient", "sender", "letter"],
     ["reply"],
   );
-  if (m.version !== "mm-message-1")
+  if (m.version !== "mm-message-1" && m.version !== "mm-message-2")
     throw new Error("Unsupported sealed message");
   const recipient = party(m.recipient, ["conversation"]),
     sender = party(m.sender, ["controller"]);
@@ -100,7 +101,20 @@ export function parseSealedMessage(
   if (sender.controller !== context.senderPublicKey)
     throw new Error("Sealed sender does not match transaction signer");
   if (recipient.conversation !== undefined) identifier(recipient.conversation);
-  const letter = shape(m.letter, ["subject", "body"], ["thread"]);
+  const letter = shape(
+    m.letter,
+    ["subject", "body"],
+    m.version === "mm-message-2" ? ["thread", "privatePayment"] : ["thread"],
+  );
+  if (m.version === "mm-message-2") {
+    if (!Object.hasOwn(letter, "privatePayment"))
+      throw new Error("Payment message requires its encrypted attachment");
+    parsePrivatePayment(
+      letter.privatePayment,
+      context.network,
+      context.senderPublicKey,
+    );
+  }
   if (
     typeof letter.subject !== "string" ||
     typeof letter.body !== "string" ||

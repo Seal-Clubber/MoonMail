@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Envelope, Letter, Postbox } from "../core/types";
 import { useChainMailbox, type MailboxAccess } from "./useChainMailbox";
 import { hasSentCopy } from "../core/sent-mail";
+import { PrivatePaymentCard } from "./PrivatePaymentCard";
 import { conversation } from "../core/threads";
 import { MailboxSaveBar } from "./MailboxSaveBar";
 import {
@@ -617,6 +618,11 @@ export function MailboxWorkspace({
                   delivery details remain available; a private-link letter still
                   opens with its original secret link.
                 </p>
+              )}
+              {content(selected)?.privatePayment && (
+                <PrivatePaymentCard
+                  payment={content(selected)!.privatePayment!}
+                />
               )}
               <dl>
                 <dt>Letter ID</dt>

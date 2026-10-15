@@ -9,6 +9,15 @@ import type {
 } from "./types";
 import { hex } from "./crypto";
 import {
+  paymentAddress,
+  paymentAmount,
+  paymentHex,
+  paymentMemo,
+  privateTari,
+  type PaymentRequest,
+  type PaymentReceipt,
+} from "./private-payment";
+import {
   SapientCapsuleMailbox,
   type CapsuleSubstateReader,
   verifyCapsuleDeployment,
@@ -231,6 +240,133 @@ export class SapientSession {
     )
       throw new Error("Invalid Sapient TARI balance");
     return money(balance.amount).toString();
+  }
+  async privatePaymentCapabilities(receiving = false) {
+    await this.assertCurrent();
+    const capabilities = record(await this.call("tari_getCapabilities"));
+    await this.assertCurrent();
+    if (
+      receiving
+        ? capabilities.privateScan !== true
+        : capabilities.privateSpend !== true ||
+          capabilities.supportsPrivateFees !== true
+    )
+      throw new Error(
+        receiving
+          ? "This Sapient account cannot import native private payments"
+          : "This Sapient account cannot send privately with private postage. No public fallback is allowed.",
+      );
+  }
+  async createPrivatePayment(
+    request: PaymentRequest,
+    intentId: string,
+    feeCap: string,
+  ) {
+    if (request.resource !== privateTari)
+      throw new Error("Only native test TARI is supported");
+    paymentAmount(request.amount);
+    paymentAmount(feeCap);
+    paymentAddress(request.destination, this.network);
+    paymentHex(intentId);
+    await this.privatePaymentCapabilities();
+    const created = record(
+      await this.call("tari_createTransactionRequest", {
+        kind: "sendPrivately",
+        resourceAddress: privateTari,
+        recipientWalletAddress: request.destination,
+        amount: request.amount,
+        maxFee: feeCap,
+        memo: paymentMemo(intentId),
+        minimumValuePromise: "0",
+        feeType: "private",
+        enforceFeeType: true,
+      }),
+    );
+    if (
+      typeof created.requestId !== "string" ||
+      !/^[A-Za-z0-9_-]{1,128}$/.test(created.requestId)
+    )
+      throw new Error(
+        "Private payment request identity was lost. Keep the original attempt; do not create another.",
+      );
+    await this.assertCurrent();
+    return created.requestId;
+  }
+  async inspectPrivatePayment(requestId: string) {
+    if (!/^[A-Za-z0-9_-]{1,128}$/.test(requestId))
+      throw new Error("Invalid original private payment request");
+    await this.assertCurrent();
+    const r = record(
+      await this.call("tari_getTransactionRequest", { requestId }),
+    );
+    await this.assertCurrent();
+    if (
+      r.requestId !== requestId ||
+      ![
+        "pending",
+        "approved",
+        "submitting",
+        "submitted",
+        "rejected",
+        "failed",
+      ].includes(r.status as string)
+    )
+      throw new Error(
+        "Private payment request does not match the original approval",
+      );
+    return r as {
+      requestId: string;
+      status:
+        | "pending"
+        | "approved"
+        | "submitting"
+        | "submitted"
+        | "rejected"
+        | "failed";
+      result?: unknown;
+    };
+  }
+  async submitPrivatePayment(requestId: string) {
+    const existing = await this.inspectPrivatePayment(requestId);
+    if (existing.status === "submitted") return existing.result;
+    if (existing.status !== "approved")
+      throw new Error(
+        "Keep the original private payment approval and resume it; do not create a replacement",
+      );
+    await this.privatePaymentCapabilities();
+    return this.call("tari_submitTransactionRequest", { requestId }, 120000);
+  }
+  async importPrivatePayment(receipt: PaymentReceipt) {
+    await this.privatePaymentCapabilities(true);
+    if (
+      receipt.resource !== privateTari ||
+      receipt.destination !== this.accounts[0].address
+    )
+      throw new Error(
+        "This payment is addressed to a different Sapient wallet",
+      );
+    paymentHex(receipt.commitment);
+    if (!(await this.hasPostboxViewAccess()))
+      throw new Error(
+        "Approve private view access before importing this payment. Spending permission is separate.",
+      );
+    const result = record(
+      await this.call("tari_claimPrivatePayment", {
+        resourceAddress: privateTari,
+        commitment: receipt.commitment,
+      }),
+    );
+    await this.assertCurrent();
+    if (!(await this.hasPostboxViewAccess()))
+      throw new Error("Private view permission was removed during import");
+    if (
+      result.amount !== receipt.amount ||
+      result.memo !== paymentMemo(receipt.intentLetter)
+    )
+      throw new Error(
+        "Sapient recovered a different amount or payment memo. Do not treat this receipt as paid.",
+      );
+    return { amount: receipt.amount };
   }
   invalidate() {
     this.active = false;

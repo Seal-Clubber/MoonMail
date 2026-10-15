@@ -15,18 +15,25 @@ import { conversationReplyKey } from "../../src/core/sealed-addressing";
 import ledger from "../fixtures/capsule-carrier.json" with { type: "json" };
 
 // Synthetic browser/provider fixture. No real wallet, signature or broadcast.
-async function fixture(page: Page, enabled = true) {
+async function fixture(page: Page, enabled = true, payments = false) {
   const owner = generateKeypair(),
     view = generateKeypair(),
     own = generateKeypair(),
-    other = generateKeypair();
+    other = generateKeypair(),
+    otherOwner = generateKeypair();
+  const foreignAddress = generateOotleAddress(
+      otherOwner.public_key,
+      view.public_key,
+      38,
+    ),
+    foreignController = payments ? hex(otherOwner.public_key) : "77".repeat(32);
   const controller = hex(owner.public_key),
     address = generateOotleAddress(owner.public_key, view.public_key, 38),
     ownSecret = new Uint8Array(own.secret_key),
     otherSecret = new Uint8Array(other.secret_key),
     ownPub = hex(own.public_key),
     otherPub = hex(other.public_key);
-  for (const pair of [owner, view, own, other]) pair.free();
+  for (const pair of [owner, view, own, other, otherOwner]) pair.free();
   const account = `component_${"dd".repeat(32)}`,
     resource = Object.keys(ledger).find((k) => k.startsWith("resource_"))!,
     utxo = Object.keys(ledger).find((k) => k.startsWith("utxo_"))!;
@@ -60,11 +67,11 @@ async function fixture(page: Page, enabled = true) {
       postboxClaims: true,
       mailboxState: true,
       nativePrivatePostage: true,
+      nativePrivatePayments: payments,
     },
   };
   const home = { postbox: "home", keyVersion: 1, publicKey: ownPub },
-    foreign = { postbox: "foreign", keyVersion: 1, publicKey: otherPub },
-    foreignController = "77".repeat(32);
+    foreign = { postbox: "foreign", keyVersion: 1, publicKey: otherPub };
   const encoded = await encodeMailboxCapsule(
       { ...d, controller, postbox: home.postbox, keyVersion: 1 },
       ownSecret,
@@ -85,12 +92,24 @@ async function fixture(page: Page, enabled = true) {
     reply = await conversationReplyKey(ownSecret, d, conversation);
   const messages: SealedMessage[] = [
     {
-      version: "mm-message-1",
+      version: payments ? "mm-message-2" : "mm-message-1",
       sender: { ...foreign, controller: foreignController },
       recipient: home,
       letter: {
         subject: "A sealed hello",
         body: "Your recipient address stays inside this ciphertext.",
+        ...(payments
+          ? {
+              privatePayment: {
+                version: "mm-payment-1" as const,
+                kind: "request" as const,
+                nonce: "a1".repeat(32),
+                resource: `resource_${"01".repeat(32)}`,
+                amount: "12345",
+                destination: foreignAddress,
+              },
+            }
+          : {}),
       },
     },
     {
@@ -238,6 +257,8 @@ async function fixture(page: Page, enabled = true) {
               transactionRequests: true,
               walletAddress: true,
               supportsPrivateFees: true,
+              privateSpend: true,
+              privateScan: true,
             };
           if (method === "tari_requestViewAccess") {
             sessionStorage.setItem("fixture:sealed-grant", "1");
@@ -274,6 +295,7 @@ async function fixture(page: Page, enabled = true) {
     },
   );
   return {
+    foreignAddress,
     writes: () => writes,
     privateMarkers: messages.map((m) => m.letter.body),
   };
@@ -453,6 +475,81 @@ test("reloading restores sealed mail with the actual fixture grant and revocatio
       exact: true,
     }),
   ).toBeVisible();
+  await readOnly(page, f.writes);
+});
+test("private payment requests open read-only and require a separate three-approval review", async ({
+  page,
+}) => {
+  const f = await fixture(page, true, true);
+  await connect(page);
+  await page
+    .getByRole("button", { name: "Open letter: A sealed hello", exact: true })
+    .click();
+  const card = page.getByRole("region", {
+    name: "Private payment",
+    exact: true,
+  });
+  await expect(card).toContainText("0.012345 test TARI");
+  await card
+    .getByRole("button", { name: "Review private payment", exact: true })
+    .click();
+  await expect(
+    card.getByRole("group", { name: "Private payment review", exact: true }),
+  ).toContainText("Three Sapient approvals");
+  await expect(card).toContainText(
+    "not an atomic mail-and-payment transaction",
+  );
+  await card
+    .getByRole("button", { name: "Cancel payment review", exact: true })
+    .click();
+  await expect(
+    card.getByRole("group", { name: "Private payment review", exact: true }),
+  ).toHaveCount(0);
+  await readOnly(page, f.writes);
+  expect(
+    await page.evaluate(() =>
+      JSON.stringify({ ...localStorage, ...sessionStorage }),
+    ),
+  ).not.toContain(f.foreignAddress);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+});
+test("composing an encrypted payment request includes an address and amount without requesting a spend", async ({
+  page,
+}) => {
+  const f = await fixture(page, true, true);
+  await connect(page);
+  await page
+    .getByRole("button", { name: "Compose", exact: true })
+    .last()
+    .click();
+  await page
+    .getByRole("combobox", { name: "Recipient postbox", exact: true })
+    .selectOption("foreign");
+  await page
+    .getByRole("textbox", { name: "Subject", exact: true })
+    .fill("Private invoice fixture");
+  await page
+    .getByRole("textbox", { name: "Your letter", exact: true })
+    .fill("Pay only after reviewing the encrypted request.");
+  await page
+    .getByRole("checkbox", { name: "Request a private payment", exact: true })
+    .check();
+  await page
+    .getByRole("textbox", { name: "Requested private payment", exact: true })
+    .fill("0.12");
+  await page.getByRole("button", { name: /Review letter/ }).click();
+  await expect(
+    page
+      .locator(".review")
+      .getByRole("region", { name: "Private payment", exact: true }),
+  ).toContainText("0.12 test TARI");
+  await expect(
+    page.getByRole("button", { name: "Send encrypted letter", exact: true }),
+  ).toBeEnabled();
   await readOnly(page, f.writes);
 });
 test("unverified V4 evidence cannot enable sending or silently switch back to legacy routing", async ({

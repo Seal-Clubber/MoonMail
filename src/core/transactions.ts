@@ -27,6 +27,8 @@ export function publishTransaction(
   fee: string,
   epoch: number,
 ) {
+  if ("privatePayment" in envelope.payload)
+    throw new Error("Private payment attachments require sealed delivery");
   if (
     envelope.deliveryProtocol === "mm-sealed-2" ||
     (d.contractProtocol === "unified-2" && envelope.mode === "postbox")

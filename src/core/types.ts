@@ -11,6 +11,7 @@ export interface ReplyThread {
   parent: string;
 }
 export interface Letter {
+  privatePayment?: import("./private-payment").PrivatePayment;
   thread?: ReplyThread;
   subject: string;
   body: string;
@@ -114,5 +115,6 @@ export interface Deployment extends Context {
     postboxClaims?: boolean;
     mailboxState?: boolean;
     nativePrivatePostage?: boolean;
+    nativePrivatePayments?: boolean;
   };
 }

@@ -4435,3 +4435,33 @@ footer {
     padding: 8px 3% 0;
   }
 }
+.private-payment-card {
+  margin: 1.2rem 0;
+  padding: 1rem;
+  background: #14283e;
+  color: #edf3fb;
+  border: 1px solid #4c7099;
+  border-radius: 10px;
+  font-family: system-ui, sans-serif;
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.private-payment-card p,
+.private-payment-card .fine-print {
+  color: #cbdced;
+  line-height: 1.6;
+}
+.private-payment-card summary {
+  cursor: pointer;
+  color: #e9cd91;
+}
+.private-payment-card button {
+  color: #f1dba9;
+  border-color: #7190ae;
+  margin-top: 0.75rem;
+}
+.private-payment-review {
+  margin-top: 1rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #4c7099;
+}

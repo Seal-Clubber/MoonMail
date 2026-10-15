@@ -99,6 +99,10 @@ import {
   verifySealedPublication,
 } from "../core/sealed-view";
 import { PrivateInboxAccess } from "./PrivateInboxAccess";
+import { PrivatePaymentCard } from "./PrivatePaymentCard";
+import { privatePaymentClient } from "../core/private-payment-client";
+import { privateTari } from "../core/private-payment";
+import { hex } from "../core/crypto";
 
 const short = (v: string) =>
   v.length > 20 ? `${v.slice(0, 10)}…${v.slice(-6)}` : v;
@@ -156,6 +160,17 @@ export function App() {
   const [composeViewApproved, setComposeViewApproved] = useState(false);
   const [privateAccessRevision, setPrivateAccessRevision] = useState(0);
   const [privateReplies, setPrivateReplies] = useState(false);
+  const [requestPayment, setRequestPayment] = useState(false);
+  const [requestedAmount, setRequestedAmount] = useState("100000");
+  const [requestNonce, setRequestNonce] = useState(() =>
+    hex(crypto.getRandomValues(new Uint8Array(32))),
+  );
+  const [paymentReview, setPaymentReview] = useState<string>();
+  const [paymentFee, setPaymentFee] = useState("30000");
+  const [paymentNotice, setPaymentNotice] = useState("");
+  const privatePaymentsEnabled =
+    d.contractProtocol === "unified-2" &&
+    d.evidence.nativePrivatePayments === true;
   useEffect(() => {
     setComposeViewApproved(false);
     setSealedProgress(new Map());
@@ -165,6 +180,17 @@ export function App() {
       sealedOpening.current.clear();
     };
   }, [wallet, d.network, d.registry, d.template]);
+  useEffect(() => {
+    setPaymentReview(undefined);
+    setPaymentNotice("");
+  }, [
+    wallet,
+    d.network,
+    d.registry,
+    d.template,
+    active?.id,
+    privateAccessRevision,
+  ]);
   const [postage, setPostage] = useState<"private" | "transparent">(
     "transparent",
   );
@@ -984,6 +1010,7 @@ export function App() {
     original?: Envelope,
     originalPlain?: Letter,
   ) {
+    setRequestPayment(false);
     const postbox = boxes.find((p) => p.id === id);
     if (!postbox) return;
     const keptDraft = !!(subject || body || (gift && gift !== "0"));
@@ -1035,6 +1062,8 @@ export function App() {
     );
   }
   function closeLetter() {
+    setPaymentReview(undefined);
+    setPaymentNotice("");
     collectionFocus.clear();
     inboxFocus.clear();
     setPublicLetterRoute(undefined);
@@ -1208,6 +1237,83 @@ export function App() {
     }
     sealedSessions.current.set(postbox, session);
     return session;
+  }
+  async function paymentClientForLetter() {
+    if (
+      !active ||
+      active.deliveryProtocol !== "mm-sealed-2" ||
+      !privatePaymentsEnabled ||
+      !chain ||
+      !(wallet instanceof SapientSession)
+    )
+      throw new Error(
+        "Connect Sapient and open an enabled sealed payment letter",
+      );
+    const box = boxes.find(
+      (p) =>
+        p.id === active.recipientPostbox &&
+        p.controller === wallet.accounts[0].account.owner_public_key,
+    );
+    if (!box)
+      throw new Error(
+        "Select the Sapient wallet receiving this private letter",
+      );
+    const session = await sealedSession(box.id),
+      generation = connectionSequence.current,
+      revision = deploymentRevision.current;
+    const client = privatePaymentClient(
+      d,
+      chain,
+      session,
+      wallet,
+      box,
+      browserStorage,
+      (message) => {
+        if (
+          generation === connectionSequence.current &&
+          revision === deploymentRevision.current
+        ) {
+          setPaymentNotice(message);
+          setStatus(message);
+        }
+      },
+    );
+    return { client, box, generation, revision };
+  }
+  async function payActiveRequest() {
+    const id = active?.id;
+    if (!id || paymentReview !== id)
+      throw new Error("Review this private payment before approving");
+    const { client, box, generation, revision } =
+      await paymentClientForLetter();
+    await client.pay(id, paymentFee);
+    if (
+      generation !== connectionSequence.current ||
+      revision !== deploymentRevision.current
+    )
+      throw new Error(
+        "Payment session changed; resume its original recovery record",
+      );
+    setPaymentReview(undefined);
+    setPaymentNotice(
+      "Private payment and encrypted receipt confirmed. Checking again resumes this same payment; it does not pay twice.",
+    );
+    await refresh();
+    await discoverSealed(box, true);
+  }
+  async function importActivePayment() {
+    const id = active?.id;
+    if (!id) throw new Error("Open the private payment receipt");
+    const { client, generation, revision } = await paymentClientForLetter(),
+      result = await client.import(id);
+    if (
+      generation !== connectionSequence.current ||
+      revision !== deploymentRevision.current
+    )
+      throw new Error("Payment session changed");
+    setPaymentNotice(
+      `Verified and imported ${tari(result.amount)} test TARI into Sapient. No transaction or spending approval was needed.${result.transactionHistoryAvailable ? "" : " The indexer no longer retains the transaction receipt; the current unspent output, ownership, amount and memo were verified instead."}`,
+    );
   }
   async function discoverSealed(box: Postbox, refresh = false) {
     const generation = connectionSequence.current,
@@ -1407,6 +1513,7 @@ export function App() {
     if (openSequence.current === sequence) setPlain(letter);
   }
   function composeFromPostbox(box: Postbox) {
+    setRequestPayment(false);
     const owner = wallet?.accounts.findIndex(
       (a) => a.account.owner_public_key === box.controller,
     );
@@ -1468,6 +1575,21 @@ export function App() {
     subject,
     body,
     ...(mode === "postbox" && thread ? { thread } : {}),
+    ...(sealedCompose &&
+    privatePaymentsEnabled &&
+    requestPayment &&
+    current?.address
+      ? {
+          privatePayment: {
+            version: "mm-payment-1" as const,
+            kind: "request" as const,
+            nonce: requestNonce,
+            resource: privateTari,
+            amount: requestedAmount,
+            destination: current.address,
+          },
+        }
+      : {}),
   };
   const draftMetadata = {
     mode,
@@ -2740,6 +2862,46 @@ export function App() {
               )}
               {sealedCompose && (
                 <div className="sent-copy-choice">
+                  {privatePaymentsEnabled && (
+                    <div className="private-payment-composer">
+                      <label className="checkbox">
+                        <input
+                          type="checkbox"
+                          checked={requestPayment}
+                          disabled={busy || !current?.address}
+                          onChange={(e) => {
+                            setRequestPayment(e.target.checked);
+                            setRequestNonce(
+                              hex(crypto.getRandomValues(new Uint8Array(32))),
+                            );
+                            setReview(false);
+                            setPrepared(undefined);
+                          }}
+                        />
+                        Request a private payment
+                      </label>
+                      {requestPayment && (
+                        <>
+                          <AmountInput
+                            label="Requested private payment"
+                            value={requestedAmount}
+                            disabled={busy}
+                            onChange={(value) => {
+                              setRequestedAmount(value);
+                              setReview(false);
+                              setPrepared(undefined);
+                            }}
+                          />
+                          <p className="fine-print">
+                            Your Sapient receiving address and amount will be
+                            encrypted inside this letter. Sending the request
+                            pays postage only; your correspondent separately
+                            reviews and approves payment.
+                          </p>
+                        </>
+                      )}
+                    </div>
+                  )}
                   <p>
                     Every sealed letter includes recoverable encrypted Sent
                     access. Sender and recipient postbox addresses stay inside
@@ -2884,6 +3046,9 @@ export function App() {
                     ? "Sealed on this device"
                     : "Ready for review"}
                 </h2>
+                {draftLetter.privatePayment && (
+                  <PrivatePaymentCard payment={draftLetter.privatePayment} />
+                )}
                 <dl className="receipt">
                   <div>
                     <dt>Recipient receives</dt>
@@ -3698,6 +3863,40 @@ export function App() {
                       )}
                   </div>
                 )}
+                {plain?.privatePayment &&
+                  active.deliveryProtocol === "mm-sealed-2" && (
+                    <PrivatePaymentCard
+                      payment={plain.privatePayment}
+                      busy={busy}
+                      onPay={
+                        privatePaymentsEnabled &&
+                        plain.privatePayment.kind === "request" &&
+                        active.localAccess?.inbox &&
+                        !!current &&
+                        active.claimAuthority ===
+                          current.account.owner_public_key
+                          ? () => {
+                              setPaymentReview(active.id);
+                              setPaymentNotice("");
+                            }
+                          : undefined
+                      }
+                      onImport={
+                        privatePaymentsEnabled &&
+                        plain.privatePayment.kind === "receipt" &&
+                        active.localAccess?.inbox &&
+                        current?.address === plain.privatePayment.destination
+                          ? () => void task(importActivePayment)
+                          : undefined
+                      }
+                      review={paymentReview === active.id}
+                      fee={paymentFee}
+                      onFee={setPaymentFee}
+                      onConfirm={() => void task(payActiveRequest)}
+                      onCancel={() => setPaymentReview(undefined)}
+                      notice={paymentNotice}
+                    />
+                  )}
                 {active.replyPostbox &&
                   boxes.some((p) => p.id === active.replyPostbox) && (
                     <button
