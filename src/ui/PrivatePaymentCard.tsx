@@ -1,9 +1,12 @@
+import { FeeAdjustment } from "./FeeAdjustment";
+import { validFee, type FeeProblem } from "../core/fee-limit";
 import type { PrivatePayment } from "../core/private-payment";
-import { AmountInput, tari } from "./AmountInput";
+import { tari } from "./AmountInput";
 import { CopyField } from "./CopyField";
 
 export function PrivatePaymentCard({
   payment,
+  feeProblem,
   busy = false,
   onPay,
   onImport,
@@ -15,6 +18,7 @@ export function PrivatePaymentCard({
   notice,
 }: {
   payment: PrivatePayment;
+  feeProblem?: FeeProblem;
   busy?: boolean;
   onPay?: () => void;
   onImport?: () => void;
@@ -80,11 +84,16 @@ export function PrivatePaymentCard({
             commits. Postage is separate; this is not an atomic mail-and-payment
             transaction.
           </p>
+          <p className="fine-print">
+            Network fees are set automatically, up to {tari(fee)} TARI per step
+            and attempt.
+          </p>
           {onFee && (
-            <AmountInput
-              label="Maximum fee per payment step and attempt"
+            <FeeAdjustment
+              label="Payment fee limit"
+              problem={feeProblem}
               value={fee}
-              disabled={busy}
+              busy={busy}
               onChange={onFee}
             />
           )}
@@ -95,7 +104,11 @@ export function PrivatePaymentCard({
             original Sapient installation to retrieve a missing approval result.
           </p>
           <div className="actions">
-            <button className="primary" disabled={busy} onClick={onConfirm}>
+            <button
+              className="primary"
+              disabled={busy || !validFee(fee)}
+              onClick={onConfirm}
+            >
               Continue with Sapient
             </button>
             <button disabled={busy} onClick={onCancel}>

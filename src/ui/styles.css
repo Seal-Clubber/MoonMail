@@ -4340,6 +4340,11 @@ footer {
   font-family: system-ui, sans-serif;
 }
 .public-consent input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  padding: 0;
+  flex-basis: 18px;
   flex-shrink: 0;
   margin-top: 6px;
 }
@@ -4433,4 +4438,35 @@ footer {
 .private-payment-card label,
 .letter-modal .private-payment-card label {
   color: #edf3fb;
+}
+.fee-warning {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #c4a36b;
+  border-radius: 10px;
+  background: #14283e;
+  color: #edf3fb;
+  font:
+    0.9rem/1.6 system-ui,
+    sans-serif;
+}
+.fee-warning p,
+.fee-warning label,
+.letter-modal .fee-warning p,
+.letter-modal .fee-warning label {
+  color: #e0eaf7;
+}
+.fee-warning button,
+.letter-modal .fee-warning button {
+  background: #263f5a;
+  color: #f4e1b6;
+  border-color: #8ea6bc;
+  margin: 0.5rem 0;
+}
+.fee-warning button:hover:not(:disabled),
+.fee-warning button:focus-visible,
+.letter-modal .fee-warning button:hover:not(:disabled),
+.letter-modal .fee-warning button:focus-visible {
+  background: #355371;
+  color: #fff0cf;
 }

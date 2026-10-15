@@ -1,3 +1,4 @@
+import { readable } from "./support/contrast";
 import { test, expect, type Page, type Locator } from "@playwright/test";
 import {
   generateKeypair,
@@ -102,7 +103,7 @@ async function connectFixture(page: Page, privateFees = false) {
               result: {
                 finalize: {
                   result: { Accept: {} },
-                  total_fees_required: "1000",
+                  total_fees_required: state.walletSimulationFee ?? "1000",
                 },
               },
             };
@@ -1290,5 +1291,109 @@ test("a stalled manual delivery check preserves the original attempt and ignores
   await check.click();
   await expect(page.locator(".delivery-card")).toContainText("Delivered");
   expect(await page.evaluate(() => (window as any).walletCalls)).toEqual([]);
+  expect(writes).toBe(0);
+});
+
+test("automatic fees reveal an adjustment only after a low preflight estimate, without auto-submitting", async ({
+  page,
+}) => {
+  await configure(page);
+  await connectFixture(page);
+  let writes = 0;
+  await page.route(`${d.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") {
+      writes++;
+      return r.abort();
+    }
+    return r.fulfill({ json: ledger(r.request().url()) });
+  });
+  await page.goto("./#/compose");
+  await page
+    .getByRole("button", { name: "Connect wallet", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Connect Sapient", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "✧ Public mail", exact: true })
+    .click();
+  await page
+    .getByLabel("Subject", { exact: true })
+    .fill("Automatic fee fixture");
+  await page
+    .getByLabel("Your letter", { exact: true })
+    .fill("This is an isolated browser fixture; no real transaction.");
+  await expect(
+    page.getByRole("textbox", { name: "Sending fee limit", exact: true }),
+  ).toHaveCount(0);
+  await page.evaluate(() => {
+    (window as any).walletSimulationFee = "200000";
+  });
+  await page.getByRole("button", { name: "Review letter" }).click();
+  await page
+    .getByRole("checkbox", { name: "I choose to publish this subject" })
+    .check();
+  await page
+    .getByRole("button", { name: "Publish publicly", exact: true })
+    .click();
+  const warning = page.getByRole("alert", {
+    name: "Sending fee limit warning",
+    exact: true,
+  });
+  await expect(warning).toContainText("Nothing was submitted");
+  await expect(warning).toContainText("at least 0.2 TARI");
+  await readable(warning.locator("p"));
+  await readable(
+    warning.getByRole("button", {
+      name: "Adjust sending fee limit",
+      exact: true,
+    }),
+  );
+  await page.screenshot({
+    path: test.info().outputPath("automatic-fee-warning.png"),
+    fullPage: true,
+  });
+  expect(
+    await page.evaluate(() =>
+      (window as any).walletCalls.filter((c: any) =>
+        /createTransactionRequest|submitTransactionRequest/.test(c.method),
+      ),
+    ),
+  ).toEqual([]);
+  await warning
+    .getByRole("button", { name: "Adjust sending fee limit", exact: true })
+    .click();
+  await warning
+    .getByRole("textbox", { name: "Sending fee limit", exact: true })
+    .fill("0.3");
+  await expect(
+    page.getByRole("button", { name: "Publish publicly", exact: true }),
+  ).toHaveCount(0);
+  expect(writes).toBe(0);
+  await page.getByRole("button", { name: "Review letter" }).click();
+  await page
+    .getByRole("checkbox", { name: "I choose to publish this subject" })
+    .check();
+  await page
+    .getByRole("button", { name: "Publish publicly", exact: true })
+    .click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          (window as any).walletCalls.filter(
+            (c: any) => c.method === "tari_createTransactionRequest",
+          ).length,
+      ),
+    )
+    .toBe(1);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as any).walletCalls.find(
+          (c: any) => c.method === "tari_createTransactionRequest",
+        ).params.maxFee,
+    ),
+  ).toBe("300000");
   expect(writes).toBe(0);
 });

@@ -1,0 +1,9 @@
+# Automatic network fees
+
+MoonMail uses the established default limits without asking newcomers to edit them: sending/postbox changes/mailbox saves up to 0.1 test TARI per attempt, recovery backups up to 1 test TARI, and native private payment steps up to 0.03 test TARI per step/attempt. Public/private-link gifts automatically include 0.1 test TARI for collection, separate from the amount the recipient receives. Read-only cost summaries remain visible before approval. These are limits/allowances, not guaranteed minimum prices; stock private fee processing can charge the full limit, including overcharge. Retries can incur another fee.
+
+Routine fee editors are hidden. A verified Sapient pre-submission simulation that reports a higher required fee shows a warning and an **Adjust fee limit** action. It creates no wallet approval or transaction. Editing the limit closes the previous sending review; the user must review and approve again. MoonMail never automatically raises fees, sends a retry or switches funding sources.
+
+Private postage is not simulated through the wallet's transparent legacy path. If an error occurs after a wallet request may exist, the warning instead directs the user to the original operation in Activity/Sapient. Its journal and request ID stay preserved. No fee editor is offered to replace an unknown, failed or rejected approval. A private payment resumed with the wrong local fee limit can restore the exact limit from its authenticated encrypted intent; it still resumes only the original wallet request.
+
+Wallet fee-error text is used only for conservative classification, not displayed in the warning. An insufficient wallet balance, timeout or rejection is not proof that a fee limit should be raised. Fee checks do not grant private-view permission or spending approval. Public gift collection funds already locked in an existing letter cannot be changed through a fee editor.

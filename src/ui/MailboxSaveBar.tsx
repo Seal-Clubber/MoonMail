@@ -1,4 +1,5 @@
-import { AmountInput } from "./AmountInput";
+import { FeeAdjustment } from "./FeeAdjustment";
+import { validFee } from "../core/fee-limit";
 import type { useChainMailbox } from "./useChainMailbox";
 export function MailboxSaveBar({
   state,
@@ -22,7 +23,7 @@ export function MailboxSaveBar({
       <div className="mailbox-save-actions">
         <button
           className="primary"
-          disabled={busy || state.loading || blocked}
+          disabled={busy || state.loading || blocked || !validFee(state.fee)}
           onClick={state.save}
         >
           Save mailbox changes
@@ -30,19 +31,13 @@ export function MailboxSaveBar({
         <button disabled={busy || state.loading} onClick={state.discard}>
           Discard unsaved changes
         </button>
-        <details>
-          <summary>Transaction fee limit</summary>
-          <AmountInput
-            label="Mailbox save fee cap"
-            value={state.fee}
-            disabled={busy}
-            onChange={state.setFee}
-          />
-          <p>
-            Saving requests one transaction approval in Sapient. Opening letters
-            sends no transaction.
-          </p>
-        </details>
+        <FeeAdjustment
+          label="Mailbox save fee limit"
+          problem={state.feeProblem}
+          value={state.fee}
+          busy={busy}
+          onChange={state.setFee}
+        />
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import { FeeLimitError, walletFeeFailure } from "./fee-limit";
 import { parseOotleAddress } from "@tari-project/ootle-wasm";
 import type { WalletAccount } from "./wallet";
 import type { NativeMailboxAdapter } from "./native-mailbox";
@@ -280,6 +281,8 @@ export class SapientSession {
         minimumValuePromise: "0",
         feeType: "private",
         enforceFeeType: true,
+      }).catch((error) => {
+        throw walletFeeFailure(error, "private-payment") ?? error;
       }),
     );
     if (
@@ -314,6 +317,8 @@ export class SapientSession {
       throw new Error(
         "Private payment request does not match the original approval",
       );
+    if (r.status === "failed" && walletFeeFailure(r.error, "private-payment"))
+      throw walletFeeFailure(r.error, "private-payment")!;
     return r as {
       requestId: string;
       status:
@@ -334,7 +339,13 @@ export class SapientSession {
         "Keep the original private payment approval and resume it; do not create a replacement",
       );
     await this.privatePaymentCapabilities();
-    return this.call("tari_submitTransactionRequest", { requestId }, 120000);
+    return this.call(
+      "tari_submitTransactionRequest",
+      { requestId },
+      120000,
+    ).catch((error) => {
+      throw walletFeeFailure(error, "private-payment") ?? error;
+    });
   }
   async importPrivatePayment(receipt: PaymentReceipt) {
     await this.privatePaymentCapabilities(true);
@@ -616,13 +627,21 @@ export class SapientSession {
       const execution = record(dry.result),
         finalize = record(execution.finalize),
         outcome = record(finalize.result);
-      if (
-        !("Accept" in outcome) ||
-        money(String(finalize.total_fees_required)) > money(feeCap)
-      )
-        throw new Error(
-          "Sapient simulation rejected or exceeded the fee cap; nothing submitted",
+      if (money(String(finalize.total_fees_required)) > money(feeCap))
+        throw new FeeLimitError(
+          context.operation,
+          hasUnresolved(
+            storage,
+            context.network,
+            context.registry,
+            context.envelopeId,
+          )
+            ? "locked"
+            : "low",
+          String(finalize.total_fees_required),
         );
+      if (!("Accept" in outcome))
+        throw new Error("Sapient simulation rejected; nothing submitted");
     }
     await this.assertCurrent();
     if (context.operation === "capsule")
@@ -643,6 +662,8 @@ export class SapientSession {
         ...params,
         feeType: postage,
         enforceFeeType: true,
+      }).catch((error) => {
+        throw walletFeeFailure(error, context.operation) ?? error;
       }),
     );
     if (
@@ -701,7 +722,9 @@ export class SapientSession {
           "tari_submitTransactionRequest",
           { requestId: request.id },
           120000,
-        );
+        ).catch((error) => {
+          throw walletFeeFailure(error, pending.operation) ?? error;
+        });
         const id = transactionId(result);
         completeSubmission(storage, attempt, id);
         return id;
@@ -712,6 +735,8 @@ export class SapientSession {
           "Transaction rejected in Sapient; nothing submitted by MoonMail",
         );
       }
+      if (r.status === "failed" && walletFeeFailure(r.error, pending.operation))
+        throw walletFeeFailure(r.error, pending.operation)!;
       if (r.status === "failed")
         throw new Error(
           "Sapient reported failure. Retain this request and reconcile wallet history before any replacement.",

@@ -213,7 +213,6 @@ test("disconnect clears the wallet-bound reply choice and keeps the written draf
   const fixture = await connectFixture(page);
   await fixture.toggle.check();
   await page.getByLabel("Gift amount (optional)").fill("2.5");
-  await page.getByLabel("Set aside for collection fees").fill("0.1");
   await page
     .getByRole("button", { name: "Review letter", exact: false })
     .click();
@@ -233,9 +232,12 @@ test("disconnect clears the wallet-bound reply choice and keeps the written draf
     "This letter has no gift and is never submitted.",
   );
   await expect(page.getByLabel("Gift amount (optional)")).toHaveValue("2.5");
-  await expect(page.getByLabel("Set aside for collection fees")).toHaveValue(
-    "0.1",
-  );
+  await expect(
+    page.getByText(
+      "Collection postage is included automatically: 0.1 TARI, separate from the gift.",
+      { exact: true },
+    ),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Review letter", exact: false })
     .click();
@@ -261,7 +263,6 @@ test("changing offices clears old reply routing even when the new office has the
   const fixture = await connectFixture(page);
   await fixture.toggle.check();
   await page.getByLabel("Gift amount (optional)").fill("2.5");
-  await page.getByLabel("Set aside for collection fees").fill("0.1");
   await page.getByRole("button", { name: "Settings", exact: false }).click();
   await page.getByText("Advanced connection settings", { exact: true }).click();
   const registry = `component_${"e".repeat(64)}`;
@@ -273,9 +274,12 @@ test("changing offices clears old reply routing even when the new office has the
     page.getByRole("button", { name: "Wallet details", exact: true }),
   ).toBeVisible();
   await expect(page.getByLabel("Gift amount (optional)")).toHaveValue("2.5");
-  await expect(page.getByLabel("Set aside for collection fees")).toHaveValue(
-    "0.1",
-  );
+  await expect(
+    page.getByText(
+      "Collection postage is included automatically: 0.1 TARI, separate from the gift.",
+      { exact: true },
+    ),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Review letter", exact: false })
     .click();

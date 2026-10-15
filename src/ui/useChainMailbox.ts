@@ -1,3 +1,4 @@
+import { FeeLimitError, type FeeProblem } from "../core/fee-limit";
 import {
   useCallback,
   useEffect,
@@ -46,6 +47,7 @@ type Snapshot = {
   draft: MailboxPreferences;
   base?: { revision: string; ciphertext: string; component?: string };
   fee: string;
+  feeProblem?: FeeProblem;
 };
 type Entry = { value: Snapshot; listeners: Set<() => void>; active: boolean };
 const changes = new Set<() => void>();
@@ -296,6 +298,7 @@ export function useChainMailbox(box: Postbox, access?: MailboxAccess) {
     fee,
     loading: state.loading || state.saving,
     error: state.error,
+    feeProblem: state.feeProblem,
     setFee: (value: string) => update({ fee: value }),
     load: () => {
       void load();
@@ -305,7 +308,7 @@ export function useChainMailbox(box: Postbox, access?: MailboxAccess) {
     },
     discard: () => {
       if (store.value.saved && !store.value.loading)
-        update({ draft: store.value.saved });
+        update({ draft: store.value.saved, feeProblem: undefined });
     },
     toggle: (id: string, bit: number) => edit((p) => toggleMark(p, id, bit)),
     markMany: (ids: string[], bit: number, enabled: boolean) =>
@@ -372,9 +375,16 @@ export function useChainMailbox(box: Postbox, access?: MailboxAccess) {
             );
           if (g !== generation.current) return;
           await read(g, submitted);
+          update({ feeProblem: undefined });
           access.onStatus(
             "Mailbox settings confirmed on Ootle. The same wallet can recover them on another device.",
           );
+        } catch (error) {
+          update({
+            feeProblem:
+              error instanceof FeeLimitError ? error.problem : undefined,
+          });
+          throw error;
         } finally {
           update({ saving: false });
         }

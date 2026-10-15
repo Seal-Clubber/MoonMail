@@ -1,3 +1,5 @@
+import { FeeAdjustment } from "./FeeAdjustment";
+import type { FeeProblem } from "../core/fee-limit";
 import { useState, useEffect, useRef } from "react";
 import type { Deployment, Envelope, Postbox } from "../core/types";
 import type { ConnectedWallet } from "../core/wallet";
@@ -7,7 +9,7 @@ import { writesReady } from "../core/config";
 import { readPending, savePending, type Pending } from "../core/pending";
 import { SapientSession } from "../core/sapient";
 import { PrivateInboxAccess } from "./PrivateInboxAccess";
-import { AmountInput, tari } from "./AmountInput";
+import { tari } from "./AmountInput";
 import { readDelivery } from "../core/delivery";
 import { browserStorage } from "../core/browser-storage";
 import { CopyField } from "./CopyField";
@@ -19,6 +21,7 @@ import type { Letter } from "../core/types";
 import { createPostboxLink } from "../core/postbox-links";
 
 export function Postboxes({
+  feeProblem,
   wallet,
   chain,
   deployment,
@@ -50,6 +53,7 @@ export function Postboxes({
   discovery,
   privateAccessRevision = 0,
 }: {
+  feeProblem?: FeeProblem;
   wallet?: ConnectedWallet;
   chain?: PostOfficeClient;
   deployment: Deployment;
@@ -563,17 +567,17 @@ export function Postboxes({
               )}
               {(!box || rotating) && (
                 <>
-                  <details className="advanced">
-                    <summary>
-                      Backup fee limit · {tari(recoveryFee)} TARI
-                    </summary>
-                    <AmountInput
-                      label="Maximum backup fee per attempt"
-                      value={recoveryFee}
-                      disabled={busy || !!prepared}
-                      onChange={setRecoveryFee}
-                    />
-                  </details>
+                  <FeeAdjustment
+                    label="Backup fee limit"
+                    problem={
+                      feeProblem?.operation === "capsule"
+                        ? feeProblem
+                        : undefined
+                    }
+                    value={recoveryFee}
+                    busy={busy || !!prepared}
+                    onChange={setRecoveryFee}
+                  />
                   <p className="fine-print">
                     Your backup is encrypted on Ootle so the same Sapient wallet
                     can restore your mail later. Confirm the backup below before
@@ -626,15 +630,15 @@ export function Postboxes({
                 Ootle and searchable in the directory. Your private letters stay
                 encrypted.
               </p>
-              <details className="advanced">
-                <summary>Postbox fee limit · {tari(fee)} TARI</summary>
-                <AmountInput
-                  label="Maximum postbox fee per attempt"
-                  value={fee}
-                  disabled={busy}
-                  onChange={setFee}
-                />
-              </details>
+              <FeeAdjustment
+                label="Postbox fee limit"
+                problem={
+                  feeProblem?.operation === "postbox" ? feeProblem : undefined
+                }
+                value={fee}
+                busy={busy}
+                onChange={setFee}
+              />
               <p className="fine-print">
                 Sapient shows its fee estimate before approval. Your connected
                 account pays the fee for each attempt.

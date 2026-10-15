@@ -1,3 +1,5 @@
+import { FeeLimitError, type FeeProblem } from "../core/fee-limit";
+import { FeeAdjustment } from "./FeeAdjustment";
 import { letterLimit, unifiedOffice } from "../core/config";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -342,12 +344,25 @@ export function App() {
   const owned = boxes.filter(
     (p) => p.controller === wallet?.accounts[account]?.account.owner_public_key,
   );
+  const [feeProblem, setFeeProblem] = useState<FeeProblem>();
+  useEffect(() => {
+    setFeeProblem(undefined);
+  }, [
+    wallet,
+    d.network,
+    d.registry,
+    d.template,
+    active?.id,
+    privateAccessRevision,
+  ]);
   async function task(fn: () => Promise<void>) {
     setBusy(true);
     setError("");
+    setFeeProblem(undefined);
     try {
       await fn();
     } catch (e) {
+      if (e instanceof FeeLimitError) setFeeProblem(e.problem);
       setError(e instanceof Error ? e.message : "Operation failed");
     } finally {
       setBusy(false);
@@ -951,6 +966,7 @@ export function App() {
     }
   }
   function navigate(v: string) {
+    setFeeProblem(undefined);
     if (active?.mode === "postbox" && inlinePostboxReader) {
       if (busy) return;
       closeLetter();
@@ -2697,15 +2713,10 @@ export function App() {
                       }}
                     />
                     {gift && BigInt(gift) > 0n && (
-                      <AmountInput
-                        label="Set aside for collection fees"
-                        value={reserve}
-                        disabled={busy}
-                        onChange={(value) => {
-                          setReserve(value);
-                          setReview(false);
-                        }}
-                      />
+                      <p className="fine-print">
+                        Collection postage is included automatically:{" "}
+                        {tari(reserve)} TARI, separate from the gift.
+                      </p>
                     )}
                   </div>
                   <p className="fine-print">
@@ -2889,23 +2900,18 @@ export function App() {
                     </select>
                   </label>
                 )}
-              <details className="advanced">
-                <summary>Sending fee limit</summary>
-                <AmountInput
-                  label="Maximum sending fee per attempt"
-                  value={fee}
-                  disabled={busy}
-                  onChange={(value) => {
-                    setFee(value);
-                    setReview(false);
-                  }}
-                />
-                <p className="fine-print">
-                  Sapient estimates the fee before you approve. Your letter and
-                  its encrypted wrapping must fit within {letterLimit(d) / 1024}{" "}
-                  KiB.
-                </p>
-              </details>
+              <FeeAdjustment
+                problem={
+                  feeProblem?.operation === "publish" ? feeProblem : undefined
+                }
+                label="Sending fee limit"
+                value={fee}
+                busy={busy}
+                onChange={(value) => {
+                  setFee(value);
+                  setReview(false);
+                }}
+              />
               {wallet?.kind === "sapient" && (
                 <p className="fine-print">
                   This cap applies to each transaction. Sapient may retry input
@@ -3136,6 +3142,7 @@ export function App() {
         )}
         {view === "postboxes" && (
           <Postboxes
+            feeProblem={feeProblem}
             wallet={wallet}
             chain={chain}
             deployment={d}
@@ -3780,6 +3787,11 @@ export function App() {
                       }
                       review={paymentReview === active.id}
                       fee={paymentFee}
+                      feeProblem={
+                        feeProblem?.operation === "private-payment"
+                          ? feeProblem
+                          : undefined
+                      }
                       onFee={setPaymentFee}
                       onConfirm={() => void task(payActiveRequest)}
                       onCancel={() => setPaymentReview(undefined)}

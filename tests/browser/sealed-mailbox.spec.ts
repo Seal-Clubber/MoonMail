@@ -511,11 +511,11 @@ test("private payment requests open read-only and require a separate three-appro
   await readable(
     card.getByRole("button", { name: "Cancel payment review", exact: true }),
   );
-  await readable(
-    card
-      .locator("label")
-      .filter({ hasText: "Maximum fee per payment step and attempt" }),
-  );
+  await expect(
+    card.getByRole("textbox", { name: "Payment fee limit", exact: true }),
+  ).toHaveCount(0);
+  await expect(card).toContainText("up to 0.03 TARI per step and attempt");
+
   await card
     .getByRole("button", { name: "Cancel payment review", exact: true })
     .click();
@@ -595,4 +595,56 @@ test("unverified V4 evidence cannot enable sending or silently switch back to le
     page.getByRole("button", { name: "Send encrypted letter", exact: true }),
   ).toBeDisabled();
   await readOnly(page, f.writes);
+});
+
+test("a private payment fee failure stays tied to its original request and never offers a replacement", async ({
+  page,
+}) => {
+  const f = await fixture(page, true, true);
+  await connect(page);
+  await page.evaluate(() => {
+    const w = window as any,
+      prior = w.tari.request;
+    w.failedFeeCreates = 0;
+    w.tari.request = async (args: any) => {
+      if (args.method === "tari_createTransactionRequest") {
+        w.failedFeeCreates++;
+        throw Error("fee budget too low: PRIVATE_PROVIDER_DETAIL");
+      }
+      return prior(args);
+    };
+  });
+  await page
+    .getByRole("button", { name: "Open letter: A sealed hello", exact: true })
+    .click();
+  const card = page.getByRole("region", {
+    name: "Private payment",
+    exact: true,
+  });
+  await card
+    .getByRole("button", { name: "Review private payment", exact: true })
+    .click();
+  await card
+    .getByRole("button", { name: "Continue with Sapient", exact: true })
+    .click();
+  const warning = card.getByRole("alert", {
+    name: "Payment fee limit warning",
+    exact: true,
+  });
+  await expect(warning).toContainText("Keep the original request");
+  await readable(warning.locator("p"));
+  await expect(warning.getByRole("button", { name: /Adjust/ })).toHaveCount(0);
+  await expect(
+    card.getByRole("textbox", { name: "Payment fee limit", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.locator("body")).not.toContainText(
+    "PRIVATE_PROVIDER_DETAIL",
+  );
+  await card
+    .getByRole("button", { name: "Continue with Sapient", exact: true })
+    .click();
+  await expect
+    .poll(() => page.evaluate(() => (window as any).failedFeeCreates))
+    .toBe(1);
+  expect(f.writes()).toBe(0);
 });

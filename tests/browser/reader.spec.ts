@@ -773,7 +773,6 @@ for (const throughPublicLink of [false, true]) {
       .getByLabel("Your letter")
       .fill("Keep these carefully written words.");
     await page.getByLabel("Gift amount (optional)").fill("2.5");
-    await page.getByLabel("Set aside for collection fees").fill("0.1");
     if (throughPublicLink) {
       const hash = new URL(
         createPublicLetterLink("https://example.com/MoonMail/", {
@@ -798,9 +797,12 @@ for (const throughPublicLink of [false, true]) {
       "Keep these carefully written words.",
     );
     await expect(page.getByLabel("Gift amount (optional)")).toHaveValue("2.5");
-    await expect(page.getByLabel("Set aside for collection fees")).toHaveValue(
-      "0.1",
-    );
+    await expect(
+      page.getByText(
+        "Collection postage is included automatically: 0.1 TARI, separate from the gift.",
+        { exact: true },
+      ),
+    ).toBeVisible();
     await expect(page.getByLabel("Recipient postbox ID")).toHaveValue(
       "reply-spirit",
     );

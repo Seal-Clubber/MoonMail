@@ -28,6 +28,8 @@ Sealed mail encrypts subjects, bodies, recipient/reply addressing, conversation 
 
 Private postage is selected when the current Sapient account supports it; a deliberate public-funding choice remains available. Unsupported private operations fail closed instead of silently spending public funds. Permission to read is separate from each spending approval.
 
+Network fees use automatic defaults. Routine fee editors are hidden; a verified pre-submission fee shortage reveals an adjustment, while existing approvals remain protected from replacement. Cost summaries stay visible before approval. [Fee behavior](docs/automatic-fees.md).
+
 ## Verification
 
 The application targets Ootle **0.46.0**, TypeScript SDK **0.9.0**, crypto WASM **0.46.0** and the inspected unmodified stock Sapient **0.6.6**. Current-account capabilities are checked at runtime. The single [V4 template](contracts/moonmail-v4/README.md) stores sealed letters, postboxes, historical recovery keys, encrypted settings and public gift rules.

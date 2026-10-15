@@ -450,9 +450,12 @@ test("TARI gift input reviews exact micro amounts and resets collection funds fo
   await page.getByLabel("Subject", { exact: true }).fill("A little kindness");
   await page.getByLabel("Your letter").fill("Keep the exact tiny amount.");
   await page.getByLabel("Gift amount (optional)").fill("1.234567");
-  await expect(page.getByLabel("Set aside for collection fees")).toHaveValue(
-    "0.1",
-  );
+  await expect(
+    page.getByText(
+      "Collection postage is included automatically: 0.1 TARI, separate from the gift.",
+      { exact: true },
+    ),
+  ).toBeVisible();
   await page
     .getByRole("button", { name: "Review letter", exact: false })
     .click();

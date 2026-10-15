@@ -1,3 +1,4 @@
+import { FeeLimitError } from "./fee-limit";
 import type { Context } from "./types";
 import type { RecoveredSealedMail } from "./sealed-mail";
 import {
@@ -277,9 +278,7 @@ export async function payPrivateRequest(
     "Sending the original private payment. A reload resumes this same Sapient approval.",
   );
   if (intent.feeCap !== feeCap)
-    throw new Error(
-      `The original approval uses ${intent.feeCap} microTARI per attempt. Restore that fee cap before resuming; MoonMail will not substitute a different approval.`,
-    );
+    throw new FeeLimitError("private-payment", "restore", intent.feeCap);
   const native = await approval(port, intent.walletRequest, true),
     out = result(native);
   await port.assertCurrent();

@@ -1019,3 +1019,28 @@ test("private grant query checks wallet identity before and after and never requ
     "account or network changed",
   );
 });
+
+test("a wallet fee failure keeps its original unknown approval and cannot create a replacement", async () => {
+  const f = fixture(),
+    wallet = await SapientSession.connect(38, f.provider),
+    call = f.provider.request;
+  let creates = 0;
+  f.provider.request = (args) => {
+    if (args.method === "tari_createTransactionRequest") {
+      creates++;
+      return Promise.reject(Error("fee budget too low"));
+    }
+    return call(args);
+  };
+  await expect(
+    wallet.submitOperation(f.tx, "100", f.storage, f.context),
+  ).rejects.toMatchObject({
+    problem: { mode: "locked", operation: "publish" },
+  });
+  expect(readPending(f.storage)).toHaveLength(1);
+  expect(readPending(f.storage)[0].state).toBe("unknown");
+  await expect(
+    wallet.submitOperation(f.tx, "200", f.storage, f.context),
+  ).rejects.toThrow("existing submission");
+  expect(creates).toBe(1);
+});
