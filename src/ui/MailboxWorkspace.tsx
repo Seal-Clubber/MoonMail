@@ -638,7 +638,7 @@ export function MailboxWorkspace({
               <span>
                 {folder === "sent"
                   ? "Sent letter"
-                  : "Only your wallet unlocks this letter"}
+                  : "Encrypted for this postbox"}
               </span>
             </div>
           )}
@@ -708,21 +708,25 @@ export function MailboxWorkspace({
                         "Correspondent"}{" "}
                     · {conversationText.get(e.id)?.subject}
                   </summary>
-                  <p className="letter-body">
-                    {conversationText.get(e.id)?.body}
-                  </p>
+                  {e.id !== selected.id && (
+                    <p className="letter-body">
+                      {conversationText.get(e.id)?.body}
+                    </p>
+                  )}
                   <small>
                     Letter {e.id}
-                    {e.id === selected.id ? " · Currently open" : ""}
+                    {e.id === selected.id ? " · Currently open above" : ""}
                   </small>
-                  {e.sender !== box.controller && e.replyPostbox && (
-                    <button
-                      disabled={busy}
-                      onClick={() => onReply(e, conversationText.get(e.id)!)}
-                    >
-                      Reply to this message
-                    </button>
-                  )}
+                  {e.id !== selected.id &&
+                    e.sender !== box.controller &&
+                    e.replyPostbox && (
+                      <button
+                        disabled={busy}
+                        onClick={() => onReply(e, conversationText.get(e.id)!)}
+                      >
+                        Reply to this message
+                      </button>
+                    )}
                 </details>
               ))}
             </section>
