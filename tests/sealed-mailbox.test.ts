@@ -367,7 +367,18 @@ test("composition binds reply routing to an opened original and always creates a
         prepared.id,
       ),
     ).toEqual(opened);
-    expect(JSON.stringify(prepared.payload)).not.toContain(b.box.id);
+    // Random base64 ciphertext can contain a short name such as "bob" by chance.
+    // A clear JSON identity value is a leak; an incidental ciphertext substring is not.
+    expect(Object.keys(prepared.payload).sort()).toEqual([
+      "ciphertext",
+      "ephemeralPublicKey",
+      "iv",
+      "slots",
+      "version",
+    ]);
+    expect(JSON.stringify(prepared.payload)).not.toContain(
+      JSON.stringify(b.box.id),
+    );
     expect(f.submit).not.toHaveBeenCalled();
   } finally {
     session?.dispose();
