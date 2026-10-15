@@ -1,8 +1,18 @@
 # Native private payments by encrypted request
 
-Implementation checkpoint; public deployment activation requires a fresh stock
-Sapient campaign. `nativePrivatePayments` is separate from private-postage
-evidence and is currently absent from published profiles.
+Verified on real Esmeralda with unmodified stock Sapient 0.6.6. The current
+sealed-mail profile enables `nativePrivatePayments` separately from private
+postage. [Sanitized test evidence](private-payment-evidence.json) records four
+confirmed transactions: encrypted request, recovery intent, one 0.1-test-TARI
+private transfer and encrypted receipt. Total fees were 0.105339 test TARI.
+The native result was deliberately lost after success; a fresh browser recovered
+the original wallet request from its encrypted intent and delivered only the
+receipt. No second payment was created. A separately restored wallet verified
+the exact amount and memo. Its stock scan had already recovered the output;
+MoonMail verified that existing output instead of importing it twice. Actual
+receipt UI checks at 1440/390 pixels and a repeat check used zero financial
+requests/broadcasts. These are local-build checks on the Pages HTTPS origin
+with real ledger responses; publishing the website remains user-controlled.
 
 A sealed payment request contains the requesting wallet's receiving address,
 native TARI amount and random nonce. The address owner must match the
@@ -18,7 +28,9 @@ Paying takes three approvals:
    ID. Only after that unique intent commits may MoonMail submit the payment.
 3. Publish its encrypted receipt, containing the recipient output commitment.
    The recipient imports that output through Sapient's separate view permission;
-   importing sends no transaction and grants no spending approval.
+   importing sends no transaction and grants no spending approval. If stock Sapient
+   has already recovered the output, MoonMail verifies its exact resource,
+   commitment, amount and memo instead of treating it as a new claim.
 
 Intent and receipt IDs derive from the encrypted invoice nonce, invoice ID,
 payer and office. A competing browser cannot submit its different approval when

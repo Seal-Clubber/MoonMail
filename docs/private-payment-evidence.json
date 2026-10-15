@@ -1,0 +1,80 @@
+{
+  "verifiedAt": "2026-10-15T15:44:30.668Z",
+  "network": 38,
+  "registry": "component_47b0dddced08140d37448b79bbf1f545907344b65bfa28b5f10ffe27f8132ebe",
+  "template": "e0c2b09b5d172542e7196f54625fbf78a5150aa77cead67d0b8737bd436d2f0c",
+  "stockSapient": "0.6.6",
+  "sourceFinancial": "24a600268a6d9f9054cb2a6fee47c589138232de",
+  "sourceReadOnly": "229327d1dc38c8346a72bcc1cf9bd87e0c8808d7",
+  "financialRequests": 4,
+  "publicTransactions": 4,
+  "paymentMicroTari": "100000",
+  "feesMicroTari": "105339",
+  "transactions": [
+    {
+      "stage": "invoice",
+      "transactionId": "4017981bc7cb670fb910b081062ffe4743410dce150058e63dadbf6a841c5726",
+      "feeMicroTari": "30000",
+      "feeOvercharge": 11545,
+      "upSubstateVariants": [
+        "Utxo",
+        "Component",
+        "Component",
+        "TransactionReceipt"
+      ]
+    },
+    {
+      "stage": "intent",
+      "transactionId": "9ac58bb8cc19f70b11ee06ccb7ac32ca01869445ec87f68ef383aa37c99b4e20",
+      "feeMicroTari": "30000",
+      "feeOvercharge": 11430,
+      "upSubstateVariants": [
+        "Utxo",
+        "Component",
+        "Component",
+        "TransactionReceipt"
+      ]
+    },
+    {
+      "stage": "native-payment",
+      "transactionId": "635f212cd1fd66ea5135128d7e11c40c7e278f4c915f99443fa3cec62f10dbcf",
+      "feeMicroTari": "15339",
+      "feeOvercharge": 12,
+      "upSubstateVariants": ["Utxo", "Utxo", "TransactionReceipt"]
+    },
+    {
+      "stage": "receipt",
+      "transactionId": "80125ae1643b20649b1f4b5e507775dfbf9f1d7699322281fc7f59af97ba054a",
+      "feeMicroTari": "30000",
+      "feeOvercharge": 11318,
+      "upSubstateVariants": [
+        "Utxo",
+        "Component",
+        "Component",
+        "TransactionReceipt"
+      ]
+    }
+  ],
+  "deliberatelyLostNativeResult": true,
+  "originalPaymentRecoveredFromEncryptedIntent": true,
+  "receiptOnlyRecovery": true,
+  "independentRestoredWallet": true,
+  "exactAmountAndMemoVerified": true,
+  "alreadyRecoveredByWallet": true,
+  "repeatFinancialRequests": 0,
+  "repeatBroadcasts": 0,
+  "gui": {
+    "realReceiptOpened": true,
+    "exactAmountAndMemoVerified": true,
+    "alreadyRecoveredByWallet": true,
+    "widths": [1440, 390],
+    "financialRequests": 0
+  },
+  "ledgerResponsesOverridden": false,
+  "githubPushed": false,
+  "limits": [
+    "Three approvals, not an atomic payment-and-letter transaction.",
+    "If original installation and approval result are lost before receipt delivery, automatic discovery is not guaranteed.",
+    "Public signers, fees, output commitments and timing remain observable."
+  ]
+}

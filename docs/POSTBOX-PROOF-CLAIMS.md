@@ -1,5 +1,7 @@
 # Sapient gift-funded postbox claims
 
+> Historical design/evidence notes: the current release uses the V4 sealed office as its single default. Old testnet offices are not selectable or migrated. See [current private-email capabilities](private-email.md), [sealed protocol](sealed-mail-protocol.md) and [verified private payments](private-payments.md). Dated results below apply only to their recorded build.
+
 The separate `PostOfficeV2` and `EnvelopeV2` contracts let the controller approve a specific gift payout with Sapient's `tari_signWalletOwnershipChallenge`. GhostDrop submits a transaction sealed by a temporary local relay key. The recipient's financial wallet key never leaves Sapient, and their account needs no coins for collection. The sender funds both the full gift and a separate capped fee reserve.
 
 **Current V2 result (2026-10-07):** three reviewed templates and the registry/capsule components are confirmed on Esmeralda. Stock Sapient registered a postbox, funded an addressed gift and rotated its key. An independently restored wallet recovered current and historical keys from actual permanent ledger carriers, collected the full 1 TARI into a zero-TARI account through an ownership proof, and independently spent the payout. The claim charged 5,730 µTARI to the sender's separate100,000 µTARI reserve. [Actual public evidence](postbox-v2-esmeralda-evidence.json) records exact IDs, artifacts, fees and limits.

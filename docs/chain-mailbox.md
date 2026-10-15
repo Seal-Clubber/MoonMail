@@ -1,5 +1,7 @@
 # Your wallet-controlled mailbox
 
+> Historical design/evidence notes: the current release uses the V4 sealed office as its single default. Old testnet offices are not selectable or migrated. See [current private-email capabilities](private-email.md), [sealed protocol](sealed-mail-protocol.md) and [verified private payments](private-payments.md). Dated results below apply only to their recorded build.
+
 My inbox gives each owned Sapient postbox a full-width mail workspace with a folder sidebar, searchable letter list and reading pane. A compact toolbar keeps postbox selection, refresh and editing near the top; address details sit below the mail. Desktop folders, message rows and reading pane scroll independently. It uses the existing on-chain post office; there is no MoonMail account server or mailbox database.
 
 ## What follows you to another device

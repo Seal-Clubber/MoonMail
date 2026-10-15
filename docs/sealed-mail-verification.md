@@ -1,9 +1,11 @@
 # Sealed mailbox verification — 15 October 2026
 
-The separate V4 office is deployed on Esmeralda. **Try sealed mail** selects it
-explicitly; **Open existing postboxes** returns to V3. Existing mail is not
-migrated. The office choice is a public browser preference, and each wallet
-still approves spending separately from its private-view permission.
+The V4 office is deployed on Esmeralda and is now the single default mailbox.
+Old testnet offices are not selected or migrated. Each wallet approves spending
+separately from its private-view permission. The campaign below predates removal
+of the old office chooser; its results remain historical evidence.
+[Native private payment evidence](private-payment-evidence.json) records the
+subsequent completed payment/recovery campaign.
 
 Stock Sapient 0.6.6 sent five encrypted letters and replies with native private
 postage. The recipient rotated its encryption key between replies. A separately

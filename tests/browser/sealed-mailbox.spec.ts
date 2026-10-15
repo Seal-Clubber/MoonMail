@@ -12,6 +12,7 @@ import {
   type SealedMessage,
 } from "../../src/core/sealed-mail";
 import { conversationReplyKey } from "../../src/core/sealed-addressing";
+import { readable } from "./support/contrast";
 import ledger from "../fixtures/capsule-carrier.json" with { type: "json" };
 
 // Synthetic browser/provider fixture. No real wallet, signature or broadcast.
@@ -416,7 +417,7 @@ test("sealed composition includes recoverable Sent and optional reply identities
     .check();
   await expect(
     page.getByRole("textbox", { name: "Gift amount (optional)" }),
-  ).toBeDisabled();
+  ).toHaveCount(0);
   await page
     .getByRole("button", { name: /Review/ })
     .last()
@@ -490,14 +491,30 @@ test("private payment requests open read-only and require a separate three-appro
     exact: true,
   });
   await expect(card).toContainText("0.012345 test TARI");
-  await card
-    .getByRole("button", { name: "Review private payment", exact: true })
-    .click();
+  const reviewButton = card.getByRole("button", {
+    name: "Review private payment",
+    exact: true,
+  });
+  await readable(reviewButton);
+  await reviewButton.hover();
+  await readable(reviewButton);
+  await reviewButton.click();
   await expect(
     card.getByRole("group", { name: "Private payment review", exact: true }),
   ).toContainText("Three Sapient approvals");
   await expect(card).toContainText(
     "not an atomic mail-and-payment transaction",
+  );
+  await readable(
+    card.getByRole("button", { name: "Continue with Sapient", exact: true }),
+  );
+  await readable(
+    card.getByRole("button", { name: "Cancel payment review", exact: true }),
+  );
+  await readable(
+    card
+      .locator("label")
+      .filter({ hasText: "Maximum fee per payment step and attempt" }),
   );
   await card
     .getByRole("button", { name: "Cancel payment review", exact: true })

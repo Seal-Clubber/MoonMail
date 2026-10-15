@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
-import { reviewedOffice } from "../../src/core/offices";
+import deployed from "../../public/deployment.json" with { type: "json" };
+import archived from "../../public/deployment-v2.json" with { type: "json" };
 import { createPostboxLink } from "../../src/core/postbox-links";
 
 test.beforeEach(async ({ page }) => {
@@ -7,60 +8,88 @@ test.beforeEach(async ({ page }) => {
     route.abort(),
   );
 });
-test("sealed mail is explicit, survives reload, and keeps existing postboxes one click away", async ({
+
+test("sealed mail is the single default even with a stale office preference", async ({
   page,
 }) => {
-  await page.goto("./#/postboxes");
-  const office = page.getByRole("region", {
-    name: "Mailbox office",
-    exact: true,
+  const profiles: string[] = [];
+  page.on("request", (r) => {
+    if (/deployment[^/]*\.json/.test(r.url()))
+      profiles.push(new URL(r.url()).pathname);
   });
-  await expect(office).toContainText("Existing postboxes · Esmeralda");
-  await office
-    .getByRole("button", { name: "Try sealed mail", exact: true })
-    .click();
-  await expect(office).toContainText("Sealed mail · Esmeralda");
+  await page.addInitScript(() =>
+    localStorage.setItem("moonmail:office:v1", "existing"),
+  );
+  await page.goto("./#/postboxes");
+  await expect(
+    page.getByRole("region", { name: "Mailbox office", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Try sealed mail", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Open existing postboxes", exact: true }),
+  ).toHaveCount(0);
+  await expect.poll(() => profiles.length).toBe(1);
   await page.reload();
-  await expect(office).toContainText("Sealed mail · Esmeralda");
-  await office
-    .getByRole("button", { name: "Open existing postboxes", exact: true })
-    .click();
-  await expect(office).toContainText("Existing postboxes · Esmeralda");
+  await expect.poll(() => profiles.length).toBe(2);
+  expect(profiles.every((p) => p === "/MoonMail/deployment.json")).toBe(true);
+  expect(deployed.contractProtocol).toBe("unified-2");
+  expect(deployed.evidence.nativePrivatePayments).toBe(true);
   expect(
     await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
   ).toBeNull();
   expect(await page.evaluate(() => (window as any).tari)).toBeUndefined();
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= innerWidth,
-    ),
-  ).toBe(true);
 });
-test("an incoming known-office invitation offers an explicit switch and preserves the invitation", async ({
+
+test("a current invitation opens directly without an office switch", async ({
   page,
 }) => {
   const hash = new URL(
     createPostboxLink("https://example.com/MoonMail/", {
       id: "fixture-recipient",
-      context: reviewedOffice("sealed"),
+      context: deployed,
     }),
   ).hash;
   await page.goto("./" + hash);
-  const incoming = page.getByRole("region", {
-    name: "Incoming mail office",
+  await expect(
+    page.getByRole("region", { name: "Incoming mail office", exact: true }),
+  ).toHaveCount(0);
+  const invitation = page.getByRole("region", {
+    name: "Postbox invitation",
     exact: true,
   });
-  await expect(incoming).toContainText("No transaction is sent");
-  await incoming
-    .getByRole("button", { name: "Open this link’s office", exact: true })
-    .click();
-  await expect(incoming).toHaveCount(0);
-  await expect(
-    page.getByRole("region", { name: "Postbox invitation", exact: true }),
-  ).toContainText("fixture-recipient");
+  await expect(invitation).toContainText("fixture-recipient");
+  await expect(invitation).toContainText("could not be reached");
   expect(
     await page.evaluate(() => localStorage.getItem("moonmail:office:v1")),
-  ).toBe("sealed");
+  ).toBeNull();
+});
+
+test("an old testnet invitation cannot change the active office or start a draft", async ({
+  page,
+}) => {
+  const hash = new URL(
+    createPostboxLink("https://example.com/MoonMail/", {
+      id: "old-test-postbox",
+      context: archived,
+    }),
+  ).hash;
+  await page.goto("./" + hash);
+  const invitation = page.getByRole("region", {
+    name: "Postbox invitation",
+    exact: true,
+  });
+  await expect(invitation).toContainText("different post office or network");
+  await expect(
+    invitation.getByRole("button", {
+      name: "Use this postbox for my letter",
+      exact: true,
+    }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Open this link’s office", exact: true }),
+  ).toHaveCount(0);
   expect(
     await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
   ).toBeNull();

@@ -28,6 +28,7 @@
     "mailboxRecovery": true,
     "postboxClaims": true,
     "mailboxState": true,
-    "nativePrivatePostage": true
+    "nativePrivatePostage": true,
+    "nativePrivatePayments": true
   }
 }

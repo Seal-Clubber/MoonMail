@@ -1,5 +1,7 @@
 # One MoonMail mail template
 
+> Historical design/evidence notes: the current release uses the V4 sealed office as its single default. Old testnet offices are not selectable or migrated. See [current private-email capabilities](private-email.md), [sealed protocol](sealed-mail-protocol.md) and [verified private payments](private-payments.md). Dated results below apply only to their recorded build.
+
 `contracts/ghostdrop-v3` builds one published WASM template, `GhostDrop`. It includes the post office, public letters, private-link letters, addressed Sapient mail, gift vaults and claim rules, permanent recovery capsules and encrypted mailbox preferences. A single template can instantiate many components. The root keeps small directory references; separate letter and mailbox components keep payloads out of the shared directory. This is one mail application template, not one ever-growing ledger record. There is no MoonMail backend.
 
 ## Deployment status

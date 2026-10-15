@@ -1,5 +1,7 @@
 # Architecture and threat model
 
+> Historical design/evidence notes: the current release uses the V4 sealed office as its single default. Old testnet offices are not selectable or migrated. See [current private-email capabilities](private-email.md), [sealed protocol](sealed-mail-protocol.md) and [verified private payments](private-payments.md). Dated results below apply only to their recorded build.
+
 MoonMail is a static React application. GitHub Pages serves HTML/CSS/JS and the official Tari crypto WASM. There is no required MoonMail server. The website connects directly to Sapient's injected browser provider; indexer reads and guest transaction submissions go directly to replaceable infrastructure. Optional donor/deployment tools and preserved historical recovery code retain their daemon adapter.
 
 ## Authority and data

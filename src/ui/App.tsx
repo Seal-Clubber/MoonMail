@@ -83,14 +83,6 @@ import { parsePostboxLink, type PostboxRoute } from "../core/postbox-links";
 import { MailReadNotice } from "./MailReadNotice";
 import { networkPreset, checkPublicIndexer } from "../core/networks";
 import { loadOfficeProfile } from "../core/office-profile";
-import {
-  officeFile,
-  rememberedOffice,
-  rememberOffice,
-  reviewedOffice,
-  knownOffice,
-  type OfficeChoice,
-} from "../core/offices";
 import { useActionFocus } from "./useActionFocus";
 import { SealedMailboxSession } from "../core/sealed-mailbox";
 import {
@@ -419,9 +411,7 @@ export function App() {
   useEffect(() => {
     let cancelled = false;
     const revision = deploymentRevision.current;
-    loadOfficeProfile(
-      `${import.meta.env.BASE_URL}${officeFile(rememberedOffice(browserStorage))}`,
-    )
+    loadOfficeProfile(`${import.meta.env.BASE_URL}deployment.json`)
       .then((data) => {
         if (!cancelled && revision === deploymentRevision.current) {
           initialOfficePending.current = false;
@@ -947,7 +937,7 @@ export function App() {
     setOfficeLoadError(false);
     try {
       const profile = await loadOfficeProfile(
-        `${import.meta.env.BASE_URL}${officeFile(rememberedOffice(browserStorage))}`,
+        `${import.meta.env.BASE_URL}deployment.json`,
       );
       if (revision !== deploymentRevision.current) return;
       if (retryInitial && initialOfficePending.current) {
@@ -959,31 +949,6 @@ export function App() {
     } catch {
       if (revision === deploymentRevision.current) setOfficeLoadError(true);
     }
-  }
-  function selectOffice(choice: OfficeChoice) {
-    if (busy || pendingMailboxChanges.length) return;
-    const incoming = { route, postboxInvitation, publicLetterRoute };
-    const profile = reviewedOffice(choice);
-    changeDeployment(profile, true);
-    rememberOffice(browserStorage, choice);
-    if (incoming.route && sameContext(incoming.route.context, profile))
-      setRoute(incoming.route);
-    if (
-      incoming.postboxInvitation &&
-      sameContext(incoming.postboxInvitation.context, profile)
-    )
-      setPostboxInvitation(incoming.postboxInvitation);
-    else setPostboxInvitation(undefined);
-    if (
-      incoming.publicLetterRoute &&
-      sameContext(incoming.publicLetterRoute.context, profile)
-    )
-      setPublicLetterRoute(incoming.publicLetterRoute);
-    setStatus(
-      choice === "sealed"
-        ? "Sealed mail selected. Create a postbox here to receive sealed letters; your existing postboxes stay in their own office."
-        : "Existing postboxes selected. Your earlier mail stays available here.",
-    );
   }
   function navigate(v: string) {
     if (active?.mode === "postbox" && inlinePostboxReader) {
@@ -1929,76 +1894,6 @@ export function App() {
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
-        {["postboxes", "compose", "network"].includes(view) && (
-          <section
-            className="office-choice office-choice--compact"
-            aria-label="Mailbox office"
-          >
-            <strong>
-              {d.contractProtocol === "unified-2"
-                ? "Sealed mail · Esmeralda"
-                : "Existing postboxes · Esmeralda"}
-            </strong>
-            <details>
-              <summary>About this office</summary>
-              <p>
-                {d.contractProtocol === "unified-2"
-                  ? "Recipient and reply addressing stay encrypted. New postboxes live here; earlier mail stays in its existing office."
-                  : "Your earlier postboxes and mail are here. Try sealed mail for encrypted recipient and reply addressing."}
-              </p>
-            </details>
-            {!!pendingMailboxChanges.length && (
-              <p role="status">
-                Save your mailbox changes before switching offices.
-              </p>
-            )}
-            <button
-              disabled={busy || !!pendingMailboxChanges.length}
-              onClick={() =>
-                selectOffice(
-                  d.contractProtocol === "unified-2" ? "existing" : "sealed",
-                )
-              }
-            >
-              {d.contractProtocol === "unified-2"
-                ? "Open existing postboxes"
-                : "Try sealed mail"}
-            </button>
-            <button className="text-button" onClick={() => navigate("privacy")}>
-              What can others see?
-            </button>
-          </section>
-        )}
-        {(() => {
-          const context =
-            route?.context ??
-            postboxInvitation?.context ??
-            publicLetterRoute?.context;
-          const choice =
-            context && !sameContext(context, d)
-              ? knownOffice(context)
-              : undefined;
-          return (
-            choice && (
-              <section
-                className="office-choice"
-                aria-label="Incoming mail office"
-              >
-                <p>
-                  This link belongs to MoonMail’s{" "}
-                  {choice === "sealed" ? "sealed" : "existing"} office. Open
-                  that office to continue. No transaction is sent.
-                </p>
-                <button
-                  disabled={busy || !!pendingMailboxChanges.length}
-                  onClick={() => selectOffice(choice)}
-                >
-                  Open this link’s office
-                </button>
-              </section>
-            )
-          );
-        })()}
         {!["welcome", "privacy", "postboxes", "compose", "network"].includes(
           view,
         ) && (
@@ -2797,42 +2692,45 @@ export function App() {
                   </p>
                 )}
               </div>
-              <div className="form-row">
-                <AmountInput
-                  label="Gift amount (optional)"
-                  value={gift}
-                  disabled={busy || sealedCompose}
-                  onChange={(value) => {
-                    setGift(value);
-                    setReserve(
-                      value && BigInt(value) > 0n
-                        ? reserve === "0"
-                          ? "100000"
-                          : reserve
-                        : "0",
-                    );
-                    setReview(false);
-                  }}
-                />
-                {gift && BigInt(gift) > 0n && (
-                  <AmountInput
-                    label="Set aside for collection fees"
-                    value={reserve}
-                    disabled={busy}
-                    onChange={(value) => {
-                      setReserve(value);
-                      setReview(false);
-                    }}
-                  />
-                )}
-              </div>
-              <p className="fine-print">
-                {sealedCompose
-                  ? privatePaymentsEnabled
-                    ? "Sealed mail can request a native private payment below. Sending a request pays postage only; the recipient reviews payment separately. This gift field stays disabled and never falls back to public funding."
-                    : "Private payment attachments are not enabled in this sealed office yet. This letter does not move a gift or fall back to public funding."
-                  : "The recipient gets the full gift. You fund collection fees separately. Gifts have no expiry or refunds; unused collection funds stay locked. Use 0 for a letter without a gift."}
-              </p>
+              {!sealedCompose && (
+                <>
+                  <div className="form-row">
+                    <AmountInput
+                      label="Gift amount (optional)"
+                      value={gift}
+                      disabled={busy}
+                      onChange={(value) => {
+                        setGift(value);
+                        setReserve(
+                          value && BigInt(value) > 0n
+                            ? reserve === "0"
+                              ? "100000"
+                              : reserve
+                            : "0",
+                        );
+                        setReview(false);
+                      }}
+                    />
+                    {gift && BigInt(gift) > 0n && (
+                      <AmountInput
+                        label="Set aside for collection fees"
+                        value={reserve}
+                        disabled={busy}
+                        onChange={(value) => {
+                          setReserve(value);
+                          setReview(false);
+                        }}
+                      />
+                    )}
+                  </div>
+                  <p className="fine-print">
+                    The recipient gets the full gift. You fund collection fees
+                    separately. Gifts have no expiry or refunds; unused
+                    collection funds stay locked. Use 0 for a letter without a
+                    gift.
+                  </p>
+                </>
+              )}
               {!sealedCompose && (
                 <label className="checkbox">
                   <input
@@ -3936,7 +3834,7 @@ export function App() {
                     <pre>{JSON.stringify(active.payload, null, 2)}</pre>
                     <p>
                       {active.deliveryProtocol === "mm-sealed-2"
-                        ? "Subject, body, recipient and reply addressing are encrypted inside this payload. Your transaction signer, timing, office and padded size bucket remain public. Access-slot keys and local decrypted addressing are not published here. This letter carries no payment attachment."
+                        ? "Subject, body, recipient and reply addressing are encrypted inside this payload. Your transaction signer, timing, office and padded size bucket remain public. Access-slot keys and local decrypted addressing are not published here. Any private payment request or recovery record is encrypted too; a payment uses separate approvals, with signers, fees, commitments and timing still observable."
                         : "Encryption hides the subject and body of sealed mail. The existing gift vault uses revealed test TARI: amounts, sender/controller keys, timing and routing remain observable. Ghost View does not provide payment anonymity."}
                     </p>
                   </div>

@@ -4378,63 +4378,6 @@ footer {
     animation: none;
   }
 }
-.office-choice {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.25rem;
-  margin: 0 0 1.25rem;
-  border: 1px solid #486284;
-  border-radius: 12px;
-  background: #14283e;
-  color: #e0eaf6;
-}
-.office-choice p {
-  margin: 0.3rem 0 0;
-  max-width: 76ch;
-  color: #c6d6e8;
-  font-size: 0.9rem;
-}
-.office-choice button {
-  flex-shrink: 0;
-}
-.office-choice--compact {
-  padding: 8px 2.5% 0;
-  margin: 0;
-  gap: 0.75rem;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  font-size: 0.8rem;
-}
-.office-choice--compact button {
-  padding: 6px 10px;
-}
-.office-choice--compact .text-button {
-  margin-left: auto;
-}
-.office-choice--compact summary {
-  cursor: pointer;
-  color: #c6d6e8;
-}
-.office-choice--compact details[open] {
-  flex-basis: 100%;
-  order: 5;
-}
-@media (max-width: 640px) {
-  .office-choice {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .office-choice--compact {
-    flex-direction: row;
-    align-items: center;
-    padding: 8px 3% 0;
-  }
-}
 .private-payment-card {
   margin: 1.2rem 0;
   padding: 1rem;
@@ -4455,8 +4398,10 @@ footer {
   cursor: pointer;
   color: #e9cd91;
 }
-.private-payment-card button {
-  color: #f1dba9;
+.private-payment-card button,
+.letter-modal .private-payment-card button {
+  background: #263f5a;
+  color: #f4e1b6;
   border-color: #7190ae;
   margin-top: 0.75rem;
 }
@@ -4464,4 +4409,28 @@ footer {
   margin-top: 1rem;
   padding-top: 0.5rem;
   border-top: 1px solid #4c7099;
+}
+
+.private-payment-card button:hover:not(:disabled),
+.private-payment-card button:focus-visible,
+.letter-modal .private-payment-card button:hover:not(:disabled),
+.letter-modal .private-payment-card button:focus-visible {
+  background: #355371;
+  color: #fff0cf;
+}
+.private-payment-card button.primary,
+.letter-modal .private-payment-card button.primary {
+  background: #e4c17c;
+  color: #17283c;
+  border-color: #e4c17c;
+}
+.private-payment-card button:disabled,
+.letter-modal .private-payment-card button:disabled {
+  background: #26394e;
+  color: #b8c6d5;
+  border-color: #52677d;
+}
+.private-payment-card label,
+.letter-modal .private-payment-card label {
+  color: #edf3fb;
 }

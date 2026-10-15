@@ -1,10 +1,11 @@
 # Sealed mail protocol (Esmeralda V4)
 
-The separate V4 office is deployed and verified on Esmeralda with stock Sapient
-0.6.6 and independent wallet recovery. The website offers an explicit **Try sealed
-mail** choice after the user publishes this checkpoint. Existing postboxes stay
-in the original V3 office; keys, ciphertext and financial journals keep their
-identities. There is no automatic migration. [Live verification](sealed-mail-evidence.json).
+The V4 office is the single default mailbox, deployed and verified on Esmeralda
+with stock Sapient 0.6.6 and independent wallet recovery. Old testnet offices are
+not selected or migrated. Earlier versions remain in backup branches.
+[Live verification](sealed-mail-evidence.json) and
+[private-payment verification](private-payment-evidence.json) describe the
+separate test campaigns. Publishing the website remains user-controlled.
 
 ## Envelope and recovery
 
@@ -18,7 +19,8 @@ The body binds network, registry, template, letter ID, ephemeral key and the
 contract-recorded transaction signer. Copying it under another signer cannot
 impersonate the original sender.
 
-The protected `mm-message-1` body contains the complete subject and text, both
+The protected `mm-message-1` body (or `mm-message-2` with a strict encrypted
+private-payment attachment) contains the complete subject and text, both
 mailbox identities/key versions, optional reply identity and encrypted thread
 links. It is padded to 1,024, 2,048, 4,096, 8,192 or 16,384 bytes, including its
 four-byte length prefix. The maximum envelope stays below 24,000 JSON bytes; the
@@ -64,16 +66,16 @@ closed, never be guessed through the old codec.
 
 The separate `moonmail-sealed-1` profile requires recorded engine, recovery,
 stock-Sapient and Sent/reply evidence. Private postage also requires its own
-deployment evidence and the account's current capability. The separate
-`deployment-v4.json` profile enables it; V3 remains the first-visit default.
-Public consent, payment approval and private
-view permission remain separate.
+deployment evidence and the account's current capability. `deployment.json`
+selects this sealed office directly; `deployment-v4.json` is the same reviewed
+profile. Old office choices are ignored. Public consent, payment approval and
+private view permission remain separate.
 
 `publish_sealed` stores ciphertext without a gift withdrawal. Native private
-payments are separate operations and are not atomic attachments here. Payment
-handoff must not be advertised until recipient import and interrupted-delivery
-recovery are implemented and tested. Current V3 gifts retain their tested public
-vault and prepaid collection rules.
+payments are separate operations and are not atomic attachments here. The
+[implemented request/intent/receipt flow](private-payments.md) has independent
+stock-wallet receiving and interrupted-result recovery evidence. Public gifts
+in this office retain their tested public vault and prepaid collection rules.
 
 Others can still observe transaction signers, timing, office/template identifiers,
 opaque letter/component IDs, size buckets and private-output commitments. Public

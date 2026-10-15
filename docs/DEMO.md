@@ -1,59 +1,39 @@
-# Using MoonMail with Sapient
+# MoonMail demo
 
-Use Esmeralda in Sapient. All amounts are test TARI. The website needs no separate bridge or daemon. The current source uses the verified Sapient office; older office mail does not carry over.
+Use isolated Esmeralda test funds. The app needs only the website and stock Sapient. Do not enter your wallet seed or signing keys into MoonMail.
 
-The mist, fireflies and ghost artwork follow your device’s reduced-motion setting. Text and wallet controls stay still; the parchment writing and reading surfaces use dark ink.
+## A familiar private mailbox
 
-Choose a visible postbox name. If it is too long, shorten it before setup; emoji and accented letters use more space.
+1. Open the contest page: **MoonMail — Your words, under cover of night.** Choose **Open mailbox**. Public mail has a separate **Explore public mail** action.
+2. Connect Sapient. Before reading private mail, the full permission dialog explains account-wide private output summaries, including amounts and memos for other resources. Explicitly continue in Sapient. This is a reading permission, not spending authorization.
+3. Create a new postbox in the current sealed office. Review its name, directory visibility and fee limits. Approve **Save recovery backup**, wait for confirmation, then approve **Open my postbox**. These are two transactions. Interrupted setup resumes the original request; Activity tracks outcomes.
+4. Copy **My postbox invitation** for a friend. They can open it without a wallet, verify the full ID (names can repeat) and choose **Use this postbox for my letter**. An invitation grants no inbox access.
+5. Use Compose to send encrypted mail. Choose a recipient from favourites, verified previous correspondents, the public directory or a full ID. Review the content, selected sending postbox, encryption disclosure, postage source and fee cap. Every sealed letter includes recoverable Sent access. Optional conversation-specific reply keys separate encryption identities, while the transaction signer stays public.
+6. Open a letter to read the conversation and reply. Successful opening stages a read mark. Select letters for read/unread, star or archive. Changed mailbox preferences/read marks stay visibly unsaved until **Save** is approved on chain. Contacts/favourites are beside the recipient choices. No draft folder is stored.
+7. Restore the same Sapient wallet on another system: Inbox, Sent, historical keys and saved encrypted settings recover from Ootle. Reload reuses only a real, still-valid Sapient connection/view grant. Revoking that grant clears decrypted mail.
 
-Postbox setup shows **1 of 2 · Save recovery backup**, then **2 of 2 · Open my postbox** after confirmation. Approve each transaction in Sapient. Private-view access is a separate permission; each transaction has its own network fee. Reading an existing inbox only needs view permission. Rotation uses the same two approvals to save a new backup and update the encryption key.
+The current office is the single default. Old testnet mail is not migrated or selectable; backup branches preserve earlier versions.
 
-## Read a letter
+## Request and pay privately
 
-Open **Public mail** and choose a letter. Public reading needs no wallet. If someone gives you a private link, open the complete link to decrypt the letter on your device. Opening a letter never collects a gift. If a private inbox letter fails to open, use **Retry opening letter** inside it. If Sapient needs view permission, close the letter and approve postbox view access in **My inbox** first. Empty and loading states show no invented mail or funded gifts.
+1. In encrypted Compose, select **Request a private payment**, enter the amount and send the letter. The amount and your current Sapient receiving address are encrypted. This sends a request, not money.
+2. The recipient opens it read-only, then chooses **Review private payment**. Review the amount, private receiving details and maximum fee per step/attempt.
+3. Continue with Sapient for three approvals: authorize the native transfer, publish its unique encrypted recovery record, then deliver the encrypted receipt after payment succeeds. The transfer uses private funds/fees and zero minimum-value promise. Fees remain separately observable.
+4. If interrupted, reopen the original request and resume it. MoonMail retrieves the original approved wallet request; it does not pay a second time or replace unknown/rejected requests. If the original installation and result are lost before receipt delivery, automatic discovery is not guaranteed.
+5. The requesting wallet opens the receipt and selects **Verify & import in Sapient**. MoonMail checks authenticated request/intent/receipt records, the actual native output, ownership, exact amount and encrypted memo. If Sapient already recovered it, the app verifies that existing output. This step sends no transaction or spending request.
 
-For a public letter, choose **Copy public letter link** and share the complete address. Your friend can open that exact letter without connecting Sapient. Public links give everyone access to the letter and any available public gift; opening alone never collects it. Keep sealed mail on its private link or controlling postbox wallet. If a public link belongs to another office, check it with the sender. The site keeps your current office settings.
+A payment and its mail receipt are not atomic. [Real testnet verification](private-payment-evidence.json) includes a deliberately lost successful transfer result, receipt-only recovery and an independently restored recipient.
 
-## Prepare your Sapient funds
+## Public letters and gifts
 
-MoonMail sending and postbox setup use public TARI. Open **Wallet details → Check public funds** to read that balance without requesting private-view permission or signing. This is a snapshot, not a guarantee that a future transaction will succeed; Sapient still checks funds and fees. An unavailable read stays unknown and can retry.
+Choose public mail or a private link deliberately. Public publication requires its own content acknowledgement; editing clears it. Public gifts have a visible amount and separately funded collection reserve. The recipient gets the full gift when its reserve covers execution. No expiry/refunds; unused reserves stay locked.
 
-If you received private TARI, it appears under Sapient’s **Private balance**, while **Public balance** can remain zero. Rescan beside **Assets**, or use **Receive → Claim a private payment** with the sender’s commitment for a missing output. Each payment has its own commitment. Then use **Unshield** in Sapient for the amount you want available to MoonMail, including gifts, collection reserves and transaction fees; review the wallet’s amount and fee before approving. Gift collection itself still needs no recipient coins. Never enter your seed or private keys into MoonMail.
+For a private link, save the complete link before publishing and confirm that you saved it. Anyone with it can read/collect; the link is scrubbed from history and is not stored as a draft or transaction-journal secret. Refreshing/closing can lose an unsaved link.
 
-## Send a little kindness
+Opening a letter never collects its gift. **Review gift collection** shows the exact payout, destination and sender-funded reserve before **Confirm & collect gift**. Public/private-link gifts can be received without connecting a wallet, using supported existing/fresh account options. Native private payments use the different encrypted request/receipt flow above.
 
-1. Open **Write a letter** and choose public mail, a private link, or a postbox. For a postbox, browse the spirit directory or paste your friend’s registered ID. Check the ID with your friend because names can repeat.
-2. Write the subject and body. Set the gift to `0` for a plain letter, or enter a TARI amount. A funded gift gets a separate collection reserve; the recipient receives the full gift when that reserve covers execution. Unused reserve stays locked, and there are no refunds or expiry.
-3. Connect Sapient, approve the site and review. **Sending fee limit** shows the per-attempt cap; Sapient estimates the actual fee before approval. Its own retries can charge multiple attempt fees.
-4. For a private link, use **Copy secret link**, or copy the complete value from **Private link to save**, before publishing. Tick **I saved my private link somewhere safe** only once you have saved it; sending remains disabled until then. Keep the complete link safely: it is not stored in browser history or the transaction journal, and cannot be recovered after closing or refreshing the session.
-5. Choose **Fund & publish letter** and approve in Sapient. The app takes you to **Activity**. Known transaction IDs are checked automatically for up to two minutes while that page is open, without signing or resubmitting. Manual **Check status** stays available afterward. Once delivery confirms, copy the same confirmed private link or refresh the public hall. An uncertain request stays blocked; resume the original Sapient approval rather than sending a replacement. A fee-only commit remains uncertain and is not shown as delivered. If saved records cannot be read, financial actions are paused; inspect wallet history before recovering storage rather than deleting uncertain attempts.
+## Explain the privacy honestly
 
-If a letter includes a registered return postbox, choose **Reply to this spirit**. It selects that postbox at your writing desk without connecting a wallet or sending. Your existing draft, gift and collection funds are kept; only an empty subject gets a reply suggestion. Check the recipient and gift before publishing. To offer a return address yourself, connect the wallet owning your registered postbox and tick **Include my postbox for replies**.
+Open **What can others see?** Subjects, bodies and sealed routing are encrypted. Signers, timing, contract/office IDs, opaque IDs, padding buckets, fees, commitments, postbox registrations and changes remain observable. Payment steps can be correlated by timing. Public gifts expose amount/routing; hosts/indexers see connections. There is no anonymity claim.
 
-Sending review shows **Replies** with your complete included postbox ID, or **No reply postbox**. An included return ID is public even when the contents are sealed. Changing the optional reply checkbox closes the old review; review again and save the new private link before publishing.
-
-Disconnecting or changing offices removes the included return address and old preparation, while keeping your written draft, gift and fee settings. Reconnect and choose a return postbox again if needed; IDs belong to their selected post office.
-
-## Invite a friend to write
-
-Once your postbox is registered, open **My inbox** and copy **My postbox invitation**. Send that public address to your friend. It works for an unlisted postbox too. They can open it without connecting a wallet, check its full ID with you, and choose **Use this postbox for my letter**. Their current subject, message and gift stay in the draft; nothing is published until they review and approve through Sapient. This invitation gives no access to your inbox. A different office or an unavailable/unknown postbox cannot be selected until verified.
-
-## Make a postbox
-
-1. Open **My inbox** and connect Sapient. Existing owned postboxes appear automatically. Otherwise choose **Create my postbox**.
-2. Read the separate private-view explanation. Acknowledge its account-wide scope, then approve view access in Sapient. This exposes private output summaries, including amounts and memos for other resources, but not your seed or financial signing key.
-3. Give the postbox a name and choose whether it appears in the directory. Review the backup and postbox fee limits.
-4. Choose **Save recovery backup** and approve the backup transaction. The app checks known receipts automatically for up to two minutes; **Check backup status** also remains available. Confirmation is required before **Open my postbox** becomes available. A saved approval without a transaction ID uses **Resume Sapient approval**, which resumes only that same request. Approve that second transaction, then check it in **Activity**.
-5. Return to **My inbox**, refresh and copy your postbox ID for friends. Select private mail to open it. Restore the same Sapient wallet to recover mail on another device; recovery keys are encrypted on Ootle. Key rotation affects new mail while earlier keys remain recoverable.
-
-## Collect a gift
-
-Open the letter and choose the receiving account. Connecting Sapient selects it automatically; public/private-link guests can instead provide a compatible Ootle receiving address and existing built-in account component, or select fresh-account creation with a new address. Recipient validation runs before signing/submission.
-
-Choose **Review gift collection**. Check the complete receiving address/account, testnet, exact payout and sender’s fee reserve. **Change destination** returns to editing without a wallet request or submission; closing the letter discards this review. Only **Confirm & collect gift** starts collection. A postbox claim asks Sapient for an ownership proof scoped to this gift, destination and at most 10 network epochs. Its fee comes from the sender’s reserve and needs no recipient coins. Rejection submits nothing. Opening alone never claims. Use **Activity** to confirm delivery, then refresh Sapient.
-
-## Developer checks
-
-Client and desktop/mobile browser tests use isolated fixtures. The published GUI also passed real stock Sapient connection and private-inbox reading with no new financial operation; [GUI evidence](gui-evidence.json) records the exact build and limits. Real funded stock-wallet and engine evidence is linked from README. Do not treat fixture tests as new public financial verification. Advanced settings are under **Settings**; editing identities clears the reviewed evidence. No financial worker starts with the site.
-
-Never put private links in screenshots, logs or issue reports. Use isolated test funds for demonstrations.
+Activity preserves uncertain requests and checks known receipts without signing or resubmitting. Use the original approval instead of creating a replacement. The site's saved settings and read permission are separate from spending; every transaction is approved in Sapient. Never include private links or credentials in screenshots/issues.
