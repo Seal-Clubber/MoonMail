@@ -1,8 +1,10 @@
-# Sealed mail protocol (unpublished V4)
+# Sealed mail protocol (Esmeralda V4)
 
-This protocol is disabled in the published deployment. The existing V3 office,
-keys, ciphertext formats and financial journals retain their original identities.
-Do not select V4 until stock Sapient and independent recovery have been verified.
+The separate V4 office is deployed and verified on Esmeralda with stock Sapient
+0.6.6 and independent wallet recovery. The website offers an explicit **Try sealed
+mail** choice after the user publishes this checkpoint. Existing postboxes stay
+in the original V3 office; keys, ciphertext and financial journals keep their
+identities. There is no automatic migration. [Live verification](sealed-mail-evidence.json).
 
 ## Envelope and recovery
 
@@ -62,8 +64,9 @@ closed, never be guessed through the old codec.
 
 The separate `moonmail-sealed-1` profile requires recorded engine, recovery,
 stock-Sapient and Sent/reply evidence. Private postage also requires its own
-deployment evidence and the account's current capability. No published profile
-currently enables this protocol. Public consent, payment approval and private
+deployment evidence and the account's current capability. The separate
+`deployment-v4.json` profile enables it; V3 remains the first-visit default.
+Public consent, payment approval and private
 view permission remain separate.
 
 `publish_sealed` stores ciphertext without a gift withdrawal. Native private

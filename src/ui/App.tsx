@@ -83,6 +83,14 @@ import { parsePostboxLink, type PostboxRoute } from "../core/postbox-links";
 import { MailReadNotice } from "./MailReadNotice";
 import { networkPreset, checkPublicIndexer } from "../core/networks";
 import { loadOfficeProfile } from "../core/office-profile";
+import {
+  officeFile,
+  rememberedOffice,
+  rememberOffice,
+  reviewedOffice,
+  knownOffice,
+  type OfficeChoice,
+} from "../core/offices";
 import { useActionFocus } from "./useActionFocus";
 import { SealedMailboxSession } from "../core/sealed-mailbox";
 import {
@@ -385,7 +393,9 @@ export function App() {
   useEffect(() => {
     let cancelled = false;
     const revision = deploymentRevision.current;
-    loadOfficeProfile(`${import.meta.env.BASE_URL}deployment.json`)
+    loadOfficeProfile(
+      `${import.meta.env.BASE_URL}${officeFile(rememberedOffice(browserStorage))}`,
+    )
       .then((data) => {
         if (!cancelled && revision === deploymentRevision.current) {
           initialOfficePending.current = false;
@@ -911,7 +921,7 @@ export function App() {
     setOfficeLoadError(false);
     try {
       const profile = await loadOfficeProfile(
-        `${import.meta.env.BASE_URL}deployment.json`,
+        `${import.meta.env.BASE_URL}${officeFile(rememberedOffice(browserStorage))}`,
       );
       if (revision !== deploymentRevision.current) return;
       if (retryInitial && initialOfficePending.current) {
@@ -923,6 +933,31 @@ export function App() {
     } catch {
       if (revision === deploymentRevision.current) setOfficeLoadError(true);
     }
+  }
+  function selectOffice(choice: OfficeChoice) {
+    if (busy || pendingMailboxChanges.length) return;
+    const incoming = { route, postboxInvitation, publicLetterRoute };
+    const profile = reviewedOffice(choice);
+    changeDeployment(profile, true);
+    rememberOffice(browserStorage, choice);
+    if (incoming.route && sameContext(incoming.route.context, profile))
+      setRoute(incoming.route);
+    if (
+      incoming.postboxInvitation &&
+      sameContext(incoming.postboxInvitation.context, profile)
+    )
+      setPostboxInvitation(incoming.postboxInvitation);
+    else setPostboxInvitation(undefined);
+    if (
+      incoming.publicLetterRoute &&
+      sameContext(incoming.publicLetterRoute.context, profile)
+    )
+      setPublicLetterRoute(incoming.publicLetterRoute);
+    setStatus(
+      choice === "sealed"
+        ? "Sealed mail selected. Create a postbox here to receive sealed letters; your existing postboxes stay in their own office."
+        : "Existing postboxes selected. Your earlier mail stays available here.",
+    );
   }
   function navigate(v: string) {
     if (active?.mode === "postbox" && inlinePostboxReader) {
@@ -1772,6 +1807,69 @@ export function App() {
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
+        {["postboxes", "compose", "network"].includes(view) && (
+          <section className="office-choice" aria-label="Mailbox office">
+            <div>
+              <strong>
+                {d.contractProtocol === "unified-2"
+                  ? "Sealed mail · Esmeralda"
+                  : "Existing postboxes · Esmeralda"}
+              </strong>
+              <p>
+                {d.contractProtocol === "unified-2"
+                  ? "Recipient and reply addressing stay encrypted. New postboxes live here; earlier mail stays in its existing office."
+                  : "Your earlier postboxes and mail are here. Try sealed mail for encrypted recipient and reply addressing."}
+              </p>
+              {!!pendingMailboxChanges.length && (
+                <p role="status">
+                  Save your mailbox changes before switching offices.
+                </p>
+              )}
+            </div>
+            <button
+              disabled={busy || !!pendingMailboxChanges.length}
+              onClick={() =>
+                selectOffice(
+                  d.contractProtocol === "unified-2" ? "existing" : "sealed",
+                )
+              }
+            >
+              {d.contractProtocol === "unified-2"
+                ? "Open existing postboxes"
+                : "Try sealed mail"}
+            </button>
+          </section>
+        )}
+        {(() => {
+          const context =
+            route?.context ??
+            postboxInvitation?.context ??
+            publicLetterRoute?.context;
+          const choice =
+            context && !sameContext(context, d)
+              ? knownOffice(context)
+              : undefined;
+          return (
+            choice && (
+              <section
+                className="office-choice"
+                aria-label="Incoming mail office"
+              >
+                <p>
+                  This link belongs to MoonMail’s{" "}
+                  {choice === "sealed" ? "sealed" : "existing"} office. Open
+                  that office to continue. No transaction is sent.
+                </p>
+                <button
+                  disabled={busy || !!pendingMailboxChanges.length}
+                  onClick={() => selectOffice(choice)}
+                >
+                  Open this link’s office
+                </button>
+              </section>
+            )
+          );
+        })()}
         {view !== "welcome" && view !== "privacy" && (
           <div className="privacy-shortcut">
             <button className="text-button" onClick={() => navigate("privacy")}>

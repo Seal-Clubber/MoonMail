@@ -1,0 +1,33 @@
+{
+  "network": 38,
+  "registry": "component_47b0dddced08140d37448b79bbf1f545907344b65bfa28b5f10ffe27f8132ebe",
+  "template": "e0c2b09b5d172542e7196f54625fbf78a5150aa77cead67d0b8737bd436d2f0c",
+  "envelopeTemplate": "e0c2b09b5d172542e7196f54625fbf78a5150aa77cead67d0b8737bd436d2f0c",
+  "contractProtocol": "unified-2",
+  "resource": "resource_0101010101010101010101010101010101010101010101010101010101010101",
+  "postboxClaimProtocol": "sapient-proof-1",
+  "indexerUrl": "https://ootle-indexer-a.tari.com/",
+  "capsule": {
+    "template": "e0c2b09b5d172542e7196f54625fbf78a5150aa77cead67d0b8737bd436d2f0c",
+    "component": "component_47b0dddced08140d37448b79bbf1f545907344b65bfa28b5f10ffe27f8132ebe",
+    "resource": "resource_47bfdda5de155f1dc614e15fe8b1b1f89d66ba136ebf1041ae0e6174a40c67f8"
+  },
+  "sealedDelivery": {
+    "engine": true,
+    "recovery": true,
+    "stockSapient": true,
+    "sentAndReplies": true
+  },
+  "evidence": {
+    "engineClaims": true,
+    "guestPayout": true,
+    "guestAccountCreation": true,
+    "daemonScopes": false,
+    "httpsWallet": false,
+    "sapientWallet": true,
+    "mailboxRecovery": true,
+    "postboxClaims": true,
+    "mailboxState": true,
+    "nativePrivatePostage": true
+  }
+}

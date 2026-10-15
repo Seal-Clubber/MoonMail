@@ -4378,3 +4378,30 @@ footer {
     animation: none;
   }
 }
+.office-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  margin: 0 0 1.25rem;
+  border: 1px solid #486284;
+  border-radius: 12px;
+  background: #14283e;
+  color: #e0eaf6;
+}
+.office-choice p {
+  margin: 0.3rem 0 0;
+  max-width: 76ch;
+  color: #c6d6e8;
+  font-size: 0.9rem;
+}
+.office-choice button {
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .office-choice {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

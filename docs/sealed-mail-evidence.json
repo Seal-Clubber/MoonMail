@@ -1,0 +1,129 @@
+{
+  "network": 38,
+  "stockSapient": "0.6.6",
+  "sourceCommits": [
+    "3bce0ff3eeba8562261d7697249f90a72be0f9d6",
+    "0fb3b12680c4e3295c6f9c37291a2f0af123f6be"
+  ],
+  "localBuildOnPagesHttpsOrigin": true,
+  "ledgerResponsesOverridden": false,
+  "template": "e0c2b09b5d172542e7196f54625fbf78a5150aa77cead67d0b8737bd436d2f0c",
+  "registry": "component_47b0dddced08140d37448b79bbf1f545907344b65bfa28b5f10ffe27f8132ebe",
+  "recoveryResource": "resource_47bfdda5de155f1dc614e15fe8b1b1f89d66ba136ebf1041ae0e6174a40c67f8",
+  "operatorTransactions": 4,
+  "stockFinancialRequests": 16,
+  "guestClaims": 1,
+  "confirmedTransactions": 21,
+  "feesMicroTari": "14604952",
+  "transactions": [
+    {
+      "phase": "shield-sender",
+      "transactionId": "f6ea4afc22946d250e0a9dc7c579b63ea65eace5110f6bf3df1c91a0793b4eed",
+      "feeMicroTari": "9703"
+    },
+    {
+      "phase": "shield-recipient",
+      "transactionId": "f4a56c3d9190505b9d7d6c5844568f00984a7950e929deff7bdf89a6f96c1712",
+      "feeMicroTari": "9703"
+    },
+    {
+      "phase": "capsule-sender",
+      "transactionId": "89d15153bd1b4859cd52cd4ca00eb81686359a8684ec9948889bcd6e5196e49c",
+      "feeMicroTari": "12897"
+    },
+    {
+      "phase": "register-sender",
+      "transactionId": "6ef072fcbd9270995eaddf8031c9d0d742b4cdf06c580b1c0a4cce3efba10252",
+      "feeMicroTari": "3775"
+    },
+    {
+      "phase": "capsule-recipient",
+      "transactionId": "29c382f7598c0e6ca8350e7e86ea84a76112932a3bb94bf28f47b24690fc5fe5",
+      "feeMicroTari": "12911"
+    },
+    {
+      "phase": "register-recipient",
+      "transactionId": "04e2f867adb76cd31f310431ef54bae0f4626fb96fa4133dcec2c06eade14d8e",
+      "feeMicroTari": "4251"
+    },
+    {
+      "phase": "initial-letter",
+      "transactionId": "b96c6c7c980ea93eb69fdf758d37e2cfa4f1f26f34a69ba701738cb977753433",
+      "feeMicroTari": "30000"
+    },
+    {
+      "phase": "reply-letter",
+      "transactionId": "04836e6bfa786fa5f4715da2f8a410585f8efb570cb09a14f12d3374fdf0b361",
+      "feeMicroTari": "30000"
+    },
+    {
+      "phase": "mailbox-settings",
+      "transactionId": "508a32f0a31f745ca57ad38bfc411c2dbd35dcec0608fd99a721982b2bbbdcd8",
+      "feeMicroTari": "13104"
+    },
+    {
+      "phase": "rotate-capsule",
+      "transactionId": "8892457e8fe94e696fd990e857ade95c61cb8cca497c0ee6a14b2b103cb6234f",
+      "feeMicroTari": "12937"
+    },
+    {
+      "phase": "rotate-key",
+      "transactionId": "0271db0ca81db0df192c8276edddc1423f57336c056f1c2d91ce530deb63870d",
+      "feeMicroTari": "5019"
+    },
+    {
+      "phase": "old-key-reply",
+      "transactionId": "34b0d45e2ce85f22f76197d6952e4e939d955012ed81b5acfb92b3765726e75f",
+      "feeMicroTari": "30000"
+    },
+    {
+      "phase": "new-key-letter",
+      "transactionId": "3413ce562001f54fca14670f7bfd638eadefe9d95363c37d40a79b13e461bd8b",
+      "feeMicroTari": "30000"
+    },
+    {
+      "phase": "rotated-reply",
+      "transactionId": "8da63c0e4668ef4f52606bbc79f07d501f357119650baae089e153c8a0db0a2a",
+      "feeMicroTari": "30000"
+    },
+    {
+      "phase": "public-gift",
+      "transactionId": "c91564f2ea9b65e37d01927cbe706265973d3e56ed66d0e847150b0ae7dbe81e",
+      "feeMicroTari": "30000"
+    },
+    {
+      "phase": "link-letter",
+      "transactionId": "67c775fec8875f04fd2bbd7a1e042296f7cf943ac67e5df9d3e6e1b34ebc9f5c",
+      "feeMicroTari": "30000"
+    },
+    {
+      "phase": "public-guest-claim",
+      "transactionId": "575f1ff0507ccfb20db69bfc9519d9edec006a69abd3216bc8ad1ab81a1cf274",
+      "feeMicroTari": "4081"
+    }
+  ],
+  "restoredWallet": {
+    "inbox": 3,
+    "sent": 2,
+    "keyVersion": 2,
+    "keyHistory": 1
+  },
+  "senderWallet": {
+    "inbox": 2,
+    "sent": 3,
+    "keyVersion": 1,
+    "keyHistory": 0
+  },
+  "realGui": {
+    "realLetterOpened": true,
+    "widths": [1440, 390],
+    "reloadRecovered": true
+  },
+  "operatorStopped": true,
+  "githubPushed": false,
+  "limits": [
+    "Private payment attachments are not implemented.",
+    "Public gifts retain public amounts and payout routing.",
+    "Transaction signer, timing, office, size buckets and postbox registrations remain public."
+  ]
+}
