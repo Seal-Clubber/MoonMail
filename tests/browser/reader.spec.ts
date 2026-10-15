@@ -191,7 +191,7 @@ test("Activity confirms an uncertain publication from ledger state without signi
   ).toBe("confirmed");
 });
 
-test("directory searches names, excludes unlisted postboxes and starts an addressed draft", async ({
+test("directory searches all public registrations despite old unlisted flags and starts an addressed draft", async ({
   page,
 }) => {
   await configure(page);
@@ -250,9 +250,13 @@ test("directory searches names, excludes unlisted postboxes and starts an addres
   await expect(
     page.getByRole("heading", { name: "Moonlit Friend", exact: true }),
   ).toBeVisible();
-  await expect(page.getByText("Unlisted Friend", { exact: true })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole("heading", { name: "Unlisted Friend", exact: true }),
+  ).toBeVisible();
+  await page.getByLabel("Find a postbox").fill("secret");
+  await expect(
+    page.getByRole("button", { name: "Write to Unlisted Friend" }),
+  ).toBeVisible();
   await page.getByLabel("Find a postbox").fill("missing");
   await expect(
     page.getByRole("heading", { name: "No spirits by that name." }),

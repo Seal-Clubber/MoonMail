@@ -10,6 +10,8 @@ Choose **Open mailbox**, connect Sapient and create a postbox. Creation has two 
 
 Compose defaults to encrypted private mail. The workspace has folders, a message list, conversation reader, selection actions, read/unread, archive and encrypted settings. Opening a successfully decrypted letter stages it as read. Changed settings/read marks have a prominent save action because saving them is an Ootle transaction. There is no drafts folder or saved drafts. Restore the same Sapient wallet on another device to recover mailbox keys, Sent, historical keys and saved preferences.
 
+All registered postboxes are searchable in the directory. There is no hide/unlisted control: names, IDs and controlling public keys are public on Ootle. [Postbox visibility](docs/public-postboxes.md) explains the boundary.
+
 The single default is the verified V4 sealed Esmeralda office in `public/deployment.json`. Old testnet postboxes and messages are not carried over or selected. Earlier app versions remain in backup branches; historical evidence retains the exact build and contract it tested. This is testnet software with finite storage/discovery limits, not a production email replacement.
 
 ## Private payments and public gifts

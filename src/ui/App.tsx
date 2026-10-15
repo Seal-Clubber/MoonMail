@@ -2591,25 +2591,12 @@ export function App() {
                           <optgroup key={group.label} label={group.label}>
                             {group.boxes.map((p) => (
                               <option key={p.id} value={p.id}>
-                                {p.nickname}
-                                {!p.discoverable ? " · Unlisted" : ""} ·{" "}
-                                {short(p.id)}
+                                {p.nickname} · {short(p.id)}
                               </option>
                             ))}
                           </optgroup>
                         ),
                     )}
-                    {recipient &&
-                      !contactGroups.some((g) =>
-                        g.boxes.some((p) => p.id === recipient),
-                      ) &&
-                      boxes
-                        .filter((p) => p.id === recipient)
-                        .map((p) => (
-                          <option key={p.id} value={p.id}>
-                            {p.nickname} · Unlisted · {short(p.id)}
-                          </option>
-                        ))}
                   </select>
                   <input
                     aria-label="Recipient postbox ID"
@@ -2619,7 +2606,7 @@ export function App() {
                       setThread(undefined);
                       setReview(false);
                     }}
-                    placeholder="Or paste a registered ID, including an unlisted postbox"
+                    placeholder="Or paste a registered postbox ID"
                     disabled={busy}
                   />
                 </div>
@@ -3193,7 +3180,7 @@ export function App() {
               Find a <em>familiar spirit.</em>
             </h1>
             <p>
-              Find a friend’s listed postbox. Check the ID with your friend:
+              Find a friend’s registered postbox. Check the ID with your friend:
               different people can use the same name.
             </p>
             <label>
@@ -3207,12 +3194,10 @@ export function App() {
             </label>
             <div className="directory">
               {boxes
-                .filter(
-                  (p) =>
-                    p.discoverable &&
-                    `${p.nickname} ${p.id}`
-                      .toLowerCase()
-                      .includes(directoryQuery.toLowerCase()),
+                .filter((p) =>
+                  `${p.nickname} ${p.id}`
+                    .toLowerCase()
+                    .includes(directoryQuery.toLowerCase()),
                 )
                 .map((p) => (
                   <article className="directory-card" key={p.id}>
@@ -3230,12 +3215,10 @@ export function App() {
                   </article>
                 ))}
             </div>
-            {!boxes.some(
-              (p) =>
-                p.discoverable &&
-                `${p.nickname} ${p.id}`
-                  .toLowerCase()
-                  .includes(directoryQuery.toLowerCase()),
+            {!boxes.some((p) =>
+              `${p.nickname} ${p.id}`
+                .toLowerCase()
+                .includes(directoryQuery.toLowerCase()),
             ) && (
               <div className="quiet-state">
                 <h2>
@@ -3246,7 +3229,7 @@ export function App() {
                 <p>
                   {directoryQuery
                     ? "Try another name or ask your friend for their postbox ID."
-                    : "Friends can share an unlisted postbox ID directly. You can also create your own."}
+                    : "Ask a friend for their postbox invitation, or create your own."}
                 </p>
               </div>
             )}

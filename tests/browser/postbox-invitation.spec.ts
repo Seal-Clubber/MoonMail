@@ -93,7 +93,7 @@ test("an unlisted invitation verifies its full ID and asks before starting a dra
   ).toHaveValue(id);
   await expect(
     page.getByRole("option", {
-      name: "Moonlit Friend · Unlisted · unlisted-friend",
+      name: "Moonlit Friend · unlisted-friend",
     }),
   ).toHaveCount(1);
   await expect(

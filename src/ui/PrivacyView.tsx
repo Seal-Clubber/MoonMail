@@ -69,8 +69,8 @@ export function PrivacyView({
               </li>
             )}
             <li>
-              Postbox registration, public keys and changes to encrypted mailbox
-              state
+              Postbox names, IDs, controlling public keys and changes to
+              encrypted mailbox state
             </li>
             {sealed && payments && (
               <li>
@@ -84,7 +84,7 @@ export function PrivacyView({
       <p className="privacy-boundary">
         {sealed
           ? "Recipient and conversation addressing stay encrypted in this sealed office. Public postbox registrations still associate controllers and encryption keys. Private postage does not hide your transaction signer or timing. MoonMail does not provide anonymity."
-          : "MoonMail does not provide anonymity. An unlisted postbox is still on chain. Private postage does not hide the letter’s routing or turn its public gift vault into a private payment."}
+          : "MoonMail does not provide anonymity. Postbox names, IDs and controlling public keys are public. Private postage does not hide the letter’s routing or turn its public gift vault into a private payment."}
       </p>
       <h3>Two separate permissions</h3>
       <p>

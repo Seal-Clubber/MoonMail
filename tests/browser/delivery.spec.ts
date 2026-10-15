@@ -1175,6 +1175,14 @@ test("postbox names respect the chain byte limit before the first backup approva
       name: "1 of 2 · Save recovery backup",
       exact: true,
     });
+  await expect(
+    page.getByRole("checkbox", {
+      name: "Let people find this postbox in the directory",
+    }),
+  ).toHaveCount(0);
+  await expect(page.locator(".postbox-setup")).toContainText(
+    "Your postbox name, ID and controlling public key are public",
+  );
   await name.fill("👻".repeat(21));
   await expect(backup).toBeDisabled();
   await expect(name).toHaveAttribute("aria-invalid", "true");

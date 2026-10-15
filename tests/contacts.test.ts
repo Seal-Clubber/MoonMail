@@ -32,6 +32,10 @@ test("recipients order favourites, verified correspondents and public directory 
     ["friend"],
     ["home", "other"],
   ]);
+  expect(recipientGroups([home, friend], [], home)[2].boxes).toEqual([
+    friend,
+    home,
+  ]);
   expect(
     recipientGroups([home, friend], [received], home, ["friend"])[1].boxes,
   ).toEqual([]);

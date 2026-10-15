@@ -35,7 +35,7 @@ export function recipientGroups(
     .filter((p) => previous.has(p.id) && !known.has(p.id))
     .sort(order);
   const directory = boxes
-    .filter((p) => p.discoverable && !known.has(p.id) && !previous.has(p.id))
+    .filter((p) => !known.has(p.id) && !previous.has(p.id))
     .sort(order);
   return [
     { label: "Favourite postboxes", boxes: fav },

@@ -87,7 +87,6 @@ export function Postboxes({
   const [selected, setSelected] = useState(""),
     [controller, setController] = useState(0),
     [nickname, setNickname] = useState(""),
-    [discoverable, setDiscoverable] = useState(true),
     [fee, setFee] = useState("100000"),
     [recoveryFee, setRecoveryFee] = useState("1000000"),
     [editing, setEditing] = useState(false),
@@ -232,7 +231,6 @@ export function Postboxes({
     setSelected(id);
     const p = owned.find((p) => p.id === id);
     setNickname(p?.nickname || "");
-    setDiscoverable(p?.discoverable ?? true);
     setEditing(false);
     setRotating(false);
     setPrepared(undefined);
@@ -358,7 +356,9 @@ export function Postboxes({
       {
         id,
         nickname,
-        discoverable,
+        // The website lists every public registration. Preserve old contract
+        // metadata on edits; new postboxes use the normal listed value.
+        discoverable: box?.discoverable ?? true,
         encryptionKey,
         controller: account.account.owner_public_key,
       },
@@ -621,15 +621,11 @@ export function Postboxes({
                   )}
                 </>
               )}
-              <label className="checkbox">
-                <input
-                  type="checkbox"
-                  checked={discoverable}
-                  disabled={busy}
-                  onChange={(e) => setDiscoverable(e.target.checked)}
-                />
-                Let people find this postbox in the directory
-              </label>
+              <p className="info">
+                Your postbox name, ID and controlling public key are public on
+                Ootle and searchable in the directory. Your private letters stay
+                encrypted.
+              </p>
               <details className="advanced">
                 <summary>Postbox fee limit · {tari(fee)} TARI</summary>
                 <AmountInput
@@ -661,12 +657,8 @@ export function Postboxes({
                       <dd>{nickname || "Choose a name above"}</dd>
                     </div>
                     <div>
-                      <dt>Directory</dt>
-                      <dd>
-                        {discoverable
-                          ? "People can find me"
-                          : "Unlisted · share my ID"}
-                      </dd>
+                      <dt>Public postbox details</dt>
+                      <dd>Name, ID and controlling public key</dd>
                     </div>
                     <div>
                       <dt>Backup fee limit</dt>
@@ -837,20 +829,19 @@ export function Postboxes({
                 )}
                 <p className="fine-print">
                   Share this public address with a friend. It lets them write to
-                  you, including when your postbox is unlisted; it gives no
-                  access to your wallet or inbox.
+                  you; it gives no access to your wallet or inbox.
                 </p>
                 <p>
-                  {box.discoverable ? "Visible in the directory" : "Unlisted"} ·
-                  Controlling account {account?.account.name}
+                  Public directory entry · Controlling account{" "}
+                  {account?.account.name}
                 </p>
                 <details className="advanced">
                   <summary>About key rotation</summary>
                   <p className="fine-print">
                     Rotation affects new mail. Historical key versions remain
                     recoverable through their original recovery route. Rotation
-                    changes only the encryption key; save nickname and listing
-                    changes separately.
+                    changes only the encryption key; save nickname changes
+                    separately.
                     {sealed &&
                       " This office keeps up to sixteen key versions. When that history is full, create another postbox; older keys are never discarded."}
                   </p>
