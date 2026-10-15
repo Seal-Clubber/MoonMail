@@ -278,7 +278,10 @@ test("receipt failure and browser storage loss recover from encrypted intent on 
     );
     f.data.clear();
     f.setLostReceipt(false);
-    await payPrivateRequest(f.port, f.source, "99999");
+    await expect(payPrivateRequest(f.port, f.source, "99999")).rejects.toThrow(
+      "original approval uses",
+    );
+    await payPrivateRequest(f.port, f.source, "30000");
     expect(f.port.submit).toHaveBeenCalledTimes(1);
     expect(f.port.create).toHaveBeenCalledTimes(1);
   } finally {

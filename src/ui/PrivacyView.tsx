@@ -4,10 +4,12 @@ export function PrivacyView({
   mode = "postbox",
   compact = false,
   sealed = false,
+  payments = false,
 }: {
   mode?: MailMode;
   compact?: boolean;
   sealed?: boolean;
+  payments?: boolean;
 }) {
   const publicMail = mode === "public";
   const content = (
@@ -38,6 +40,12 @@ export function PrivacyView({
                   : "Recipient recovery keys stay with Sapient; a Sent copy can also be opened by its sender"}
               </li>
             )}
+            {sealed && payments && (
+              <li>
+                Native private payment amounts, receiving addresses and recovery
+                memos stay encrypted
+              </li>
+            )}
           </ul>
         </section>
         <section>
@@ -64,6 +72,12 @@ export function PrivacyView({
               Postbox registration, public keys and changes to encrypted mailbox
               state
             </li>
+            {sealed && payments && (
+              <li>
+                Payment transaction signers, fees and output commitments; the
+                multi-step timing can link mail with a payment
+              </li>
+            )}
           </ul>
         </section>
       </div>
@@ -84,7 +98,9 @@ export function PrivacyView({
         The website host and public indexers can observe connection information,
         such as your IP address and requests.{" "}
         {sealed
-          ? "Sealed discovery reads shared pages and tries your recovered keys locally. Native payment attachments are not enabled here."
+          ? payments
+            ? "Sealed discovery reads shared pages and tries your recovered keys locally. Native payments use separate approvals and an encrypted recovery intent/receipt, not an atomic mail-and-payment transaction. If the original wallet installation and a missing result are lost before receipt delivery, automatic payment discovery is not guaranteed."
+            : "Sealed discovery reads shared pages and tries your recovered keys locally. Native payment attachments are not enabled here."
           : "Sealed addressing and conversation-specific identities are not enabled in this deployed contract."}
       </p>
     </>

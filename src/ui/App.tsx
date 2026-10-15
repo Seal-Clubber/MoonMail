@@ -2158,7 +2158,10 @@ export function App() {
           />
         )}
         {view === "privacy" && (
-          <PrivacyView sealed={d.contractProtocol === "unified-2"} />
+          <PrivacyView
+            sealed={d.contractProtocol === "unified-2"}
+            payments={privatePaymentsEnabled}
+          />
         )}
         {view === "hall" && (
           <>
@@ -2581,7 +2584,12 @@ export function App() {
                 </button>
               ))}
             </div>
-            <PrivacyView mode={mode} compact sealed={sealedCompose} />
+            <PrivacyView
+              mode={mode}
+              compact
+              sealed={sealedCompose}
+              payments={privatePaymentsEnabled}
+            />
             {sealedCompose &&
               wallet instanceof SapientSession &&
               sendingBox &&
@@ -2820,7 +2828,9 @@ export function App() {
               </div>
               <p className="fine-print">
                 {sealedCompose
-                  ? "Private payment attachments are not enabled in this sealed office yet. This letter does not move a gift or fall back to public funding."
+                  ? privatePaymentsEnabled
+                    ? "Sealed mail can request a native private payment below. Sending a request pays postage only; the recipient reviews payment separately. This gift field stays disabled and never falls back to public funding."
+                    : "Private payment attachments are not enabled in this sealed office yet. This letter does not move a gift or fall back to public funding."
                   : "The recipient gets the full gift. You fund collection fees separately. Gifts have no expiry or refunds; unused collection funds stay locked. Use 0 for a letter without a gift."}
               </p>
               {!sealedCompose && (

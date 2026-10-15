@@ -1,13 +1,20 @@
 // Public synthetic test key (scalar 1). Never use it for a wallet or deployment.
-import { publicKeyFromSecretKey } from "@tari-project/ootle-wasm";
+import {
+  publicKeyFromSecretKey,
+  generateOotleAddress,
+} from "@tari-project/ootle-wasm";
 import { isDeepStrictEqual } from "node:util";
-import { hex } from "../src/core/crypto";
+import { hex, unhex } from "../src/core/crypto";
 import {
   sealAddressedRoute,
   openAddressedRoute,
   type SealedAddressEnvelope,
 } from "../src/core/sealed-addressing";
-import { sealPrivateMail, openPrivateMail } from "../src/core/sealed-mail";
+import {
+  sealPrivateMail,
+  openPrivateMail,
+  type SealedMessage,
+} from "../src/core/sealed-mail";
 import {
   decodeSealedOffice,
   decodeSealedLetter,
@@ -37,8 +44,8 @@ try {
     const senderSecret = new Uint8Array(32);
     senderSecret[0] = 2;
     try {
-      const message = {
-        version: "mm-message-1" as const,
+      const message: SealedMessage = {
+        version: value.payment ? "mm-message-2" : "mm-message-1",
         recipient: {
           postbox: "private-engine-inbox",
           keyVersion: 2,
@@ -50,7 +57,26 @@ try {
           publicKey: hex(publicKeyFromSecretKey(senderSecret)),
           controller: value.context.senderPublicKey,
         },
-        letter: { subject: "Native sealed delivery", body: "P".repeat(15000) },
+        letter: {
+          subject: "Native sealed delivery",
+          body: "P".repeat(15000),
+          ...(value.payment
+            ? {
+                privatePayment: {
+                  version: "mm-payment-1" as const,
+                  kind: "request" as const,
+                  nonce: "bc".repeat(32),
+                  resource: `resource_${"01".repeat(32)}`,
+                  amount: "100000",
+                  destination: generateOotleAddress(
+                    unhex(value.context.senderPublicKey),
+                    publicKeyFromSecretKey(secret),
+                    value.context.network,
+                  ),
+                },
+              }
+            : {}),
+        },
       };
       if (command === "tx2") {
         if (

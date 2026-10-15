@@ -276,6 +276,10 @@ export async function payPrivateRequest(
   port.status(
     "Sending the original private payment. A reload resumes this same Sapient approval.",
   );
+  if (intent.feeCap !== feeCap)
+    throw new Error(
+      `The original approval uses ${intent.feeCap} microTARI per attempt. Restore that fee cap before resuming; MoonMail will not substitute a different approval.`,
+    );
   const native = await approval(port, intent.walletRequest, true),
     out = result(native);
   await port.assertCurrent();

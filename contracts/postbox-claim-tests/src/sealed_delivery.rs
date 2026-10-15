@@ -146,10 +146,20 @@ fn encrypted_sent_slots_have_no_public_roles_or_mailbox_keys_and_are_strictly_bo
 }
 #[test]
 fn largest_padded_browser_mail_restores_inbox_and_sent_through_actual_v4_state_codecs() {
+    browser_mail_roundtrip(false);
+}
+#[test]
+fn encrypted_private_payment_request_restores_both_parties_through_native_v4_storage() {
+    browser_mail_roundtrip(true);
+}
+fn browser_mail_roundtrip(payment: bool) {
     let (mut t, office) = fixture();
     let id = "ef".repeat(32);
     let context = serde_json::json!({"network":16,"registry":office.to_string(),"template":t.get_template_address("MoonMail").to_string(),"senderPublicKey":t.to_public_key_bytes().to_string()});
-    let payload = crypto_fixture("create2", serde_json::json!({"context":context,"id":id}));
+    let payload = crypto_fixture(
+        "create2",
+        serde_json::json!({"context":context,"id":id,"payment":payment}),
+    );
     for marker in [
         "private-engine-inbox",
         "private-engine-sent",
@@ -167,7 +177,7 @@ fn largest_padded_browser_mail_restores_inbox_and_sent_through_actual_v4_state_c
     let child_state = t.read_only_state_store().get_component(child).unwrap();
     let result = crypto_fixture(
         "codec2",
-        serde_json::json!({"context":context,"id":id,"payload":serde_json::from_str::<serde_json::Value>(&state.payload).unwrap(),"root":root_state,"child":child_state,"component":child.to_string(),"recoveryResource":resource.to_string()}),
+        serde_json::json!({"context":context,"id":id,"payment":payment,"payload":serde_json::from_str::<serde_json::Value>(&state.payload).unwrap(),"root":root_state,"child":child_state,"component":child.to_string(),"recoveryResource":resource.to_string()}),
     );
     let report: serde_json::Value = serde_json::from_str(&result).unwrap();
     assert_eq!(report["recovered"], true);

@@ -139,15 +139,18 @@ export function privatePaymentClient(
         source.message.sender.postbox,
         { id, replyTo: source.id, privateReply: true },
       );
+      const originalIntent =
+        payment.kind === "receipt"
+          ? (await read(payment.intentLetter))?.message.letter.privatePayment
+          : undefined;
+      if (payment.kind === "receipt" && originalIntent?.kind !== "intent")
+        throw new Error("The original payment fee cap cannot be recovered");
       return office.publish(
         wallet,
         prepared,
         payment.kind === "intent"
           ? payment.feeCap
-          : (
-              (await read(payment.intentLetter))?.message.letter
-                .privatePayment as { feeCap: string }
-            ).feeCap,
+          : (originalIntent as { feeCap: string }).feeCap,
         storage,
         "private",
       );
