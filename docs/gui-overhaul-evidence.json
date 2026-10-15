@@ -2,7 +2,7 @@
   "date": "2026-10-16",
   "restoreTag": "moonmail-pre-gui-overhaul",
   "restoreCommit": "a05d1aa6bb4518e0b375e3168d411cbfef2a0cc4",
-  "reviewedFrontendCommit": "32f8a7e6c4353439044025b3a1335070d738b5ed",
+  "reviewedFrontendCommit": "a186a906059d74e2ead2ee0fc3ce86a6bd38d7d3",
   "unitChecks": {
     "tests": 269,
     "files": 32,
@@ -11,10 +11,10 @@
   "typeScript": "passed",
   "pagesBuild": "passed",
   "browserChecks": {
-    "fullSuite": 296,
-    "fullSuiteUiCheckpoint": "32f8a7e6c4353439044025b3a1335070d738b5ed",
+    "fullSuite": 302,
+    "fullSuiteUiCheckpoint": "a186a906059d74e2ead2ee0fc3ce86a6bd38d7d3",
     "passed": true,
-    "scope": "Full desktop/mobile suite passed on the final interface, including bundled fonts, header search, collapsed controls and explicitly fictional concept previews.",
+    "scope": "Complete desktop/mobile suite on the floating composer build. Includes mailbox continuity, close/focus, minimize/expand/restore, no persisted drafts, single private-view permission and synthetic one-request publication above an open reader.",
     "incomingMailFixtureCount": 100,
     "additionalPageViewportChecks": 20,
     "additionalViewportWidths": [
@@ -25,7 +25,8 @@
     ],
     "fixturesAreLiveMail": false,
     "conceptPreviewFixtureCount": 27,
-    "conceptPreviewChecks": 2
+    "conceptPreviewChecks": 2,
+    "floatingComposerChecks": 6
   },
   "stockWalletAcceptance": {
     "wallet": "Unmodified Sapient",
@@ -48,7 +49,12 @@
     "newFinancialWalletRequests": 0,
     "broadcasts": 0,
     "completed": true,
-    "selfHostedInterLoaded": true
+    "selfHostedInterLoaded": true,
+    "floatingComposer": true,
+    "desktopAndPhoneComposer": true,
+    "unsentTextRetainedAfterMinimize": true,
+    "noDraftPersisted": true,
+    "checks": 9
   },
   "contractChanges": false,
   "newTemplateDeployment": false,
