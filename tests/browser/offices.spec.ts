@@ -40,6 +40,18 @@ test("sealed mail is the single default even with a stale office preference", as
     await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
   ).toBeNull();
   expect(await page.evaluate(() => (window as any).tari)).toBeUndefined();
+  await page
+    .getByRole("button", { name: "What can others see?", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "What can others see?", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator(".privacy-page")).toContainText(
+    "Native private payment amounts, receiving addresses and recovery memos stay encrypted",
+  );
+  await expect(page.locator(".privacy-page")).toContainText(
+    "does not provide anonymity",
+  );
 });
 
 test("a current invitation opens directly without an office switch", async ({

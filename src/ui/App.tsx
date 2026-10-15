@@ -1894,9 +1894,7 @@ export function App() {
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
-        {!["welcome", "privacy", "postboxes", "compose", "network"].includes(
-          view,
-        ) && (
+        {!["welcome", "privacy", "compose"].includes(view) && (
           <div className="privacy-shortcut">
             <button className="text-button" onClick={() => navigate("privacy")}>
               What can others see?
