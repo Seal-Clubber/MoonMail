@@ -10,6 +10,7 @@ const mime = {
   ".css": "text/css",
   ".json": "application/json",
   ".wasm": "application/wasm",
+  ".woff2": "font/woff2",
 };
 http
   .createServer(async (req, res) => {

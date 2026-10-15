@@ -22,6 +22,7 @@ import { createPostboxLink } from "../core/postbox-links";
 import { UiIcon } from "./UiIcon";
 
 export function Postboxes({
+  searchTarget,
   feeProblem,
   wallet,
   chain,
@@ -56,6 +57,7 @@ export function Postboxes({
   discovery,
   privateAccessRevision = 0,
 }: {
+  searchTarget: HTMLDivElement | null;
   feeProblem?: FeeProblem;
   wallet?: ConnectedWallet;
   chain?: PostOfficeClient;
@@ -765,6 +767,7 @@ export function Postboxes({
                 </div>
               )}
               <MailboxWorkspace
+                searchTarget={searchTarget}
                 postboxPicker={postboxPicker}
                 postboxActions={postboxActions}
                 onPublic={onPublic}

@@ -16,9 +16,7 @@ export function MailboxSaveBar({
       <div role="status">
         <strong>Unsaved mailbox changes</strong>
         <p>
-          Saving requires a Sapient approval. Keep read status, archive,
-          favourites and layout on another device. Reloading loses unsaved
-          changes.
+          Saving requires a Sapient approval. Reloading loses unsaved changes.
         </p>
       </div>
       <div className="mailbox-save-actions">

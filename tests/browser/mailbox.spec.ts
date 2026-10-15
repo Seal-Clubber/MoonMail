@@ -28,7 +28,50 @@ async function mailboxFixture(
   threaded = false,
   persistentGrant = false,
   incomingCount = 27,
+  visual = false,
 ) {
+  const showcase = [
+    [
+      "Mara",
+      "The midnight delivery",
+      "Hi Seal,\n\nThe moon was still out when I passed the old garden. I left a note beneath the lantern, just where we agreed.\n\nIf you find it before sunset, send a reply. I would love to hear what you think.\n\nUntil tonight,\nMara",
+    ],
+    [
+      "Rowan",
+      "Re: A place under the moon",
+      "That sounds perfect. See you at dusk, near the old gate.",
+    ],
+    [
+      "Night Garden",
+      "The lantern walk",
+      "The garden gates open at sunset. Bring a lantern and a warm coat.",
+    ],
+    [
+      "Elin",
+      "A small favour",
+      "Could you look over the invitation? I have left a few notes for you.",
+    ],
+    [
+      "The Spectral Clerk",
+      "Welcome to MoonMail",
+      "Your first letter has found its way home. May many more follow.",
+    ],
+    [
+      "Orin",
+      "Re: Tomorrow's meet",
+      "Shall we still plan to meet at the bridge? I will bring the map.",
+    ],
+    [
+      "Lys",
+      "Winter market",
+      "The stalls will be set up by noon. I saved you a place by the fire.",
+    ],
+    [
+      "Mara",
+      "A note for the weekend",
+      "There is a little more light in the garden today. Thought you would like to know.",
+    ],
+  ];
   const owner = generateKeypair(),
     view = generateKeypair(),
     key = generateKeypair();
@@ -88,7 +131,11 @@ async function mailboxFixture(
     references[id] = child;
     const payload = await sealMailbox(
       {
-        subject: i === 1 ? "A quiet midnight hello" : `Letter ${i}`,
+        subject: visual
+          ? showcase[(i - 1) % showcase.length][1] + (i > 8 ? ` · ${i}` : "")
+          : i === 1
+            ? "A quiet midnight hello"
+            : `Letter ${i}`,
         ...(threaded && i === 3
           ? {
               thread: {
@@ -98,8 +145,9 @@ async function mailboxFixture(
               },
             }
           : {}),
-        body:
-          i === 1
+        body: visual
+          ? showcase[(i - 1) % showcase.length][2]
+          : i === 1
             ? "A private note for your eyes only."
             : `Encrypted letter ${i} from the post office.`,
       },
@@ -112,13 +160,21 @@ async function mailboxFixture(
       id,
       2,
       JSON.stringify(payload),
-      i <= 6 ? "25000" : "0",
-      i <= 6 ? "25000" : "0",
-      i <= 2,
+      !visual && i <= 6 ? "25000" : "0",
+      !visual && i <= 6 ? "25000" : "0",
+      !visual && i <= 2,
       controller,
       "home",
-      threaded && i <= 3 ? "foreign" : "",
-      threaded && i <= 3 ? "7".repeat(64) : "f".repeat(64),
+      visual
+        ? `friend-${(i - 1) % showcase.length}`
+        : threaded && i <= 3
+          ? "foreign"
+          : "",
+      visual
+        ? (((i - 1) % showcase.length) + 1).toString(16).repeat(64)
+        : threaded && i <= 3
+          ? "7".repeat(64)
+          : "f".repeat(64),
       "",
     ];
   }
@@ -293,13 +349,19 @@ async function mailboxFixture(
   const savedState = unified
     ? await sealPreferences(
         {
-          marks: [
-            [firstId, READ | STAR],
-            ["note-02", ARCHIVE],
-          ],
+          marks: visual
+            ? [
+                ["note-02", READ],
+                ["note-05", READ],
+                ["note-08", READ],
+              ]
+            : [
+                [firstId, READ | STAR],
+                ["note-02", ARCHIVE],
+              ],
           favourites: ["home"],
-          sort: "subject",
-          density: "compact",
+          sort: visual ? "chain" : "subject",
+          density: visual ? "comfortable" : "compact",
         },
         context,
         "1",
@@ -357,7 +419,7 @@ async function mailboxFixture(
           {
             home: [
               "home",
-              "Moonlit home",
+              visual ? "seal-public" : "Moonlit home",
               controller,
               JSON.stringify(descriptor),
               true,
@@ -376,6 +438,20 @@ async function mailboxFixture(
               JSON.stringify(descriptor),
               true,
             ],
+            ...(visual
+              ? Object.fromEntries(
+                  showcase.map(([name], i) => [
+                    `friend-${i}`,
+                    [
+                      `friend-${i}`,
+                      name,
+                      (i + 1).toString(16).repeat(64),
+                      JSON.stringify(descriptor),
+                      true,
+                    ],
+                  ]),
+                )
+              : {}),
           },
           `template_${d.envelopeTemplate}`,
         ];
@@ -477,7 +553,7 @@ async function connect(page: Page) {
   ).toHaveValue("home");
   await page.getByRole("button", { name: "Not now", exact: true }).click();
 }
-async function unlock(page: Page) {
+async function unlock(page: Page, firstSubject = "A quiet midnight hello") {
   await page
     .getByRole("button", { name: "Unlock private inbox", exact: true })
     .click();
@@ -487,7 +563,7 @@ async function unlock(page: Page) {
     .click();
   await expect(
     page.getByRole("button", {
-      name: "Open letter: A quiet midnight hello",
+      name: `Open letter: ${firstSubject}`,
       exact: true,
     }),
   ).toBeVisible();
@@ -766,6 +842,8 @@ test("unified mailbox recovers encrypted marks and layout after a fresh browser 
       path: `${process.env.GHOSTDROP_MAILBOX_SCREENSHOTS}/mailbox-${page.viewportSize()?.width}.png`,
       fullPage: true,
     });
+  await expect(page.locator(".mailbox-view-options summary")).toBeVisible();
+  await page.locator(".mailbox-view-options summary").click();
   await expect(
     page.getByRole("combobox", { name: "Sort letters" }),
   ).toHaveValue("subject");
@@ -1481,13 +1559,11 @@ test("moonlit mailbox keeps tools optional and uses a focused phone reader", asy
   await connect(page);
   await unlock(page);
   const tools = page.locator(".mailbox-tools");
-  if (page.viewportSize()!.width <= 600) {
-    await expect(tools).not.toHaveAttribute("open", "");
-    await expect(
-      page.getByRole("button", { name: "Edit selected postbox" }),
-    ).not.toBeVisible();
-    await tools.locator(":scope > summary").click();
-  }
+  await expect(tools).not.toHaveAttribute("open", "");
+  await expect(
+    page.getByRole("button", { name: "Edit selected postbox" }),
+  ).not.toBeVisible();
+  await tools.locator(":scope > summary").click();
   await expect(
     page.getByRole("button", { name: "Edit selected postbox" }),
   ).toBeVisible();
@@ -1594,5 +1670,83 @@ test("a hundred encrypted incoming letters remain paged and selectable without w
   await expect(
     page.getByRole("button", { name: "Open letter: Letter 100", exact: true }),
   ).toBeVisible();
+  await assertReadOnly(page, writes);
+});
+
+test("approved concept composition uses real controls, a bundled font and explicitly fictional preview letters", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(
+    page,
+    "note-01",
+    true,
+    false,
+    false,
+    false,
+    false,
+    27,
+    true,
+  );
+  if (page.viewportSize()!.width > 900)
+    await page.setViewportSize({ width: 1586, height: 992 });
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page, "The midnight delivery");
+  await expect(
+    page
+      .locator(".header-search-target")
+      .getByRole("searchbox", { name: "Search this folder" }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(async () =>
+      (await document.fonts.load("16px Inter")).some(
+        (font) => font.status === "loaded",
+      ),
+    ),
+  ).toBe(true);
+  await expect(page.locator(".mailbox-tools")).not.toHaveAttribute("open", "");
+  await expect(
+    page.getByRole("combobox", { name: "Sort letters" }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", {
+      name: "Open letter: The midnight delivery",
+      exact: true,
+    })
+    .click();
+  const reader = page.getByRole("region", {
+    name: "The midnight delivery",
+    exact: true,
+  });
+  await expect(reader.locator(".letter-participants strong")).toHaveText(
+    "Mara",
+  );
+  await expect(reader.locator(".letter-participants p")).toHaveText(
+    "To seal-public",
+  );
+  await expect(reader.locator(".claim-panel")).toHaveCount(0);
+  await expect(
+    reader.getByRole("button", { name: /^Reply to this spirit/ }),
+  ).toBeEnabled();
+  await expect(
+    page.getByLabel("Unsaved mailbox changes", { exact: true }),
+  ).toBeVisible();
+  await readable(reader.locator(".letter-body"));
+  await page.evaluate(() => {
+    // Mark the screenshot honestly; these valid encrypted test fixtures never become live mail.
+    document.querySelector(".eyebrow")!.textContent =
+      "DESIGN CHECK · FICTIONAL MAIL · NO TRANSACTIONS";
+    scrollTo(0, 0);
+  });
+  await page.screenshot({
+    path: test.info().outputPath("concept-matched-mailbox.png"),
+  });
+  await page
+    .getByRole("button", { name: "Disconnect wallet", exact: true })
+    .click();
+  await expect(page.locator(".header-search-target")).toHaveCount(0);
+  await expect(
+    page.getByRole("searchbox", { name: "Search this folder" }),
+  ).toHaveCount(0);
   await assertReadOnly(page, writes);
 });

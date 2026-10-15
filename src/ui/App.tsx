@@ -102,6 +102,8 @@ import { hex } from "../core/crypto";
 const short = (v: string) =>
   v.length > 20 ? `${v.slice(0, 10)}…${v.slice(-6)}` : v;
 export function App() {
+  const [mailboxSearchTarget, setMailboxSearchTarget] =
+    useState<HTMLDivElement | null>(null);
   const restoreBlocked = useRef(false);
   const [officeLoadError, setOfficeLoadError] = useState(false);
   const hallRange = useRef<HTMLParagraphElement>(null);
@@ -1867,6 +1869,9 @@ export function App() {
             MoonMail<small>YOUR WORDS, UNDER COVER OF NIGHT</small>
           </span>
         </a>
+        {view === "postboxes" && owned.length > 0 && (
+          <div className="header-search-target" ref={setMailboxSearchTarget} />
+        )}
         <nav aria-label="Main navigation">
           {[
             ["postboxes", "My inbox"],
@@ -1876,6 +1881,7 @@ export function App() {
           ].map(([v, label]) => (
             <button
               key={v}
+              title={label}
               className={`${view === v ? "nav-active" : ""} ${v === "compose" ? "nav-compose" : ""}`}
               aria-current={view === v ? "page" : undefined}
               onClick={() =>
@@ -1896,10 +1902,10 @@ export function App() {
                       ? "compose"
                       : v === "hall"
                         ? "globe"
-                        : "check"
+                        : "activity"
                 }
               />
-              {label}
+              <span className="nav-label">{label}</span>
             </button>
           ))}
         </nav>
@@ -3168,6 +3174,7 @@ export function App() {
         )}
         {view === "postboxes" && (
           <Postboxes
+            searchTarget={mailboxSearchTarget}
             feeProblem={feeProblem}
             wallet={wallet}
             chain={chain}

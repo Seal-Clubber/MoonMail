@@ -13,6 +13,7 @@ import {
 } from "../core/mailbox-state";
 import { tari } from "./AmountInput";
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { MoonlitScene, UiIcon, type IconName } from "./UiIcon";
 
 // Every folder is a view of loaded on-chain state, not a device-only mailbox record.
@@ -31,6 +32,7 @@ const folders: { id: Folder; label: string; icon: IconName }[] = [
   { id: "collected", label: "Collected gifts", icon: "check" },
 ];
 export function MailboxWorkspace({
+  searchTarget,
   box,
   letters,
   plain,
@@ -53,6 +55,7 @@ export function MailboxWorkspace({
   onPublic,
   onPrivacy,
 }: {
+  searchTarget: HTMLDivElement | null;
   postboxPicker: ReactNode;
   postboxActions: ReactNode;
   onPublic: () => void;
@@ -78,9 +81,7 @@ export function MailboxWorkspace({
   const state = useChainMailbox(box, stateAccess);
   const marks = new Map(state.draft.marks);
   const [checked, setChecked] = useState<string[]>([]);
-  const [toolsOpen, setToolsOpen] = useState(
-    () => matchMedia("(min-width: 601px)").matches,
-  );
+  const [toolsOpen, setToolsOpen] = useState(false);
   useEffect(() => {
     if (state.loaded) onPreferences(box.id, state.draft);
   }, [box.id, state.loaded, state.draft, onPreferences]);
@@ -220,8 +221,25 @@ export function MailboxWorkspace({
     setSentId("");
     onClose();
   }
+  const search = (
+    <label className="mailbox-search">
+      <span className="search-label">Search this folder</span>
+      <UiIcon name="search" />
+      <input
+        type="search"
+        value={query}
+        maxLength={160}
+        placeholder="Search this folder"
+        onChange={(event) => {
+          setQuery(event.target.value);
+          setPage(1);
+        }}
+      />
+    </label>
+  );
   return (
-    <div className="mailbox-client">
+    <div className={`mailbox-client ${state.dirty ? "has-unsaved" : ""}`}>
+      {searchTarget && createPortal(search, searchTarget)}
       <section
         className={`mailbox-workspace ${selected ? "reading" : ""} ${state.loaded ? state.draft.density : ""}`}
         aria-label={`${box.nickname} mailbox`}
@@ -254,6 +272,16 @@ export function MailboxWorkspace({
               </button>
             ))}
           </nav>
+          <div className="mailbox-secondary">
+            <button onClick={onPublic} disabled={busy}>
+              <UiIcon name="globe" />
+              Public mail & gifts
+            </button>
+            <button onClick={onPrivacy} disabled={busy}>
+              <UiIcon name="privacy" />
+              What can others see?
+            </button>
+          </div>
           <details
             className="mailbox-tools"
             open={toolsOpen}
@@ -262,16 +290,6 @@ export function MailboxWorkspace({
             <summary>
               <UiIcon name="settings" /> Postbox options
             </summary>
-            <div className="mailbox-secondary">
-              <button onClick={onPublic} disabled={busy}>
-                <UiIcon name="globe" />
-                Public mail & gifts
-              </button>
-              <button onClick={onPrivacy} disabled={busy}>
-                <UiIcon name="privacy" />
-                What can others see?
-              </button>
-            </div>
             {postboxActions}
             <p className="mailbox-device-note">
               Mail and gift states come from Ootle. Reconnect the same Sapient
@@ -348,38 +366,32 @@ export function MailboxWorkspace({
             <span className="mailbox-mail-count">
               {views[folder].length} loaded
             </span>
+            <details className="mailbox-view-options">
+              <summary>
+                <UiIcon name="settings" />
+                View options
+              </summary>
+              <label className="mailbox-sort">
+                Sort letters
+                <select
+                  value={sort}
+                  onChange={(e) => {
+                    if (state.loaded)
+                      state.change({
+                        sort: e.target.value as "chain" | "subject" | "gift",
+                      });
+                    else setSort(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="chain">Post office order</option>
+                  <option value="subject">Subject A–Z · unlocked first</option>
+                  <option value="gift">Gift amount · largest first</option>
+                </select>
+              </label>
+            </details>
           </header>
-          <label className="mailbox-search">
-            Search this folder
-            <input
-              type="search"
-              value={query}
-              maxLength={160}
-              placeholder="Subject, message or letter ID"
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setPage(1);
-              }}
-            />
-          </label>
-          <label className="mailbox-sort">
-            Sort letters
-            <select
-              value={sort}
-              onChange={(e) => {
-                if (state.loaded)
-                  state.change({
-                    sort: e.target.value as "chain" | "subject" | "gift",
-                  });
-                else setSort(e.target.value);
-                setPage(1);
-              }}
-            >
-              <option value="chain">Post office order</option>
-              <option value="subject">Subject A–Z · unlocked first</option>
-              <option value="gift">Gift amount · largest first</option>
-            </select>
-          </label>
+          {!searchTarget && search}
           {locked.length > 0 && (
             <div className="mailbox-unlock">
               <button
@@ -407,7 +419,10 @@ export function MailboxWorkspace({
             </p>
           )}
           {state.loaded && folder !== "sent" && (
-            <div className="mailbox-bulk" aria-label="Bulk message actions">
+            <div
+              className={`mailbox-bulk ${checked.length ? "has-selection" : ""}`}
+              aria-label="Bulk message actions"
+            >
               <label>
                 <input
                   type="checkbox"
@@ -470,9 +485,11 @@ export function MailboxWorkspace({
                   </button>
                 </>
               )}
-              <small>
-                Changes stay pending until you save mailbox changes on Ootle.
-              </small>
+              {!!checked.length && (
+                <small>
+                  Changes stay pending until you save mailbox changes on Ootle.
+                </small>
+              )}
             </div>
           )}
           <p className="mailbox-range" ref={range} tabIndex={-1} role="status">
@@ -508,6 +525,8 @@ export function MailboxWorkspace({
                   )}
                   <button
                     className="mailbox-message-open"
+                    title={e.id}
+                    data-unlocked={!!text}
                     data-envelope-id={e.id}
                     disabled={busy}
                     aria-pressed={isSelected}

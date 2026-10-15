@@ -1,7 +1,15 @@
+/* Self-hosted Inter, unmodified, SIL Open Font License in public/fonts/LICENSE.txt. */
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/InterVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 /* MoonMail application skin. Protocol, wallet and approval states stay in their existing components. */
 :root {
   font-family:
-    "Segoe UI",
+    "Inter",
     system-ui,
     -apple-system,
     sans-serif;
@@ -22,6 +30,7 @@ body {
   background: #0a1325;
 }
 .app-shell {
+  font-family: "Inter", system-ui, sans-serif;
   min-height: 100dvh;
   isolation: isolate;
 }
@@ -44,6 +53,13 @@ body {
   background: #233957;
   color: #f5f7ff;
   border-color: #91aaff;
+  box-shadow: none;
+}
+.app-shell button:disabled {
+  opacity: 1;
+  background: #17253b;
+  color: #9db1cc;
+  border-color: #3b4e68;
   box-shadow: none;
 }
 .app-shell .primary {
@@ -112,7 +128,7 @@ body {
   flex: 0 0 auto;
   gap: 8px;
   font:
-    650 25px/1.1 "Segoe UI",
+    650 25px/1.1 "Inter",
     system-ui,
     sans-serif;
   letter-spacing: -0.035em;
@@ -135,7 +151,7 @@ body {
 .app-shell .brand small {
   color: #a6b8d4;
   font:
-    9px/1.5 "Segoe UI",
+    9px/1.5 "Inter",
     system-ui,
     sans-serif;
   letter-spacing: 0.09em;
@@ -291,7 +307,7 @@ body {
   color: #f0f4ff;
   border-color: #526b8b;
   font:
-    17px/1.8 "Segoe UI",
+    17px/1.8 "Inter",
     system-ui,
     sans-serif;
   min-height: 260px;
@@ -387,7 +403,7 @@ body {
 .app-shell .mailbox-identity small {
   color: #b4c5dd;
   font:
-    11px/1.5 "Segoe UI",
+    11px/1.5 "Inter",
     system-ui,
     sans-serif;
 }
@@ -417,6 +433,11 @@ body {
   padding: 10px 12px;
   color: #c5d4eb;
   font-size: 14px;
+}
+.app-shell .mailbox-sidebar nav button:not([aria-pressed="true"]):not(:hover) {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
 }
 .app-shell .mailbox-sidebar nav button[aria-pressed="true"] {
   background: #213655;
@@ -495,7 +516,7 @@ body {
 }
 .app-shell .mailbox-state-panel :is(label, p) {
   font:
-    12px/1.6 "Segoe UI",
+    12px/1.6 "Inter",
     system-ui,
     sans-serif;
   color: #b4c5dd;
@@ -531,7 +552,7 @@ body {
 .app-shell .mailbox-list-header h2 {
   margin: 0;
   font:
-    650 26px/1.3 "Segoe UI",
+    650 26px/1.3 "Inter",
     system-ui,
     sans-serif;
 }
@@ -542,7 +563,7 @@ body {
 .app-shell :is(.mailbox-search, .mailbox-sort) {
   margin: 10px 20px;
   font:
-    12px/1.6 "Segoe UI",
+    12px/1.6 "Inter",
     system-ui,
     sans-serif;
   color: #b4c5dd;
@@ -717,11 +738,14 @@ body {
 }
 .app-shell .mailbox-letter .letter-body {
   font:
-    17px/1.85 "Segoe UI",
+    17px/1.85 "Inter",
     system-ui,
     sans-serif !important;
   color: #edf2ff;
   margin-block: 24px 32px;
+}
+.app-shell .mailbox-letter p.letter-body {
+  color: #edf2ff;
 }
 .app-shell .mailbox-letter button {
   background: #192d49;
@@ -769,7 +793,7 @@ body {
 }
 .app-shell .mailbox-sent-detail .letter-body {
   font:
-    17px/1.85 "Segoe UI",
+    17px/1.85 "Inter",
     system-ui,
     sans-serif !important;
   color: #edf2ff;
@@ -783,7 +807,7 @@ body {
 }
 .app-shell .mailbox-conversation .letter-body {
   font:
-    15px/1.8 "Segoe UI",
+    15px/1.8 "Inter",
     system-ui,
     sans-serif !important;
   color: #e0e9fa;
@@ -1372,7 +1396,7 @@ body {
 }
 .app-shell .activity-summary strong {
   font:
-    650 30px/1.3 "Segoe UI",
+    650 30px/1.3 "Inter",
     system-ui,
     sans-serif;
 }
@@ -1483,6 +1507,514 @@ body {
 @media (max-width: 1100px) {
   .payment-approval-steps {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Match the approved composition: quiet chrome, generous type, mail first. */
+.header-search-target:empty {
+  display: none;
+}
+.app-shell .header-search-target {
+  order: 1;
+  flex: 1 1 280px;
+  max-width: 600px;
+  min-width: 180px;
+}
+.app-shell .header-search-target .mailbox-search {
+  position: relative;
+  margin: 0;
+}
+.app-shell .mailbox-search .search-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.app-shell .mailbox-search > .ui-icon {
+  position: absolute;
+  left: 15px;
+  top: 14px;
+  color: #b1c7f0;
+  pointer-events: none;
+}
+.app-shell .header-search-target input {
+  margin: 0;
+  padding: 12px 16px 12px 46px;
+  min-height: 48px;
+  background: #13233d;
+  border-color: #344e74;
+  font-size: 15px;
+}
+.app-shell.view-postboxes .topbar {
+  gap: 14px;
+}
+.app-shell.view-postboxes .topbar .brand {
+  font-size: 29px;
+  margin-right: 14px;
+}
+.app-shell.view-postboxes .topbar nav {
+  order: 2;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+.app-shell.view-postboxes .topbar nav button {
+  width: 40px;
+  height: 44px;
+  padding: 10px;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+}
+.app-shell.view-postboxes .topbar .nav-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.app-shell.view-postboxes .topbar nav button[title="Activity"] {
+  width: auto;
+  gap: 8px;
+}
+.app-shell.view-postboxes .topbar nav button[title="Activity"] .nav-label {
+  position: static;
+  width: auto;
+  height: auto;
+  clip-path: none;
+  overflow: visible;
+}
+.app-shell.view-postboxes .topbar > .wallet-actions {
+  order: 3;
+}
+.app-shell.view-postboxes .brand small {
+  display: none;
+}
+.app-shell .mailbox-workspace :where(:not(code):not(pre)) {
+  font-family: inherit;
+}
+.app-shell .mailbox-sidebar {
+  padding-top: 20px;
+}
+.app-shell .postbox-switcher {
+  font-size: 12px;
+}
+.app-shell .postbox-switcher select {
+  font-size: 16px;
+  min-height: 48px;
+}
+.app-shell .mailbox-identity {
+  padding-bottom: 12px;
+}
+.app-shell .mailbox-identity small {
+  font-size: 12px;
+}
+.app-shell .mailbox-compose {
+  font-size: 16px;
+  min-height: 52px;
+  margin-bottom: 18px;
+  background: linear-gradient(115deg, #819cff, #92aaff);
+}
+.app-shell .mailbox-sidebar nav {
+  gap: 3px;
+}
+.app-shell .mailbox-sidebar nav button {
+  font-size: 15px;
+  min-height: 44px;
+}
+.app-shell .mailbox-secondary {
+  margin-top: 18px;
+  padding-top: 16px;
+}
+.app-shell .mailbox-secondary button {
+  font-size: 13px;
+  min-height: 42px;
+}
+.app-shell .mailbox-tools {
+  margin-top: 12px;
+}
+.app-shell :is(.mailbox-tools > summary, .mailbox-preferences > summary) {
+  font-size: 13px;
+}
+.app-shell .mailbox-list-panel {
+  position: relative;
+}
+.app-shell .mailbox-list-header {
+  padding: 24px 22px 20px;
+  gap: 12px;
+  min-height: 90px;
+  align-items: center;
+}
+.app-shell .mailbox-list-header h2 {
+  font-size: 28px;
+}
+.app-shell .mailbox-mail-count {
+  font-size: 12px;
+  margin-left: auto;
+}
+.app-shell .mailbox-view-options {
+  position: relative;
+  flex: none;
+}
+.app-shell .mailbox-view-options > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  gap: 7px;
+  padding: 8px;
+  font-size: 11px;
+  color: #bbcee9;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  list-style: none;
+}
+.mailbox-view-options > summary::-webkit-details-marker {
+  display: none;
+}
+.app-shell .mailbox-view-options[open] > summary {
+  border-color: #6d88b4;
+  background: #1b3150;
+}
+.app-shell .mailbox-view-options .mailbox-sort {
+  position: absolute;
+  z-index: 6;
+  right: 0;
+  top: 40px;
+  width: 270px;
+  max-width: calc(100vw - 50px);
+  margin: 0;
+  padding: 16px;
+  background: #13233d;
+  border: 1px solid #526f98;
+  border-radius: 10px;
+  box-shadow: 0 14px 35px #0006;
+  color: #d6e3f9;
+}
+.app-shell .mailbox-bulk {
+  margin: 0 22px;
+  padding: 8px 0;
+  border: 0;
+  gap: 14px;
+  min-height: 48px;
+  justify-content: space-between;
+}
+.app-shell .mailbox-bulk.has-selection {
+  padding-block: 12px;
+  background: #192e4c;
+  border-block: 1px solid #486487;
+  padding-inline: 12px;
+  margin-inline: 0;
+}
+.app-shell .mailbox-bulk > label {
+  font-size: 12px;
+}
+.app-shell .mailbox-bulk > span {
+  margin-left: auto;
+  font-size: 12px;
+  color: #c0d1ec;
+}
+.app-shell .mailbox-range {
+  margin: 4px 22px 12px;
+  font-size: 11px;
+}
+.app-shell .mailbox-message-open {
+  position: relative;
+  gap: 5px;
+  padding-block: 17px;
+}
+.app-shell .mailbox-correspondent {
+  font-size: 15px;
+  padding-right: 90px;
+  font-weight: 500;
+}
+.app-shell .mailbox-row-heading strong {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.app-shell .mailbox-row-preview {
+  font-size: 14px;
+  line-height: 1.55;
+  -webkit-line-clamp: 1;
+}
+.app-shell .mailbox-workspace.compact .mailbox-message-open {
+  padding-block: 14px;
+}
+.app-shell .mailbox-workspace.compact .mailbox-row-preview {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+.app-shell
+  .mailbox-message-open[data-unlocked="true"]
+  .mailbox-row-meta
+  > span:first-child {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.app-shell .mailbox-message-open[data-unlocked="true"] .mailbox-row-meta {
+  position: absolute;
+  right: 18px;
+  top: 17px;
+  max-width: 90px;
+  text-align: right;
+  font-size: 10px;
+}
+.app-shell .mailbox-reading-tools {
+  border-bottom-color: #2b405d;
+  min-height: 76px;
+  padding-inline: 28px;
+}
+.app-shell .mailbox-reading-tools button {
+  font-size: 13px;
+}
+.app-shell .mailbox-reading-tools span {
+  font-size: 12px;
+}
+.app-shell .mailbox-letter {
+  padding: 30px 34px;
+}
+.app-shell .mailbox-letter h2 {
+  font-size: 30px;
+  margin-bottom: 20px;
+}
+.app-shell .mailbox-letter .kicker {
+  font-size: 11px;
+  color: #b1c8ea;
+}
+.app-shell .letter-participants {
+  margin-block: 20px 30px;
+  padding-block: 22px;
+}
+.app-shell .letter-participants strong {
+  font-size: 15px;
+}
+.app-shell .letter-participants p {
+  font-size: 13px;
+}
+.app-shell .letter-avatar {
+  width: 44px;
+  height: 44px;
+}
+.app-shell .mailbox-letter .letter-body {
+  font-size: 18px !important;
+  line-height: 1.85 !important;
+}
+.app-shell .mailbox-reading-empty {
+  min-height: 520px;
+  padding: 48px;
+}
+.app-shell .mailbox-reading-empty h2 {
+  font-size: 27px;
+}
+.app-shell .moonlit-scene {
+  margin-top: 18px;
+}
+.app-shell .mailbox-save-bar {
+  padding: 16px 20px;
+}
+.app-shell .mailbox-save-bar strong {
+  font-size: 16px;
+}
+.app-shell .mailbox-save-bar p {
+  font-size: 13px;
+  max-width: 470px;
+}
+.app-shell .mailbox-save-actions {
+  gap: 8px;
+}
+.app-shell .mailbox-save-bar > div:first-child {
+  flex-basis: 220px;
+}
+.app-shell .mailbox-identity {
+  display: none;
+}
+.app-shell .mailbox-sidebar nav button:nth-last-child(-n + 2) {
+  min-height: 36px;
+  font-size: 13px;
+}
+.app-shell .moonlit-scene {
+  mask-image: linear-gradient(transparent, #000 15%);
+}
+@media (min-width: 1101px) {
+  .app-shell .mailbox-client {
+    display: grid;
+    grid-template-columns: 244px minmax(330px, 0.94fr) minmax(0, 1.25fr);
+  }
+  .app-shell .mailbox-open .mailbox-workspace {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    grid-template-columns: 244px minmax(330px, 0.94fr) minmax(0, 1.25fr);
+    height: max(740px, calc(100svh - 130px));
+  }
+  .app-shell .mailbox-client > .mailbox-save-bar {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: end;
+    position: sticky;
+    bottom: 16px;
+    margin: 0 16px 16px;
+    border-radius: 10px;
+  }
+  .app-shell .mailbox-client.has-unsaved .mailbox-reading-pane {
+    padding-bottom: 190px;
+  }
+  .app-shell .mailbox-sidebar {
+    display: flex;
+    flex-direction: column;
+    padding-top: 14px;
+  }
+  .app-shell .mailbox-sidebar > * {
+    flex-shrink: 0;
+  }
+  .app-shell .postbox-switcher {
+    gap: 4px;
+    margin-bottom: 10px;
+    line-height: 1.35;
+  }
+  .app-shell .postbox-switcher select {
+    min-height: 44px;
+    padding: 9px 10px;
+    font-size: 15px;
+  }
+  .app-shell .mailbox-compose {
+    min-height: 48px;
+    margin-bottom: 12px;
+    padding-block: 12px;
+  }
+  .app-shell .mailbox-sidebar nav {
+    gap: 0;
+  }
+  .app-shell .mailbox-sidebar nav button {
+    min-height: 40px;
+    padding: 8px 12px;
+    line-height: 1.3;
+  }
+  .app-shell .mailbox-sidebar nav button:nth-last-child(-n + 2) {
+    min-height: 34px;
+    font-size: 13px;
+  }
+  .app-shell .mailbox-secondary {
+    margin-top: 14px;
+    padding-top: 12px;
+  }
+  .app-shell .mailbox-secondary button {
+    min-height: 38px;
+    padding: 9px 10px;
+  }
+  .app-shell .mailbox-tools {
+    margin-top: 8px;
+    padding-top: 4px;
+  }
+  .app-shell .mailbox-tools > summary,
+  .app-shell .mailbox-preferences > summary {
+    padding: 6px 4px;
+  }
+  .app-shell .mailbox-preferences {
+    padding-block: 6px;
+  }
+  .app-shell .moonlit-scene {
+    margin-top: auto;
+    padding-top: 8px;
+  }
+}
+@media (max-width: 1100px) {
+  .app-shell.view-postboxes .topbar .brand {
+    flex: 0 0 auto;
+  }
+  .app-shell.view-postboxes .topbar nav {
+    width: auto;
+  }
+  .app-shell.view-postboxes .header-search-target {
+    order: 4;
+    flex-basis: 100%;
+    max-width: none;
+  }
+  .app-shell.view-postboxes .topbar > .wallet-actions {
+    margin-left: auto;
+  }
+}
+@media (max-width: 600px) {
+  .app-shell.view-postboxes .topbar .brand {
+    font-size: 23px;
+    margin: 0;
+  }
+  .app-shell.view-postboxes .topbar nav {
+    order: 5;
+    flex-basis: 100%;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .app-shell.view-postboxes .topbar nav button {
+    width: auto;
+    height: auto;
+  }
+  .app-shell.view-postboxes .topbar .nav-label {
+    position: static;
+    width: auto;
+    height: auto;
+    clip-path: none;
+    overflow: visible;
+  }
+  .app-shell .header-search-target input {
+    font-size: 14px;
+    min-height: 44px;
+  }
+  .app-shell .mailbox-search > .ui-icon {
+    top: 12px;
+  }
+  .app-shell .mailbox-sidebar {
+    gap: 10px;
+  }
+  .app-shell .postbox-switcher select {
+    font-size: 14px;
+  }
+  .app-shell .mailbox-compose {
+    min-height: 46px;
+    font-size: 13px;
+  }
+  .app-shell .mailbox-sidebar nav button {
+    font-size: 13px;
+  }
+  .app-shell .mailbox-list-header {
+    padding: 20px 16px 12px;
+    min-height: 84px;
+  }
+  .app-shell .mailbox-list-header h2 {
+    font-size: 25px;
+  }
+  .app-shell .mailbox-view-options > summary {
+    font-size: 10px;
+    gap: 4px;
+  }
+  .app-shell .mailbox-bulk {
+    margin-inline: 16px;
+  }
+  .app-shell .mailbox-row-preview {
+    font-size: 13px;
+  }
+  .app-shell .mailbox-correspondent {
+    font-size: 14px;
+  }
+  .app-shell .mailbox-row-heading strong {
+    font-size: 14px;
+  }
+  .app-shell .mailbox-letter {
+    padding: 26px 22px;
+  }
+  .app-shell .mailbox-letter h2 {
+    font-size: 26px;
+  }
+  .app-shell .mailbox-letter .letter-body {
+    font-size: 17px !important;
+  }
+  .app-shell .mailbox-save-bar {
+    padding: 14px 16px;
   }
 }
 @media (max-width: 600px) {
