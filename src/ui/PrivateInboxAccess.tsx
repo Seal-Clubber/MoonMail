@@ -156,7 +156,7 @@ export function PrivateInboxAccess({
         )}
         {pending && (
           <p role="status">
-            Waiting for Sapient� Check your wallet for the permission request.
+            Waiting for Sapient… Check your wallet for the permission request.
           </p>
         )}
         <div className="private-inbox-actions">
@@ -165,7 +165,7 @@ export function PrivateInboxAccess({
             disabled={busy || pending || checking}
             onClick={() => void approve()}
           >
-            {pending ? "Waiting for Sapient�" : "Continue in Sapient"}
+            {pending ? "Waiting for Sapient…" : "Continue in Sapient"}
           </button>
           <button onClick={dismiss}>Not now</button>
         </div>

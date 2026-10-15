@@ -84,6 +84,32 @@ export function PrivatePaymentCard({
             commits. Postage is separate; this is not an atomic mail-and-payment
             transaction.
           </p>
+          <ol
+            className="payment-approval-steps"
+            aria-label="Private payment approvals"
+          >
+            <li>
+              <span>1</span>
+              <div>
+                <strong>Authorize payment</strong>
+                <small>Approve the original private transfer.</small>
+              </div>
+            </li>
+            <li>
+              <span>2</span>
+              <div>
+                <strong>Save recovery record</strong>
+                <small>Keep the payment safe to resume.</small>
+              </div>
+            </li>
+            <li>
+              <span>3</span>
+              <div>
+                <strong>Deliver receipt</strong>
+                <small>Let your correspondent verify it.</small>
+              </div>
+            </li>
+          </ol>
           <p className="fine-print">
             Network fees are set automatically, up to {tari(fee)} TARI per step
             and attempt.

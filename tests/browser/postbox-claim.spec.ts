@@ -186,6 +186,11 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
         ),
       ).toHaveCount(0);
       await page.getByRole("button", { name: "Not now", exact: true }).click();
+      if (
+        (await page.locator(".mailbox-tools").getAttribute("open")) === null
+      ) {
+        await page.locator(".mailbox-tools summary").click();
+      }
       await page.getByRole("button", { name: "Edit selected postbox" }).click();
       await expect(page.locator(".setup-steps")).toHaveCount(0);
       await page

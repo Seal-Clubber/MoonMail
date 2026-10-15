@@ -363,6 +363,9 @@ test("sealed discovery fills Inbox and Sent and keeps mailbox actions and replie
   await expect(
     page.getByText(/Access-slot keys and local decrypted addressing/),
   ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Back to messages", exact: true })
+    .click();
   await page.getByRole("button", { name: /^Sent/ }).click();
   await expect(
     page.getByRole("button", {
@@ -407,6 +410,7 @@ test("sealed composition includes recoverable Sent and optional reply identities
   await page
     .getByRole("textbox", { name: "Your letter", exact: true })
     .fill("A message written under cover of night.");
+  await page.getByText("Reply encryption options", { exact: true }).click();
   await expect(
     page.getByRole("checkbox", {
       name: "Use a conversation-specific reply key",

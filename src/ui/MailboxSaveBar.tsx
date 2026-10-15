@@ -23,13 +23,18 @@ export function MailboxSaveBar({
       </div>
       <div className="mailbox-save-actions">
         <button
+          type="button"
           className="primary"
           disabled={busy || state.loading || blocked || !validFee(state.fee)}
           onClick={state.save}
         >
           Save mailbox changes
         </button>
-        <button disabled={busy || state.loading} onClick={state.discard}>
+        <button
+          type="button"
+          disabled={busy || state.loading}
+          onClick={state.discard}
+        >
           Discard unsaved changes
         </button>
         <FeeAdjustment

@@ -726,7 +726,7 @@ export function Postboxes({
               )}
             </form>
           )}
-          {box && (
+          {box && !editing && (
             <>
               <MailReadNotice
                 ids={unavailableLetterIds}
@@ -829,7 +829,7 @@ export function Postboxes({
               )}
             </>
           )}
-          {box && (
+          {box && !editing && (
             <details className="mailbox-address-settings">
               <summary>Postbox address & settings</summary>
               <article className="postbox">

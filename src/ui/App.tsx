@@ -1924,13 +1924,17 @@ export function App() {
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
-        {!["welcome", "privacy", "compose", "postboxes"].includes(view) && (
-          <div className="privacy-shortcut">
-            <button className="text-button" onClick={() => navigate("privacy")}>
-              What can others see?
-            </button>
-          </div>
-        )}
+        {!["welcome", "privacy", "compose"].includes(view) &&
+          (view !== "postboxes" || !owned.length) && (
+            <div className="privacy-shortcut">
+              <button
+                className="text-button"
+                onClick={() => navigate("privacy")}
+              >
+                What can others see?
+              </button>
+            </div>
+          )}
         {!!pendingMailboxChanges.length &&
           view !== "postboxes" &&
           view !== "compose" && (
@@ -2549,7 +2553,7 @@ export function App() {
               <p className="info">
                 A private letter for a Sapient postbox.{" "}
                 {writesReady(d, "postbox", "sapient")
-                  ? "The recipient controls opening the delivered copy and collecting its gift. You can keep a separately encrypted Sent copy. Choose a friend below, or paste their postbox ID."
+                  ? "Choose a friend below, or paste their postbox ID. Their wallet opens the delivered letter; your encrypted Sent copy stays recoverable."
                   : "Private postbox sending is currently unavailable. Check the post office connection in Settings."}
               </p>
             )}
@@ -2559,6 +2563,27 @@ export function App() {
                 void task(prepare);
               }}
             >
+              {reply && (
+                <label className="compose-from">
+                  {sealedCompose
+                    ? "Sending postbox"
+                    : "Verified owned reply postbox"}
+                  <select
+                    value={reply}
+                    disabled={busy}
+                    onChange={(e) => {
+                      setReply(e.target.value);
+                      setReview(false);
+                    }}
+                  >
+                    {owned.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.nickname} · {short(p.id)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              )}
               {mode === "postbox" && (
                 <div className="recipient-choice">
                   {thread && (
@@ -2762,27 +2787,6 @@ export function App() {
                   Include my postbox for replies (optional)
                 </label>
               )}
-              {reply && (
-                <label>
-                  {sealedCompose
-                    ? "Sending postbox"
-                    : "Verified owned reply postbox"}
-                  <select
-                    value={reply}
-                    disabled={busy}
-                    onChange={(e) => {
-                      setReply(e.target.value);
-                      setReview(false);
-                    }}
-                  >
-                    {owned.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nickname} · {short(p.id)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
               {sealedCompose && (
                 <div className="sent-copy-choice">
                   {privatePaymentsEnabled && (
@@ -2830,23 +2834,26 @@ export function App() {
                     access. Sender and recipient postbox addresses stay inside
                     the encrypted message.
                   </p>
-                  <label className="checkbox">
-                    <input
-                      type="checkbox"
-                      checked={privateReplies}
-                      disabled={busy}
-                      onChange={(e) => {
-                        setPrivateReplies(e.target.checked);
-                        setReview(false);
-                        setPrepared(undefined);
-                      }}
-                    />
-                    Use a conversation-specific reply key
-                  </label>
-                  <p className="fine-print">
-                    This separates reply encryption keys. Your transaction
-                    signer and timing remain public.
-                  </p>
+                  <details className="reply-key-options">
+                    <summary>Reply encryption options</summary>
+                    <label className="checkbox">
+                      <input
+                        type="checkbox"
+                        checked={privateReplies}
+                        disabled={busy}
+                        onChange={(e) => {
+                          setPrivateReplies(e.target.checked);
+                          setReview(false);
+                          setPrepared(undefined);
+                        }}
+                      />
+                      Use a conversation-specific reply key
+                    </label>
+                    <p className="fine-print">
+                      This separates reply encryption keys. Your transaction
+                      signer and timing remain public.
+                    </p>
+                  </details>
                   {!sendingBox && (
                     <button type="button" onClick={() => navigate("postboxes")}>
                       Create or choose my sending postbox
@@ -3737,6 +3744,34 @@ export function App() {
                 <h2 id="letter-title" tabIndex={-1}>
                   {plain?.subject || "A sealed little secret"}
                 </h2>
+                {inlinePostboxReader && (
+                  <div className="letter-participants">
+                    <span className="letter-avatar" aria-hidden="true">
+                      <UiIcon name="mail" />
+                    </span>
+                    <div>
+                      <strong>
+                        {boxes.find(
+                          (p) =>
+                            p.id === active.replyPostbox &&
+                            p.controller === active.sender,
+                        )?.nickname || `Wallet ${short(active.sender)}`}
+                      </strong>
+                      <p>
+                        To{" "}
+                        {boxes.find(
+                          (p) =>
+                            p.id === active.recipientPostbox &&
+                            p.controller === active.claimAuthority,
+                        )?.nickname || "your postbox"}
+                      </p>
+                    </div>
+                    <span className="letter-private-label">
+                      <UiIcon name="privacy" />
+                      Encrypted letter
+                    </span>
+                  </div>
+                )}
                 {plain ? (
                   <p className="letter-body">{plain.body}</p>
                 ) : (

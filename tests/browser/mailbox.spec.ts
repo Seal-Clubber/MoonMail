@@ -27,6 +27,7 @@ async function mailboxFixture(
   encryptedSent = false,
   threaded = false,
   persistentGrant = false,
+  incomingCount = 27,
 ) {
   const owner = generateKeypair(),
     view = generateKeypair(),
@@ -81,7 +82,7 @@ async function mailboxFixture(
   };
   const states: Record<string, unknown[]> = {};
   const references: Record<string, string> = Object.create(null);
-  for (let i = 1; i <= 27; i++) {
+  for (let i = 1; i <= incomingCount; i++) {
     const id = i === 1 ? firstId : `note-${String(i).padStart(2, "0")}`;
     const child = `component_${(i + 100).toString(16).padStart(64, "0")}`;
     references[id] = child;
@@ -581,7 +582,6 @@ test("chain-backed mailbox handles 27 letters, gift folders, search, sent scope 
   });
   await expect(reader).toContainText("A private note for your eyes only.");
   for (const selector of [
-    ".postbox-switcher",
     ".mailbox-reading-tools span",
     ".mailbox-letter .letter-body",
     ".mailbox-letter .kicker",
@@ -599,6 +599,7 @@ test("chain-backed mailbox handles 27 letters, gift folders, search, sent scope 
   ).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(reader).toHaveCount(0);
+  await readable(page.locator(".postbox-switcher"));
   await expect(
     page.getByRole("button", {
       name: "Open letter: A quiet midnight hello",
@@ -624,6 +625,9 @@ test("chain-backed mailbox handles 27 letters, gift folders, search, sent scope 
   await expect(page.locator(".mailbox-sent-detail")).toContainText(
     "A public outgoing note.",
   );
+  await page
+    .getByRole("button", { name: "Back to messages", exact: true })
+    .click();
   await page
     .getByRole("combobox", { name: "My postboxes", exact: true })
     .selectOption("work");
@@ -1038,12 +1042,29 @@ test("favourites recover encrypted, stage edits and lead the recipient picker", 
     exact: true,
   });
   await expect(favourite).toHaveAttribute("aria-pressed", "true");
+  await page
+    .getByRole("textbox", { name: "Subject", exact: true })
+    .fill("No accidental review");
+  await page
+    .getByRole("textbox", { name: "Your letter", exact: true })
+    .fill("Editing contacts must not submit the composer.");
+  await page
+    .getByRole("combobox", { name: "Recipient postbox", exact: true })
+    .selectOption("foreign");
+  await page.locator(".compose form").evaluate((form) => {
+    (window as any).composerSubmits = 0;
+    form.addEventListener("submit", () => {
+      (window as any).composerSubmits++;
+    });
+  });
   await favourite.click();
   await expect(favourite).toHaveAttribute("aria-pressed", "false");
   await page
     .getByRole("button", { name: "Discard unsaved changes", exact: true })
     .click();
   await expect(favourite).toHaveAttribute("aria-pressed", "true");
+  expect(await page.evaluate(() => (window as any).composerSubmits)).toBe(0);
+  await expect(page.locator(".review")).toHaveCount(0);
   await page.locator(".mailbox-contact button").first().click();
   await expect(
     page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
@@ -1286,9 +1307,7 @@ test("opening decrypted incoming mail stages read once, keeps edits through comp
     .getByRole("button", { name: "Open letter: Letter 10", exact: true })
     .click();
   await expect(row).toHaveClass(/read/);
-  await page
-    .getByRole("button", { name: "Compose letter", exact: false })
-    .click();
+  await page.getByRole("button", { name: "Compose", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Save mailbox changes", exact: true }),
   ).toBeVisible();
@@ -1394,6 +1413,9 @@ test("a failed private letter read never stages a read mark or save transaction"
   await page
     .getByRole("button", { name: "Sealed letter · note-10", exact: true })
     .click();
+  await page
+    .getByRole("button", { name: "Back to messages", exact: true })
+    .click();
   await expect(
     page
       .getByRole("navigation", { name: "Mailbox folders" })
@@ -1441,5 +1463,136 @@ test("unsaved read changes remain visible on other pages and clear on disconnect
     .getByRole("button", { name: "Disconnect wallet", exact: true })
     .click();
   await expect(page.locator(".mailbox-save-bar")).toHaveCount(0);
+  await assertReadOnly(page, writes);
+});
+
+test("moonlit mailbox keeps tools optional and uses a focused phone reader", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(
+    page,
+    "note-01",
+    true,
+    false,
+    false,
+    true,
+  );
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page);
+  const tools = page.locator(".mailbox-tools");
+  if (page.viewportSize()!.width <= 600) {
+    await expect(tools).not.toHaveAttribute("open", "");
+    await expect(
+      page.getByRole("button", { name: "Edit selected postbox" }),
+    ).not.toBeVisible();
+    await tools.locator(":scope > summary").click();
+  }
+  await expect(
+    page.getByRole("button", { name: "Edit selected postbox" }),
+  ).toBeVisible();
+  await readable(tools.locator(":scope > summary"));
+  await page
+    .getByRole("searchbox", { name: "Search this folder" })
+    .fill("Letter 3");
+  await page
+    .getByRole("button", {
+      name: "Open letter: Letter 3",
+      exact: true,
+    })
+    .click();
+  const reader = page.getByRole("region", {
+    name: "Letter 3",
+    exact: true,
+  });
+  await expect(reader.locator(".letter-participants")).toContainText(
+    "Someone else",
+  );
+  await expect(reader.locator(".letter-participants")).toContainText(
+    "To Moonlit home",
+  );
+  await readable(reader.locator(".letter-participants strong"));
+  await readable(reader.locator(".letter-participants p"));
+  await readable(reader.locator(".letter-private-label"));
+  await expect(
+    page.getByLabel("Unsaved mailbox changes", { exact: true }),
+  ).toBeVisible();
+  if (page.viewportSize()!.width <= 600) {
+    await expect(page.locator(".mailbox-sidebar")).not.toBeVisible();
+    await expect(page.locator(".mailbox-list-panel")).not.toBeVisible();
+  }
+  await page.screenshot({
+    path: test.info().outputPath("moonmail-conversation.png"),
+    fullPage: true,
+  });
+  await page
+    .getByRole("button", { name: "Back to messages", exact: true })
+    .click();
+  await expect(page.locator(".mailbox-sidebar")).toBeVisible();
+  await expect(page.locator(".mailbox-list-panel")).toBeVisible();
+  await expect(reader).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Discard unsaved changes", exact: true })
+    .click();
+  await page.getByRole("searchbox", { name: "Search this folder" }).clear();
+  await page.screenshot({
+    path: test.info().outputPath("moonmail-inbox.png"),
+    fullPage: true,
+  });
+  await assertReadOnly(page, writes);
+});
+
+test("a hundred encrypted incoming letters remain paged and selectable without writes", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(
+    page,
+    "note-01",
+    true,
+    false,
+    false,
+    false,
+    false,
+    100,
+  );
+  await page.goto("./#/postboxes");
+  await connect(page);
+  const more = page.getByRole("button", {
+    name: "Load more letters",
+    exact: true,
+  });
+  if (await more.isVisible()) await more.click();
+  await page
+    .getByRole("button", { name: "Unlock private inbox", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Continue in Sapient" }).click();
+  await page
+    .getByRole("button", { name: "Unlock 100 loaded letters", exact: true })
+    .click();
+  await expect(page.locator(".mailbox-range")).toHaveText(
+    "1–12 of 99 loaded letters",
+  );
+  await page
+    .getByRole("checkbox", { name: "Select this page", exact: true })
+    .check();
+  await expect(
+    page.getByRole("status").filter({ hasText: /^12 selected$/ }),
+  ).toHaveText("12 selected");
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.locator(".mailbox-range")).toHaveText(
+    "13–24 of 99 loaded letters",
+  );
+  await expect(
+    page.getByRole("checkbox", { name: "Select this page", exact: true }),
+  ).not.toBeChecked();
+  await page
+    .getByRole("button", { name: "Clear selection", exact: true })
+    .click();
+  await page
+    .getByRole("searchbox", { name: "Search this folder" })
+    .fill("Encrypted letter 100 from the post office.");
+  await expect(
+    page.getByRole("button", { name: "Open letter: Letter 100", exact: true }),
+  ).toBeVisible();
   await assertReadOnly(page, writes);
 });

@@ -78,6 +78,9 @@ export function MailboxWorkspace({
   const state = useChainMailbox(box, stateAccess);
   const marks = new Map(state.draft.marks);
   const [checked, setChecked] = useState<string[]>([]);
+  const [toolsOpen, setToolsOpen] = useState(
+    () => matchMedia("(min-width: 601px)").matches,
+  );
   useEffect(() => {
     if (state.loaded) onPreferences(box.id, state.draft);
   }, [box.id, state.loaded, state.draft, onPreferences]);
@@ -251,17 +254,30 @@ export function MailboxWorkspace({
               </button>
             ))}
           </nav>
-          <div className="mailbox-secondary">
-            <button onClick={onPublic} disabled={busy}>
-              <UiIcon name="globe" />
-              Public mail & gifts
-            </button>
-            <button onClick={onPrivacy} disabled={busy}>
-              <UiIcon name="privacy" />
-              What can others see?
-            </button>
-          </div>
-          {postboxActions}
+          <details
+            className="mailbox-tools"
+            open={toolsOpen}
+            onToggle={(event) => setToolsOpen(event.currentTarget.open)}
+          >
+            <summary>
+              <UiIcon name="settings" /> Postbox options
+            </summary>
+            <div className="mailbox-secondary">
+              <button onClick={onPublic} disabled={busy}>
+                <UiIcon name="globe" />
+                Public mail & gifts
+              </button>
+              <button onClick={onPrivacy} disabled={busy}>
+                <UiIcon name="privacy" />
+                What can others see?
+              </button>
+            </div>
+            {postboxActions}
+            <p className="mailbox-device-note">
+              Mail and gift states come from Ootle. Reconnect the same Sapient
+              wallet on another device to recover your postboxes.
+            </p>
+          </details>
           {state.ready && (
             <details className="mailbox-preferences" open={!state.loaded}>
               <summary>
@@ -321,10 +337,6 @@ export function MailboxWorkspace({
               </div>
             </details>
           )}
-          <p className="mailbox-device-note">
-            Mail and gift states come from Ootle. Reconnect the same Sapient
-            wallet on another device to recover your postboxes.
-          </p>
           <MoonlitScene />
         </aside>
         <div className="mailbox-list-panel">
