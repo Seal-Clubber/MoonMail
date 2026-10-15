@@ -4,6 +4,8 @@ Use isolated Esmeralda test funds. The app needs only the website and stock Sapi
 
 ## A familiar private mailbox
 
+The desktop mailbox uses a postbox/folder rail, message list and dark conversation reader. On a phone, open a letter and use **Back to messages** to return. Postbox management is under **Postbox options**; spacing/reload controls are under **Mailbox settings**. Unsaved read/archive/favourite changes have an amber save bar. [Interface guide](gui-overhaul.md).
+
 1. Open the contest page: **MoonMail — Your words, under cover of night.** Choose **Open mailbox**. Public mail has a separate **Explore public mail** action.
 2. Connect Sapient. Before reading private mail, the full permission dialog explains account-wide private output summaries, including amounts and memos for other resources. Explicitly continue in Sapient. This is a reading permission, not spending authorization.
 3. Create a new postbox in the current sealed office. Review its name, public registration details and automatic fee limits. Postbox names, IDs and controlling public keys are public; letters remain encrypted. Approve **Save recovery backup**, wait for confirmation, then approve **Open my postbox**. These are two transactions. Interrupted setup resumes the original request; Activity tracks outcomes.

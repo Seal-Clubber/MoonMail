@@ -1,0 +1,43 @@
+{
+  "date": "2026-10-16",
+  "restoreTag": "moonmail-pre-gui-overhaul",
+  "restoreCommit": "a05d1aa6bb4518e0b375e3168d411cbfef2a0cc4",
+  "reviewedFrontendCommit": "047f82fd6e691852eecc888b4ff8fe6324b79d0c",
+  "unitChecks": { "tests": 269, "files": 32, "passed": true },
+  "typeScript": "passed",
+  "pagesBuild": "passed",
+  "browserChecks": {
+    "fullSuite": 294,
+    "fullSuiteUiCheckpoint": "e5d330f9522d6fabb78a510813a99d50a679623d",
+    "finalReaderAffectedChecks": 56,
+    "passed": true,
+    "scope": "The full suite preceded favicon-only alignment. The final reader refinement passed all affected checks; subsequent stock acceptance pins the final build including its favicon.",
+    "incomingMailFixtureCount": 100,
+    "additionalPageViewportChecks": 20,
+    "additionalViewportWidths": [320, 390, 768, 1440],
+    "fixturesAreLiveMail": false
+  },
+  "stockWalletAcceptance": {
+    "wallet": "Unmodified Sapient",
+    "version": "0.6.6",
+    "network": "Esmeralda",
+    "networkId": 38,
+    "actualLedgerResponses": true,
+    "reviewedFrontendAssetsOnPagesHttpsOrigin": true,
+    "publishedAssetsVerified": false,
+    "reviewedBuildAssetCount": 12,
+    "viewportWidths": [1440, 390],
+    "restoredIsolatedDevelopmentWallet": true,
+    "inboxAndSentRecovered": true,
+    "savedSettingsAndFavouritesRecovered": true,
+    "reloadWithoutRepeatPrivatePermission": true,
+    "existingPrivateReceiptVerifiedAgainstWallet": true,
+    "newFinancialWalletRequests": 0,
+    "broadcasts": 0,
+    "completed": true
+  },
+  "contractChanges": false,
+  "newTemplateDeployment": false,
+  "newPrivatePostboxIdentityFeature": false,
+  "githubPushPerformedForOverhaul": false
+}

@@ -32,6 +32,8 @@ Network fees use automatic defaults. Routine fee editors are hidden; a verified 
 
 ## Verification
 
+The [moonlit GUI overhaul](docs/gui-overhaul.md) provides the responsive mailbox, guided options and clearer approval steps. Its [verification scope](docs/gui-overhaul-evidence.json) includes the full browser suite and stock Sapient read-only acceptance against real Esmeralda mail.
+
 The application targets Ootle **0.46.0**, TypeScript SDK **0.9.0**, crypto WASM **0.46.0** and the inspected unmodified stock Sapient **0.6.6**. Current-account capabilities are checked at runtime. The single [V4 template](contracts/moonmail-v4/README.md) stores sealed letters, postboxes, historical recovery keys, encrypted settings and public gift rules.
 
 - [Final sealed-default verification](docs/sealed-default-verification.md): desktop/mobile checks and zero-spend stock-Sapient/real-ledger acceptance.
