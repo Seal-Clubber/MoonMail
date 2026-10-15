@@ -209,18 +209,23 @@ async function fixture(page: Page, enabled = true, payments = false) {
       return r.abort();
     }
     const url = r.request().url(),
-      carrier = url.includes(utxo)
-        ? utxo
-        : url.includes(resource)
-          ? resource
-          : undefined;
+      carrier =
+        url.includes(utxo) ||
+        url.includes(`utxo_${resource.slice(9)}_${"cd".repeat(32)}`)
+          ? utxo
+          : url.includes(resource)
+            ? resource
+            : undefined;
     if (carrier)
       return r.fulfill({
         json: structuredClone(ledger[carrier as keyof typeof ledger]),
       });
+    if (new URL(url).pathname === "/epoch-manager/stats")
+      return r.fulfill({ json: { current_epoch: 100 } });
     const child = Object.keys(states).find((k) => url.includes(k));
     return r.fulfill({
       json: {
+        version: 0,
         substate: {
           Component: {
             header: { template_address: d.template, owner_rule: "None" },
@@ -340,6 +345,48 @@ async function readOnly(page: Page, writes: () => number) {
     ),
   ).toBe(true);
 }
+test("connecting from the composer requests private view once and keeps spending separate", async ({
+  page,
+}) => {
+  const f = await fixture(page);
+  await page.goto("./#/compose");
+  await page
+    .getByRole("button", { name: "Connect to send", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Connect Sapient", exact: true })
+    .click();
+  const permission = page.getByRole("dialog", {
+    name: "Unlock your private inbox",
+    exact: true,
+  });
+  await expect(permission).toHaveCount(1);
+  await expect(permission).toBeVisible();
+  expect(await page.locator("dialog[open]").count()).toBe(1);
+  await permission
+    .getByRole("button", { name: "Continue in Sapient", exact: true })
+    .click();
+  await expect(permission).toHaveCount(0);
+  await expect(
+    page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Minimize composer", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", {
+      name: "Open letter: A sealed hello",
+      exact: true,
+    }),
+  ).toBeVisible();
+  expect(
+    (await page.evaluate(() => (window as any).sealedMethods)).filter(
+      (method: string) => method === "tari_requestViewAccess",
+    ),
+  ).toHaveLength(1);
+  await readOnly(page, f.writes);
+});
+
 test("sealed discovery fills Inbox and Sent and keeps mailbox actions and replies in the familiar workspace", async ({
   page,
 }) => {
@@ -392,6 +439,78 @@ test("sealed discovery fills Inbox and Sent and keeps mailbox actions and replie
   });
   await readOnly(page, f.writes);
 });
+test("sending above an open conversation keeps approval controls locked and returns to Activity once", async ({
+  page,
+}) => {
+  const f = await fixture(page);
+  await connect(page);
+  await page
+    .getByRole("button", { name: "Open letter: A sealed hello", exact: true })
+    .click();
+  await expect(page.locator(".letter-body")).toBeVisible();
+  await page.getByRole("button", { name: "Compose", exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Recipient postbox", exact: true })
+    .selectOption("foreign");
+  await page.getByLabel("Subject", { exact: true }).fill("One simulated reply");
+  await page
+    .getByLabel("Your letter", { exact: true })
+    .fill("Synthetic transaction fixture; never sent to a network.");
+  await page
+    .getByRole("button", { name: "Review letter", exact: false })
+    .click();
+  await page.evaluate(() => {
+    const w = window as any,
+      previous = w.tari.request;
+    w.composerRequests = [];
+    w.tari.request = async (args: any) => {
+      if (args.method === "tari_createTransactionRequest") {
+        w.composerRequests.push(args.method);
+        return { requestId: "request_composer_fixture" };
+      }
+      if (args.method === "tari_getTransactionRequest")
+        return { requestId: "request_composer_fixture", status: "approved" };
+      if (args.method === "tari_submitTransactionRequest") {
+        w.composerRequests.push(args.method);
+        return new Promise((resolve) => {
+          w.finishComposerSubmission = () =>
+            resolve({ transactionId: "9".repeat(64) });
+        });
+      }
+      return previous(args);
+    };
+  });
+  await page
+    .getByRole("button", { name: "Send encrypted letter", exact: true })
+    .click();
+  await expect
+    .poll(() =>
+      page.evaluate(() => typeof (window as any).finishComposerSubmission),
+    )
+    .toBe("function");
+  await expect(
+    page.getByRole("button", { name: "Close composer", exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page.getByRole("button", { name: "Minimize composer", exact: true }),
+  ).toBeDisabled();
+  await expect(
+    page
+      .locator(".topbar")
+      .getByRole("button", { name: "Activity", exact: true }),
+  ).toBeDisabled();
+  await page.evaluate(() => (window as any).finishComposerSubmission());
+  await expect(
+    page.getByRole("heading", { name: "Your activity." }),
+  ).toBeVisible();
+  await expect(page.locator(".compose-window")).toHaveCount(0);
+  expect(await page.evaluate(() => (window as any).composerRequests)).toEqual([
+    "tari_createTransactionRequest",
+    "tari_submitTransactionRequest",
+  ]);
+  expect(f.writes()).toBe(0);
+});
+
 test("sealed composition includes recoverable Sent and optional reply identities without a spend permission", async ({
   page,
 }) => {

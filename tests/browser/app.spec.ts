@@ -14,6 +14,9 @@ test("hash links and browser Back keep the selected page in sync", async ({
   await page.goto("./#/hall");
   await page.getByRole("button", { name: "Compose", exact: true }).click();
   await expect(page.locator(".compose")).toBeVisible();
+  await page
+    .getByRole("button", { name: "Minimize composer", exact: true })
+    .click();
   await page.getByRole("button", { name: "Activity", exact: true }).click();
   await page.goBack();
   await expect(page.locator(".compose")).toBeVisible();
@@ -153,7 +156,10 @@ test("wallet dialog traps keyboard focus, closes on Escape and restores focus", 
     .click();
   const trigger = page.getByRole("button", { name: "Connect to send" });
   await trigger.click();
-  const dialog = page.getByRole("dialog");
+  const dialog = page.getByRole("dialog", {
+    name: "Connect Sapient",
+    exact: true,
+  });
   await expect(dialog).toBeVisible();
   expect(
     await page.locator("main").evaluate((el) => (el as HTMLElement).inert),

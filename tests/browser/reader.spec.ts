@@ -1,3 +1,4 @@
+import { minimizeComposer } from "./support/composer";
 import { test, expect, type Page } from "@playwright/test";
 import {
   generateKeypair,
@@ -784,6 +785,7 @@ for (const throughPublicLink of [false, true]) {
         location.hash = value;
       }, hash);
     } else {
+      await minimizeComposer(page);
       await page
         .getByRole("button", { name: "Public mail", exact: true })
         .click();

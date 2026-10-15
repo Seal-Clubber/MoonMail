@@ -33,6 +33,7 @@ const folders: { id: Folder; label: string; icon: IconName }[] = [
 ];
 export function MailboxWorkspace({
   searchTarget,
+  showSaveBar = true,
   box,
   letters,
   plain,
@@ -56,6 +57,7 @@ export function MailboxWorkspace({
   onPrivacy,
 }: {
   searchTarget: HTMLDivElement | null;
+  showSaveBar?: boolean;
   postboxPicker: ReactNode;
   postboxActions: ReactNode;
   onPublic: () => void;
@@ -760,11 +762,13 @@ export function MailboxWorkspace({
           )}
         </div>
       </section>
-      <MailboxSaveBar
-        state={state}
-        busy={busy}
-        blocked={stateAccess?.writeBlocked}
-      />
+      {showSaveBar && (
+        <MailboxSaveBar
+          state={state}
+          busy={busy}
+          blocked={stateAccess?.writeBlocked}
+        />
+      )}
     </div>
   );
 }

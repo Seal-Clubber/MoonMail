@@ -1,3 +1,7 @@
+import {
+  connectFromVisibleControl,
+  minimizeComposer,
+} from "./support/composer";
 import { test, expect, type Page } from "@playwright/test";
 import {
   generateKeypair,
@@ -101,9 +105,7 @@ async function connectFixture(page: Page) {
   await page
     .getByRole("button", { name: "⌘ Private link", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "Connect wallet", exact: true })
-    .click();
+  await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
@@ -202,7 +204,7 @@ async function expectNoSpending(page: Page, writes: () => number) {
   expect(
     (await page.evaluate(() => (window as any).walletCalls)).some(
       (method: string) =>
-        /View|Transaction|Ownership|PrivatePayment/.test(method),
+        /requestViewAccess|Transaction|Ownership|PrivatePayment/.test(method),
     ),
   ).toBe(false);
 }
@@ -219,8 +221,12 @@ test("disconnect clears the wallet-bound reply choice and keeps the written draf
   await page
     .getByRole("checkbox", { name: "I saved my private link somewhere safe" })
     .check();
+  await minimizeComposer(page);
   await page
     .getByRole("button", { name: "Disconnect wallet", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Restore composer", exact: true })
     .click();
   await expect(fixture.toggle).not.toBeChecked();
   await expect(fixture.toggle).toBeDisabled();
@@ -263,6 +269,13 @@ test("changing offices clears old reply routing even when the new office has the
   const fixture = await connectFixture(page);
   await fixture.toggle.check();
   await page.getByLabel("Gift amount (optional)").fill("2.5");
+  await page
+    .getByRole("button", { name: "Close composer", exact: true })
+    .click();
+  await page
+    .getByRole("dialog", { name: "Unlock your private inbox", exact: true })
+    .getByRole("button", { name: "Not now", exact: true })
+    .click();
   await page.getByRole("button", { name: "Settings", exact: false }).click();
   await page.getByText("Advanced connection settings", { exact: true }).click();
   const registry = `component_${"e".repeat(64)}`;

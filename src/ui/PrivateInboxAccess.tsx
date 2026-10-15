@@ -12,6 +12,7 @@ export function PrivateInboxAccess({
   busy,
   task,
   onGranted,
+  autoPrompt = true,
 }: {
   wallet: SapientSession;
   scope: string;
@@ -19,6 +20,7 @@ export function PrivateInboxAccess({
   busy: boolean;
   task: (fn: () => Promise<void>) => Promise<void>;
   onGranted: () => void;
+  autoPrompt?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -39,19 +41,20 @@ export function PrivateInboxAccess({
         if (current.current !== token) return;
         setChecking(false);
         if (granted) grantedCallback.current();
-        else if (!explained.get(wallet)?.has(scope))
+        else if (autoPrompt && !explained.get(wallet)?.has(scope))
           dialog.current?.showModal();
       })
       .catch(() => {
         if (current.current !== token) return;
         setChecking(false);
-        if (!explained.get(wallet)?.has(scope)) dialog.current?.showModal();
+        if (autoPrompt && !explained.get(wallet)?.has(scope))
+          dialog.current?.showModal();
       });
     return () => {
       current.current = null;
       dialog.current?.close();
     };
-  }, [wallet, scope]);
+  }, [wallet, scope, autoPrompt]);
   function dismiss() {
     requestVersion.current++;
     const scopes = explained.get(wallet) ?? new Set<string>();

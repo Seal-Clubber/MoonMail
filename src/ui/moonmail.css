@@ -274,6 +274,7 @@ body {
 .app-shell .compose {
   max-width: 920px;
 }
+
 .compose-heading {
   display: flex;
   align-items: center;
@@ -2037,5 +2038,120 @@ body {
   }
   .app-shell .mailbox-tools .mailbox-device-note {
     display: block;
+  }
+}
+
+/* A non-modal writing window keeps the mailbox available behind it. */
+.app-shell .compose-window {
+  position: fixed;
+  z-index: 12;
+  right: 24px;
+  bottom: 0;
+  width: min(620px, calc(100vw - 48px));
+  height: min(820px, calc(100dvh - 100px));
+  max-width: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #101e34;
+  border: 1px solid #627ba4;
+  border-bottom: 0;
+  border-radius: 14px 14px 0 0;
+  box-shadow:
+    0 0 0 1px #091224,
+    0 12px 60px #02071399;
+}
+.app-shell .compose-window-heading {
+  flex: 0 0 auto;
+  padding: 12px 18px;
+  background: #203455;
+  border-bottom: 1px solid #4b6288;
+}
+.app-shell .compose-window-heading h1 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.4;
+}
+.compose-window-controls {
+  display: flex;
+  gap: 4px;
+}
+.app-shell .compose-window-controls button {
+  justify-content: center;
+  padding: 4px;
+  min-width: 36px;
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: #edf2ff;
+  font-size: 23px;
+}
+.app-shell .compose-window-controls button:hover:not(:disabled) {
+  background: #354f79;
+}
+.compose-window-content {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px 22px 24px;
+  min-height: 0;
+}
+.compose-window-content[hidden] {
+  display: none;
+}
+.app-shell .compose-window-content > p:first-child {
+  margin-top: 0;
+  font-size: 13px;
+}
+.app-shell .compose-window form {
+  margin-top: 18px;
+  padding: 0;
+  border: 0;
+}
+.app-shell .compose-window .info {
+  font-size: 13px;
+}
+.app-shell .compose-window .compose-session-note {
+  margin: 18px 0 0;
+  font-size: 12px;
+  color: #bacbe4;
+}
+.app-shell .compose-window.minimized {
+  width: min(370px, calc(100vw - 48px));
+  height: auto;
+}
+.app-shell .compose-window.expanded:not(.minimized) {
+  inset: 32px;
+  width: auto;
+  height: auto;
+  border-bottom: 1px solid #627ba4;
+  border-radius: 14px;
+}
+@media (max-width: 700px) {
+  .app-shell .compose-window:not(.minimized),
+  .app-shell .compose-window.expanded:not(.minimized) {
+    inset: 0;
+    width: 100%;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+  .app-shell .compose-window.minimized {
+    right: 12px;
+    width: calc(100vw - 24px);
+  }
+  .app-shell .compose-window .compose-window-heading {
+    flex-direction: row;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+  .app-shell .compose-window-heading h1 {
+    font-size: 17px;
+  }
+  .app-shell .compose-window .compose-expand {
+    display: none;
+  }
+  .app-shell .compose-window-content {
+    padding: 18px 18px max(24px, env(safe-area-inset-bottom));
   }
 }

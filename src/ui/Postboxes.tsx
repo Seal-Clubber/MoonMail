@@ -23,6 +23,8 @@ import { UiIcon } from "./UiIcon";
 
 export function Postboxes({
   searchTarget,
+  privateAccessActive = true,
+  autoPromptPrivateAccess = true,
   feeProblem,
   wallet,
   chain,
@@ -58,6 +60,8 @@ export function Postboxes({
   privateAccessRevision = 0,
 }: {
   searchTarget: HTMLDivElement | null;
+  privateAccessActive?: boolean;
+  autoPromptPrivateAccess?: boolean;
   feeProblem?: FeeProblem;
   wallet?: ConnectedWallet;
   chain?: PostOfficeClient;
@@ -477,10 +481,12 @@ export function Postboxes({
               </p>
             </div>
           )}
-          {wallet instanceof SapientSession &&
+          {privateAccessActive &&
+            wallet instanceof SapientSession &&
             (editing || box || prepared) &&
             !viewApproved && (
               <PrivateInboxAccess
+                autoPrompt={autoPromptPrivateAccess}
                 key={`${account?.account.component_address}:${deployment.network}:${deployment.registry}`}
                 wallet={wallet}
                 scope={`${account?.account.component_address}:${deployment.network}:${deployment.registry}`}
@@ -767,6 +773,7 @@ export function Postboxes({
                 </div>
               )}
               <MailboxWorkspace
+                showSaveBar={privateAccessActive}
                 searchTarget={searchTarget}
                 postboxPicker={postboxPicker}
                 postboxActions={postboxActions}

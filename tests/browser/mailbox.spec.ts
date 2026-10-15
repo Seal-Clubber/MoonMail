@@ -1673,6 +1673,116 @@ test("a hundred encrypted incoming letters remain paged and selectable without w
   await assertReadOnly(page, writes);
 });
 
+test("floating composer keeps the inbox, selection and unsent text available without publishing", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(page, "note-01", true);
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page);
+  const selection = page.getByRole("checkbox", {
+    name: "Select this page",
+    exact: true,
+  });
+  await selection.check();
+  await page
+    .getByRole("button", { name: "Compose letter", exact: true })
+    .click();
+  const composer = page.getByRole("dialog", { name: "Compose a letter." });
+  await expect(composer).toBeVisible();
+  await expect(composer).toHaveAttribute("aria-modal", "false");
+  await expect(page.locator(".mailbox-workspace")).toBeVisible();
+  await expect(page.locator("#writing-desk-title")).toBeFocused();
+  await composer
+    .getByLabel("Subject", { exact: true })
+    .fill("A letter by moonlight");
+  await composer
+    .getByLabel("Your letter", { exact: true })
+    .fill("Keep this text in the tab while I check my inbox.");
+  await readable(composer.getByLabel("Your letter", { exact: true }));
+  const bounds = await composer.boundingBox();
+  const viewport = page.viewportSize()!;
+  expect(Math.abs(bounds!.y + bounds!.height - viewport.height)).toBeLessThan(
+    2,
+  );
+  if (viewport.width > 700) {
+    expect(viewport.width - bounds!.x - bounds!.width).toBe(24);
+    expect(bounds!.width).toBe(620);
+    await composer
+      .getByRole("button", { name: "Expand composer", exact: true })
+      .click();
+    expect((await composer.boundingBox())!.width).toBeGreaterThan(
+      bounds!.width,
+    );
+    await composer
+      .getByRole("button", { name: "Shrink composer", exact: true })
+      .click();
+  } else {
+    expect(bounds!.width).toBe(viewport.width);
+    expect(bounds!.y).toBe(0);
+  }
+  await composer
+    .getByRole("button", { name: "Minimize composer", exact: true })
+    .click();
+  await expect(composer.getByLabel("Subject", { exact: true })).toBeHidden();
+  await expect(selection).toBeChecked();
+  await page
+    .getByRole("searchbox", { name: "Search this folder", exact: true })
+    .fill("quiet midnight");
+  await expect(page.locator(".mailbox-range")).toHaveText(
+    "1–1 of 1 loaded letters",
+  );
+  await composer
+    .getByRole("button", { name: "Restore composer", exact: true })
+    .click();
+  await expect(composer.getByLabel("Subject", { exact: true })).toHaveValue(
+    "A letter by moonlight",
+  );
+  await expect(composer.getByLabel("Your letter", { exact: true })).toHaveValue(
+    "Keep this text in the tab while I check my inbox.",
+  );
+  await composer.getByLabel("Subject", { exact: true }).focus();
+  await page.keyboard.press("Escape");
+  await expect(
+    composer.getByRole("button", { name: "Restore composer", exact: true }),
+  ).toBeFocused();
+  await composer
+    .getByRole("button", { name: "Restore composer", exact: true })
+    .click();
+  await page.screenshot({
+    path: test.info().outputPath("floating-composer.png"),
+  });
+  await composer
+    .getByRole("button", { name: "Close composer", exact: true })
+    .click();
+  await expect(composer).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Compose letter", exact: true }),
+  ).toBeFocused();
+  await page
+    .getByRole("button", { name: "Compose letter", exact: true })
+    .click();
+  await expect(composer.getByLabel("Subject", { exact: true })).toHaveValue(
+    "A letter by moonlight",
+  );
+  await composer
+    .getByRole("button", { name: "Close composer", exact: true })
+    .click();
+  await page.reload();
+  await connect(page);
+  await expect(
+    page.getByRole("combobox", { name: "My postboxes", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Compose letter", exact: true })
+    .click();
+  await expect(composer.getByLabel("Subject", { exact: true })).toHaveValue("");
+  await expect(composer.getByLabel("Your letter", { exact: true })).toHaveValue(
+    "",
+  );
+  await assertReadOnly(page, writes);
+});
+
 test("approved concept composition uses real controls, a bundled font and explicitly fictional preview letters", async ({
   page,
 }) => {

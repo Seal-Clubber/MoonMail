@@ -28,6 +28,9 @@ test("theme keeps utility, parchment and nested dark text readable", async ({
     page.getByLabel("Your letter", { exact: true }),
     "::placeholder",
   );
+  await page
+    .getByRole("button", { name: "Close composer", exact: true })
+    .click();
   await page.getByRole("button", { name: "Public mail", exact: true }).click();
   await page.getByRole("button", { name: "Explore preview" }).click();
   await page

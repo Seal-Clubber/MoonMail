@@ -1,3 +1,7 @@
+import {
+  connectFromVisibleControl,
+  minimizeComposer,
+} from "./support/composer";
 import { readable } from "./support/contrast";
 import { test, expect, type Page, type Locator } from "@playwright/test";
 import {
@@ -146,9 +150,7 @@ for (const verified of [false, true])
       r.fulfill({ json: ledger(r.request().url()) }),
     );
     await page.goto("./#/compose");
-    await page
-      .getByRole("button", { name: "Connect wallet", exact: true })
-      .click();
+    await connectFromVisibleControl(page);
     await page
       .getByRole("button", { name: "Connect Sapient", exact: true })
       .click();
@@ -188,9 +190,7 @@ test("a connected funded public review stays gated until explicit publication ch
     return r.fulfill({ json: ledger(r.request().url()) });
   });
   await page.goto("./#/compose");
-  await page
-    .getByRole("button", { name: "Connect wallet", exact: true })
-    .click();
+  await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
@@ -214,6 +214,7 @@ test("a connected funded public review stays gated until explicit publication ch
   await expect(publish).toBeDisabled();
   await consent.check();
   await expect(publish).toBeEnabled();
+  await minimizeComposer(page);
   await page.getByRole("button", { name: "Activity", exact: true }).click();
   await page.getByRole("button", { name: "Compose", exact: true }).click();
   await page.getByRole("button", { name: "Review letter" }).click();
@@ -252,9 +253,7 @@ test("private link must be saved before one approved publication; confirmation r
   await page
     .getByRole("button", { name: "⌘ Private link", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "Connect wallet", exact: true })
-    .click();
+  await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
@@ -378,9 +377,7 @@ test("damaged delivery history is retained, explained and cannot authorize sendi
   await page
     .getByRole("button", { name: "✧ Public mail", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "Connect wallet", exact: true })
-    .click();
+  await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
@@ -456,6 +453,7 @@ test("a receipt that finishes after a network change cannot confirm the old deli
   );
   release();
   await returned;
+  await minimizeComposer(page);
   await page.getByRole("button", { name: "Activity", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "No deliveries yet." }),
@@ -584,9 +582,7 @@ test("saved postbox backup confirms read-only; opening needs separate view conse
     pending,
   );
   await page.goto("./#/postboxes");
-  await page
-    .getByRole("button", { name: "Connect wallet", exact: true })
-    .click();
+  await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
@@ -670,9 +666,7 @@ test("private-link copying has a manual fallback and never acknowledges saving a
   await page
     .getByRole("button", { name: "⌘ Private link", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "Connect wallet", exact: true })
-    .click();
+  await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
@@ -791,12 +785,11 @@ for (const denied of ["getter", "writes"] as const) {
         .filter({ hasText: "Browser storage needs permission" }),
     ).toBeVisible();
     await page.getByRole("button", { name: "Compose", exact: true }).click();
-    await page
-      .getByRole("button", { name: "Connect wallet", exact: true })
-      .click();
+    await connectFromVisibleControl(page);
     await page
       .getByRole("button", { name: "Connect Sapient", exact: true })
       .click();
+    await minimizeComposer(page);
     await page.getByRole("button", { name: "Activity", exact: true }).click();
     const resume = page.getByRole("button", {
       name: "Resume Sapient approval",
@@ -910,15 +903,14 @@ test("wallet details expose only public receiving information without requesting
   await page
     .getByLabel("Subject", { exact: true })
     .fill("A draft stays at the writing desk");
-  await page
-    .getByRole("button", { name: "Connect wallet", exact: true })
-    .click();
+  await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
   const methods = await page.evaluate(() =>
     (window as any).walletCalls.map((c: any) => c.method),
   );
+  await minimizeComposer(page);
   const trigger = page.getByRole("button", {
     name: "Wallet details",
     exact: true,
@@ -985,12 +977,11 @@ async function openWalletFunds(page: Page) {
   await page
     .getByRole("button", { name: "⌘ Private link", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "Connect wallet", exact: true })
-    .click();
+  await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
+  await minimizeComposer(page);
   await page
     .getByRole("button", { name: "Wallet details", exact: true })
     .click();
@@ -1161,9 +1152,7 @@ test("postbox names respect the chain byte limit before the first backup approva
     return r.fulfill({ json: ledger(r.request().url()) });
   });
   await page.goto("./#/postboxes");
-  await page
-    .getByRole("button", { name: "Connect wallet", exact: true })
-    .click();
+  await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
@@ -1308,9 +1297,7 @@ test("automatic fees reveal an adjustment only after a low preflight estimate, w
     return r.fulfill({ json: ledger(r.request().url()) });
   });
   await page.goto("./#/compose");
-  await page
-    .getByRole("button", { name: "Connect wallet", exact: true })
-    .click();
+  await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();

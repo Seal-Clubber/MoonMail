@@ -112,6 +112,10 @@ export function App() {
   const [view, setView] = useState("welcome"),
     [d, setD] = useState<Deployment>(() => networkPreset(38)),
     [chain, setChain] = useState<PostOfficeClient>();
+  const mailboxView = view === "postboxes" || view === "compose";
+  const [composerMinimized, setComposerMinimized] = useState(false);
+  const [composerExpanded, setComposerExpanded] = useState(false);
+  const composerReturnFocus = useRef<HTMLElement | null>(null);
   const [letters, setLetters] = useState<Envelope[]>([]),
     [boxes, setBoxes] = useState<Postbox[]>([]),
     [preview, setPreview] = useState(false),
@@ -211,8 +215,7 @@ export function App() {
   );
   const [mailboxReaderTarget, setMailboxReaderTarget] =
     useState<HTMLDivElement | null>(null);
-  const inlinePostboxReader =
-    view === "postboxes" && active?.mode === "postbox";
+  const inlinePostboxReader = mailboxView && active?.mode === "postbox";
   const activeSample = !!active && sampleMail.includes(active);
   const [showSampleActivity, setShowSampleActivity] = useState(false);
   useEffect(() => {
@@ -968,10 +971,21 @@ export function App() {
       if (revision === deploymentRevision.current) setOfficeLoadError(true);
     }
   }
-  function navigate(v: string) {
+  function navigate(v: string, publicationSubmitted = false) {
     setFeeProblem(undefined);
-    if (active?.mode === "postbox" && inlinePostboxReader) {
-      if (busy) return;
+    if (v === "compose" && busy) return;
+    if (v === "compose") {
+      composerReturnFocus.current = document.activeElement as HTMLElement;
+      setComposerMinimized(false);
+      focusAddressedDraft.current = true;
+    }
+    if (
+      v !== "compose" &&
+      !(v === "postboxes" && view === "compose") &&
+      active?.mode === "postbox" &&
+      inlinePostboxReader
+    ) {
+      if (busy && !publicationSubmitted) return;
       closeLetter();
     }
     setPublicLetterRoute(undefined);
@@ -988,19 +1002,33 @@ export function App() {
     history.pushState(null, "", `${location.pathname}#/${v}`);
     window.scrollTo(0, 0);
   }
+  function closeComposer() {
+    if (busy) return;
+    navigate("postboxes");
+    requestAnimationFrame(() => {
+      const previous = composerReturnFocus.current;
+      if (previous?.isConnected && previous.getClientRects().length)
+        previous.focus({ preventScroll: true });
+      else
+        document
+          .querySelector<HTMLButtonElement>('nav button[title="My inbox"]')
+          ?.focus();
+    });
+  }
   function beginAddressedDraft(
     id: string,
     replyTitle?: string,
     original?: Envelope,
     originalPlain?: Letter,
   ) {
+    if (busy) return;
     setRequestPayment(false);
     const postbox = boxes.find((p) => p.id === id);
     if (!postbox) return;
     const keptDraft = !!(subject || body || (gift && gift !== "0"));
     focusAddressedDraft.current = true;
     draftSequence.current += 1;
-    closeLetter();
+    if (!inlinePostboxReader) closeLetter();
     setMode("postbox");
     setRecipient(id);
     setThread(original ? replyThread(original, originalPlain) : undefined);
@@ -1497,13 +1525,14 @@ export function App() {
     if (openSequence.current === sequence) setPlain(letter);
   }
   function composeFromPostbox(box: Postbox) {
+    if (busy) return;
     setRequestPayment(false);
     const owner = wallet?.accounts.findIndex(
       (a) => a.account.owner_public_key === box.controller,
     );
     if (owner === undefined || owner < 0) return;
     draftSequence.current += 1;
-    closeLetter();
+    if (!inlinePostboxReader) closeLetter();
     setAccount(owner);
     setMode("postbox");
     setReply(box.id);
@@ -1830,6 +1859,48 @@ export function App() {
       setStatus(`Sapient submission ${id}. Reconcile chain confirmation next.`);
     });
   }
+  const invitationPanel = postboxInvitation && (
+    <PostboxInvitation
+      invitation={postboxInvitation}
+      deployment={d}
+      boxes={boxes}
+      ready={readState === "ready"}
+      failed={readState === "failed"}
+      busy={busy || connect || !!active}
+      onAccept={(id) => beginAddressedDraft(id)}
+      onDismiss={() => navigate(view)}
+      onRetry={() => void task(refresh)}
+    />
+  );
+  const storageNotices = (
+    <>
+      {storageError && (
+        <div role="alert" className="message error">
+          <strong>Browser storage needs permission.</strong>
+          <p>{storageError}</p>
+          <button
+            onClick={() => {
+              setStorageError(checkBrowserStorage());
+              setDeliveryRevision((value) => value + 1);
+            }}
+          >
+            Recheck browser storage
+          </button>
+        </div>
+      )}
+      {deliveryHistory.error && !storageError && (
+        <div role="alert" className="message error">
+          <strong>Your delivery history needs attention.</strong>
+          <p>
+            Sending and collection are paused because this browser’s saved
+            records cannot be read. Check Sapient transaction history before
+            recovering local storage. Don’t send a replacement or clear the
+            records while an outcome is uncertain.
+          </p>
+        </div>
+      )}
+    </>
+  );
   const publicTitles = Object.fromEntries(
     letters
       .filter((e) => e.mode === "public")
@@ -1842,7 +1913,7 @@ export function App() {
   );
   return (
     <div
-      className={`app-shell view-${view} ${view === "postboxes" ? "inbox-layout" : ""}`}
+      className={`app-shell view-${mailboxView ? "postboxes" : view} ${mailboxView ? "inbox-layout" : ""}`}
     >
       <div className="haunting" aria-hidden="true">
         <div className="haunting-mist" />
@@ -1869,7 +1940,7 @@ export function App() {
             MoonMail<small>YOUR WORDS, UNDER COVER OF NIGHT</small>
           </span>
         </a>
-        {view === "postboxes" && owned.length > 0 && (
+        {mailboxView && owned.length > 0 && (
           <div className="header-search-target" ref={setMailboxSearchTarget} />
         )}
         <nav aria-label="Main navigation">
@@ -1881,6 +1952,7 @@ export function App() {
           ].map(([v, label]) => (
             <button
               key={v}
+              disabled={busy}
               title={label}
               className={`${view === v ? "nav-active" : ""} ${v === "compose" ? "nav-compose" : ""}`}
               aria-current={view === v ? "page" : undefined}
@@ -1931,7 +2003,7 @@ export function App() {
       </header>
       <main id="main-content" tabIndex={-1}>
         {!["welcome", "privacy", "compose"].includes(view) &&
-          (view !== "postboxes" || !owned.length) && (
+          (!mailboxView || !owned.length) && (
             <div className="privacy-shortcut">
               <button
                 className="text-button"
@@ -1974,19 +2046,7 @@ export function App() {
             </button>
           </div>
         )}
-        {postboxInvitation && (
-          <PostboxInvitation
-            invitation={postboxInvitation}
-            deployment={d}
-            boxes={boxes}
-            ready={readState === "ready"}
-            failed={readState === "failed"}
-            busy={busy || connect || !!active}
-            onAccept={(id) => beginAddressedDraft(id)}
-            onDismiss={() => navigate(view)}
-            onRetry={() => void task(refresh)}
-          />
-        )}
+        {view !== "compose" && invitationPanel}
         {publicLetterRoute && !active && (
           <section
             className="deployment-note private-link-status"
@@ -2485,695 +2545,789 @@ export function App() {
           </>
         )}
         {view === "compose" && (
-          <section className="page-panel compose">
-            <span className="kicker">THE WRITING DESK</span>
-            <div className="compose-heading">
+          <section
+            className={`page-panel compose compose-window ${composerMinimized ? "minimized" : ""} ${composerExpanded ? "expanded" : ""}`}
+            role="dialog"
+            aria-modal="false"
+            aria-labelledby="writing-desk-title"
+            onKeyDown={(event) => {
+              if (
+                event.key === "Escape" &&
+                !event.defaultPrevented &&
+                !busy &&
+                !(event.target as HTMLElement).closest("dialog")
+              ) {
+                event.preventDefault();
+                event.stopPropagation();
+                setComposerMinimized(true);
+                requestAnimationFrame(() =>
+                  document
+                    .querySelector<HTMLButtonElement>(
+                      '[aria-label="Restore composer"]',
+                    )
+                    ?.focus(),
+                );
+              }
+            }}
+          >
+            <div className="compose-heading compose-window-heading">
               <h1 id="writing-desk-title" tabIndex={-1}>
                 Compose <em>a letter.</em>
               </h1>
-              <button onClick={() => navigate("postboxes")}>
-                <UiIcon name="back" /> My inbox
-              </button>
-            </div>
-            <p>
-              Encrypted private mail by default. Choose a recipient and write
-              your letter.
-            </p>
-            <div className="mode-switch" role="group" aria-label="Mail mode">
-              {(["postbox", "link", "public"] as const).map((m) => (
+              <div className="compose-window-controls">
                 <button
-                  aria-pressed={mode === m}
+                  type="button"
                   disabled={busy}
-                  className={mode === m ? "selected" : ""}
-                  onClick={() => {
-                    draftSequence.current += 1;
-                    setMode(m);
-                    setThread(undefined);
-                    setReview(false);
-                    setPrepared(undefined);
-                  }}
-                  key={m}
+                  aria-label={
+                    composerMinimized ? "Restore composer" : "Minimize composer"
+                  }
+                  title={
+                    composerMinimized ? "Restore composer" : "Minimize composer"
+                  }
+                  aria-expanded={!composerMinimized}
+                  onClick={() => setComposerMinimized((value) => !value)}
                 >
-                  {m === "public"
-                    ? "✧ Public mail"
-                    : m === "link"
-                      ? "⌘ Private link"
-                      : "▥ Private mail"}
+                  <span aria-hidden="true">
+                    {composerMinimized ? "▱" : "−"}
+                  </span>
                 </button>
-              ))}
+                <button
+                  type="button"
+                  className="compose-expand"
+                  disabled={busy}
+                  aria-label={
+                    composerExpanded ? "Shrink composer" : "Expand composer"
+                  }
+                  title={
+                    composerExpanded ? "Shrink composer" : "Expand composer"
+                  }
+                  onClick={() => {
+                    setComposerExpanded((value) => !value);
+                    setComposerMinimized(false);
+                  }}
+                >
+                  <span aria-hidden="true">{composerExpanded ? "↙" : "↗"}</span>
+                </button>
+                <button
+                  type="button"
+                  disabled={busy}
+                  aria-label="Close composer"
+                  title="Close composer. Unsent text stays in this tab only."
+                  onClick={closeComposer}
+                >
+                  <span aria-hidden="true">×</span>
+                </button>
+              </div>
             </div>
-            <PrivacyView
-              mode={mode}
-              compact
-              sealed={sealedCompose}
-              payments={privatePaymentsEnabled}
-            />
-            {sealedCompose &&
-              wallet instanceof SapientSession &&
-              sendingBox &&
-              !composeViewApproved && (
-                <PrivateInboxAccess
-                  wallet={wallet}
-                  scope={`${current?.account.component_address}:${d.network}:${d.registry}`}
-                  setup={false}
-                  busy={busy}
-                  task={task}
-                  onGranted={() => setComposeViewApproved(true)}
-                />
+            <div className="compose-window-content" hidden={composerMinimized}>
+              {invitationPanel}
+              {storageNotices}
+              {error && (
+                <div role="alert" className="message error">
+                  {error}
+                </div>
               )}
-            {mode === "public" && (
-              <p className="public-warning" role="status">
-                Public publishing: your subject and full message will be
-                permanently readable by anyone. Choose Private mail to keep the
-                content encrypted.
+              {status && (
+                <div role="status" className="message status">
+                  {status}
+                </div>
+              )}
+              <p>
+                Encrypted private mail by default. Choose a recipient and write
+                your letter.
               </p>
-            )}
-            {mode === "link" && (
-              <p className="info">
-                Only people with your complete link can open this letter. Anyone
-                holding it can collect the gift once, including you. Save the
-                link before sending; lost links cannot be recovered.
-              </p>
-            )}
-            {mode === "postbox" && (
-              <p className="info">
-                A private letter for a Sapient postbox.{" "}
-                {writesReady(d, "postbox", "sapient")
-                  ? "Choose a friend below, or paste their postbox ID. Their wallet opens the delivered letter; your encrypted Sent copy stays recoverable."
-                  : "Private postbox sending is currently unavailable. Check the post office connection in Settings."}
-              </p>
-            )}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                void task(prepare);
-              }}
-            >
-              {reply && (
-                <label className="compose-from">
-                  {sealedCompose
-                    ? "Sending postbox"
-                    : "Verified owned reply postbox"}
-                  <select
-                    value={reply}
+              <div className="mode-switch" role="group" aria-label="Mail mode">
+                {(["postbox", "link", "public"] as const).map((m) => (
+                  <button
+                    aria-pressed={mode === m}
                     disabled={busy}
-                    onChange={(e) => {
-                      setReply(e.target.value);
+                    className={mode === m ? "selected" : ""}
+                    onClick={() => {
+                      draftSequence.current += 1;
+                      setMode(m);
+                      setThread(undefined);
                       setReview(false);
+                      setPrepared(undefined);
                     }}
+                    key={m}
                   >
-                    {owned.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.nickname} · {short(p.id)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    {m === "public"
+                      ? "✧ Public mail"
+                      : m === "link"
+                        ? "⌘ Private link"
+                        : "▥ Private mail"}
+                  </button>
+                ))}
+              </div>
+              <PrivacyView
+                mode={mode}
+                compact
+                sealed={sealedCompose}
+                payments={privatePaymentsEnabled}
+              />
+              {sealedCompose &&
+                !composerMinimized &&
+                wallet instanceof SapientSession &&
+                sendingBox &&
+                !composeViewApproved && (
+                  <PrivateInboxAccess
+                    wallet={wallet}
+                    scope={`${current?.account.component_address}:${d.network}:${d.registry}`}
+                    setup={false}
+                    busy={busy}
+                    task={task}
+                    onGranted={() => setComposeViewApproved(true)}
+                  />
+                )}
+              {mode === "public" && (
+                <p className="public-warning" role="status">
+                  Public publishing: your subject and full message will be
+                  permanently readable by anyone. Choose Private mail to keep
+                  the content encrypted.
+                </p>
+              )}
+              {mode === "link" && (
+                <p className="info">
+                  Only people with your complete link can open this letter.
+                  Anyone holding it can collect the gift once, including you.
+                  Save the link before sending; lost links cannot be recovered.
+                </p>
               )}
               {mode === "postbox" && (
-                <div className="recipient-choice">
-                  {thread && (
-                    <p className="reply-context">
-                      Replying to letter {short(thread.parent)} · conversation
-                      links are encrypted with your message.{" "}
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => {
+                <p className="info">
+                  A private letter for a Sapient postbox.{" "}
+                  {writesReady(d, "postbox", "sapient")
+                    ? "Choose a friend below, or paste their postbox ID. Their wallet opens the delivered letter; your encrypted Sent copy stays recoverable."
+                    : "Private postbox sending is currently unavailable. Check the post office connection in Settings."}
+                </p>
+              )}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void task(prepare);
+                }}
+              >
+                {reply && (
+                  <label className="compose-from">
+                    {sealedCompose
+                      ? "Sending postbox"
+                      : "Verified owned reply postbox"}
+                    <select
+                      value={reply}
+                      disabled={busy}
+                      onChange={(e) => {
+                        setReply(e.target.value);
+                        setReview(false);
+                      }}
+                    >
+                      {owned.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.nickname} · {short(p.id)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                {mode === "postbox" && (
+                  <div className="recipient-choice">
+                    {thread && (
+                      <p className="reply-context">
+                        Replying to letter {short(thread.parent)} · conversation
+                        links are encrypted with your message.{" "}
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => {
+                            setThread(undefined);
+                            setReview(false);
+                          }}
+                        >
+                          Start a separate conversation
+                        </button>
+                      </p>
+                    )}
+                    {contactHome && wallet instanceof SapientSession && (
+                      <ComposerContacts
+                        key={`${d.network}:${d.registry}:${contactHome.id}:${current?.account.component_address}`}
+                        box={contactHome}
+                        boxes={boxes}
+                        letters={letters}
+                        busy={busy}
+                        access={{
+                          wallet,
+                          chain,
+                          deployment: d,
+                          approved: false,
+                          writeBlocked,
+                          task,
+                          onStatus: setStatus,
+                        }}
+                        onPreferences={rememberPreferences}
+                        onContact={(id) => {
+                          setRecipient(id);
                           setThread(undefined);
                           setReview(false);
                         }}
-                      >
-                        Start a separate conversation
-                      </button>
-                    </p>
-                  )}
-                  {contactHome && wallet instanceof SapientSession && (
-                    <ComposerContacts
-                      key={`${d.network}:${d.registry}:${contactHome.id}:${current?.account.component_address}`}
-                      box={contactHome}
-                      boxes={boxes}
-                      letters={letters}
-                      busy={busy}
-                      access={{
-                        wallet,
-                        chain,
-                        deployment: d,
-                        approved: false,
-                        writeBlocked,
-                        task,
-                        onStatus: setStatus,
-                      }}
-                      onPreferences={rememberPreferences}
-                      onContact={(id) => {
-                        setRecipient(id);
+                      />
+                    )}
+                    <label htmlFor="recipient-postbox">Recipient postbox</label>
+                    <button
+                      type="button"
+                      className="text-button"
+                      onClick={() => navigate("ledger")}
+                    >
+                      Browse the spirit directory ↗
+                    </button>
+                    <select
+                      id="recipient-postbox"
+                      value={recipient}
+                      disabled={busy}
+                      onChange={(e) => {
+                        setRecipient(e.target.value);
                         setThread(undefined);
                         setReview(false);
                       }}
-                    />
-                  )}
-                  <label htmlFor="recipient-postbox">Recipient postbox</label>
-                  <button
-                    type="button"
-                    className="text-button"
-                    onClick={() => navigate("ledger")}
-                  >
-                    Browse the spirit directory ↗
-                  </button>
-                  <select
-                    id="recipient-postbox"
-                    value={recipient}
-                    disabled={busy}
-                    onChange={(e) => {
-                      setRecipient(e.target.value);
-                      setThread(undefined);
-                      setReview(false);
-                    }}
-                  >
-                    <option value="">Choose a registered postbox</option>
-                    {contactGroups.map(
-                      (group) =>
-                        !!group.boxes.length && (
-                          <optgroup key={group.label} label={group.label}>
-                            {group.boxes.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.nickname} · {short(p.id)}
-                              </option>
-                            ))}
-                          </optgroup>
-                        ),
-                    )}
-                  </select>
-                  <input
-                    aria-label="Recipient postbox ID"
-                    value={recipient}
-                    onChange={(e) => {
-                      setRecipient(e.target.value);
-                      setThread(undefined);
-                      setReview(false);
-                    }}
-                    placeholder="Or paste a registered postbox ID"
-                    disabled={busy}
-                  />
-                </div>
-              )}
-              <label>
-                Subject
-                <input
-                  value={subject}
-                  disabled={busy}
-                  maxLength={120}
-                  onChange={(e) => {
-                    setSubject(e.target.value);
-                    setReview(false);
-                  }}
-                  placeholder="A small thought from the other side"
-                  required
-                />
-              </label>
-              <label className="letter-body-label" htmlFor="letter-body">
-                Your letter
-              </label>
-              <textarea
-                id="letter-body"
-                value={body}
-                disabled={busy}
-                maxLength={unifiedOffice(d) ? 16000 : 2600}
-                aria-describedby="letter-space"
-                aria-invalid={draftTooLarge}
-                onChange={(e) => {
-                  setBody(e.target.value);
-                  setReview(false);
-                }}
-                placeholder="Dear wandering soul…"
-                rows={7}
-                required
-              />
-              <div
-                id="letter-space"
-                className={`letter-space ${draftTooLarge ? "letter-full" : ""}`}
-              >
-                {draftSize !== undefined ? (
-                  <>
-                    <div>
-                      <span>Letter space</span>
-                      <strong>
-                        {draftTooLarge
-                          ? "Letter is full"
-                          : `${Math.max(0, Math.floor((1 - draftSize / composeLimit) * 100))}% remaining`}
-                      </strong>
-                    </div>
-                    <progress
-                      aria-label="Letter space used"
-                      aria-valuetext={`${Math.min(100, Math.ceil((draftSize / composeLimit) * 100))}% used`}
-                      max={composeLimit}
-                      value={Math.min(draftSize, composeLimit)}
-                    />
-                    <p role={draftTooLarge ? "alert" : undefined}>
-                      {draftTooLarge
-                        ? "Shorten your subject or message before reviewing. Your text stays here."
-                        : mode === "public"
-                          ? "Addressing and gift details also need room in the letter."
-                          : "Sealed letters also need room for encryption, addressing and gift details."}
-                    </p>
-                  </>
-                ) : (
-                  <p>
-                    Choose a registered postbox to check available letter space.
-                  </p>
-                )}
-              </div>
-              {!sealedCompose && (
-                <>
-                  <div className="form-row">
-                    <AmountInput
-                      label="Gift amount (optional)"
-                      value={gift}
-                      disabled={busy}
-                      onChange={(value) => {
-                        setGift(value);
-                        setReserve(
-                          value && BigInt(value) > 0n
-                            ? reserve === "0"
-                              ? "100000"
-                              : reserve
-                            : "0",
-                        );
+                    >
+                      <option value="">Choose a registered postbox</option>
+                      {contactGroups.map(
+                        (group) =>
+                          !!group.boxes.length && (
+                            <optgroup key={group.label} label={group.label}>
+                              {group.boxes.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.nickname} · {short(p.id)}
+                                </option>
+                              ))}
+                            </optgroup>
+                          ),
+                      )}
+                    </select>
+                    <input
+                      aria-label="Recipient postbox ID"
+                      value={recipient}
+                      onChange={(e) => {
+                        setRecipient(e.target.value);
+                        setThread(undefined);
                         setReview(false);
                       }}
+                      placeholder="Or paste a registered postbox ID"
+                      disabled={busy}
                     />
-                    {gift && BigInt(gift) > 0n && (
-                      <p className="fine-print">
-                        Collection postage is included automatically:{" "}
-                        {tari(reserve)} TARI, separate from the gift.
-                      </p>
-                    )}
                   </div>
-                  <p className="fine-print">
-                    The recipient gets the full gift. You fund collection fees
-                    separately. Gifts have no expiry or refunds; unused
-                    collection funds stay locked. Use 0 for a letter without a
-                    gift.
-                  </p>
-                </>
-              )}
-              {!sealedCompose && (
-                <label className="checkbox">
+                )}
+                <label>
+                  Subject
                   <input
-                    type="checkbox"
-                    checked={!!reply}
-                    disabled={busy || !owned.length}
+                    value={subject}
+                    disabled={busy}
+                    maxLength={120}
                     onChange={(e) => {
-                      setReply(e.target.checked ? owned[0]?.id || "" : "");
+                      setSubject(e.target.value);
                       setReview(false);
-                      setPrepared(undefined);
-                      setLinkSaved(false);
                     }}
-                  />{" "}
-                  Include my postbox for replies (optional)
+                    placeholder="A small thought from the other side"
+                    required
+                  />
                 </label>
-              )}
-              {sealedCompose && (
-                <div className="sent-copy-choice">
-                  {privatePaymentsEnabled && (
-                    <div className="private-payment-composer">
-                      <label className="checkbox">
-                        <input
-                          type="checkbox"
-                          checked={requestPayment}
-                          disabled={busy || !current?.address}
-                          onChange={(e) => {
-                            setRequestPayment(e.target.checked);
-                            setRequestNonce(
-                              hex(crypto.getRandomValues(new Uint8Array(32))),
-                            );
-                            setReview(false);
-                            setPrepared(undefined);
-                          }}
-                        />
-                        Request a private payment
-                      </label>
-                      {requestPayment && (
-                        <>
-                          <AmountInput
-                            label="Requested private payment"
-                            value={requestedAmount}
-                            disabled={busy}
-                            onChange={(value) => {
-                              setRequestedAmount(value);
-                              setReview(false);
-                              setPrepared(undefined);
-                            }}
-                          />
-                          <p className="fine-print">
-                            Your Sapient receiving address and amount will be
-                            encrypted inside this letter. Sending the request
-                            pays postage only; your correspondent separately
-                            reviews and approves payment.
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  )}
-                  <p>
-                    Every sealed letter includes recoverable encrypted Sent
-                    access. Sender and recipient postbox addresses stay inside
-                    the encrypted message.
-                  </p>
-                  <details className="reply-key-options">
-                    <summary>Reply encryption options</summary>
-                    <label className="checkbox">
-                      <input
-                        type="checkbox"
-                        checked={privateReplies}
-                        disabled={busy}
-                        onChange={(e) => {
-                          setPrivateReplies(e.target.checked);
-                          setReview(false);
-                          setPrepared(undefined);
-                        }}
+                <label className="letter-body-label" htmlFor="letter-body">
+                  Your letter
+                </label>
+                <textarea
+                  id="letter-body"
+                  value={body}
+                  disabled={busy}
+                  maxLength={unifiedOffice(d) ? 16000 : 2600}
+                  aria-describedby="letter-space"
+                  aria-invalid={draftTooLarge}
+                  onChange={(e) => {
+                    setBody(e.target.value);
+                    setReview(false);
+                  }}
+                  placeholder="Dear wandering soul…"
+                  rows={7}
+                  required
+                />
+                <div
+                  id="letter-space"
+                  className={`letter-space ${draftTooLarge ? "letter-full" : ""}`}
+                >
+                  {draftSize !== undefined ? (
+                    <>
+                      <div>
+                        <span>Letter space</span>
+                        <strong>
+                          {draftTooLarge
+                            ? "Letter is full"
+                            : `${Math.max(0, Math.floor((1 - draftSize / composeLimit) * 100))}% remaining`}
+                        </strong>
+                      </div>
+                      <progress
+                        aria-label="Letter space used"
+                        aria-valuetext={`${Math.min(100, Math.ceil((draftSize / composeLimit) * 100))}% used`}
+                        max={composeLimit}
+                        value={Math.min(draftSize, composeLimit)}
                       />
-                      Use a conversation-specific reply key
-                    </label>
-                    <p className="fine-print">
-                      This separates reply encryption keys. Your transaction
-                      signer and timing remain public.
+                      <p role={draftTooLarge ? "alert" : undefined}>
+                        {draftTooLarge
+                          ? "Shorten your subject or message before reviewing. Your text stays here."
+                          : mode === "public"
+                            ? "Addressing and gift details also need room in the letter."
+                            : "Sealed letters also need room for encryption, addressing and gift details."}
+                      </p>
+                    </>
+                  ) : (
+                    <p>
+                      Choose a registered postbox to check available letter
+                      space.
                     </p>
-                  </details>
-                  {!sendingBox && (
-                    <button type="button" onClick={() => navigate("postboxes")}>
-                      Create or choose my sending postbox
-                    </button>
                   )}
                 </div>
-              )}
-              {mode !== "public" && !sealedCompose && unifiedOffice(d) && (
-                <div className="sent-copy-choice">
+                {!sealedCompose && (
+                  <>
+                    <div className="form-row">
+                      <AmountInput
+                        label="Gift amount (optional)"
+                        value={gift}
+                        disabled={busy}
+                        onChange={(value) => {
+                          setGift(value);
+                          setReserve(
+                            value && BigInt(value) > 0n
+                              ? reserve === "0"
+                                ? "100000"
+                                : reserve
+                              : "0",
+                          );
+                          setReview(false);
+                        }}
+                      />
+                      {gift && BigInt(gift) > 0n && (
+                        <p className="fine-print">
+                          Collection postage is included automatically:{" "}
+                          {tari(reserve)} TARI, separate from the gift.
+                        </p>
+                      )}
+                    </div>
+                    <p className="fine-print">
+                      The recipient gets the full gift. You fund collection fees
+                      separately. Gifts have no expiry or refunds; unused
+                      collection funds stay locked. Use 0 for a letter without a
+                      gift.
+                    </p>
+                  </>
+                )}
+                {!sealedCompose && (
                   <label className="checkbox">
                     <input
                       type="checkbox"
-                      checked={saveSent}
-                      disabled={busy || !sentDescriptor}
+                      checked={!!reply}
+                      disabled={busy || !owned.length}
                       onChange={(e) => {
-                        setSaveSent(e.target.checked);
+                        setReply(e.target.checked ? owned[0]?.id || "" : "");
                         setReview(false);
                         setPrepared(undefined);
                         setLinkSaved(false);
                       }}
-                    />
-                    Save an encrypted copy in Sent
-                  </label>
-                  <p className="fine-print">
-                    {sentDescriptor
-                      ? "Your sending postbox can recover this copy with Sapient on another device. It uses extra on-chain letter space; no extra wallet approval is needed."
-                      : "Include your Sapient postbox for replies above to save recoverable Sent mail."}
-                  </p>
-                </div>
-              )}
-              {wallet && wallet.accounts.length > 1 && (
-                <label>
-                  Funding account
-                  <select
-                    value={account}
-                    disabled={busy}
-                    onChange={(e) => {
-                      setAccount(Number(e.target.value));
-                      setReview(false);
-                      setReply("");
-                    }}
-                  >
-                    {wallet.accounts.map((a, i) => (
-                      <option key={i} value={i}>
-                        {a.account.name} · {short(a.account.component_address)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              )}
-              {wallet instanceof SapientSession &&
-                wallet.privateFeeCapable &&
-                d.evidence.nativePrivatePostage === true && (
-                  <label>
-                    Postage source
-                    <select
-                      value={postage}
-                      disabled={busy}
-                      onChange={(e) => {
-                        setPostage(e.target.value as "private" | "transparent");
-                        setReview(false);
-                      }}
-                    >
-                      <option value="private">
-                        Private TARI · native Sapient postage
-                      </option>
-                      <option value="transparent">
-                        Public TARI · visible account funding
-                      </option>
-                    </select>
+                    />{" "}
+                    Include my postbox for replies (optional)
                   </label>
                 )}
-              <FeeAdjustment
-                problem={
-                  feeProblem?.operation === "publish" ? feeProblem : undefined
-                }
-                label="Sending fee limit"
-                value={fee}
-                busy={busy}
-                onChange={(value) => {
-                  setFee(value);
-                  setReview(false);
-                }}
-              />
-              {wallet?.kind === "sapient" && (
-                <p className="fine-print">
-                  This cap applies to each transaction. Sapient may retry input
-                  or version failures; more than one attempt can pay fees. An
-                  uncertain operation stays pending until you reconcile it.
-                </p>
-              )}
-              <div className="actions">
-                <button
-                  type="submit"
-                  className="primary"
-                  disabled={
-                    busy ||
-                    draftTooLarge ||
-                    (mode === "postbox" && (!recipient || !d.registry))
-                  }
-                >
-                  {busy ? "Sealing…" : "Review letter"} <span>↗</span>
-                </button>
-                {!wallet && (
-                  <button type="button" onClick={() => setConnect(true)}>
-                    Connect to send
-                  </button>
-                )}
-              </div>
-            </form>
-            {review && prepared && (
-              <div className="review">
-                <h2>
-                  {mode === "link"
-                    ? "Sealed on this device"
-                    : "Ready for review"}
-                </h2>
-                {draftLetter.privatePayment && (
-                  <PrivatePaymentCard payment={draftLetter.privatePayment} />
-                )}
-                <dl className="receipt">
-                  <div>
-                    <dt>Recipient receives</dt>
-                    <dd>{tari(gift)} TARI</dd>
-                  </div>
-                  <div>
-                    <dt>Collection funds</dt>
-                    <dd>{tari(reserve)} TARI</dd>
-                  </div>
-                  <div>
-                    <dt>Sending fee limit</dt>
-                    <dd>{tari(fee)} TARI per attempt</dd>
-                  </div>
-                  <div>
-                    <dt>Gift + collection funds</dt>
-                    <dd>
-                      {tari((BigInt(gift) + BigInt(reserve)).toString())} TARI
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Replies</dt>
-                    <dd>
-                      {prepared.envelope.replyPostbox ? (
-                        <code className="postbox-address">
-                          {prepared.envelope.replyPostbox}
-                        </code>
-                      ) : (
-                        "No reply postbox"
-                      )}
-                    </dd>
-                  </div>
-                  {prepared.envelope.mode !== "public" && (
-                    <div>
-                      <dt>Sent folder</dt>
-                      <dd>
-                        {prepared.sealedReview || sentCopy(prepared.envelope)
-                          ? "Encrypted copy saved with this letter"
-                          : "No recoverable sender copy"}
-                      </dd>
-                    </div>
-                  )}
-                </dl>
-                {prepared.envelope.replyPostbox && !prepared.sealedReview && (
-                  <p className="fine-print">
-                    Your included reply postbox ID is public, including on
-                    sealed letters.
-                  </p>
-                )}
-                <p>
-                  Sapient will show the sending fee before you approve.{" "}
-                  {!prepared.sealedReview &&
-                    "Collection works only if the funds you set aside cover it."}
-                </p>
-                <p className="fine-print">
-                  {prepared.sealedReview
-                    ? "Nothing has been published yet. Subject, body, recipient and reply addressing are encrypted. The transaction signer, timing, office and size bucket remain public."
-                    : "Nothing has been published or funded yet. Encryption includes the subject. Private gift amounts and routing metadata remain visible on chain."}
-                </p>
-                <p className="info">
-                  {postage === "private"
-                    ? "Postage uses private TARI in Sapient, with no automatic public fallback. The wallet builds the fee proof after you approve; its stock API cannot privately simulate this custom letter in advance. A rejected transaction may still pay fees." +
-                      (prepared.sealedReview
-                        ? " This letter has no payment attachment."
-                        : " Attached gifts still use the public gift vault.")
-                    : prepared.sealedReview
-                      ? "Postage uses public TARI. Sapient simulates this letter before asking you to approve. No payment is attached."
-                      : "Postage and attached gifts use public TARI. Sapient simulates this letter before asking you to approve."}
-                </p>
-                {prepared.capability && d.registry && (
-                  <section
-                    className="secret-link-save"
-                    aria-labelledby="save-link-title"
-                  >
-                    <h3 id="save-link-title">Keep your secret safe.</h3>
+                {sealedCompose && (
+                  <div className="sent-copy-choice">
+                    {privatePaymentsEnabled && (
+                      <div className="private-payment-composer">
+                        <label className="checkbox">
+                          <input
+                            type="checkbox"
+                            checked={requestPayment}
+                            disabled={busy || !current?.address}
+                            onChange={(e) => {
+                              setRequestPayment(e.target.checked);
+                              setRequestNonce(
+                                hex(crypto.getRandomValues(new Uint8Array(32))),
+                              );
+                              setReview(false);
+                              setPrepared(undefined);
+                            }}
+                          />
+                          Request a private payment
+                        </label>
+                        {requestPayment && (
+                          <>
+                            <AmountInput
+                              label="Requested private payment"
+                              value={requestedAmount}
+                              disabled={busy}
+                              onChange={(value) => {
+                                setRequestedAmount(value);
+                                setReview(false);
+                                setPrepared(undefined);
+                              }}
+                            />
+                            <p className="fine-print">
+                              Your Sapient receiving address and amount will be
+                              encrypted inside this letter. Sending the request
+                              pays postage only; your correspondent separately
+                              reviews and approves payment.
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
                     <p>
-                      Save this complete link before sending. It opens after
-                      delivery confirms. Anyone with it can open the letter and
-                      collect its gift; MoonMail cannot recover it for you.
+                      Every sealed letter includes recoverable encrypted Sent
+                      access. Sender and recipient postbox addresses stay inside
+                      the encrypted message.
                     </p>
-                    <CopyField
-                      label="Private link to save"
-                      buttonLabel="Copy secret link"
-                      copiedMessage="Private link copied. Save it somewhere safe before sending."
-                      disabled={busy}
-                      multiline
-                      value={createGiftLink(
-                        new URL(import.meta.env.BASE_URL, location.href).href,
-                        {
-                          id: prepared.envelope.id,
-                          capability: prepared.capability,
-                          context: d,
-                        },
-                      )}
-                    />
+                    <details className="reply-key-options">
+                      <summary>Reply encryption options</summary>
+                      <label className="checkbox">
+                        <input
+                          type="checkbox"
+                          checked={privateReplies}
+                          disabled={busy}
+                          onChange={(e) => {
+                            setPrivateReplies(e.target.checked);
+                            setReview(false);
+                            setPrepared(undefined);
+                          }}
+                        />
+                        Use a conversation-specific reply key
+                      </label>
+                      <p className="fine-print">
+                        This separates reply encryption keys. Your transaction
+                        signer and timing remain public.
+                      </p>
+                    </details>
+                    {!sendingBox && (
+                      <button
+                        type="button"
+                        onClick={() => navigate("postboxes")}
+                      >
+                        Create or choose my sending postbox
+                      </button>
+                    )}
+                  </div>
+                )}
+                {mode !== "public" && !sealedCompose && unifiedOffice(d) && (
+                  <div className="sent-copy-choice">
                     <label className="checkbox">
                       <input
                         type="checkbox"
-                        checked={linkSaved}
-                        disabled={busy}
-                        onChange={(e) => setLinkSaved(e.target.checked)}
+                        checked={saveSent}
+                        disabled={busy || !sentDescriptor}
+                        onChange={(e) => {
+                          setSaveSent(e.target.checked);
+                          setReview(false);
+                          setPrepared(undefined);
+                          setLinkSaved(false);
+                        }}
                       />
-                      I saved my private link somewhere safe
+                      Save an encrypted copy in Sent
                     </label>
-                  </section>
+                    <p className="fine-print">
+                      {sentDescriptor
+                        ? "Your sending postbox can recover this copy with Sapient on another device. It uses extra on-chain letter space; no extra wallet approval is needed."
+                        : "Include your Sapient postbox for replies above to save recoverable Sent mail."}
+                    </p>
+                  </div>
                 )}
-                {mode === "public" && (
-                  <label className="public-consent">
-                    <input
-                      type="checkbox"
-                      checked={publicConfirmed}
+                {wallet && wallet.accounts.length > 1 && (
+                  <label>
+                    Funding account
+                    <select
+                      value={account}
                       disabled={busy}
-                      onChange={(e) => setPublicConfirmed(e.target.checked)}
-                    />
-                    I choose to publish this subject, message and any gift
-                    publicly on Ootle.
+                      onChange={(e) => {
+                        setAccount(Number(e.target.value));
+                        setReview(false);
+                        setReply("");
+                      }}
+                    >
+                      {wallet.accounts.map((a, i) => (
+                        <option key={i} value={i}>
+                          {a.account.name} ·{" "}
+                          {short(a.account.component_address)}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                 )}
-                <button
-                  className="primary"
-                  disabled={
-                    (mode === "public" && !publicConfirmed) ||
-                    !wallet ||
-                    !chain ||
-                    !writesReady(d, mode, "sapient") ||
-                    writeBlocked ||
-                    (!!prepared.capability && !linkSaved) ||
-                    busy
+                {wallet instanceof SapientSession &&
+                  wallet.privateFeeCapable &&
+                  d.evidence.nativePrivatePostage === true && (
+                    <label>
+                      Postage source
+                      <select
+                        value={postage}
+                        disabled={busy}
+                        onChange={(e) => {
+                          setPostage(
+                            e.target.value as "private" | "transparent",
+                          );
+                          setReview(false);
+                        }}
+                      >
+                        <option value="private">
+                          Private TARI · native Sapient postage
+                        </option>
+                        <option value="transparent">
+                          Public TARI · visible account funding
+                        </option>
+                      </select>
+                    </label>
+                  )}
+                <FeeAdjustment
+                  problem={
+                    feeProblem?.operation === "publish" ? feeProblem : undefined
                   }
-                  onClick={() =>
-                    void task(async () => {
-                      if (!wallet || !chain || !current) return;
-                      if (
-                        prepared.envelope.mode === "public" &&
-                        !publicConfirmed
-                      )
-                        throw new Error(
-                          "Choose public publication explicitly before continuing",
-                        );
-                      const id =
-                        prepared.sealedReview &&
-                        wallet instanceof SapientSession
-                          ? await chain
-                              .sealedOffice()
-                              .publish(
+                  label="Sending fee limit"
+                  value={fee}
+                  busy={busy}
+                  onChange={(value) => {
+                    setFee(value);
+                    setReview(false);
+                  }}
+                />
+                {wallet?.kind === "sapient" && (
+                  <p className="fine-print">
+                    This cap applies to each transaction. Sapient may retry
+                    input or version failures; more than one attempt can pay
+                    fees. An uncertain operation stays pending until you
+                    reconcile it.
+                  </p>
+                )}
+                <div className="actions">
+                  <button
+                    type="submit"
+                    className="primary"
+                    disabled={
+                      busy ||
+                      draftTooLarge ||
+                      (mode === "postbox" && (!recipient || !d.registry))
+                    }
+                  >
+                    {busy ? "Sealing…" : "Review letter"} <span>↗</span>
+                  </button>
+                  {!wallet && (
+                    <button type="button" onClick={() => setConnect(true)}>
+                      Connect to send
+                    </button>
+                  )}
+                </div>
+              </form>
+              {review && prepared && (
+                <div className="review">
+                  <h2>
+                    {mode === "link"
+                      ? "Sealed on this device"
+                      : "Ready for review"}
+                  </h2>
+                  {draftLetter.privatePayment && (
+                    <PrivatePaymentCard payment={draftLetter.privatePayment} />
+                  )}
+                  <dl className="receipt">
+                    <div>
+                      <dt>Recipient receives</dt>
+                      <dd>{tari(gift)} TARI</dd>
+                    </div>
+                    <div>
+                      <dt>Collection funds</dt>
+                      <dd>{tari(reserve)} TARI</dd>
+                    </div>
+                    <div>
+                      <dt>Sending fee limit</dt>
+                      <dd>{tari(fee)} TARI per attempt</dd>
+                    </div>
+                    <div>
+                      <dt>Gift + collection funds</dt>
+                      <dd>
+                        {tari((BigInt(gift) + BigInt(reserve)).toString())} TARI
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Replies</dt>
+                      <dd>
+                        {prepared.envelope.replyPostbox ? (
+                          <code className="postbox-address">
+                            {prepared.envelope.replyPostbox}
+                          </code>
+                        ) : (
+                          "No reply postbox"
+                        )}
+                      </dd>
+                    </div>
+                    {prepared.envelope.mode !== "public" && (
+                      <div>
+                        <dt>Sent folder</dt>
+                        <dd>
+                          {prepared.sealedReview || sentCopy(prepared.envelope)
+                            ? "Encrypted copy saved with this letter"
+                            : "No recoverable sender copy"}
+                        </dd>
+                      </div>
+                    )}
+                  </dl>
+                  {prepared.envelope.replyPostbox && !prepared.sealedReview && (
+                    <p className="fine-print">
+                      Your included reply postbox ID is public, including on
+                      sealed letters.
+                    </p>
+                  )}
+                  <p>
+                    Sapient will show the sending fee before you approve.{" "}
+                    {!prepared.sealedReview &&
+                      "Collection works only if the funds you set aside cover it."}
+                  </p>
+                  <p className="fine-print">
+                    {prepared.sealedReview
+                      ? "Nothing has been published yet. Subject, body, recipient and reply addressing are encrypted. The transaction signer, timing, office and size bucket remain public."
+                      : "Nothing has been published or funded yet. Encryption includes the subject. Private gift amounts and routing metadata remain visible on chain."}
+                  </p>
+                  <p className="info">
+                    {postage === "private"
+                      ? "Postage uses private TARI in Sapient, with no automatic public fallback. The wallet builds the fee proof after you approve; its stock API cannot privately simulate this custom letter in advance. A rejected transaction may still pay fees." +
+                        (prepared.sealedReview
+                          ? " This letter has no payment attachment."
+                          : " Attached gifts still use the public gift vault.")
+                      : prepared.sealedReview
+                        ? "Postage uses public TARI. Sapient simulates this letter before asking you to approve. No payment is attached."
+                        : "Postage and attached gifts use public TARI. Sapient simulates this letter before asking you to approve."}
+                  </p>
+                  {prepared.capability && d.registry && (
+                    <section
+                      className="secret-link-save"
+                      aria-labelledby="save-link-title"
+                    >
+                      <h3 id="save-link-title">Keep your secret safe.</h3>
+                      <p>
+                        Save this complete link before sending. It opens after
+                        delivery confirms. Anyone with it can open the letter
+                        and collect its gift; MoonMail cannot recover it for
+                        you.
+                      </p>
+                      <CopyField
+                        label="Private link to save"
+                        buttonLabel="Copy secret link"
+                        copiedMessage="Private link copied. Save it somewhere safe before sending."
+                        disabled={busy}
+                        multiline
+                        value={createGiftLink(
+                          new URL(import.meta.env.BASE_URL, location.href).href,
+                          {
+                            id: prepared.envelope.id,
+                            capability: prepared.capability,
+                            context: d,
+                          },
+                        )}
+                      />
+                      <label className="checkbox">
+                        <input
+                          type="checkbox"
+                          checked={linkSaved}
+                          disabled={busy}
+                          onChange={(e) => setLinkSaved(e.target.checked)}
+                        />
+                        I saved my private link somewhere safe
+                      </label>
+                    </section>
+                  )}
+                  {mode === "public" && (
+                    <label className="public-consent">
+                      <input
+                        type="checkbox"
+                        checked={publicConfirmed}
+                        disabled={busy}
+                        onChange={(e) => setPublicConfirmed(e.target.checked)}
+                      />
+                      I choose to publish this subject, message and any gift
+                      publicly on Ootle.
+                    </label>
+                  )}
+                  <button
+                    className="primary"
+                    disabled={
+                      (mode === "public" && !publicConfirmed) ||
+                      !wallet ||
+                      !chain ||
+                      !writesReady(d, mode, "sapient") ||
+                      writeBlocked ||
+                      (!!prepared.capability && !linkSaved) ||
+                      busy
+                    }
+                    onClick={() =>
+                      void task(async () => {
+                        if (!wallet || !chain || !current) return;
+                        if (
+                          prepared.envelope.mode === "public" &&
+                          !publicConfirmed
+                        )
+                          throw new Error(
+                            "Choose public publication explicitly before continuing",
+                          );
+                        const id =
+                          prepared.sealedReview &&
+                          wallet instanceof SapientSession
+                            ? await chain
+                                .sealedOffice()
+                                .publish(
+                                  wallet,
+                                  prepared.sealedReview,
+                                  fee,
+                                  browserStorage,
+                                  postage,
+                                )
+                            : await chain.publish(
                                 wallet,
-                                prepared.sealedReview,
+                                current,
+                                prepared.envelope,
                                 fee,
                                 browserStorage,
                                 postage,
-                              )
-                          : await chain.publish(
-                              wallet,
-                              current,
-                              prepared.envelope,
-                              fee,
-                              browserStorage,
-                              postage,
-                            );
-                      navigate("activity");
-                      setStatus(
-                        `Letter submitted. Check its confirmation below before sharing. Transaction: ${id}.`,
-                      );
-                    })
-                  }
-                >
-                  {mode === "public"
-                    ? "Publish publicly"
-                    : "Send encrypted letter"}
-                </button>
-                {!wallet && (
-                  <button onClick={() => setConnect(true)} disabled={busy}>
-                    Connect Sapient to send
+                              );
+                        navigate("activity", true);
+                        setStatus(
+                          `Letter submitted. Check its confirmation below before sharing. Transaction: ${id}.`,
+                        );
+                      })
+                    }
+                  >
+                    {mode === "public"
+                      ? "Publish publicly"
+                      : "Send encrypted letter"}
                   </button>
-                )}
-                {!chain && (
-                  <p className="review-note">
-                    {readState === "failed"
-                      ? "The post office connection failed. Try Refresh on Public mail."
-                      : "Waiting for the post office connection. Try Refresh on Public mail if this takes a while."}
-                  </p>
-                )}
-                {error && <p className="review-note">{error}</p>}
-                {!writesReady(d, mode, "sapient") && (
-                  <p className="info">
-                    Sending is currently unavailable for these post office
-                    settings.
-                  </p>
-                )}
-              </div>
-            )}
+                  {!wallet && (
+                    <button onClick={() => setConnect(true)} disabled={busy}>
+                      Connect Sapient to send
+                    </button>
+                  )}
+                  {!chain && (
+                    <p className="review-note">
+                      {readState === "failed"
+                        ? "The post office connection failed. Try Refresh on Public mail."
+                        : "Waiting for the post office connection. Try Refresh on Public mail if this takes a while."}
+                    </p>
+                  )}
+                  {error && <p className="review-note">{error}</p>}
+                  {!writesReady(d, mode, "sapient") && (
+                    <p className="info">
+                      Sending is currently unavailable for these post office
+                      settings.
+                    </p>
+                  )}
+                </div>
+              )}
+              <p className="compose-session-note">
+                Unsent text stays in this tab only. Reloading loses it; no draft
+                is saved.
+              </p>
+            </div>
           </section>
         )}
-        {view === "postboxes" && (
+        {mailboxView && (
           <Postboxes
+            autoPromptPrivateAccess={view !== "compose"}
+            privateAccessActive={view !== "compose" || composerMinimized}
             searchTarget={mailboxSearchTarget}
             feeProblem={feeProblem}
             wallet={wallet}
@@ -3518,37 +3672,13 @@ export function App() {
             )}
           </section>
         )}
-        {storageError && (
-          <div role="alert" className="message error">
-            <strong>Browser storage needs permission.</strong>
-            <p>{storageError}</p>
-            <button
-              onClick={() => {
-                setStorageError(checkBrowserStorage());
-                setDeliveryRevision((value) => value + 1);
-              }}
-            >
-              Recheck browser storage
-            </button>
-          </div>
-        )}
-        {deliveryHistory.error && !storageError && (
-          <div role="alert" className="message error">
-            <strong>Your delivery history needs attention.</strong>
-            <p>
-              Sending and collection are paused because this browser’s saved
-              records cannot be read. Check Sapient transaction history before
-              recovering local storage. Don’t send a replacement or clear the
-              records while an outcome is uncertain.
-            </p>
-          </div>
-        )}
-        {error && (
+        {view !== "compose" && storageNotices}
+        {error && view !== "compose" && (
           <div role="alert" className="message error">
             {error}
           </div>
         )}
-        {status && (
+        {status && view !== "compose" && (
           <div role="status" className="message status">
             {status}
           </div>
