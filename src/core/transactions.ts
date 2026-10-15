@@ -9,7 +9,7 @@ import {
   boolLiteral,
 } from "@tari-project/ootle";
 import type { Deployment, Envelope, Postbox } from "./types";
-import { letterLimit } from "./config";
+import { letterLimit, unifiedOffice } from "./config";
 import { assertEnvelopeSize } from "./crypto";
 import { postboxNameError } from "./postbox-name";
 import { sentCopy } from "./sent-mail";
@@ -188,7 +188,7 @@ export function mailboxStateTransaction(
   component?: string,
 ) {
   if (
-    d.contractProtocol !== "unified-1" ||
+    !unifiedOffice(d) ||
     d.template !== d.envelopeTemplate ||
     !/^[A-Za-z0-9_-]{1,64}$/.test(postbox) ||
     !ciphertext ||

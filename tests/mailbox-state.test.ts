@@ -158,6 +158,50 @@ test("long public, private-link and postbox payloads require the new deployment 
     "32 KiB",
   );
 });
+test("sealed and existing offices build settings transactions without changing the exact revision", () => {
+  for (const contractProtocol of ["unified-1", "unified-2"] as const) {
+    const profile = { ...d, contractProtocol };
+    const initial = mailboxStateTransaction(
+      profile,
+      `component_${"f".repeat(64)}`,
+      "100000",
+      50,
+      "home",
+      "opaque",
+      "0",
+    );
+    expect(initial.instructions[0]).toHaveProperty(
+      "CallMethod.method",
+      "open_mailbox",
+    );
+    const update = mailboxStateTransaction(
+      profile,
+      `component_${"f".repeat(64)}`,
+      "100000",
+      50,
+      "home",
+      "opaque",
+      "9007199254740993",
+      `component_${"e".repeat(64)}`,
+    );
+    expect(update.instructions[0]).toHaveProperty(
+      "CallMethod.method",
+      "set_ciphertext",
+    );
+    expect(update.instructions[0]).toEqual(
+      mailboxStateTransaction(
+        d,
+        `component_${"f".repeat(64)}`,
+        "100000",
+        50,
+        "home",
+        "opaque",
+        "9007199254740993",
+        `component_${"e".repeat(64)}`,
+      ).instructions[0],
+    );
+  }
+});
 test("new state transaction preserves exact u64 revision and journal blocks a replacement", () => {
   const tx = mailboxStateTransaction(
     d,
