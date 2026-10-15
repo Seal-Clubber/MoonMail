@@ -30,6 +30,7 @@ Private postage is selected when the current Sapient account supports it; a deli
 
 The application targets Ootle **0.46.0**, TypeScript SDK **0.9.0**, crypto WASM **0.46.0** and the inspected unmodified stock Sapient **0.6.6**. Current-account capabilities are checked at runtime. The single [V4 template](contracts/moonmail-v4/README.md) stores sealed letters, postboxes, historical recovery keys, encrypted settings and public gift rules.
 
+- [Final sealed-default verification](docs/sealed-default-verification.md): desktop/mobile checks and zero-spend stock-Sapient/real-ledger acceptance.
 - [Sealed-mail Esmeralda evidence](docs/sealed-mail-evidence.json): real encrypted letters/replies, rotation, independently restored Inbox/Sent, settings and native private postage.
 - [Private-payment Esmeralda evidence](docs/private-payment-evidence.json): one 0.1-test-TARI payment, deliberate loss of its success response, receipt-only recovery, exact amount/memo verification in a separately restored wallet, and repeat checks without another payment.
 - [Ootle upgrade verification](docs/ootle-v046-upgrade.md): dependency pins and engine compatibility.

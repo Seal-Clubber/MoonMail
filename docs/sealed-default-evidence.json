@@ -1,0 +1,151 @@
+{
+  "reviewedFrontendCommit": "24d5c8714ca86f426543060b8c2c4c8cd764e8a1",
+  "checkedAt": "2026-10-15T16:03:15.323Z",
+  "network": 38,
+  "stockSapient": "0.6.6",
+  "singleDefaultOffice": "unified-2",
+  "localBuildOnPagesHttpsOrigin": true,
+  "ledgerResponsesOverridden": false,
+  "financialRequests": 0,
+  "financialBroadcasts": 0,
+  "viewPermissionSeparateFromSpending": true,
+  "viewportWidths": [1440, 390],
+  "walletChecks": [
+    {
+      "moonMailTitleMastheadFooter": true,
+      "newPagesBase": "/MoonMail/"
+    },
+    {
+      "realSealedLetterOpened": true,
+      "independentWalletRecovery": true,
+      "savedSettingsRecovered": true
+    },
+    {
+      "realPrivateReceiptVerified": true,
+      "exactAmountAndMemoVerified": true,
+      "alreadyAvailableInIndependentWallet": true,
+      "financialRequests": 0
+    },
+    {
+      "reloadRestoredOffice": true,
+      "realPrivateGrantReused": true,
+      "repeatPermissionRequests": 0,
+      "realSentRecovered": true
+    },
+    {
+      "realEncryptedFavouritesRecovered": true,
+      "privatePaymentRequestAvailable": true,
+      "oldGiftFieldAbsentFromPrivateCompose": true,
+      "singleDefaultSealedOffice": true
+    },
+    {
+      "privacyDisclosureReachableFromSettings": true
+    }
+  ],
+  "guestChecks": [
+    {
+      "kind": "private-link",
+      "singleDefaultOffice": true,
+      "realLetterOpened": true,
+      "walletRequired": false,
+      "privateLinkScrubbed": true
+    },
+    {
+      "kind": "public",
+      "singleDefaultOffice": true,
+      "realLetterOpened": true,
+      "walletRequired": false,
+      "privateLinkScrubbed": false
+    }
+  ],
+  "buildAssets": [
+    {
+      "path": "assets/index-BY7rttvo.js",
+      "sha256": "47e576ea5014fa5522f124ddf36cdc03c894e8bd4679e5b6d6f3ff381a338ef3",
+      "bytes": 472975
+    },
+    {
+      "path": "assets/index-CiTJLh84.css",
+      "sha256": "f4120799ab4aaf493190e369f395e1031851e5537116fe211844ca6981eda71c",
+      "bytes": 60293
+    },
+    {
+      "path": "assets/ootle_wasm-Cvsi1jVQ.js",
+      "sha256": "5a1d1731282460783530d4849963ddc10f35d2c180f9d9d938c0c59398fa02fa",
+      "bytes": 209
+    },
+    {
+      "path": "assets/ootle_wasm-n1KAxUxM.js",
+      "sha256": "52cbef608ed1da5f8838994d75ccb0a5c69a0e0ce1099f34662518f13b836a2f",
+      "bytes": 21318
+    },
+    {
+      "path": "assets/ootle_wasm_bg-8nI6dVGr.wasm",
+      "sha256": "2856d86b688959fc6620ac8cf2cb4629ee554c94bd81a6baaa2a71a7e7a393f2",
+      "bytes": 1289871
+    },
+    {
+      "path": "assets/sealed-view-CespAHq4.js",
+      "sha256": "bca62873d5215becd0aaf894f7242d92fdbc90ec1fbd255f3d90a561c2097b05",
+      "bytes": 116
+    },
+    {
+      "path": "assets/sealed-view-PHdEIXqv.js",
+      "sha256": "4e7e4f07eced18e41384b7cfe679ef4a283f2935f72666f909b28b2e7c2e55d2",
+      "bytes": 24191
+    },
+    {
+      "path": "deployment-v2.json",
+      "sha256": "7f56cbeded7ddb07d1046cda1f4841ecaf5dad2f1995f4418df11661d4664921",
+      "bytes": 1100
+    },
+    {
+      "path": "deployment-v4.json",
+      "sha256": "1199ba73180004530df0c74083ae48a558aa6cf05607898843c5d2ba0f1ac589",
+      "bytes": 1257
+    },
+    {
+      "path": "deployment.json",
+      "sha256": "1199ba73180004530df0c74083ae48a558aa6cf05607898843c5d2ba0f1ac589",
+      "bytes": 1257
+    },
+    {
+      "path": "favicon.svg",
+      "sha256": "32cc54bf2ebec8c90c82fa5004c6a82fcc53d03b5a7b785ffc515903ed279ecd",
+      "bytes": 896
+    },
+    {
+      "path": "index.html",
+      "sha256": "fd5415301a9889078eaa1e17479a02cb3e21a2afe5def3a13ba00cb06ffadf06",
+      "bytes": 963
+    }
+  ],
+  "validation": {
+    "unitTests": 266,
+    "unitFiles": 31,
+    "browserCases": 286,
+    "fullBrowserSource": "fc946978d0db690ebcd33c430f81dc7eef369c11",
+    "affectedBrowserCasesAfterPrivacyShortcut": 60,
+    "nativeEngineChecks": 47,
+    "ignoredEngineChecks": 0,
+    "strictTypescript": true,
+    "pagesBaseBuild": true
+  },
+  "privacyScan": {
+    "repositoryAndBuildFiles": 289,
+    "historicalPrivateValues": 40,
+    "sealedPrivateValues": 11,
+    "paymentPrivateValues": 9,
+    "privateMaterialFound": false,
+    "localDevelopmentFilesTracked": false
+  },
+  "githubPushed": false,
+  "pagesDispatched": false,
+  "limits": [
+    "Old testnet offices are not selectable or migrated.",
+    "Payment is by encrypted request, with three approvals; transfer and receipt are not atomic.",
+    "If the original wallet installation and a missing result are lost before receipt delivery, automatic payment discovery is not guaranteed.",
+    "Public chain metadata remains observable; no anonymity claim.",
+    "Local-build acceptance does not claim the website has already been published."
+  ]
+}
