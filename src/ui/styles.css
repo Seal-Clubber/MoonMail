@@ -4399,9 +4399,39 @@ footer {
 .office-choice button {
   flex-shrink: 0;
 }
+.office-choice--compact {
+  padding: 8px 2.5% 0;
+  margin: 0;
+  gap: 0.75rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  font-size: 0.8rem;
+}
+.office-choice--compact button {
+  padding: 6px 10px;
+}
+.office-choice--compact .text-button {
+  margin-left: auto;
+}
+.office-choice--compact summary {
+  cursor: pointer;
+  color: #c6d6e8;
+}
+.office-choice--compact details[open] {
+  flex-basis: 100%;
+  order: 5;
+}
 @media (max-width: 640px) {
   .office-choice {
     align-items: stretch;
     flex-direction: column;
+  }
+  .office-choice--compact {
+    flex-direction: row;
+    align-items: center;
+    padding: 8px 3% 0;
   }
 }

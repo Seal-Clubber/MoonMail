@@ -1808,24 +1808,28 @@ export function App() {
       </header>
       <main id="main-content" tabIndex={-1}>
         {["postboxes", "compose", "network"].includes(view) && (
-          <section className="office-choice" aria-label="Mailbox office">
-            <div>
-              <strong>
-                {d.contractProtocol === "unified-2"
-                  ? "Sealed mail · Esmeralda"
-                  : "Existing postboxes · Esmeralda"}
-              </strong>
+          <section
+            className="office-choice office-choice--compact"
+            aria-label="Mailbox office"
+          >
+            <strong>
+              {d.contractProtocol === "unified-2"
+                ? "Sealed mail · Esmeralda"
+                : "Existing postboxes · Esmeralda"}
+            </strong>
+            <details>
+              <summary>About this office</summary>
               <p>
                 {d.contractProtocol === "unified-2"
                   ? "Recipient and reply addressing stay encrypted. New postboxes live here; earlier mail stays in its existing office."
                   : "Your earlier postboxes and mail are here. Try sealed mail for encrypted recipient and reply addressing."}
               </p>
-              {!!pendingMailboxChanges.length && (
-                <p role="status">
-                  Save your mailbox changes before switching offices.
-                </p>
-              )}
-            </div>
+            </details>
+            {!!pendingMailboxChanges.length && (
+              <p role="status">
+                Save your mailbox changes before switching offices.
+              </p>
+            )}
             <button
               disabled={busy || !!pendingMailboxChanges.length}
               onClick={() =>
@@ -1837,6 +1841,9 @@ export function App() {
               {d.contractProtocol === "unified-2"
                 ? "Open existing postboxes"
                 : "Try sealed mail"}
+            </button>
+            <button className="text-button" onClick={() => navigate("privacy")}>
+              What can others see?
             </button>
           </section>
         )}
@@ -1870,7 +1877,9 @@ export function App() {
             )
           );
         })()}
-        {view !== "welcome" && view !== "privacy" && (
+        {!["welcome", "privacy", "postboxes", "compose", "network"].includes(
+          view,
+        ) && (
           <div className="privacy-shortcut">
             <button className="text-button" onClick={() => navigate("privacy")}>
               What can others see?
