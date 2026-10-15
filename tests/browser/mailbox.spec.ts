@@ -581,8 +581,7 @@ test("chain-backed mailbox handles 27 letters, gift folders, search, sent scope 
   });
   await expect(reader).toContainText("A private note for your eyes only.");
   for (const selector of [
-    ".mailbox-identity small",
-    ".mailbox-device-note",
+    ".postbox-switcher",
     ".mailbox-reading-tools span",
     ".mailbox-letter .letter-body",
     ".mailbox-letter .kicker",
@@ -751,6 +750,7 @@ test("unified mailbox recovers encrypted marks and layout after a fresh browser 
   await connect(page);
   await unlock(page);
   await expect(page.locator(".mailbox-workspace")).toHaveClass(/compact/);
+  await page.locator(".mailbox-preferences summary").click();
   await expect(
     page.getByText("Matches saved Ootle settings", { exact: true }),
   ).toBeVisible();
@@ -784,7 +784,7 @@ test("unified mailbox recovers encrypted marks and layout after a fresh browser 
     .selectOption("2:false");
   await expect(
     page.getByText("Unsaved changes · this session only", { exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(1);
   await expect(page.locator(".mailbox-range")).toHaveText(
     "No loaded letters in this view",
   );
@@ -1007,7 +1007,7 @@ test("bulk selection stages consistent read and archive changes and discard rest
     .selectOption("4:true");
   await expect(page.getByText("0 selected", { exact: true })).toBeVisible();
   await expect(
-    page.getByText("Unsaved changes · this session only", { exact: true }),
+    page.getByLabel("Unsaved mailbox changes", { exact: true }),
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Discard unsaved changes", exact: true })
@@ -1253,6 +1253,7 @@ test("opening decrypted incoming mail stages read once, keeps edits through comp
   });
   await expect(row).toHaveClass(/unread/);
   await readable(row.locator(".mailbox-row-heading strong"));
+  await page.locator(".mailbox-preferences summary").click();
   await page
     .getByRole("combobox", { name: "Message spacing" })
     .selectOption("comfortable");

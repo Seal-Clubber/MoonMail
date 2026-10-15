@@ -66,8 +66,8 @@ export function Landing({
           <span aria-hidden="true">◇</span>
           <h2>A little generosity</h2>
           <p>
-            Attach an optional test TARI gift. Gift amounts and routing are
-            currently public; encrypted content stays sealed.
+            Request a native private payment inside an encrypted letter, or
+            choose a public gift. Review every payment in Sapient.
           </p>
         </article>
       </div>

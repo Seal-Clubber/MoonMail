@@ -19,6 +19,7 @@ import type { MailboxPreferences } from "../core/mailbox-state";
 import { MailboxWorkspace } from "./MailboxWorkspace";
 import type { Letter } from "../core/types";
 import { createPostboxLink } from "../core/postbox-links";
+import { UiIcon } from "./UiIcon";
 
 export function Postboxes({
   feeProblem,
@@ -32,6 +33,8 @@ export function Postboxes({
   onStatus,
   onConnect,
   onActivity,
+  onPublic,
+  onPrivacy,
   onOpen,
   onClose,
   onCompose,
@@ -64,6 +67,8 @@ export function Postboxes({
   onStatus: (text: string) => void;
   onConnect: () => void;
   onActivity: () => void;
+  onPublic: () => void;
+  onPrivacy: () => void;
   onOpen: (letter: Envelope) => void;
   onClose: () => void;
   onCompose: (box: Postbox) => void;
@@ -378,6 +383,47 @@ export function Postboxes({
     setRotating(false);
     onActivity();
   }
+  const postboxPicker = owned.length > 0 && (
+    <label className="postbox-switcher">
+      My postboxes
+      <select
+        disabled={busy}
+        value={selected}
+        onChange={(e) => choose(e.target.value)}
+      >
+        <option value="">Select a postbox</option>
+        {owned.map((p) => (
+          <option key={p.id} value={p.id}>
+            {p.nickname} · {p.id}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+  const postboxActions = (
+    <div className="postbox-actions">
+      <button
+        onClick={() => {
+          choose("");
+          setEditing(true);
+        }}
+        disabled={busy}
+      >
+        <UiIcon name="compose" />
+        {owned.length ? "Create another postbox" : "Create my postbox"}
+      </button>
+      <button onClick={() => void task(onRefresh)} disabled={busy}>
+        <UiIcon name="refresh" />
+        Refresh postboxes & inbox
+      </button>
+      {box && (
+        <button onClick={() => setEditing(true)} disabled={busy}>
+          <UiIcon name="settings" />
+          Edit selected postbox
+        </button>
+      )}
+    </div>
+  );
   return (
     <section
       className={`page-panel inbox-page ${box && !editing ? "mailbox-open" : ""}`}
@@ -413,44 +459,12 @@ export function Postboxes({
         </div>
       ) : (
         <>
-          <div className="inbox-toolbar">
-            {owned.length > 0 && (
-              <label>
-                My postboxes
-                <select
-                  disabled={busy}
-                  value={selected}
-                  onChange={(e) => choose(e.target.value)}
-                >
-                  <option value="">Select a postbox</option>
-                  {owned.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nickname} · {p.id}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            )}
-            <div className="actions">
-              <button
-                onClick={() => {
-                  choose("");
-                  setEditing(true);
-                }}
-                disabled={busy}
-              >
-                {owned.length ? "Create another postbox" : "Create my postbox"}
-              </button>
-              <button onClick={() => void task(onRefresh)} disabled={busy}>
-                Refresh postboxes & inbox
-              </button>
-              {box && (
-                <button onClick={() => setEditing(true)} disabled={busy}>
-                  Edit selected postbox
-                </button>
-              )}
+          {(!box || editing) && (
+            <div className="inbox-toolbar">
+              {postboxPicker}
+              {postboxActions}
             </div>
-          </div>
+          )}
           {!owned.length && !editing && (
             <div className="info">
               <h2>Your first postbox awaits.</h2>
@@ -751,6 +765,10 @@ export function Postboxes({
                 </div>
               )}
               <MailboxWorkspace
+                postboxPicker={postboxPicker}
+                postboxActions={postboxActions}
+                onPublic={onPublic}
+                onPrivacy={onPrivacy}
                 key={JSON.stringify([
                   deployment.network,
                   deployment.registry,

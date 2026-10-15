@@ -12,6 +12,8 @@ import {
   type MailboxPreferences,
 } from "../core/mailbox-state";
 import { tari } from "./AmountInput";
+import type { ReactNode } from "react";
+import { MoonlitScene, UiIcon, type IconName } from "./UiIcon";
 
 // Every folder is a view of loaded on-chain state, not a device-only mailbox record.
 type Folder =
@@ -22,11 +24,11 @@ type Folder =
   | "starred"
   | "archive"
   | "unread";
-const folders: { id: Folder; label: string; icon: string }[] = [
-  { id: "inbox", label: "Inbox", icon: "✉" },
-  { id: "gifts", label: "Available gifts", icon: "◇" },
-  { id: "collected", label: "Collected gifts", icon: "✓" },
-  { id: "sent", label: "Sent", icon: "↗" },
+const folders: { id: Folder; label: string; icon: IconName }[] = [
+  { id: "inbox", label: "Inbox", icon: "inbox" },
+  { id: "sent", label: "Sent", icon: "sent" },
+  { id: "gifts", label: "Available gifts", icon: "gift" },
+  { id: "collected", label: "Collected gifts", icon: "check" },
 ];
 export function MailboxWorkspace({
   box,
@@ -46,7 +48,15 @@ export function MailboxWorkspace({
   boxes,
   onReply,
   onPreferences,
+  postboxPicker,
+  postboxActions,
+  onPublic,
+  onPrivacy,
 }: {
+  postboxPicker: ReactNode;
+  postboxActions: ReactNode;
+  onPublic: () => void;
+  onPrivacy: () => void;
   stateAccess?: MailboxAccess;
   boxes: Postbox[];
   onReply: (e: Envelope, letter: Letter) => void;
@@ -74,10 +84,12 @@ export function MailboxWorkspace({
 
   const availableFolders = state.loaded
     ? [
-        ...folders,
-        { id: "unread" as const, label: "Unread", icon: "•" },
-        { id: "starred" as const, label: "Starred", icon: "☆" },
-        { id: "archive" as const, label: "Archive", icon: "▣" },
+        folders[0],
+        { id: "unread" as const, label: "Unread", icon: "unread" as const },
+        { id: "starred" as const, label: "Starred", icon: "star" as const },
+        folders[1],
+        { id: "archive" as const, label: "Archive", icon: "archive" as const },
+        ...folders.slice(2),
       ]
     : folders;
   const [folder, setFolder] = useState<Folder>("inbox");
@@ -206,19 +218,15 @@ export function MailboxWorkspace({
     onClose();
   }
   return (
-    <>
-      <MailboxSaveBar
-        state={state}
-        busy={busy}
-        blocked={stateAccess?.writeBlocked}
-      />
+    <div className="mailbox-client">
       <section
         className={`mailbox-workspace ${selected ? "reading" : ""} ${state.loaded ? state.draft.density : ""}`}
         aria-label={`${box.nickname} mailbox`}
       >
         <aside className="mailbox-sidebar">
+          {postboxPicker}
           <div className="mailbox-identity">
-            <span aria-hidden="true">✉</span>
+            <UiIcon name="inbox" />
             <strong>{box.nickname}</strong>
             <small>Wallet-controlled postbox</small>
           </div>
@@ -227,7 +235,7 @@ export function MailboxWorkspace({
             disabled={busy}
             onClick={onCompose}
           >
-            Compose letter <span aria-hidden="true">＋</span>
+            <UiIcon name="compose" /> Compose letter
           </button>
           <nav aria-label="Mailbox folders">
             {availableFolders.map((f) => (
@@ -237,65 +245,87 @@ export function MailboxWorkspace({
                 onClick={() => chooseFolder(f.id)}
                 disabled={busy}
               >
-                <span aria-hidden="true">{f.icon}</span>
+                <UiIcon name={f.icon} />
                 <span>{f.label}</span>
                 <span className="folder-count">{views[f.id].length}</span>
               </button>
             ))}
           </nav>
+          <div className="mailbox-secondary">
+            <button onClick={onPublic} disabled={busy}>
+              <UiIcon name="globe" />
+              Public mail & gifts
+            </button>
+            <button onClick={onPrivacy} disabled={busy}>
+              <UiIcon name="privacy" />
+              What can others see?
+            </button>
+          </div>
+          {postboxActions}
           {state.ready && (
-            <div className="mailbox-state-panel">
-              <h3>Mailbox settings</h3>
-              {!state.loaded ? (
-                <>
-                  <p>
-                    {state.loading
-                      ? "Loading encrypted settings from Ootle…"
-                      : state.error
-                        ? "Settings could not load. Retry to recover your saved mailbox."
-                        : "Settings load automatically after Sapient private access is approved."}
-                  </p>
-                  {state.error && <p role="alert">{state.error}</p>}
-                  <button
-                    disabled={busy || state.loading || !stateAccess?.approved}
-                    onClick={state.load}
-                  >
-                    Retry loading mailbox settings
-                  </button>
-                </>
-              ) : (
-                <>
-                  <p role="status">
-                    {state.dirty
-                      ? "Unsaved changes · this session only"
-                      : "Matches saved Ootle settings"}
-                  </p>
-                  <label>
-                    Message spacing
-                    <select
-                      value={state.draft.density}
-                      disabled={busy}
-                      onChange={(e) =>
-                        state.change({
-                          density: e.target.value as "comfortable" | "compact",
-                        })
-                      }
+            <details className="mailbox-preferences" open={!state.loaded}>
+              <summary>
+                <UiIcon name="settings" /> Mailbox settings
+              </summary>
+              <div className="mailbox-state-panel">
+                <h3>Mailbox settings</h3>
+                {!state.loaded ? (
+                  <>
+                    <p>
+                      {state.loading
+                        ? "Loading encrypted settings from Ootle…"
+                        : state.error
+                          ? "Settings could not load. Retry to recover your saved mailbox."
+                          : "Settings load automatically after Sapient private access is approved."}
+                    </p>
+                    {state.error && <p role="alert">{state.error}</p>}
+                    <button
+                      disabled={busy || state.loading || !stateAccess?.approved}
+                      onClick={state.load}
                     >
-                      <option value="comfortable">Comfortable</option>
-                      <option value="compact">Compact</option>
-                    </select>
-                  </label>
-                  <button disabled={busy || state.dirty} onClick={state.reload}>
-                    Reload saved settings
-                  </button>
-                </>
-              )}
-            </div>
+                      Retry loading mailbox settings
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <p role="status">
+                      {state.dirty
+                        ? "Unsaved changes · this session only"
+                        : "Matches saved Ootle settings"}
+                    </p>
+                    <label>
+                      Message spacing
+                      <select
+                        value={state.draft.density}
+                        disabled={busy}
+                        onChange={(e) =>
+                          state.change({
+                            density: e.target.value as
+                              | "comfortable"
+                              | "compact",
+                          })
+                        }
+                      >
+                        <option value="comfortable">Comfortable</option>
+                        <option value="compact">Compact</option>
+                      </select>
+                    </label>
+                    <button
+                      disabled={busy || state.dirty}
+                      onClick={state.reload}
+                    >
+                      Reload saved settings
+                    </button>
+                  </>
+                )}
+              </div>
+            </details>
           )}
           <p className="mailbox-device-note">
             Mail and gift states come from Ootle. Reconnect the same Sapient
             wallet on another device to recover your postboxes.
           </p>
+          <MoonlitScene />
         </aside>
         <div className="mailbox-list-panel">
           <header className="mailbox-list-header">
@@ -591,7 +621,7 @@ export function MailboxWorkspace({
                   setSentId("");
                 }}
               >
-                Back to messages
+                <UiIcon name="back" /> Back to messages
               </button>
               <span>
                 {folder === "sent"
@@ -695,6 +725,11 @@ export function MailboxWorkspace({
           )}
         </div>
       </section>
-    </>
+      <MailboxSaveBar
+        state={state}
+        busy={busy}
+        blocked={stateAccess?.writeBlocked}
+      />
+    </div>
   );
 }

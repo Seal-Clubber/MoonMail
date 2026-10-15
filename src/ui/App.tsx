@@ -4,6 +4,7 @@ import { letterLimit, unifiedOffice } from "../core/config";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { GhostMark } from "./GhostMark";
+import { UiIcon } from "./UiIcon";
 import { Landing } from "./Landing";
 import { PrivacyView } from "./PrivacyView";
 import { ActivityBook } from "./ActivityBook";
@@ -1838,7 +1839,9 @@ export function App() {
       .map((e) => [e.id, sampleLetter(e.id)!.subject]),
   );
   return (
-    <div className={`app-shell ${view === "postboxes" ? "inbox-layout" : ""}`}>
+    <div
+      className={`app-shell view-${view} ${view === "postboxes" ? "inbox-layout" : ""}`}
+    >
       <div className="haunting" aria-hidden="true">
         <div className="haunting-mist" />
         <span className="haunting-mote" />
@@ -1861,7 +1864,7 @@ export function App() {
             <GhostMark />
           </span>
           <span>
-            MOONMAIL<small>YOUR WORDS, UNDER COVER OF NIGHT</small>
+            MoonMail<small>YOUR WORDS, UNDER COVER OF NIGHT</small>
           </span>
         </a>
         <nav aria-label="Main navigation">
@@ -1885,6 +1888,17 @@ export function App() {
                   : navigate(v)
               }
             >
+              <UiIcon
+                name={
+                  v === "postboxes"
+                    ? "inbox"
+                    : v === "compose"
+                      ? "compose"
+                      : v === "hall"
+                        ? "globe"
+                        : "check"
+                }
+              />
               {label}
             </button>
           ))}
@@ -1910,7 +1924,7 @@ export function App() {
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
-        {!["welcome", "privacy", "compose"].includes(view) && (
+        {!["welcome", "privacy", "compose", "postboxes"].includes(view) && (
           <div className="privacy-shortcut">
             <button className="text-button" onClick={() => navigate("privacy")}>
               What can others see?
@@ -2463,9 +2477,14 @@ export function App() {
         {view === "compose" && (
           <section className="page-panel compose">
             <span className="kicker">THE WRITING DESK</span>
-            <h1 id="writing-desk-title" tabIndex={-1}>
-              Compose <em>a letter.</em>
-            </h1>
+            <div className="compose-heading">
+              <h1 id="writing-desk-title" tabIndex={-1}>
+                Compose <em>a letter.</em>
+              </h1>
+              <button onClick={() => navigate("postboxes")}>
+                <UiIcon name="back" /> My inbox
+              </button>
+            </div>
             <p>
               Encrypted private mail by default. Choose a recipient and write
               your letter.
@@ -3153,6 +3172,8 @@ export function App() {
             onStatus={setStatus}
             onConnect={() => setConnect(true)}
             onActivity={() => navigate("activity")}
+            onPublic={() => navigate("hall")}
+            onPrivacy={() => navigate("privacy")}
             writeBlocked={writeBlocked}
             onOpen={(e) => void task(() => openPostbox(e))}
             onClose={closeLetter}
