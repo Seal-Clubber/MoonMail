@@ -125,5 +125,25 @@
     "Private payment attachments are not implemented.",
     "Public gifts retain public amounts and payout routing.",
     "Transaction signer, timing, office, size buckets and postbox registrations remain public."
-  ]
+  ],
+  "finalFrontendCommit": "8ae6dde45500207f3f71c211d80b66b2f0bc9baa",
+  "validation": {
+    "unitTests": 250,
+    "browserTests": 280,
+    "nativeEngineTests": 46,
+    "typescript": true,
+    "pagesBaseBuild": true,
+    "privateMaterialFound": false
+  },
+  "finalReadOnly": {
+    "stockSapientRecovery": true,
+    "connectionAndViewGrantReused": true,
+    "repeatPermissionRequests": 0,
+    "sentAndFavouritesRecovered": true,
+    "guestPublicAndPrivateLink": true,
+    "walletRequiredForGuestReading": false,
+    "financialRequests": 0,
+    "ledgerResponsesOverridden": false
+  },
+  "verification": "sealed-mail-verification.md"
 }
