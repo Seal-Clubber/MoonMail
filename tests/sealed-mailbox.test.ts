@@ -341,7 +341,7 @@ test("composition binds reply routing to an opened original and always creates a
     const prepared = await session.prepare(
       { subject: "Re: moonlight", body: "Restorable reply" },
       b.box.id,
-      { replyTo: received.id, privateReply: true },
+      { replyTo: received.id },
     );
     const opened = await openPrivateMail(
       prepared.payload,
@@ -354,6 +354,8 @@ test("composition binds reply routing to an opened original and always creates a
       conversation,
       publicKey: reply.publicKey,
     });
+    expect(opened.reply?.conversation).toBe(conversation);
+    expect(opened.reply?.publicKey).toMatch(/^[a-f0-9]{64}$/);
     expect(opened.letter.thread).toEqual({
       version: "gd-thread-1",
       root: received.id,

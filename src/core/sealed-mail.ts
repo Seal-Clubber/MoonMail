@@ -449,7 +449,7 @@ export async function discoverPrivateMailPage(
   if (
     entries.length > 50 ||
     keys.length > 16 ||
-    identities.length > 128 ||
+    identities.length > 4096 ||
     new Set(entries.map((e) => e.id)).size !== entries.length
   )
     throw new Error("Sealed discovery requires bounded unique pages and keys");
@@ -488,7 +488,7 @@ export async function discoverPrivateMailPage(
     const base = keys.find(
       (k) => k.postbox === value.postbox && k.keyVersion === value.keyVersion,
     );
-    if (!base || derived.size >= 128)
+    if (!base || derived.size >= 4096)
       throw new Error(
         "Reply recovery needs its bounded historical mailbox key",
       );
@@ -497,17 +497,13 @@ export async function discoverPrivateMailPage(
       context,
       value.conversation,
     );
-    if (reply.publicKey !== value.publicKey) {
+    try {
+      if (reply.publicKey !== value.publicKey)
+        throw new Error("Reply identity does not belong to this mailbox");
+      derived.set(tag, { ...value });
+    } finally {
       reply.secret.fill(0);
-      throw new Error("Reply identity does not belong to this mailbox");
     }
-    derived.set(tag, { ...value });
-    ephemeral.push({
-      ...base,
-      publicKey: reply.publicKey,
-      secret: reply.secret,
-      conversation: value.conversation,
-    });
   }
   async function attempt(
     entry: SealedMailEntry,
@@ -571,8 +567,41 @@ export async function discoverPrivateMailPage(
       await addIdentity(identity);
     }
     for (const entry of entries) for (const k of keys) await attempt(entry, k);
-    for (const entry of entries)
-      for (const k of ephemeral) await attempt(entry, k, k.conversation);
+    // Keep at most 128 derived secrets alive while covering the entire bounded
+    // directory. Never truncate descriptors learned from recoverable Sent mail.
+    const descriptors = [...derived.values()];
+    for (let offset = 0; offset < descriptors.length; offset += 128) {
+      try {
+        for (const identity of descriptors.slice(offset, offset + 128)) {
+          signal?.throwIfAborted();
+          const base = keys.find(
+            (k) =>
+              k.postbox === identity.postbox &&
+              k.keyVersion === identity.keyVersion,
+          )!;
+          const reply = await conversationReplyKey(
+            base.secret,
+            context,
+            identity.conversation,
+          );
+          ephemeral.push({
+            ...base,
+            publicKey: reply.publicKey,
+            secret: reply.secret,
+            conversation: identity.conversation,
+          });
+        }
+        for (const entry of entries) {
+          for (const k of ephemeral) {
+            if (found.get(entry.id)?.inbox) break;
+            await attempt(entry, k, k.conversation);
+          }
+        }
+      } finally {
+        for (const k of ephemeral) k.secret.fill(0);
+        ephemeral.length = 0;
+      }
+    }
     signal?.throwIfAborted();
     return {
       matches: [...found.values()],

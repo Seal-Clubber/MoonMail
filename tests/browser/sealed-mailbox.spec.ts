@@ -510,7 +510,7 @@ test("sending above an open conversation keeps approval controls locked and retu
   expect(f.writes()).toBe(0);
 });
 
-test("sealed composition includes recoverable Sent and optional reply identities without a spend permission", async ({
+test("sealed composition includes recoverable Sent and automatic reply identities without a spend permission", async ({
   page,
 }) => {
   const f = await fixture(page);
@@ -527,15 +527,16 @@ test("sealed composition includes recoverable Sent and optional reply identities
     .getByRole("textbox", { name: "Your letter", exact: true })
     .fill("A message written under cover of night.");
   await openDeliveryOptions(page);
-  await page.getByText("Reply encryption options", { exact: true }).click();
   await expect(
     page.getByRole("checkbox", {
       name: "Use a conversation-specific reply key",
     }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("Conversation-specific reply keys are automatic.", {
+      exact: false,
+    }),
   ).toBeVisible();
-  await page
-    .getByRole("checkbox", { name: "Use a conversation-specific reply key" })
-    .check();
   await expect(
     page.getByRole("textbox", { name: "Gift amount (optional)" }),
   ).toHaveCount(0);

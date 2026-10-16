@@ -161,7 +161,7 @@ export function App() {
   );
   const [composeViewApproved, setComposeViewApproved] = useState(false);
   const [privateAccessRevision, setPrivateAccessRevision] = useState(0);
-  const [privateReplies, setPrivateReplies] = useState(false);
+  const privateReplies = true;
   const [requestPayment, setRequestPayment] = useState(false);
   const [requestedAmount, setRequestedAmount] = useState("100000");
   const [requestNonce, setRequestNonce] = useState(() =>
@@ -2932,26 +2932,10 @@ export function App() {
                           )}
                         </div>
                       )}
-                      <details className="reply-key-options">
-                        <summary>Reply encryption options</summary>
-                        <label className="checkbox">
-                          <input
-                            type="checkbox"
-                            checked={privateReplies}
-                            disabled={busy}
-                            onChange={(e) => {
-                              setPrivateReplies(e.target.checked);
-                              setReview(false);
-                              setPrepared(undefined);
-                            }}
-                          />
-                          Use a conversation-specific reply key
-                        </label>
-                        <p className="fine-print">
-                          This separates reply encryption keys. Your transaction
-                          signer and timing remain public.
-                        </p>
-                      </details>
+                      <p className="fine-print">
+                        Conversation-specific reply keys are automatic. Your
+                        wallet signer and transaction timing remain public.
+                      </p>
                       {!sendingBox && (
                         <button
                           type="button"

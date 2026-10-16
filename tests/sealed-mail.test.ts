@@ -10,6 +10,7 @@ import {
   type SealedMessage,
   type RecoveredSealedKey,
   type SealedMailEntry,
+  type ReplyIdentity,
 } from "../src/core/sealed-mail";
 const context = {
   network: 38,
@@ -205,6 +206,110 @@ test("both parties recover reply identities from their Sent and open replies dis
     for (const k of [a, b, replyA, replyB]) k.secret.fill(0);
   }
 });
+test("reply recovery crosses the 128-key boundary and learns later Sent seeds without truncation", async () => {
+  const a = key("alice"),
+    b = key("bob");
+  const identities: ReplyIdentity[] = [];
+  try {
+    for (let i = 0; i < 129; i++) {
+      const conversation = i.toString(16).padStart(64, "0");
+      const derived = await conversationReplyKey(
+        a.secret,
+        context,
+        conversation,
+      );
+      identities.push({
+        postbox: a.postbox,
+        keyVersion: a.keyVersion,
+        conversation,
+        publicKey: derived.publicKey,
+      });
+      derived.secret.fill(0);
+    }
+    const conversation = "fe".repeat(32),
+      latest = await conversationReplyKey(a.secret, context, conversation);
+    const seed = message(a, b);
+    seed.reply = { conversation, publicKey: latest.publicKey };
+    latest.secret.fill(0);
+    const makeReply = async (
+      identity: (typeof identities)[number],
+      letterId: string,
+    ) => {
+      const value = message(b, a);
+      value.recipient = {
+        ...value.recipient,
+        conversation: identity.conversation,
+        publicKey: identity.publicKey,
+      };
+      return entry(
+        await sealPrivateMail(
+          value,
+          { ...context, senderPublicKey: b.controller },
+          letterId,
+        ),
+        letterId,
+        b.controller,
+      );
+    };
+    const first = await makeReply(identities[0], "11".repeat(32));
+    const lastIdentity = {
+      ...identities[0],
+      conversation,
+      publicKey: seed.reply.publicKey,
+    };
+    const last = await makeReply(lastIdentity, "12".repeat(32));
+    const seedEntry = entry(
+      await sealPrivateMail(seed, context, "13".repeat(32)),
+      "13".repeat(32),
+    );
+    const restored = await discoverPrivateMailPage(
+      [last, first, seedEntry],
+      [{ ...a, secret: new Uint8Array(a.secret) }],
+      context,
+      identities,
+    );
+    expect(restored.identities).toHaveLength(130);
+    expect(
+      restored.matches
+        .filter((m) => m.inbox)
+        .map((m) => m.id)
+        .sort(),
+    ).toEqual([first.id, last.id].sort());
+    expect(restored.matches.find((m) => m.id === seedEntry.id)?.sent).toBe(
+      true,
+    );
+    const restoredAgain = await discoverPrivateMailPage(
+      [last],
+      [a],
+      context,
+      restored.identities,
+    );
+    expect(restoredAgain.matches[0]?.inbox).toBe(true);
+    const abort = new AbortController();
+    const cancelled = discoverPrivateMailPage(
+      [last],
+      [a],
+      context,
+      restored.identities,
+      abort.signal,
+    );
+    abort.abort();
+    await expect(cancelled).rejects.toThrow();
+    await expect(
+      discoverPrivateMailPage(
+        [],
+        [a],
+        context,
+        Array(4097).fill(identities[0]),
+      ),
+    ).rejects.toThrow("bounded");
+    expect(a.secret.some((n) => n !== 0)).toBe(true);
+  } finally {
+    a.secret.fill(0);
+    b.secret.fill(0);
+  }
+});
+
 test("sender, deployment, id, body and access-slot substitutions cannot open copied ciphertext", async () => {
   const a = key("alice"),
     b = key("bob");

@@ -327,7 +327,7 @@ export class SealedMailboxSession {
       };
     } else if (message.letter.thread)
       throw new Error("Thread links require an opened original letter");
-    if (options.privateReply) {
+    if (options.privateReply !== false) {
       const key = this.keys.find((k) => k.keyVersion === senderKey.keyVersion)!;
       const reply = await conversationReplyKey(
         key.secret,
