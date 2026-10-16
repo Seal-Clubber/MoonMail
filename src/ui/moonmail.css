@@ -2047,8 +2047,8 @@ body {
   z-index: 12;
   right: 24px;
   bottom: 0;
-  width: min(620px, calc(100vw - 48px));
-  height: min(820px, calc(100dvh - 100px));
+  width: min(560px, calc(100vw - 48px));
+  height: min(680px, calc(100dvh - 100px));
   max-width: none;
   margin: 0;
   display: flex;
@@ -2063,6 +2063,7 @@ body {
     0 12px 60px #02071399;
 }
 .app-shell .compose-window-heading {
+  align-items: center;
   flex: 0 0 auto;
   padding: 12px 18px;
   background: #203455;
@@ -2078,6 +2079,7 @@ body {
   gap: 4px;
 }
 .app-shell .compose-window-controls button {
+  margin: 0;
   justify-content: center;
   padding: 4px;
   min-width: 36px;
@@ -2093,7 +2095,7 @@ body {
 .compose-window-content {
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 18px 22px 24px;
+  padding: 10px 18px 16px;
   min-height: 0;
 }
 .compose-window-content[hidden] {
@@ -2104,9 +2106,185 @@ body {
   font-size: 13px;
 }
 .app-shell .compose-window form {
-  margin-top: 18px;
+  margin-top: 0;
   padding: 0;
   border: 0;
+}
+.app-shell .compose-window form > label:not(.checkbox),
+.recipient-field {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  min-height: 42px;
+  border-bottom: 1px solid #354b6b;
+}
+.app-shell .compose-window form > label input,
+.app-shell .compose-window .compose-from select,
+.app-shell .recipient-field input {
+  border: 0;
+  background: transparent;
+  padding: 9px 2px;
+  margin: 0;
+  min-height: 38px;
+  width: 100%;
+  border-radius: 3px;
+  color: #eff4ff;
+  font-size: 14px;
+}
+.app-shell .compose-window .compose-from select {
+  min-width: 0;
+}
+.app-shell .compose-window form > label:not(.checkbox) {
+  font-size: 13px;
+}
+.app-shell .compose-window .recipient-choice {
+  display: block;
+  margin: 0;
+}
+.app-shell .compose-window form {
+  gap: 0;
+}
+.app-shell .compose-window .letter-body-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.app-shell .compose-window #letter-body {
+  margin: 10px 0 0;
+  padding: 8px 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  min-height: 180px;
+  height: 200px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.app-shell .compose-window .letter-space {
+  margin: 0;
+  padding: 0;
+  font-size: 11px;
+}
+.app-shell .compose-window .letter-space:not(.letter-full) p {
+  display: none;
+}
+.app-shell .compose-window .letter-space progress {
+  height: 3px;
+}
+.app-shell .compose-window .compose-options {
+  margin: 10px 0;
+  font-size: 13px;
+}
+.app-shell .compose-window .compose-options > summary {
+  color: #c2d2ee;
+  padding: 4px 0;
+}
+.app-shell .compose-window .compose-options[open] {
+  padding-bottom: 8px;
+}
+.app-shell .compose-window .compose-options .mode-switch {
+  margin-top: 10px;
+}
+.app-shell .compose-window .actions {
+  position: sticky;
+  bottom: -16px;
+  z-index: 2;
+  background: #101e34;
+  margin: 8px 0 0;
+  padding: 10px 0 4px;
+  gap: 8px;
+}
+.app-shell .compose-window .actions button {
+  min-height: 38px;
+  padding: 8px 14px;
+  font-size: 13px;
+}
+.app-shell .compose-window .compose-session-note {
+  margin-top: 8px;
+  font-size: 11px;
+}
+.recipient-picker {
+  position: relative;
+  min-width: 0;
+}
+.recipient-field:has(.recipient-favourite) {
+  grid-template-columns: 52px minmax(0, 1fr) 32px;
+}
+.app-shell .recipient-field > label {
+  margin: 0;
+  font-size: 13px;
+}
+.app-shell .recipient-favourite {
+  border: 0;
+  background: transparent;
+  padding: 4px;
+  min-height: 32px;
+  color: #e7c77b;
+  font-size: 19px;
+}
+.recipient-popover {
+  position: absolute;
+  z-index: 8;
+  top: calc(100% + 3px);
+  left: 40px;
+  right: 0;
+  max-height: min(280px, 40dvh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #172942;
+  border: 1px solid #6981a6;
+  border-radius: 8px;
+  box-shadow: 0 12px 32px #03091999;
+  padding: 5px;
+}
+.recipient-group-title {
+  padding: 6px 8px 3px;
+  color: #a9bfe4;
+  font-size: 11px;
+  font-weight: 650;
+}
+.app-shell .recipient-popover [role="option"] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  border: 0;
+  border-radius: 4px;
+  padding: 8px;
+  background: transparent;
+  color: #f0f4ff;
+  text-align: left;
+  font-size: 13px;
+}
+.recipient-popover [role="option"] span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.app-shell .recipient-popover [role="option"]:is(.active, :hover) {
+  background: #30496e;
+}
+.recipient-popover [role="option"] small {
+  color: #b7c8e2;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+.recipient-no-matches {
+  padding: 8px;
+  color: #c2d2eb;
+  font-size: 12px;
+}
+.app-shell .recipient-popover .mailbox-view-access {
+  padding: 8px;
+  font-size: 12px;
+}
+.app-shell .recipient-popover .mailbox-view-access p {
+  display: none;
 }
 .app-shell .compose-window .info {
   font-size: 13px;

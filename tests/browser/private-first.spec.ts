@@ -1,3 +1,4 @@
+import { chooseMailMode, openDeliveryOptions } from "./support/composer";
 import { test, expect } from "@playwright/test";
 import { emptyDeployment } from "../../src/core/config";
 import { readable } from "./support/contrast";
@@ -47,6 +48,7 @@ test("Compose defaults to encrypted postbox mail and explains actual metadata", 
   page,
 }) => {
   await page.goto("./#/compose");
+  await openDeliveryOptions(page);
   await expect(
     page.getByRole("button", { name: "▥ Private mail", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
@@ -60,9 +62,7 @@ test("Compose defaults to encrypted postbox mail and explains actual metadata", 
   await expect(page.locator(".privacy-disclosure")).toContainText(
     "does not authorize spending",
   );
-  await page
-    .getByRole("button", { name: "✧ Public mail", exact: true })
-    .click();
+  await chooseMailMode(page, "✧ Public mail");
   await expect(page.locator(".public-warning")).toBeVisible();
   await page
     .getByLabel("Subject", { exact: true })

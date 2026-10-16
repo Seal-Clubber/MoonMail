@@ -1,3 +1,4 @@
+import { chooseMailMode, openDeliveryOptions } from "./support/composer";
 import { test, expect, type Page } from "@playwright/test";
 import {
   generateKeypair,
@@ -74,7 +75,9 @@ test("an unlisted invitation verifies its full ID and asks before starting a dra
   ).toBeVisible();
   await expect(invitation).toContainText(id);
   await expect(invitation.getByRole("heading")).toBeFocused();
-  await expect(page.getByLabel("Recipient postbox ID")).toHaveCount(0);
+  await expect(
+    page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
+  ).toHaveCount(0);
   await noWrites(page);
   await page.screenshot({
     path: test.info().outputPath("postbox-invitation.png"),
@@ -87,17 +90,19 @@ test("an unlisted invitation verifies its full ID and asks before starting a dra
   await invitation
     .getByRole("button", { name: "Use this postbox for my letter" })
     .click();
-  await expect(page.getByLabel("Recipient postbox ID")).toHaveValue(id);
+  await expect(
+    page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
+  ).toHaveAttribute("data-recipient-id", id);
   await expect(
     page.getByLabel("Recipient postbox", { exact: true }),
-  ).toHaveValue(id);
+  ).toHaveAttribute("data-recipient-id", id);
   await expect(
-    page.getByRole("option", {
-      name: "Moonlit Friend · unlisted-friend",
-    }),
-  ).toHaveCount(1);
+    page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
+  ).toHaveValue("Moonlit Friend");
   await expect(
-    page.getByRole("button", { name: "▥ Private mail" }),
+    page
+      .locator(".compose .mode-switch button")
+      .filter({ hasText: "▥ Private mail" }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(invitation).toHaveCount(0);
   await expect(
@@ -117,9 +122,7 @@ test("opening, dismissing and accepting an invitation preserve the existing subj
   await configure(page);
   await page.route(`${d.indexerUrl}**`, (r) => r.fulfill({ json: ledger() }));
   await page.goto("./#/compose");
-  await page
-    .getByRole("button", { name: "⌘ Private link", exact: true })
-    .click();
+  await chooseMailMode(page, "⌘ Private link");
   await page.getByLabel("Subject", { exact: true }).fill("My unsent letter");
   await page.getByLabel("Your letter").fill("This text must stay here.");
   await page.getByLabel("Gift amount (optional)").fill("2.5");
@@ -151,7 +154,9 @@ test("opening, dismissing and accepting an invitation preserve the existing subj
     "This text must stay here.",
   );
   await expect(page.getByLabel("Gift amount (optional)")).toHaveValue("2.5");
-  await expect(page.getByLabel("Recipient postbox ID")).toHaveValue(id);
+  await expect(
+    page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
+  ).toHaveAttribute("data-recipient-id", id);
   await noWrites(page);
 });
 

@@ -1,4 +1,4 @@
-import { minimizeComposer } from "./support/composer";
+import { chooseMailMode, minimizeComposer } from "./support/composer";
 import { test, expect, type Page } from "@playwright/test";
 import {
   generateKeypair,
@@ -239,9 +239,7 @@ test("directory searches all public registrations despite old unlisted flags and
     }),
   );
   await page.goto("./#/compose");
-  await page
-    .getByRole("button", { name: "⌘ Private link", exact: true })
-    .click();
+  await chooseMailMode(page, "⌘ Private link");
   await page.getByLabel("Subject", { exact: true }).fill("A directory draft");
   await page.getByLabel("Your letter").fill("These words stay with the draft.");
   await page.getByLabel("Gift amount (optional)").fill("1.5");
@@ -269,9 +267,13 @@ test("directory searches all public registrations despite old unlisted flags and
     ),
   ).toBe(true);
   await page.getByRole("button", { name: "Write to Moonlit Friend" }).click();
-  await expect(page.getByLabel("Recipient postbox ID")).toHaveValue("friendly");
   await expect(
-    page.getByRole("button", { name: "▥ Private mail" }),
+    page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
+  ).toHaveAttribute("data-recipient-id", "friendly");
+  await expect(
+    page
+      .locator(".compose .mode-switch button")
+      .filter({ hasText: "▥ Private mail" }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(
     page.getByRole("button", {
@@ -766,9 +768,7 @@ for (const throughPublicLink of [false, true]) {
   }) => {
     const noWrites = await configureReply(page);
     await page.goto("./#/compose");
-    await page
-      .getByRole("button", { name: "⌘ Private link", exact: true })
-      .click();
+    await chooseMailMode(page, "⌘ Private link");
     await page.getByLabel("Subject", { exact: true }).fill("My unsent subject");
     await page
       .getByLabel("Your letter")
@@ -804,13 +804,13 @@ for (const throughPublicLink of [false, true]) {
         "Collection postage is included automatically: 0.1 TARI, separate from the gift.",
         { exact: true },
       ),
-    ).toBeVisible();
-    await expect(page.getByLabel("Recipient postbox ID")).toHaveValue(
-      "reply-spirit",
-    );
+    ).toHaveCount(1);
+    await expect(
+      page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
+    ).toHaveAttribute("data-recipient-id", "reply-spirit");
     await expect(
       page.getByLabel("Recipient postbox", { exact: true }),
-    ).toHaveValue("reply-spirit");
+    ).toHaveAttribute("data-recipient-id", "reply-spirit");
     await expect(
       page.getByRole("heading", { name: "Compose a letter." }),
     ).toBeFocused();
@@ -835,9 +835,9 @@ test("an empty writing desk receives a suggested reply subject without a gift or
   );
   await expect(page.getByLabel("Your letter")).toHaveValue("");
   await expect(page.getByLabel("Gift amount (optional)")).toHaveValue("0");
-  await expect(page.getByLabel("Recipient postbox ID")).toHaveValue(
-    "reply-spirit",
-  );
+  await expect(
+    page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
+  ).toHaveAttribute("data-recipient-id", "reply-spirit");
   await expect(
     page.getByRole("heading", { name: "Compose a letter." }),
   ).toBeFocused();

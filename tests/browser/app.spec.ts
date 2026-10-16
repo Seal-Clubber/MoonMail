@@ -1,3 +1,4 @@
+import { chooseMailMode } from "./support/composer";
 import { test, expect } from "@playwright/test";
 import { emptyDeployment } from "../../src/core/config";
 import {
@@ -151,9 +152,7 @@ test("wallet dialog traps keyboard focus, closes on Escape and restores focus", 
   page,
 }) => {
   await page.goto("./#/compose");
-  await page
-    .getByRole("button", { name: "⌘ Private link", exact: true })
-    .click();
+  await chooseMailMode(page, "⌘ Private link");
   const trigger = page.getByRole("button", { name: "Connect to send" });
   await trigger.click();
   const dialog = page.getByRole("dialog", {
@@ -193,9 +192,7 @@ test("real browser WASM encrypts subject locally; send stays disabled; drafts su
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("./#/compose");
-  await page
-    .getByRole("button", { name: "⌘ Private link", exact: true })
-    .click();
+  await chooseMailMode(page, "⌘ Private link");
   await page.getByLabel("Subject", { exact: true }).fill("A private thought");
   await page.getByLabel("Your letter").fill("Do not put this on a server");
   await page.getByRole("button", { name: "Review letter" }).click();
@@ -242,20 +239,10 @@ test("addressed mail explains Sapient recovery and remains gated", async ({
   page,
 }) => {
   await page.goto("./#/compose");
-  await page
-    .getByRole("button", { name: "⌘ Private link", exact: true })
-    .click();
-  await page.getByRole("button", { name: "▥ Private mail" }).click();
-  await expect(
-    page.getByText("A private letter for a Sapient postbox.", {
-      exact: false,
-    }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Private postbox sending is currently unavailable.", {
-      exact: false,
-    }),
-  ).toBeVisible();
+  await chooseMailMode(page, "⌘ Private link");
+  await chooseMailMode(page, "▥ Private mail");
+  await expect(page.getByRole("combobox", { name: "Recipient postbox", exact: true })).toBeVisible();
+  await expect(page.getByText("Private sending is unavailable. Check Settings.")).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Review letter" }),
   ).toBeDisabled();
@@ -450,9 +437,7 @@ test("TARI gift input reviews exact micro amounts and resets collection funds fo
   page,
 }) => {
   await page.goto("./#/compose");
-  await page
-    .getByRole("button", { name: "⌘ Private link", exact: true })
-    .click();
+  await chooseMailMode(page, "⌘ Private link");
   await page.getByLabel("Subject", { exact: true }).fill("A little kindness");
   await page.getByLabel("Your letter").fill("Keep the exact tiny amount.");
   await page.getByLabel("Gift amount (optional)").fill("1.234567");

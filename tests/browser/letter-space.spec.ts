@@ -1,3 +1,4 @@
+import { chooseMailMode, selectRecipient } from "./support/composer";
 import { test, expect } from "@playwright/test";
 import { generateKeypair } from "@tari-project/ootle-wasm";
 import { emptyDeployment } from "../../src/core/config";
@@ -60,9 +61,7 @@ for (const mode of ["public", "link", "postbox"] as const) {
       });
     });
     await page.goto("./#/compose");
-    await page
-      .getByRole("button", { name: "⌘ Private link", exact: true })
-      .click();
+    await chooseMailMode(page, "⌘ Private link");
     await page
       .getByRole("button", {
         name:
@@ -75,10 +74,10 @@ for (const mode of ["public", "link", "postbox"] as const) {
       })
       .click();
     if (mode === "postbox") {
-      await expect(page.getByLabel("Recipient postbox ID")).toBeVisible();
-      await page
-        .getByRole("combobox", { name: "Recipient postbox", exact: true })
-        .selectOption("friendly");
+      await expect(
+        page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
+      ).toBeVisible();
+      await selectRecipient(page, "friendly");
     }
     const body = page.getByLabel("Your letter", { exact: true });
     const full = "👻".repeat(1200);

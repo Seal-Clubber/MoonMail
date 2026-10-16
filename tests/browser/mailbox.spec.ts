@@ -1,3 +1,8 @@
+import {
+  chooseMailMode,
+  selectRecipient,
+  openDeliveryOptions,
+} from "./support/composer";
 import { test, expect, type Page } from "@playwright/test";
 import {
   generateKeypair,
@@ -720,6 +725,7 @@ test("chain-backed mailbox handles 27 letters, gift folders, search, sent scope 
   await expect(
     page.getByRole("combobox", { name: "Verified owned reply postbox" }),
   ).toHaveValue("home");
+  await openDeliveryOptions(page);
   await expect(
     page.getByRole("checkbox", {
       name: "Include my postbox for replies (optional)",
@@ -1019,9 +1025,7 @@ test("writing from a postbox includes encrypted Sent in review and changing that
   await page
     .getByRole("button", { name: "Compose letter", exact: false })
     .click();
-  await page
-    .getByRole("button", { name: "⌘ Private link", exact: true })
-    .click();
+  await chooseMailMode(page, "⌘ Private link");
   await page
     .getByLabel("Subject", { exact: true })
     .fill("Sender recovery review");
@@ -1114,7 +1118,7 @@ test("favourites recover encrypted, stage edits and lead the recipient picker", 
   await page
     .getByRole("button", { name: "Compose letter", exact: false })
     .click();
-  await page.locator(".mailbox-contacts summary").click();
+  await selectRecipient(page, "home");
   const favourite = page.getByRole("button", {
     name: "Favourite Moonlit home",
     exact: true,
@@ -1126,9 +1130,7 @@ test("favourites recover encrypted, stage edits and lead the recipient picker", 
   await page
     .getByRole("textbox", { name: "Your letter", exact: true })
     .fill("Editing contacts must not submit the composer.");
-  await page
-    .getByRole("combobox", { name: "Recipient postbox", exact: true })
-    .selectOption("foreign");
+  await selectRecipient(page, "home");
   await page.locator(".compose form").evaluate((form) => {
     (window as any).composerSubmits = 0;
     form.addEventListener("submit", () => {
@@ -1143,13 +1145,16 @@ test("favourites recover encrypted, stage edits and lead the recipient picker", 
   await expect(favourite).toHaveAttribute("aria-pressed", "true");
   expect(await page.evaluate(() => (window as any).composerSubmits)).toBe(0);
   await expect(page.locator(".review")).toHaveCount(0);
-  await page.locator(".mailbox-contact button").first().click();
+  await selectRecipient(page, "home");
   await expect(
     page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
-  ).toHaveValue("home");
+  ).toHaveAttribute("data-recipient-id", "home");
+  await page
+    .getByRole("combobox", { name: "Recipient postbox", exact: true })
+    .click();
   await expect(
-    page.locator("#recipient-postbox optgroup").first(),
-  ).toHaveAttribute("label", "Favourite postboxes");
+    page.getByRole("group", { name: "Favourite postboxes", exact: true }),
+  ).toBeVisible();
   await assertReadOnly(page, writes);
 });
 
@@ -1196,7 +1201,7 @@ test("encrypted Inbox and Sent replies form a verified conversation and reply ke
     .click();
   await expect(
     page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
-  ).toHaveValue("foreign");
+  ).toHaveAttribute("data-recipient-id", "foreign");
   await expect(
     page.getByRole("combobox", {
       name: "Verified owned reply postbox",
@@ -1673,6 +1678,91 @@ test("a hundred encrypted incoming letters remain paged and selectable without w
   await assertReadOnly(page, writes);
 });
 
+test("compact composer searches favourites, correspondents and directory with mouse and keyboard", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(
+    page,
+    "note-01",
+    true,
+    false,
+    false,
+    true,
+  );
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page);
+  await page
+    .getByRole("button", { name: "Compose letter", exact: true })
+    .click();
+  const input = page.getByRole("combobox", {
+    name: "Recipient postbox",
+    exact: true,
+  });
+  await expect(page.locator(".compose-options")).not.toHaveAttribute(
+    "open",
+    "",
+  );
+  await expect(page.locator("main > .eyebrow")).toHaveCount(0);
+  await input.click();
+  await expect(page.locator(".recipient-group-title")).toHaveText([
+    "Favourites",
+    "Recent correspondents",
+    "Public directory",
+  ]);
+  await input.fill("moonLIT");
+  await expect(
+    page
+      .getByRole("listbox", { name: "Matching postboxes" })
+      .getByRole("option"),
+  ).toHaveCount(1);
+  await page
+    .getByRole("listbox", { name: "Matching postboxes" })
+    .getByRole("option")
+    .click();
+  await expect(input).toHaveValue("Moonlit home");
+  await expect(input).toHaveAttribute("data-recipient-id", "home");
+  await expect(
+    page.getByRole("listbox", { name: "Matching postboxes" }),
+  ).toHaveCount(0);
+  await input.fill("night");
+  await input.press("ArrowDown");
+  await input.press("Enter");
+  await expect(input).toHaveAttribute("data-recipient-id", "work");
+  await input.fill("Someone");
+  await expect(page.locator(".recipient-group-title")).toHaveText([
+    "Recent correspondents",
+  ]);
+  await input.press("Enter");
+  await expect(input).toHaveAttribute("data-recipient-id", "foreign");
+  await page
+    .getByLabel("Subject", { exact: true })
+    .fill("Simple, private mail");
+  await page
+    .getByLabel("Your letter", { exact: true })
+    .fill("A letter from the compact composer.");
+  await page
+    .getByRole("button", { name: "Review letter", exact: false })
+    .click();
+  await expect(page.locator(".review")).toBeVisible();
+  await input.fill("no matching spirit");
+  await expect(page.locator(".recipient-no-matches")).toBeVisible();
+  await expect(page.locator(".review")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Review letter", exact: false }),
+  ).toBeDisabled();
+  await input.press("Escape");
+  await expect(
+    page.getByRole("button", { name: "Minimize composer", exact: true }),
+  ).toBeVisible();
+  await input.fill("");
+  await input.click();
+  await page.screenshot({
+    path: test.info().outputPath("compact-recipient-picker.png"),
+  });
+  await assertReadOnly(page, writes);
+});
+
 test("floating composer keeps the inbox, selection and unsent text available without publishing", async ({
   page,
 }) => {
@@ -1707,7 +1797,7 @@ test("floating composer keeps the inbox, selection and unsent text available wit
   );
   if (viewport.width > 700) {
     expect(viewport.width - bounds!.x - bounds!.width).toBe(24);
-    expect(bounds!.width).toBe(620);
+    expect(bounds!.width).toBe(560);
     await composer
       .getByRole("button", { name: "Expand composer", exact: true })
       .click();
@@ -1844,8 +1934,9 @@ test("approved concept composition uses real controls, a bundled font and explic
   await readable(reader.locator(".letter-body"));
   await page.evaluate(() => {
     // Mark the screenshot honestly; these valid encrypted test fixtures never become live mail.
-    document.querySelector(".eyebrow")!.textContent =
-      "DESIGN CHECK · FICTIONAL MAIL · NO TRANSACTIONS";
+    const watermark = document.createElement("div");
+    document.querySelector(".topbar")!.after(watermark);
+    watermark.textContent = "DESIGN CHECK · FICTIONAL MAIL · NO TRANSACTIONS";
     scrollTo(0, 0);
   });
   await page.screenshot({

@@ -1,3 +1,4 @@
+import { selectRecipient, openDeliveryOptions } from "./support/composer";
 import { test, expect, type Page } from "@playwright/test";
 import {
   generateKeypair,
@@ -449,9 +450,7 @@ test("sending above an open conversation keeps approval controls locked and retu
     .click();
   await expect(page.locator(".letter-body")).toBeVisible();
   await page.getByRole("button", { name: "Compose", exact: true }).click();
-  await page
-    .getByRole("combobox", { name: "Recipient postbox", exact: true })
-    .selectOption("foreign");
+  await selectRecipient(page, "foreign");
   await page.getByLabel("Subject", { exact: true }).fill("One simulated reply");
   await page
     .getByLabel("Your letter", { exact: true })
@@ -520,15 +519,14 @@ test("sealed composition includes recoverable Sent and optional reply identities
     .getByRole("button", { name: "Compose", exact: true })
     .last()
     .click();
-  await page
-    .getByRole("combobox", { name: "Recipient postbox", exact: true })
-    .selectOption("foreign");
+  await selectRecipient(page, "foreign");
   await page
     .getByRole("textbox", { name: "Subject", exact: true })
     .fill("A quiet reply");
   await page
     .getByRole("textbox", { name: "Your letter", exact: true })
     .fill("A message written under cover of night.");
+  await openDeliveryOptions(page);
   await page.getByText("Reply encryption options", { exact: true }).click();
   await expect(
     page.getByRole("checkbox", {
@@ -666,15 +664,14 @@ test("composing an encrypted payment request includes an address and amount with
     .getByRole("button", { name: "Compose", exact: true })
     .last()
     .click();
-  await page
-    .getByRole("combobox", { name: "Recipient postbox", exact: true })
-    .selectOption("foreign");
+  await selectRecipient(page, "foreign");
   await page
     .getByRole("textbox", { name: "Subject", exact: true })
     .fill("Private invoice fixture");
   await page
     .getByRole("textbox", { name: "Your letter", exact: true })
     .fill("Pay only after reviewing the encrypted request.");
+  await openDeliveryOptions(page);
   await page
     .getByRole("checkbox", { name: "Request a private payment", exact: true })
     .check();
@@ -701,9 +698,7 @@ test("unverified V4 evidence cannot enable sending or silently switch back to le
     .getByRole("button", { name: "Compose", exact: true })
     .last()
     .click();
-  await page
-    .getByRole("combobox", { name: "Recipient postbox", exact: true })
-    .selectOption("foreign");
+  await selectRecipient(page, "foreign");
   await page
     .getByRole("textbox", { name: "Subject", exact: true })
     .fill("Disabled evidence");

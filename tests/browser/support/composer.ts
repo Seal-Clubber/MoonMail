@@ -18,3 +18,24 @@ export async function minimizeComposer(page: Page) {
   });
   if (await minimize.isVisible()) await minimize.click();
 }
+
+export async function openDeliveryOptions(page: Page) {
+  const options = page.locator(".compose-options");
+  if ((await options.getAttribute("open")) === null)
+    await options.locator(":scope > summary").click();
+}
+
+export async function chooseMailMode(page: Page, name: string) {
+  await openDeliveryOptions(page);
+  await page.getByRole("button", { name, exact: true }).click();
+}
+
+export async function selectRecipient(page: Page, id: string) {
+  await page
+    .getByRole("combobox", { name: "Recipient postbox", exact: true })
+    .fill(id);
+  await page
+    .getByRole("option")
+    .and(page.getByTitle(id, { exact: true }))
+    .click();
+}

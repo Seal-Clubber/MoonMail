@@ -1,4 +1,6 @@
+import { openDeliveryOptions } from "./support/composer";
 import {
+  chooseMailMode,
   connectFromVisibleControl,
   minimizeComposer,
 } from "./support/composer";
@@ -102,9 +104,7 @@ async function connectFixture(page: Page) {
     { address, account },
   );
   await page.goto("./#/compose");
-  await page
-    .getByRole("button", { name: "⌘ Private link", exact: true })
-    .click();
+  await chooseMailMode(page, "⌘ Private link");
   await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
@@ -281,6 +281,7 @@ test("changing offices clears old reply routing even when the new office has the
   const registry = `component_${"e".repeat(64)}`;
   await page.getByLabel("Registry component", { exact: true }).fill(registry);
   await page.getByRole("button", { name: "Compose", exact: true }).click();
+  await openDeliveryOptions(page);
   await expect(fixture.toggle).toBeEnabled();
   await expect(fixture.toggle).not.toBeChecked();
   await expect(

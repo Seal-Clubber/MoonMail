@@ -6,6 +6,7 @@ import { SapientSession } from "../core/sapient";
 import { useChainMailbox, type MailboxAccess } from "./useChainMailbox";
 import { MailboxSaveBar } from "./MailboxSaveBar";
 import { PrivateInboxAccess } from "./PrivateInboxAccess";
+import { RecipientPicker } from "./RecipientPicker";
 export function ComposerContacts({
   box,
   boxes,
@@ -14,7 +15,9 @@ export function ComposerContacts({
   busy,
   onContact,
   onPreferences,
+  value,
 }: {
+  value: string;
   box: Postbox;
   boxes: Postbox[];
   letters: Envelope[];
@@ -24,8 +27,6 @@ export function ComposerContacts({
   onPreferences: (id: string, preferences: MailboxPreferences) => void;
 }) {
   const [approved, setApproved] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
   const session = useRef<object>(null);
   useEffect(() => {
     const token = {};
@@ -49,85 +50,43 @@ export function ComposerContacts({
   const groups = recipientGroups(boxes, letters, box, state.draft.favourites);
   return (
     <div className="composer-contacts">
-      <MailboxSaveBar state={state} busy={busy} blocked={access.writeBlocked} />
-      <details
-        className="mailbox-contacts"
-        onToggle={(event) => setOpen(event.currentTarget.open)}
-      >
-        <summary>Contacts & favourite postboxes</summary>
-        <p>
-          For {box.nickname}: favourites first, past correspondents next, then
-          the public directory. Verify IDs with your friends.
-        </p>
-        {open && !approved && access.wallet instanceof SapientSession && (
-          <PrivateInboxAccess
-            wallet={access.wallet}
-            scope={`${access.deployment.network}:${access.deployment.registry}`}
-            setup={false}
-            busy={busy}
-            task={access.task}
-            onGranted={() => setApproved(true)}
-          />
-        )}
-        {state.loading && <p role="status">Loading encrypted contacts…</p>}
-        {state.error && (
+      <RecipientPicker
+        value={value}
+        groups={groups}
+        busy={busy}
+        onChange={onContact}
+        favourites={state.draft.favourites}
+        onFavourite={state.loaded ? state.favourite : undefined}
+        extras={
           <>
-            <p role="alert">{state.error}</p>
-            <button
-              type="button"
-              disabled={busy || state.loading}
-              onClick={state.load}
-            >
-              Retry loading mailbox settings
-            </button>
+            {state.loading && <p role="status">Loading favourites…</p>}
+            {state.error && (
+              <>
+                <p role="alert">{state.error}</p>
+                <button
+                  type="button"
+                  disabled={busy || state.loading}
+                  onClick={state.load}
+                >
+                  Retry loading contacts
+                </button>
+              </>
+            )}
+            {!approved && access.wallet instanceof SapientSession && (
+              <PrivateInboxAccess
+                wallet={access.wallet}
+                scope={`${access.deployment.network}:${access.deployment.registry}`}
+                setup={false}
+                autoPrompt={false}
+                busy={busy}
+                task={access.task}
+                onGranted={() => setApproved(true)}
+              />
+            )}
           </>
-        )}
-        <label>
-          Find a contact
-          <input
-            type="search"
-            value={query}
-            maxLength={160}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </label>
-        {groups.map((group) => (
-          <section key={group.label} aria-label={group.label}>
-            <h3>{group.label}</h3>
-            {group.boxes
-              .filter((p) =>
-                `${p.nickname} ${p.id}`
-                  .toLowerCase()
-                  .includes(query.toLowerCase()),
-              )
-              .map((p) => (
-                <div className="mailbox-contact" key={p.id}>
-                  <button
-                    type="button"
-                    disabled={busy}
-                    title={p.id}
-                    onClick={() => onContact(p.id)}
-                  >
-                    {p.nickname}
-                    <small>{p.id}</small>
-                  </button>
-                  {state.loaded && (
-                    <button
-                      type="button"
-                      disabled={busy || state.loading}
-                      aria-label={`Favourite ${p.nickname}`}
-                      aria-pressed={!!state.draft.favourites?.includes(p.id)}
-                      onClick={() => state.favourite(p.id)}
-                    >
-                      ☆
-                    </button>
-                  )}
-                </div>
-              ))}
-            {!group.boxes.length && <p>None yet</p>}
-          </section>
-        ))}
-      </details>
+        }
+      />
+      <MailboxSaveBar state={state} busy={busy} blocked={access.writeBlocked} />
     </div>
   );
 }

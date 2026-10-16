@@ -1,4 +1,6 @@
 import {
+  chooseMailMode,
+  openDeliveryOptions,
   connectFromVisibleControl,
   minimizeComposer,
 } from "./support/composer";
@@ -154,6 +156,7 @@ for (const verified of [false, true])
     await page
       .getByRole("button", { name: "Connect Sapient", exact: true })
       .click();
+    await openDeliveryOptions(page);
     const source = page.getByRole("combobox", {
       name: "Postage source",
       exact: true,
@@ -194,9 +197,7 @@ test("a connected funded public review stays gated until explicit publication ch
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "✧ Public mail", exact: true })
-    .click();
+  await chooseMailMode(page, "✧ Public mail");
   await page
     .getByLabel("Subject", { exact: true })
     .fill("Deliberate public publication");
@@ -250,9 +251,7 @@ test("private link must be saved before one approved publication; confirmation r
     });
   });
   await page.goto("./#/compose");
-  await page
-    .getByRole("button", { name: "⌘ Private link", exact: true })
-    .click();
+  await chooseMailMode(page, "⌘ Private link");
   await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
@@ -374,9 +373,7 @@ test("damaged delivery history is retained, explained and cannot authorize sendi
     page.getByRole("heading", { name: "No deliveries yet." }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Compose", exact: true }).click();
-  await page
-    .getByRole("button", { name: "✧ Public mail", exact: true })
-    .click();
+  await chooseMailMode(page, "✧ Public mail");
   await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
@@ -663,9 +660,7 @@ test("private-link copying has a manual fallback and never acknowledges saving a
     });
   });
   await page.goto("./#/compose");
-  await page
-    .getByRole("button", { name: "⌘ Private link", exact: true })
-    .click();
+  await chooseMailMode(page, "⌘ Private link");
   await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
@@ -797,9 +792,7 @@ for (const denied of ["getter", "writes"] as const) {
     if (denied === "writes") await expect(resume).toBeDisabled();
     else await expect(resume).toHaveCount(0);
     await page.getByRole("button", { name: "Compose", exact: true }).click();
-    await page
-      .getByRole("button", { name: "⌘ Private link", exact: true })
-      .click();
+    await chooseMailMode(page, "⌘ Private link");
     await page.getByLabel("Subject", { exact: true }).fill("A fixture letter");
     await page.getByLabel("Your letter").fill("Read without writable storage");
     await page
@@ -897,9 +890,7 @@ test("wallet details expose only public receiving information without requesting
     return route.fulfill({ json: ledger(route.request().url()) });
   });
   await page.goto("./#/compose");
-  await page
-    .getByRole("button", { name: "⌘ Private link", exact: true })
-    .click();
+  await chooseMailMode(page, "⌘ Private link");
   await page
     .getByLabel("Subject", { exact: true })
     .fill("A draft stays at the writing desk");
@@ -974,9 +965,7 @@ async function openWalletFunds(page: Page) {
       : route.abort(),
   );
   await page.goto("./#/compose");
-  await page
-    .getByRole("button", { name: "⌘ Private link", exact: true })
-    .click();
+  await chooseMailMode(page, "⌘ Private link");
   await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
@@ -1301,9 +1290,7 @@ test("automatic fees reveal an adjustment only after a low preflight estimate, w
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
-  await page
-    .getByRole("button", { name: "✧ Public mail", exact: true })
-    .click();
+  await chooseMailMode(page, "✧ Public mail");
   await page
     .getByLabel("Subject", { exact: true })
     .fill("Automatic fee fixture");

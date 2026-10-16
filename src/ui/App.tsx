@@ -69,6 +69,7 @@ import {
 } from "../core/sent-mail";
 import { Postboxes } from "./Postboxes";
 import { ComposerContacts } from "./ComposerContacts";
+import { RecipientPicker } from "./RecipientPicker";
 import {
   usePendingMailboxChanges,
   clearMailboxSession,
@@ -1541,9 +1542,7 @@ export function App() {
     setLinkSaved(false);
     focusAddressedDraft.current = true;
     navigate("compose");
-    setStatus(
-      `Writing from ${box.nickname}. Your draft is kept; choose the recipient and review before sending.${d.contractProtocol === "unified-2" ? " Reply addressing is encrypted; your transaction signer remains public." : " Your reply postbox ID will be public."}`,
-    );
+    setStatus("");
   }
   const hallLetters = preview
     ? sampleMail
@@ -2134,15 +2133,6 @@ export function App() {
             </div>
           </section>
         )}
-        <div className="eyebrow">
-          <span /> SAPIENT ·{" "}
-          {d.network === 16
-            ? "LOCALNET"
-            : d.network === 38
-              ? "ESMERALDA"
-              : "IGOR"}{" "}
-          TESTNET · TEST TARI ONLY <span />
-        </div>
         {view === "welcome" && (
           <Landing
             onOpen={() => navigate("postboxes")}
@@ -2627,44 +2617,6 @@ export function App() {
                   {error}
                 </div>
               )}
-              {status && (
-                <div role="status" className="message status">
-                  {status}
-                </div>
-              )}
-              <p>
-                Encrypted private mail by default. Choose a recipient and write
-                your letter.
-              </p>
-              <div className="mode-switch" role="group" aria-label="Mail mode">
-                {(["postbox", "link", "public"] as const).map((m) => (
-                  <button
-                    aria-pressed={mode === m}
-                    disabled={busy}
-                    className={mode === m ? "selected" : ""}
-                    onClick={() => {
-                      draftSequence.current += 1;
-                      setMode(m);
-                      setThread(undefined);
-                      setReview(false);
-                      setPrepared(undefined);
-                    }}
-                    key={m}
-                  >
-                    {m === "public"
-                      ? "✧ Public mail"
-                      : m === "link"
-                        ? "⌘ Private link"
-                        : "▥ Private mail"}
-                  </button>
-                ))}
-              </div>
-              <PrivacyView
-                mode={mode}
-                compact
-                sealed={sealedCompose}
-                payments={privatePaymentsEnabled}
-              />
               {sealedCompose &&
                 !composerMinimized &&
                 wallet instanceof SapientSession &&
@@ -2693,12 +2645,9 @@ export function App() {
                   Save the link before sending; lost links cannot be recovered.
                 </p>
               )}
-              {mode === "postbox" && (
+              {mode === "postbox" && !writesReady(d, "postbox", "sapient") && (
                 <p className="info">
-                  A private letter for a Sapient postbox.{" "}
-                  {writesReady(d, "postbox", "sapient")
-                    ? "Choose a friend below, or paste their postbox ID. Their wallet opens the delivered letter; your encrypted Sent copy stays recoverable."
-                    : "Private postbox sending is currently unavailable. Check the post office connection in Settings."}
+                  Private sending is unavailable. Check Settings.
                 </p>
               )}
               <form
@@ -2709,10 +2658,13 @@ export function App() {
               >
                 {reply && (
                   <label className="compose-from">
-                    {sealedCompose
-                      ? "Sending postbox"
-                      : "Verified owned reply postbox"}
+                    <span>From</span>
                     <select
+                      aria-label={
+                        sealedCompose
+                          ? "Sending postbox"
+                          : "Verified owned reply postbox"
+                      }
                       value={reply}
                       disabled={busy}
                       onChange={(e) => {
@@ -2722,7 +2674,7 @@ export function App() {
                     >
                       {owned.map((p) => (
                         <option key={p.id} value={p.id}>
-                          {p.nickname} · {short(p.id)}
+                          {p.nickname}
                         </option>
                       ))}
                     </select>
@@ -2746,9 +2698,10 @@ export function App() {
                         </button>
                       </p>
                     )}
-                    {contactHome && wallet instanceof SapientSession && (
+                    {contactHome && wallet instanceof SapientSession ? (
                       <ComposerContacts
                         key={`${d.network}:${d.registry}:${contactHome.id}:${current?.account.component_address}`}
+                        value={recipient}
                         box={contactHome}
                         boxes={boxes}
                         letters={letters}
@@ -2769,50 +2722,18 @@ export function App() {
                           setReview(false);
                         }}
                       />
+                    ) : (
+                      <RecipientPicker
+                        value={recipient}
+                        groups={contactGroups}
+                        busy={busy}
+                        onChange={(id) => {
+                          setRecipient(id);
+                          setThread(undefined);
+                          setReview(false);
+                        }}
+                      />
                     )}
-                    <label htmlFor="recipient-postbox">Recipient postbox</label>
-                    <button
-                      type="button"
-                      className="text-button"
-                      onClick={() => navigate("ledger")}
-                    >
-                      Browse the spirit directory ↗
-                    </button>
-                    <select
-                      id="recipient-postbox"
-                      value={recipient}
-                      disabled={busy}
-                      onChange={(e) => {
-                        setRecipient(e.target.value);
-                        setThread(undefined);
-                        setReview(false);
-                      }}
-                    >
-                      <option value="">Choose a registered postbox</option>
-                      {contactGroups.map(
-                        (group) =>
-                          !!group.boxes.length && (
-                            <optgroup key={group.label} label={group.label}>
-                              {group.boxes.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                  {p.nickname} · {short(p.id)}
-                                </option>
-                              ))}
-                            </optgroup>
-                          ),
-                      )}
-                    </select>
-                    <input
-                      aria-label="Recipient postbox ID"
-                      value={recipient}
-                      onChange={(e) => {
-                        setRecipient(e.target.value);
-                        setThread(undefined);
-                        setReview(false);
-                      }}
-                      placeholder="Or paste a registered postbox ID"
-                      disabled={busy}
-                    />
                   </div>
                 )}
                 <label>
@@ -2882,201 +2803,234 @@ export function App() {
                     </p>
                   )}
                 </div>
-                {!sealedCompose && (
-                  <>
-                    <div className="form-row">
-                      <AmountInput
-                        label="Gift amount (optional)"
-                        value={gift}
+                <details className="compose-options">
+                  <summary>Delivery options</summary>
+                  <div
+                    className="mode-switch"
+                    role="group"
+                    aria-label="Mail mode"
+                  >
+                    {(["postbox", "link", "public"] as const).map((m) => (
+                      <button
+                        aria-pressed={mode === m}
                         disabled={busy}
-                        onChange={(value) => {
-                          setGift(value);
-                          setReserve(
-                            value && BigInt(value) > 0n
-                              ? reserve === "0"
-                                ? "100000"
-                                : reserve
-                              : "0",
-                          );
+                        className={mode === m ? "selected" : ""}
+                        onClick={() => {
+                          draftSequence.current += 1;
+                          setMode(m);
+                          setThread(undefined);
                           setReview(false);
+                          setPrepared(undefined);
                         }}
-                      />
-                      {gift && BigInt(gift) > 0n && (
-                        <p className="fine-print">
-                          Collection postage is included automatically:{" "}
-                          {tari(reserve)} TARI, separate from the gift.
-                        </p>
-                      )}
-                    </div>
-                    <p className="fine-print">
-                      The recipient gets the full gift. You fund collection fees
-                      separately. Gifts have no expiry or refunds; unused
-                      collection funds stay locked. Use 0 for a letter without a
-                      gift.
-                    </p>
-                  </>
-                )}
-                {!sealedCompose && (
-                  <label className="checkbox">
-                    <input
-                      type="checkbox"
-                      checked={!!reply}
-                      disabled={busy || !owned.length}
-                      onChange={(e) => {
-                        setReply(e.target.checked ? owned[0]?.id || "" : "");
-                        setReview(false);
-                        setPrepared(undefined);
-                        setLinkSaved(false);
-                      }}
-                    />{" "}
-                    Include my postbox for replies (optional)
-                  </label>
-                )}
-                {sealedCompose && (
-                  <div className="sent-copy-choice">
-                    {privatePaymentsEnabled && (
-                      <div className="private-payment-composer">
-                        <label className="checkbox">
-                          <input
-                            type="checkbox"
-                            checked={requestPayment}
-                            disabled={busy || !current?.address}
-                            onChange={(e) => {
-                              setRequestPayment(e.target.checked);
-                              setRequestNonce(
-                                hex(crypto.getRandomValues(new Uint8Array(32))),
-                              );
-                              setReview(false);
-                              setPrepared(undefined);
-                            }}
-                          />
-                          Request a private payment
-                        </label>
-                        {requestPayment && (
-                          <>
-                            <AmountInput
-                              label="Requested private payment"
-                              value={requestedAmount}
-                              disabled={busy}
-                              onChange={(value) => {
-                                setRequestedAmount(value);
-                                setReview(false);
-                                setPrepared(undefined);
-                              }}
-                            />
-                            <p className="fine-print">
-                              Your Sapient receiving address and amount will be
-                              encrypted inside this letter. Sending the request
-                              pays postage only; your correspondent separately
-                              reviews and approves payment.
-                            </p>
-                          </>
-                        )}
-                      </div>
-                    )}
-                    <p>
-                      Every sealed letter includes recoverable encrypted Sent
-                      access. Sender and recipient postbox addresses stay inside
-                      the encrypted message.
-                    </p>
-                    <details className="reply-key-options">
-                      <summary>Reply encryption options</summary>
-                      <label className="checkbox">
-                        <input
-                          type="checkbox"
-                          checked={privateReplies}
+                        key={m}
+                      >
+                        {m === "public"
+                          ? "✧ Public mail"
+                          : m === "link"
+                            ? "⌘ Private link"
+                            : "▥ Private mail"}
+                      </button>
+                    ))}
+                  </div>
+                  <PrivacyView
+                    mode={mode}
+                    compact
+                    sealed={sealedCompose}
+                    payments={privatePaymentsEnabled}
+                  />
+                  {!sealedCompose && (
+                    <>
+                      <div className="form-row">
+                        <AmountInput
+                          label="Gift amount (optional)"
+                          value={gift}
                           disabled={busy}
-                          onChange={(e) => {
-                            setPrivateReplies(e.target.checked);
+                          onChange={(value) => {
+                            setGift(value);
+                            setReserve(
+                              value && BigInt(value) > 0n
+                                ? reserve === "0"
+                                  ? "100000"
+                                  : reserve
+                                : "0",
+                            );
                             setReview(false);
-                            setPrepared(undefined);
                           }}
                         />
-                        Use a conversation-specific reply key
-                      </label>
+                        {gift && BigInt(gift) > 0n && (
+                          <p className="fine-print">
+                            Collection postage is included automatically:{" "}
+                            {tari(reserve)} TARI, separate from the gift.
+                          </p>
+                        )}
+                      </div>
                       <p className="fine-print">
-                        This separates reply encryption keys. Your transaction
-                        signer and timing remain public.
+                        The recipient gets the full gift. You fund collection
+                        fees separately. Gifts have no expiry or refunds; unused
+                        collection funds stay locked. Use 0 for a letter without
+                        a gift.
                       </p>
-                    </details>
-                    {!sendingBox && (
-                      <button
-                        type="button"
-                        onClick={() => navigate("postboxes")}
-                      >
-                        Create or choose my sending postbox
-                      </button>
-                    )}
-                  </div>
-                )}
-                {mode !== "public" && !sealedCompose && unifiedOffice(d) && (
-                  <div className="sent-copy-choice">
+                    </>
+                  )}
+                  {!sealedCompose && (
                     <label className="checkbox">
                       <input
                         type="checkbox"
-                        checked={saveSent}
-                        disabled={busy || !sentDescriptor}
+                        checked={!!reply}
+                        disabled={busy || !owned.length}
                         onChange={(e) => {
-                          setSaveSent(e.target.checked);
+                          setReply(e.target.checked ? owned[0]?.id || "" : "");
                           setReview(false);
                           setPrepared(undefined);
                           setLinkSaved(false);
                         }}
-                      />
-                      Save an encrypted copy in Sent
+                      />{" "}
+                      Include my postbox for replies (optional)
                     </label>
-                    <p className="fine-print">
-                      {sentDescriptor
-                        ? "Your sending postbox can recover this copy with Sapient on another device. It uses extra on-chain letter space; no extra wallet approval is needed."
-                        : "Include your Sapient postbox for replies above to save recoverable Sent mail."}
-                    </p>
-                  </div>
-                )}
-                {wallet && wallet.accounts.length > 1 && (
-                  <label>
-                    Funding account
-                    <select
-                      value={account}
-                      disabled={busy}
-                      onChange={(e) => {
-                        setAccount(Number(e.target.value));
-                        setReview(false);
-                        setReply("");
-                      }}
-                    >
-                      {wallet.accounts.map((a, i) => (
-                        <option key={i} value={i}>
-                          {a.account.name} ·{" "}
-                          {short(a.account.component_address)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                {wallet instanceof SapientSession &&
-                  wallet.privateFeeCapable &&
-                  d.evidence.nativePrivatePostage === true && (
+                  )}
+                  {sealedCompose && (
+                    <div className="sent-copy-choice">
+                      {privatePaymentsEnabled && (
+                        <div className="private-payment-composer">
+                          <label className="checkbox">
+                            <input
+                              type="checkbox"
+                              checked={requestPayment}
+                              disabled={busy || !current?.address}
+                              onChange={(e) => {
+                                setRequestPayment(e.target.checked);
+                                setRequestNonce(
+                                  hex(
+                                    crypto.getRandomValues(new Uint8Array(32)),
+                                  ),
+                                );
+                                setReview(false);
+                                setPrepared(undefined);
+                              }}
+                            />
+                            Request a private payment
+                          </label>
+                          {requestPayment && (
+                            <>
+                              <AmountInput
+                                label="Requested private payment"
+                                value={requestedAmount}
+                                disabled={busy}
+                                onChange={(value) => {
+                                  setRequestedAmount(value);
+                                  setReview(false);
+                                  setPrepared(undefined);
+                                }}
+                              />
+                              <p className="fine-print">
+                                Your Sapient receiving address and amount will
+                                be encrypted inside this letter. Sending the
+                                request pays postage only; your correspondent
+                                separately reviews and approves payment.
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      )}
+                      <details className="reply-key-options">
+                        <summary>Reply encryption options</summary>
+                        <label className="checkbox">
+                          <input
+                            type="checkbox"
+                            checked={privateReplies}
+                            disabled={busy}
+                            onChange={(e) => {
+                              setPrivateReplies(e.target.checked);
+                              setReview(false);
+                              setPrepared(undefined);
+                            }}
+                          />
+                          Use a conversation-specific reply key
+                        </label>
+                        <p className="fine-print">
+                          This separates reply encryption keys. Your transaction
+                          signer and timing remain public.
+                        </p>
+                      </details>
+                      {!sendingBox && (
+                        <button
+                          type="button"
+                          onClick={() => navigate("postboxes")}
+                        >
+                          Create or choose my sending postbox
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {mode !== "public" && !sealedCompose && unifiedOffice(d) && (
+                    <div className="sent-copy-choice">
+                      <label className="checkbox">
+                        <input
+                          type="checkbox"
+                          checked={saveSent}
+                          disabled={busy || !sentDescriptor}
+                          onChange={(e) => {
+                            setSaveSent(e.target.checked);
+                            setReview(false);
+                            setPrepared(undefined);
+                            setLinkSaved(false);
+                          }}
+                        />
+                        Save an encrypted copy in Sent
+                      </label>
+                      <p className="fine-print">
+                        {sentDescriptor
+                          ? "Your sending postbox can recover this copy with Sapient on another device. It uses extra on-chain letter space; no extra wallet approval is needed."
+                          : "Include your Sapient postbox for replies above to save recoverable Sent mail."}
+                      </p>
+                    </div>
+                  )}
+                  {wallet && wallet.accounts.length > 1 && (
                     <label>
-                      Postage source
+                      Funding account
                       <select
-                        value={postage}
+                        value={account}
                         disabled={busy}
                         onChange={(e) => {
-                          setPostage(
-                            e.target.value as "private" | "transparent",
-                          );
+                          setAccount(Number(e.target.value));
                           setReview(false);
+                          setReply("");
                         }}
                       >
-                        <option value="private">
-                          Private TARI · native Sapient postage
-                        </option>
-                        <option value="transparent">
-                          Public TARI · visible account funding
-                        </option>
+                        {wallet.accounts.map((a, i) => (
+                          <option key={i} value={i}>
+                            {a.account.name} ·{" "}
+                            {short(a.account.component_address)}
+                          </option>
+                        ))}
                       </select>
                     </label>
                   )}
+                  {wallet instanceof SapientSession &&
+                    wallet.privateFeeCapable &&
+                    d.evidence.nativePrivatePostage === true && (
+                      <label>
+                        Postage source
+                        <select
+                          value={postage}
+                          disabled={busy}
+                          onChange={(e) => {
+                            setPostage(
+                              e.target.value as "private" | "transparent",
+                            );
+                            setReview(false);
+                          }}
+                        >
+                          <option value="private">
+                            Private TARI · native Sapient postage
+                          </option>
+                          <option value="transparent">
+                            Public TARI · visible account funding
+                          </option>
+                        </select>
+                      </label>
+                    )}
+                </details>
                 <FeeAdjustment
                   problem={
                     feeProblem?.operation === "publish" ? feeProblem : undefined
@@ -3089,14 +3043,6 @@ export function App() {
                     setReview(false);
                   }}
                 />
-                {wallet?.kind === "sapient" && (
-                  <p className="fine-print">
-                    This cap applies to each transaction. Sapient may retry
-                    input or version failures; more than one attempt can pay
-                    fees. An uncertain operation stays pending until you
-                    reconcile it.
-                  </p>
-                )}
                 <div className="actions">
                   <button
                     type="submit"
