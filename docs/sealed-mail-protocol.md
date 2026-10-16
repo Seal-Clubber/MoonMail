@@ -36,14 +36,21 @@ permission in Sapient. No financial seed or signing key is requested.
 
 ## Conversations and discovery
 
-An optional conversation nonce is random and encrypted. A reply key is derived
+New sealed letters automatically include a random, encrypted conversation nonce
+and a conversation-specific reply key. Older letters without that descriptor
+remain readable. A reply key is derived
 from the sender's recovered mailbox secret plus that nonce and deployment
 context. Recovering the sender's encrypted Sent slot recovers the descriptor
 needed to derive that key again. This separates conversation encryption keys;
 it does not create a separate wallet account or hide the transaction signer.
+The website has no reply-key checkbox. This derivation does not provide forward
+secrecy: possession of the historical mailbox secret and recovered descriptor
+allows that conversation key to be derived again.
 
 Discovery tries at most fifty ciphertexts against sixteen historical mailbox
-keys and at most 128 validated conversation descriptors. It first restores base
+keys and at most 4,096 validated conversation descriptors, matching the office's
+letter capacity. At most 128 derived conversation secrets are held in a batch;
+each batch is erased before the next. It first restores base
 Inbox/Sent entries, then tries derived reply keys. If a later page restores a new
 Sent descriptor, earlier unmatched pages must be revisited. Cursors, cancellation
 and unavailable entries remain explicit. No recipient-specific indexer lookup

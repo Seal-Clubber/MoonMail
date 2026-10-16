@@ -16,6 +16,8 @@ The desktop mailbox uses a postbox/folder rail, message list and dark conversati
 
 The current office is the single default. Old testnet mail is not migrated or selectable; backup branches preserve earlier versions.
 
+New private letters automatically offer a conversation-specific reply key; no checkbox is needed. Replies use the authenticated conversation identity, and the same Sapient wallet can recover it from encrypted Sent. Earlier letters remain readable. This separates encryption keys, while transaction signers and timing remain public; it does not provide forward secrecy after compromise of the historical postbox secret.
+
 ## Request and pay privately
 
 1. In encrypted Compose, select **Request a private payment**, enter the amount and send the letter. The amount and your current Sapient receiving address are encrypted. This sends a request, not money.

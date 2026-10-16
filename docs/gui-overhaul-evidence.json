@@ -2,9 +2,9 @@
   "date": "2026-10-16",
   "restoreTag": "moonmail-pre-gui-overhaul",
   "restoreCommit": "a05d1aa6bb4518e0b375e3168d411cbfef2a0cc4",
-  "reviewedFrontendCommit": "983b3d1ff60f944ba85cff9c6fdc76799ef7418a",
+  "reviewedFrontendCommit": "9e073c7e2cf5e782f22d74d975186c536071d0c7",
   "unitChecks": {
-    "tests": 269,
+    "tests": 270,
     "files": 32,
     "passed": true
   },
@@ -12,7 +12,7 @@
   "pagesBuild": "passed",
   "browserChecks": {
     "fullSuite": 304,
-    "fullSuiteUiCheckpoint": "983b3d1ff60f944ba85cff9c6fdc76799ef7418a",
+    "fullSuiteUiCheckpoint": "9e073c7e2cf5e782f22d74d975186c536071d0c7",
     "passed": true,
     "scope": "Complete desktop/mobile suite on compact Compose. Includes recipient autocomplete group priority, mouse/keyboard selection, favourite edits/discard, clearing a recipient invalidating review, disclosure options and all prior publication/recovery safeguards.",
     "incomingMailFixtureCount": 100,
@@ -59,7 +59,8 @@
     "compactRecipientSearch": true,
     "realRecoveredFavouritesInSuggestions": true,
     "typedRegisteredIdSelected": true,
-    "deliveryOptions": true
+    "deliveryOptions": true,
+    "automaticReplyKeyPreparationWithoutSpend": true
   },
   "contractChanges": false,
   "newTemplateDeployment": false,
@@ -72,5 +73,15 @@
     "cause": "Random ciphertext contained a short test ID; corrected clear JSON identity assertion and exact outer payload checks.",
     "productionCryptographyChanged": false,
     "remoteSuccessClaimed": false
+  },
+  "automaticReplyKeys": {
+    "enabledByDefault": true,
+    "checkboxRemoved": true,
+    "recoveredDescriptorRegression": 130,
+    "descriptorCapacity": 4096,
+    "derivedSecretsPerBatch": 128,
+    "legacyLettersReadable": true,
+    "forwardSecrecyClaimed": false,
+    "liveLargeMailboxStressTest": false
   }
 }

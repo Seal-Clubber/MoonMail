@@ -56,7 +56,11 @@ historical secrets and the new private test messages/capability.
   postbox registration/controller relationships remain observable. This is not
   anonymity.
 - Discovery is bounded to fifty entries per pass, with at most sixteen mailbox
-  key versions and 128 validated conversation descriptors. Large mailboxes may
+  key versions and 4,096 validated conversation descriptors, processed in batches
+  of at most 128 derived secrets. The automatic-reply-key update adds a local
+  regression recovering 130 descriptors across that former boundary, including
+  a newly learned Sent seed and cancellation. This is not a live 4,096-key stress
+  test. Large mailboxes may
   require additional passes. The office holds at most 4,096 total letters.
 - View permission is account-wide and can expose other private output summaries
   to the site. It never grants transaction approval. Revocation clears readable
