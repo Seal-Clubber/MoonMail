@@ -79,6 +79,7 @@ import {
 import { AmountInput, tari } from "./AmountInput";
 import { CopyField } from "./CopyField";
 import { WalletFunds } from "./WalletFunds";
+import { WalletConnection } from "./WalletConnection";
 import { PostboxInvitation } from "./PostboxInvitation";
 import {
   createPublicLetterLink,
@@ -381,10 +382,12 @@ export function App() {
     const detected = () => setSapientAvailable(!!sapientProvider());
     window.addEventListener("tari#initialized", detected);
     window.addEventListener("tari:announceProvider", detected);
+    window.addEventListener("focus", detected);
     detected();
     return () => {
       window.removeEventListener("tari#initialized", detected);
       window.removeEventListener("tari:announceProvider", detected);
+      window.removeEventListener("focus", detected);
     };
   }, []);
   useEffect(() => {
@@ -3538,7 +3541,7 @@ export function App() {
       {connect && (
         <div className="modal-backdrop">
           <section
-            className="modal"
+            className="modal wallet-dialog"
             role="dialog"
             aria-modal="true"
             tabIndex={-1}
@@ -3564,10 +3567,13 @@ export function App() {
             </h2>
             {wallet && current ? (
               <div className="wallet-summary">
+                <span className="wallet-connected-badge">
+                  <UiIcon name="check" /> Connected ·{" "}
+                  {d.network === 38 ? "Esmeralda" : "Igor"} testnet
+                </span>
                 <p>
-                  Connected on {d.network === 38 ? "Esmeralda" : "Igor"}{" "}
-                  testnet. Use this address to receive test TARI, or select this
-                  account when collecting a gift.
+                  Use this address to receive test TARI. Reading private mail
+                  and spending funds still need their own approvals in Sapient.
                 </p>
                 <CopyField
                   label="Your receiving address"
@@ -3604,84 +3610,56 @@ export function App() {
                 </button>
               </div>
             ) : (
-              <>
-                <p>
-                  Unlock Sapient, choose Esmeralda, then approve this site’s
-                  connection. Your wallet keeps your keys and asks before every
-                  transaction.
-                </p>
-                <details>
-                  <summary>What do I need?</summary>
-                  <p className="fine-print">
-                    Sapient is the wallet itself. Open MoonMail in the browser
-                    where you use Sapient, unlock it, and choose your Ootle
-                    account. There is no separate MoonMail bridge or background
-                    program.
-                  </p>
-                  <p className="fine-print">
-                    Public mail and private links open without a wallet. Sending
-                    needs public test TARI for fees and gift funding. If your
-                    TARI is private, use Unshield in Sapient first. Your postbox
-                    needs a separate privacy permission, which MoonMail explains
-                    before asking.
-                  </p>
-                </details>
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    void task(async () => {
-                      const sequence = ++connectionSequence.current;
-                      const w = await SapientSession.connect(d.network);
-                      if (sequence !== connectionSequence.current) {
-                        w.invalidate();
-                        return;
-                      }
-                      if (wallet instanceof SapientSession) wallet.invalidate();
-                      else wallet?.disconnect();
-                      restoreBlocked.current = false;
-                      try {
-                        sessionStorage.setItem(
-                          "ghostdrop:sapient-resume:v1",
-                          String(d.network),
-                        );
-                      } catch {
-                        /* Reconnect manually if storage is unavailable. */
-                      }
-                      setWallet(w);
-                      setAccount(0);
-                      setConnect(false);
-                      setStatus(
-                        "Connected to Sapient. Transactions require your wallet approval.",
+              <WalletConnection
+                available={sapientAvailable}
+                busy={busy}
+                network={
+                  d.network === 38
+                    ? "Esmeralda"
+                    : d.network === 36
+                      ? "Igor"
+                      : "the required"
+                }
+                onCheck={() => {
+                  const available = !!sapientProvider();
+                  setSapientAvailable(available);
+                  return available;
+                }}
+                onConnect={async () => {
+                  setBusy(true);
+                  setError("");
+                  setFeeProblem(undefined);
+                  try {
+                    const sequence = ++connectionSequence.current;
+                    const w = await SapientSession.connect(d.network);
+                    if (sequence !== connectionSequence.current) {
+                      w.invalidate();
+                      return;
+                    }
+                    if (wallet instanceof SapientSession) wallet.invalidate();
+                    else wallet?.disconnect();
+                    restoreBlocked.current = false;
+                    try {
+                      sessionStorage.setItem(
+                        "ghostdrop:sapient-resume:v1",
+                        String(d.network),
                       );
-                    });
-                  }}
-                >
-                  <p role="status">
-                    {sapientAvailable
-                      ? "Sapient detected in this browser."
-                      : "Sapient has not been detected in this browser."}
-                  </p>
-                  {!sapientAvailable && (
-                    <a
-                      href="https://sapient.tari.mw/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Get Sapient wallet ↗
-                    </a>
-                  )}
-                  <p className="fine-print">
-                    Switch accounts in Sapient. If you change its account or
-                    network, reconnect here. Disconnect clears private page
-                    state.
-                  </p>
-                  <button className="primary" disabled={busy}>
-                    {busy ? "Connecting…" : "Connect Sapient"}
-                  </button>
-                </form>
-              </>
+                    } catch {
+                      /* Reconnect manually if storage is unavailable. */
+                    }
+                    setWallet(w);
+                    setAccount(0);
+                    setConnect(false);
+                    setStatus(
+                      "Connected to Sapient. Transactions require your wallet approval.",
+                    );
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+              />
             )}
-            {error && (
+            {wallet && current && error && (
               <p role="alert" className="error">
                 {error}
               </p>

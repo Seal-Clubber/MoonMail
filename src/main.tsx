@@ -4,6 +4,7 @@ import { App } from "./ui/App";
 import "./ui/styles.css";
 import "./ui/moonmail.css";
 import "./ui/public-mail.css";
+import "./ui/wallet-connection.css";
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <App />

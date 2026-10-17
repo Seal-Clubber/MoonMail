@@ -111,6 +111,7 @@ there are no saved drafts, and reloading loses that text.
 
 Never enter your wallet seed or signing keys into MoonMail. See the
 [walkthrough](docs/DEMO.md) for recovery, permissions and interrupted operations.
+For installation and connection problems, see [wallet connection help](docs/wallet-connection.md).
 
 ## What can others see?
 
@@ -182,8 +183,9 @@ also depend on the connected account's runtime capabilities.
 
 Recorded verification as of **17 October 2026** includes:
 
-- **270 unit tests and 308 desktop/mobile browser checks**, strict TypeScript and
-  the Pages build. [Latest GUI evidence](docs/public-mail-gui-evidence.json).
+- **270 unit tests and 316 desktop/mobile browser checks**, strict TypeScript and
+  the Pages build. [Wallet connection verification](docs/wallet-connection.md#verification)
+  and [earlier public GUI evidence](docs/public-mail-gui-evidence.json).
 - **Real Esmeralda mail and wallet recovery:** encrypted letters/replies, key
   rotation, independently restored Inbox/Sent, saved settings and native private
   postage. [Sealed-mail evidence](docs/sealed-mail-evidence.json).
