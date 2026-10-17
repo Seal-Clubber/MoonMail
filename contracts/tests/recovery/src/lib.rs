@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod unified_capsules {
+mod tests {
     use tari_template_lib::prelude::*;
     use tari_template_lib::types::stealth::{
         MerkleProof, SpendAuthorization, SpendCondition, SpendWitness, StealthInput,
@@ -8,15 +8,10 @@ mod unified_capsules {
     #[test]
     fn sdk_capsule_mints_locked_output_and_rejects_unsafe_statements() {
         let manifest = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-        let repo = manifest.join("../..");
-        let mut t = TemplateTest::new(manifest, ["../ghostdrop-v3"]);
+        let repo = manifest.join("../../..");
+        let mut t = TemplateTest::new(manifest, ["../../legacy/recovery-capsule"]);
         t.disable_fees();
-        let capsule: ComponentAddress = t.call_function(
-            "GhostDrop",
-            "new",
-            args![16u8, t.get_template_address("GhostDrop")],
-            vec![],
-        );
+        let capsule: ComponentAddress = t.call_function("RecoveryCapsules", "new", args![], vec![]);
         let resource: ResourceAddress = t.call_method(capsule, "resource", args![], vec![]);
         let node = std::env::var("GHOSTDROP_TEST_NODE").unwrap_or("node".into());
         let loader = std::env::var("GHOSTDROP_TEST_LOADER").unwrap_or("tsx".into());

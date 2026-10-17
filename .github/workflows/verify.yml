@@ -35,14 +35,14 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            contracts/ghostdrop -> target
-            contracts/envelope -> target
-            contracts/engine-tests -> target
-      - run: cargo test --manifest-path contracts/ghostdrop/Cargo.toml --locked
-      - run: cargo test --manifest-path contracts/envelope/Cargo.toml --locked
-      - run: cargo build --manifest-path contracts/envelope/Cargo.toml --target wasm32-unknown-unknown --release --locked
-      - run: cargo build --manifest-path contracts/ghostdrop/Cargo.toml --target wasm32-unknown-unknown --release --locked
-      - run: cargo test --manifest-path contracts/engine-tests/Cargo.toml --locked -- --include-ignored
+            contracts/legacy/ghostdrop -> target
+            contracts/legacy/envelope -> target
+            contracts/tests/legacy-mail -> target
+      - run: cargo test --manifest-path contracts/legacy/ghostdrop/Cargo.toml --locked
+      - run: cargo test --manifest-path contracts/legacy/envelope/Cargo.toml --locked
+      - run: cargo build --manifest-path contracts/legacy/envelope/Cargo.toml --target wasm32-unknown-unknown --release --locked
+      - run: cargo build --manifest-path contracts/legacy/ghostdrop/Cargo.toml --target wasm32-unknown-unknown --release --locked
+      - run: cargo test --manifest-path contracts/tests/legacy-mail/Cargo.toml --locked -- --include-ignored
   postbox-claims:
     runs-on: ubuntu-latest
     steps:
@@ -57,15 +57,17 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            contracts/envelope-v2 -> target
-            contracts/ghostdrop-v2 -> target
-            contracts/postbox-claim-tests -> target
-            contracts/ghostdrop-v3 -> target
-      - run: cargo test --manifest-path contracts/envelope-v2/Cargo.toml --locked
-      - run: cargo build --manifest-path contracts/envelope-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
-      - run: cargo build --manifest-path contracts/ghostdrop-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
-      - run: cargo build --manifest-path contracts/ghostdrop-v3/Cargo.toml --target wasm32-unknown-unknown --release --locked
-      - run: cargo test --manifest-path contracts/postbox-claim-tests/Cargo.toml --locked -- --include-ignored
+            contracts/legacy/envelope-v2 -> target
+            contracts/legacy/ghostdrop-v2 -> target
+            contracts/tests/mailbox -> target
+            contracts/legacy/ghostdrop-v3 -> target
+            contracts/moonmail-v4 -> target
+      - run: cargo test --manifest-path contracts/legacy/envelope-v2/Cargo.toml --locked
+      - run: cargo build --manifest-path contracts/legacy/envelope-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
+      - run: cargo build --manifest-path contracts/legacy/ghostdrop-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
+      - run: cargo build --manifest-path contracts/legacy/ghostdrop-v3/Cargo.toml --target wasm32-unknown-unknown --release --locked
+      - run: cargo build --manifest-path contracts/moonmail-v4/Cargo.toml --target wasm32-unknown-unknown --release --locked
+      - run: cargo test --manifest-path contracts/tests/mailbox/Cargo.toml --locked -- --include-ignored
   recovery-capsule:
     runs-on: ubuntu-latest
     steps:
@@ -80,7 +82,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            contracts/recovery-capsule -> target
-            contracts/capsule-tests -> target
-      - run: cargo build --manifest-path contracts/recovery-capsule/Cargo.toml --target wasm32-unknown-unknown --release --locked
-      - run: cargo test --manifest-path contracts/capsule-tests/Cargo.toml --locked
+            contracts/legacy/recovery-capsule -> target
+            contracts/tests/recovery -> target
+      - run: cargo build --manifest-path contracts/legacy/recovery-capsule/Cargo.toml --target wasm32-unknown-unknown --release --locked
+      - run: cargo test --manifest-path contracts/tests/recovery/Cargo.toml --locked

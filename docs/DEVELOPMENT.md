@@ -40,6 +40,8 @@ Linux machine that needs Chromium system dependencies, use
 | `src/`                   | Mailbox UI, encryption, wallet integration and chain reads   |
 | `public/`                | Deployment profiles, local fonts and favicon                 |
 | `contracts/moonmail-v4/` | Current unified sealed-mail template                         |
+| `contracts/tests/`       | Engine/SDK regression suites, separate from application code |
+| `contracts/legacy/`      | Earlier templates retained for reproducibility               |
 | `tests/`                 | Unit tests and desktop/mobile browser checks                 |
 | `tools/`                 | Local deployment, verification and optional keeper utilities |
 | `docs/`                  | Protocols, user guides and scoped verification evidence      |
@@ -57,7 +59,7 @@ engine checks on Linux or WSL: upstream Wasmer 7.5 Cranelift does not support
 Windows.
 
 ```sh
-cargo test --manifest-path contracts/postbox-claim-tests/Cargo.toml --locked -- --include-ignored
+cargo test --manifest-path contracts/tests/mailbox/Cargo.toml --locked -- --include-ignored
 ```
 
 The SDK bridge tests need Node and installed JavaScript dependencies. With

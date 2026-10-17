@@ -43,9 +43,9 @@ pnpm install --frozen-lockfile
 pnpm test
 pnpm build
 pnpm test:browser
-cargo test --manifest-path contracts/engine-tests/Cargo.toml --locked -- --include-ignored
-cargo test --manifest-path contracts/postbox-claim-tests/Cargo.toml --locked -- --include-ignored
-cargo test --manifest-path contracts/capsule-tests/Cargo.toml --locked
+cargo test --manifest-path contracts/tests/legacy-mail/Cargo.toml --locked -- --include-ignored
+cargo test --manifest-path contracts/tests/mailbox/Cargo.toml --locked -- --include-ignored
+cargo test --manifest-path contracts/tests/recovery/Cargo.toml --locked
 ```
 
 Node and the installed JS packages must be reachable from the engine host. In Windows/WSL, set `GHOSTDROP_TEST_NODE` to the Windows Node executable's `/mnt/c/.../node.exe` path and `GHOSTDROP_TEST_LOADER` to the `file:///C:/.../node_modules/tsx/dist/loader.mjs` URI. Bridge scripts use Windows absolute paths: `GHOSTDROP_TEST_SIGNER` → `tools/sign-engine-claim.ts`, `GHOSTDROP_TEST_POSTBOX_SIGNER` → `tools/sign-postbox-engine-claim.ts`, `GHOSTDROP_MAILBOX_SIGNER` → `tools/sign-mailbox-engine-update.ts`, `GHOSTDROP_CAPSULE_FIXTURE` → `tools/capsule-engine-fixture.ts`. Their defaults work when Node runs natively on the engine host.

@@ -134,6 +134,9 @@ postboxes, historical recovery keys, encrypted settings and public gift rules.
 Native private transfers are separate wallet operations. Old testnet mail is
 not migrated or selected; earlier app versions remain in backup branches.
 
+The [contract guide](contracts/README.md) separates the current implementation,
+engine tests and historical templates.
+
 The checked stack targets **Ootle 0.46.0**, **TypeScript SDK 0.9.0** and
 **crypto WASM 0.46.0**, with unmodified **Sapient 0.6.6**. Available operations
 also depend on the connected account's runtime capabilities.

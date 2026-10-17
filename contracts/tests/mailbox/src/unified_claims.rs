@@ -22,7 +22,7 @@ mod unified_claims {
         fixture_mode(reserve, 2)
     }
     fn fixture_mode(reserve: u64, mode: u8) -> Fixture {
-        let mut t = TemplateTest::new(env!("CARGO_MANIFEST_DIR"), ["../ghostdrop-v3"]);
+        let mut t = TemplateTest::new(env!("CARGO_MANIFEST_DIR"), ["../../legacy/ghostdrop-v3"]);
         t.disable_fees();
         let office = t.call_function(
             "GhostDrop",
@@ -526,11 +526,11 @@ mod unified_claims {
         let p = proof(&mut f, d, 5, false, "otl_loc_", false);
         let tx = transaction(&mut f, d, 16, 5, p, false);
         let result = f.t.execute_expect_success(tx, vec![]);
-        println!(
-            "Proof claim fee required: {} microTARI; reserve: 100000",
+        assert!(
+            result.finalize.total_fees_required <= 100_000,
+            "Proof claim exceeded the 100000 microTARI reserve: {}",
             result.finalize.total_fees_required
         );
-        assert!(result.finalize.total_fees_required <= 100_000);
         assert_eq!(balance(&f, d), Amount::from(1_000_000u64));
     }
     #[test]
@@ -554,7 +554,7 @@ mod unified_claims {
         let loader = std::env::var("GHOSTDROP_TEST_LOADER").unwrap_or("tsx".into());
         let script = std::env::var("GHOSTDROP_TEST_POSTBOX_SIGNER").unwrap_or_else(|_| {
             std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("../../tools/sign-postbox-engine-claim.ts")
+                .join("../../../tools/sign-postbox-engine-claim.ts")
                 .to_string_lossy()
                 .into_owned()
         });

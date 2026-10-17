@@ -3,7 +3,7 @@ use tari_template_lib::prelude::*;
 use tari_template_test_tooling::{TemplateTest, transaction::args};
 
 fn fixture() -> (TemplateTest, ComponentAddress) {
-    let mut t = TemplateTest::new(env!("CARGO_MANIFEST_DIR"), ["../moonmail-v4"]);
+    let mut t = TemplateTest::new(env!("CARGO_MANIFEST_DIR"), ["../../moonmail-v4"]);
     t.disable_fees();
     let office = t.call_function(
         "MoonMail",
@@ -428,7 +428,7 @@ fn crypto_fixture(command: &str, value: serde_json::Value) -> String {
         process::{Command, Stdio},
     };
     let node = std::env::var("GHOSTDROP_TEST_NODE").unwrap_or_else(|_| "node".to_string());
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
     let loader = std::env::var("GHOSTDROP_TEST_LOADER").unwrap_or_else(|_| {
         root.join("node_modules/tsx/dist/loader.mjs")
             .to_string_lossy()

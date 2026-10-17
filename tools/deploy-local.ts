@@ -29,11 +29,11 @@ if (!["localhost", "127.0.0.1", "[::1]"].includes(new URL(url).hostname))
 const binaries = [
   [
     "Envelope",
-    "contracts/envelope/target/wasm32-unknown-unknown/release/ghostdrop_envelope.wasm",
+    "contracts/legacy/envelope/target/wasm32-unknown-unknown/release/ghostdrop_envelope.wasm",
   ],
   [
     "PostOffice",
-    "contracts/ghostdrop/target/wasm32-unknown-unknown/release/ghostdrop_template.wasm",
+    "contracts/legacy/ghostdrop/target/wasm32-unknown-unknown/release/ghostdrop_template.wasm",
   ],
 ] as const;
 const plan = await Promise.all(

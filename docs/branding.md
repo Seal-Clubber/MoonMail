@@ -6,7 +6,11 @@ The GitHub Pages path is `/MoonMail/`. Builds use `MOONMAIL_BASE`, with the exis
 
 ## Existing mail remains readable
 
-A visual rename does not change the deployed application. `GhostDrop` is still the registered template name, `contracts/ghostdrop*` are the preserved contract source/crate paths, and the existing registry/template/resource addresses are retained. Changing those would require a separate contract deployment.
+A visual rename does not change deployed templates or cryptographic formats.
+Historical `GhostDrop` contract sources and crate names are preserved under
+`contracts/legacy/`; the current sealed office uses `contracts/moonmail-v4`.
+The [contract index](../contracts/README.md) documents the folder layout.
+Moving source folders does not change deployed registry/template/resource addresses.
 
 Cryptographic domain strings such as `GhostDrop` and protocol identifiers such as `gd-postbox-1` remain byte-for-byte compatible. Those strings bind encrypted letters, Sent copies, recovery capsules, saved mailbox settings and ownership proofs. Replacing them with a new marketing name would prevent recovery of existing data.
 

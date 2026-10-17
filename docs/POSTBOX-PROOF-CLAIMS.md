@@ -28,10 +28,10 @@ The client requests one explicit ownership approval, rechecks the selected accou
 Run `pnpm test`, `pnpm build`, `pnpm test:browser`, and:
 
 ```sh
-cargo test --manifest-path contracts/envelope-v2/Cargo.toml --locked
-cargo test --manifest-path contracts/postbox-claim-tests/Cargo.toml --locked -- --include-ignored
-cargo build --manifest-path contracts/envelope-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
-cargo build --manifest-path contracts/ghostdrop-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
+cargo test --manifest-path contracts/legacy/envelope-v2/Cargo.toml --locked
+cargo test --manifest-path contracts/tests/mailbox/Cargo.toml --locked -- --include-ignored
+cargo build --manifest-path contracts/legacy/envelope-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
+cargo build --manifest-path contracts/legacy/ghostdrop-v2/Cargo.toml --target wasm32-unknown-unknown --release --locked
 ```
 
 The [evidence record](postbox-proof-claims-evidence.json) distinguishes eleven local financial engine tests, twenty-two mocked browser-adapter tests, and an actual ownership approval/rejection in a fresh unfunded stock Sapient 0.6.6 profile. The real approved signature passes the production crypto source in Ootle 0.45, with thirteen tampering cases rejected. That crypto probe uses a synthetic registry/envelope/expiry context; it is not a registered public postbox claim. The local measured claim fee was 4,369 µTARI, with a 100,000 µTARI reserve. Public fees must still be simulated and measured independently.

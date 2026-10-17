@@ -4,7 +4,7 @@ use tari_template_test_tooling::{TemplateTest, transaction::args};
 
 #[test]
 fn only_the_registered_controller_can_create_and_update_mailbox_state_and_stale_writes_fail() {
-    let mut t = TemplateTest::new(env!("CARGO_MANIFEST_DIR"), ["../ghostdrop-v3"]);
+    let mut t = TemplateTest::new(env!("CARGO_MANIFEST_DIR"), ["../../legacy/ghostdrop-v3"]);
     t.disable_fees();
     let office: ComponentAddress = t.call_function(
         "GhostDrop",
@@ -142,7 +142,7 @@ fn only_the_registered_controller_can_create_and_update_mailbox_state_and_stale_
 
 #[test]
 fn mailbox_state_checks_directory_identity_separates_postboxes_and_accepts_bounded_ciphertext() {
-    let mut t = TemplateTest::new(env!("CARGO_MANIFEST_DIR"), ["../ghostdrop-v3"]);
+    let mut t = TemplateTest::new(env!("CARGO_MANIFEST_DIR"), ["../../legacy/ghostdrop-v3"]);
     t.disable_fees();
     let office: ComponentAddress = t.call_function(
         "GhostDrop",
@@ -213,7 +213,7 @@ fn state(t: &mut TemplateTest, component: ComponentAddress) -> MailboxState {
 
 #[test]
 fn unified_letters_allow_long_messages_but_enforce_complete_component_size_and_kind_boundaries() {
-    let mut t = TemplateTest::new(env!("CARGO_MANIFEST_DIR"), ["../ghostdrop-v3"]);
+    let mut t = TemplateTest::new(env!("CARGO_MANIFEST_DIR"), ["../../legacy/ghostdrop-v3"]);
     t.disable_fees();
     let template = t.get_template_address("GhostDrop");
     let bad = t.execute_expect_failure(
@@ -309,7 +309,7 @@ fn sdk_mailbox_transactions_pay_normal_wallet_fees_and_cannot_replay_a_stale_upd
     use std::io::Write;
     use std::process::{Command, Stdio};
     use tari_template_test_tooling::transaction::Transaction;
-    let mut t = TemplateTest::new(env!("CARGO_MANIFEST_DIR"), ["../ghostdrop-v3"]);
+    let mut t = TemplateTest::new(env!("CARGO_MANIFEST_DIR"), ["../../legacy/ghostdrop-v3"]);
     t.disable_fees();
     let template = t.get_template_address("GhostDrop");
     let office: ComponentAddress =
@@ -334,7 +334,7 @@ fn sdk_mailbox_transactions_pay_normal_wallet_fees_and_cannot_replay_a_stale_upd
     let loader = std::env::var("GHOSTDROP_TEST_LOADER").unwrap_or("tsx".into());
     let script = std::env::var("GHOSTDROP_MAILBOX_SIGNER").unwrap_or_else(|_| {
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../tools/sign-mailbox-engine-update.ts")
+            .join("../../../tools/sign-mailbox-engine-update.ts")
             .to_string_lossy()
             .into_owned()
     });

@@ -9,7 +9,10 @@ mod tests {
         transaction::{Transaction, args},
     };
     fn fixture() -> (TemplateTest, ComponentAddress, ComponentAddress) {
-        let mut t = TemplateTest::new(env!("CARGO_MANIFEST_DIR"), ["../ghostdrop", "../envelope"]);
+        let mut t = TemplateTest::new(
+            env!("CARGO_MANIFEST_DIR"),
+            ["../../legacy/ghostdrop", "../../legacy/envelope"],
+        );
         let child = t.get_template_address("Envelope");
         let office: ComponentAddress =
             t.call_function("PostOffice", "new", args![16u8, child], vec![]);
@@ -349,9 +352,21 @@ mod tests {
         let c = child(&mut t, office, "gift");
         let component = t.read_only_state_store().get_component(office).unwrap();
         let envelope = t.read_only_state_store().get_component(c).unwrap();
-        let base = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/fixtures");
-        std::fs::create_dir_all(&base).unwrap();
-        std::fs::write(base.join("engine-office.json"),serde_json::to_string_pretty(&serde_json::json!({"registry":office.to_string(),"template":component.header.template_address.to_string(),"envelopeTemplate":envelope.header.template_address.to_string(),"component":component,"envelopes":{c.to_string():envelope}})).unwrap()).unwrap();
+        let fixture = serde_json::to_string_pretty(&serde_json::json!({
+            "registry": office.to_string(),
+            "template": component.header.template_address.to_string(),
+            "envelopeTemplate": envelope.header.template_address.to_string(),
+            "component": component,
+            "envelopes": {c.to_string(): envelope}
+        }))
+        .unwrap();
+        if let Ok(path) = std::env::var("GHOSTDROP_ENGINE_FIXTURE") {
+            assert!(
+                path.ends_with(".local.json"),
+                "Fixture export must be explicit/local"
+            );
+            std::fs::write(path, fixture).unwrap();
+        }
     }
     fn js_transaction(f: serde_json::Value) -> (Transaction, serde_json::Value) {
         use std::{
@@ -362,7 +377,7 @@ mod tests {
         let loader = std::env::var("GHOSTDROP_TEST_LOADER").unwrap_or("tsx".into());
         let script = std::env::var("GHOSTDROP_TEST_SIGNER").unwrap_or_else(|_| {
             std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join("../../tools/sign-engine-claim.ts")
+                .join("../../../tools/sign-engine-claim.ts")
                 .to_string_lossy()
                 .into_owned()
         });

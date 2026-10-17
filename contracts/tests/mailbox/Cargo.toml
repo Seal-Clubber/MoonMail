@@ -7,11 +7,11 @@ license = "MIT"
 tari_template_test_tooling = "=0.46.0"
 tari_engine_types = "=0.46.0"
 tari_template_lib = "=0.34.0"
-ghostdrop_envelope_v2 = { path = "../envelope-v2" }
-ghostdrop_template_v2 = { path = "../ghostdrop-v2" }
+ghostdrop_envelope_v2 = { path = "../../legacy/envelope-v2" }
+ghostdrop_template_v2 = { path = "../../legacy/ghostdrop-v2" }
 serde_json = "=1.0.151"
 blake2 = "=0.10.6"
 bech32 = "=0.11.1"
-ghostdrop_v3 = { path = "../ghostdrop-v3" }
+ghostdrop_v3 = { path = "../../legacy/ghostdrop-v3" }
 
-moonmail_v4 = { path = "../moonmail-v4" }
+moonmail_v4 = { path = "../../moonmail-v4" }
