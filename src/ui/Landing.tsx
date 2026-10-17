@@ -1,4 +1,5 @@
 import { GhostMark } from "./GhostMark";
+import { MoonlitScene, UiIcon } from "./UiIcon";
 
 export function Landing({
   onOpen,
@@ -37,8 +38,7 @@ export function Landing({
         </button>
       </div>
       <div className="landing-moon" aria-hidden="true">
-        <div className="moon-orbit" />
-        <div className="moon-disc" />
+        <MoonlitScene />
         <div className="moon-messenger">
           <GhostMark />
         </div>
@@ -47,7 +47,9 @@ export function Landing({
       </div>
       <div className="landing-features">
         <article>
-          <span aria-hidden="true">✉</span>
+          <span className="landing-feature-icon">
+            <UiIcon name="privacy" />
+          </span>
           <h2>Private by default</h2>
           <p>
             Subjects and messages are encrypted before publishing. Public mail
@@ -55,7 +57,9 @@ export function Landing({
           </p>
         </article>
         <article>
-          <span aria-hidden="true">☾</span>
+          <span className="landing-feature-icon">
+            <UiIcon name="inbox" />
+          </span>
           <h2>Your wallet, your mailbox</h2>
           <p>
             Recover letters, Sent copies and saved mailbox settings with the
@@ -63,7 +67,9 @@ export function Landing({
           </p>
         </article>
         <article>
-          <span aria-hidden="true">◇</span>
+          <span className="landing-feature-icon">
+            <UiIcon name="gift" />
+          </span>
           <h2>A little generosity</h2>
           <p>
             Request a native private payment inside an encrypted letter, or

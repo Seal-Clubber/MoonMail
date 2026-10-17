@@ -932,8 +932,11 @@ body {
   margin: 12px 0;
 }
 .app-shell .moonmail-landing {
-  max-width: 1150px;
+  max-width: 1240px;
   margin-inline: auto;
+  padding-block: 68px 48px;
+  gap: 40px;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
 }
 .app-shell .landing-copy h1 {
   font-size: clamp(52px, 8vw, 84px);
@@ -950,9 +953,87 @@ body {
   font-size: 17px;
 }
 .app-shell .landing-features article {
-  background: #111f35;
+  background: linear-gradient(145deg, #152740, #101d32);
   border-color: #364c69;
   box-shadow: none;
+}
+.app-shell .landing-moon {
+  display: block;
+  aspect-ratio: 1;
+  max-width: 440px;
+  border: 1px solid #49678a70;
+  border-radius: 50%;
+  background: #101e34;
+  box-shadow: 0 0 90px #6083c01a;
+  overflow: hidden;
+}
+.app-shell .landing-moon .moonlit-scene {
+  display: block;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  mask-image: none;
+  object-fit: cover;
+}
+.app-shell .landing-moon .moon-messenger {
+  width: 40%;
+  left: 31%;
+  bottom: 10%;
+}
+.app-shell .landing-moon .moon-star {
+  font-size: 17px;
+  animation: moonmail-starlight 6s ease-in-out infinite;
+}
+.app-shell .landing-moon .star-one {
+  top: 26%;
+  left: 22%;
+}
+.app-shell .landing-moon .star-two {
+  right: 19%;
+  bottom: 48%;
+  animation-delay: -3s;
+}
+.app-shell .landing-feature-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid #4b648b;
+  border-radius: 12px;
+  background: #223958;
+}
+.app-shell .landing-feature-icon .ui-icon {
+  width: 22px;
+  height: 22px;
+}
+@keyframes moonmail-starlight {
+  50% {
+    opacity: 0.35;
+  }
+}
+@media (max-width: 760px) {
+  .app-shell .moonmail-landing {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 32px 6%;
+    gap: 24px;
+  }
+  .app-shell .landing-moon {
+    max-width: 250px;
+  }
+  .app-shell .landing-features {
+    padding-top: 0;
+  }
+}
+@media (max-width: 600px) {
+  .app-shell .landing-actions {
+    flex-direction: column;
+  }
+  .app-shell .landing-actions button {
+    width: 100%;
+  }
 }
 .app-shell .landing-features h2 {
   color: #e5ecff;
@@ -1641,13 +1722,13 @@ body {
   position: relative;
 }
 .app-shell .mailbox-list-header {
-  padding: 24px 22px 20px;
+  padding: 18px 22px 14px;
   gap: 12px;
-  min-height: 90px;
+  min-height: 78px;
   align-items: center;
 }
 .app-shell .mailbox-list-header h2 {
-  font-size: 28px;
+  font-size: 25px;
 }
 .app-shell .mailbox-mail-count {
   font-size: 12px;
@@ -1768,7 +1849,7 @@ body {
 }
 .app-shell .mailbox-reading-tools {
   border-bottom-color: #2b405d;
-  min-height: 76px;
+  min-height: 64px;
   padding-inline: 28px;
 }
 .app-shell .mailbox-reading-tools button {
@@ -1789,8 +1870,8 @@ body {
   color: #b1c8ea;
 }
 .app-shell .letter-participants {
-  margin-block: 20px 30px;
-  padding-block: 22px;
+  margin-block: 18px 24px;
+  padding-block: 16px;
 }
 .app-shell .letter-participants strong {
   font-size: 15px;
@@ -1851,7 +1932,7 @@ body {
     grid-column: 1 / -1;
     grid-row: 1;
     grid-template-columns: 244px minmax(330px, 0.94fr) minmax(0, 1.25fr);
-    height: max(740px, calc(100svh - 130px));
+    height: max(620px, calc(100svh - 112px));
   }
   .app-shell .mailbox-client > .mailbox-save-bar {
     grid-column: 3;
@@ -1868,7 +1949,7 @@ body {
   .app-shell .mailbox-sidebar {
     display: flex;
     flex-direction: column;
-    padding-top: 14px;
+    padding: 16px 14px 0;
   }
   .app-shell .mailbox-sidebar > * {
     flex-shrink: 0;
@@ -2020,7 +2101,7 @@ body {
 }
 @media (max-width: 600px) {
   .app-shell .mailbox-tools {
-    grid-column: 1 / -1;
+    grid-column: 1;
     margin: 0;
     padding: 0;
     border: 0;
@@ -2029,6 +2110,20 @@ body {
     min-height: 36px;
     padding: 4px;
     font-size: 12px;
+  }
+  .app-shell .mailbox-preferences {
+    grid-column: 2;
+  }
+  .app-shell :is(.mailbox-tools, .mailbox-preferences)[open] {
+    grid-column: 1 / -1;
+  }
+  .app-shell .mailbox-secondary {
+    margin-top: 0;
+    padding-top: 0;
+  }
+  .app-shell .mailbox-sidebar nav {
+    scrollbar-width: thin;
+    scrollbar-color: #526e98 #0a1428;
   }
   .app-shell .mailbox-workspace.reading .mailbox-sidebar {
     display: none;

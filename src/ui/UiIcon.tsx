@@ -65,6 +65,7 @@ export function MoonlitScene() {
     <svg
       className="moonlit-scene"
       viewBox="0 0 300 200"
+      preserveAspectRatio="xMidYMid slice"
       fill="none"
       aria-hidden="true"
       focusable="false"

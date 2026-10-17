@@ -19,12 +19,24 @@ export function RecipientPicker({
   extras?: ReactNode;
 }) {
   const id = useId(),
-    input = useRef<HTMLInputElement>(null);
+    input = useRef<HTMLInputElement>(null),
+    picker = useRef<HTMLDivElement>(null);
   const editing = useRef(false);
+  const composing = useRef(false);
   const selected = groups.flatMap((g) => g.boxes).find((p) => p.id === value);
   const [query, setQuery] = useState(selected?.nickname || value);
   const [open, setOpen] = useState(false),
-    [active, setActive] = useState(-1);
+    [activeId, setActiveId] = useState<string | undefined>();
+  useEffect(() => {
+    if (!open) return;
+    function dismiss(event: PointerEvent) {
+      if (!picker.current?.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, [open]);
   useEffect(() => {
     if (!editing.current) setQuery(selected?.nickname || value);
     editing.current = false;
@@ -38,6 +50,7 @@ export function RecipientPicker({
       .slice(0, 20),
   }));
   const results = matching.flatMap((g) => g.boxes);
+  const active = results.findIndex((box) => box.id === activeId);
   useEffect(() => {
     if (open && active >= 0)
       document
@@ -49,12 +62,13 @@ export function RecipientPicker({
     setQuery(box.nickname);
     onChange(box.id);
     setOpen(false);
-    setActive(-1);
+    setActiveId(undefined);
     input.current?.focus();
   }
   return (
     <div
       className="recipient-picker"
+      ref={picker}
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node)) {
           setOpen(false);
@@ -91,10 +105,24 @@ export function RecipientPicker({
             editing.current = true;
             setQuery(event.target.value);
             setOpen(true);
-            setActive(-1);
+            setActiveId(undefined);
             onChange("");
           }}
+          onCompositionStart={() => {
+            composing.current = true;
+          }}
+          onCompositionEnd={() => {
+            composing.current = false;
+          }}
           onKeyDown={(event) => {
+            if (
+              composing.current ||
+              event.nativeEvent.isComposing ||
+              event.nativeEvent.keyCode === 229
+            ) {
+              event.stopPropagation();
+              return;
+            }
             if (event.key === "Escape" && open) {
               event.preventDefault();
               event.stopPropagation();
@@ -102,18 +130,17 @@ export function RecipientPicker({
             } else if (event.key === "ArrowDown" || event.key === "ArrowUp") {
               event.preventDefault();
               setOpen(true);
-              setActive((n) =>
-                results.length
-                  ? n < 0
-                    ? event.key === "ArrowDown"
-                      ? 0
-                      : results.length - 1
-                    : (n +
-                        (event.key === "ArrowDown" ? 1 : -1) +
-                        results.length) %
-                      results.length
-                  : -1,
-              );
+              const next = results.length
+                ? active < 0
+                  ? event.key === "ArrowDown"
+                    ? 0
+                    : results.length - 1
+                  : (active +
+                      (event.key === "ArrowDown" ? 1 : -1) +
+                      results.length) %
+                    results.length
+                : -1;
+              setActiveId(results[next]?.id);
             } else if (event.key === "Enter" && open) {
               event.preventDefault();
               const match =
@@ -177,7 +204,7 @@ export function RecipientPicker({
                           disabled={busy}
                           title={box.id}
                           onMouseDown={(event) => event.preventDefault()}
-                          onMouseEnter={() => setActive(index)}
+                          onMouseEnter={() => setActiveId(box.id)}
                           onClick={() => choose(box)}
                         >
                           <span>{box.nickname}</span>

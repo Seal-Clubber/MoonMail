@@ -22,6 +22,15 @@ test("MoonMail landing opens the mailbox and public mail deliberately, without w
   ).toBeVisible();
   await readable(page.locator(".landing-tagline"));
   await readable(page.locator(".landing-intro"));
+  await expect(page.locator(".landing-moon")).toBeVisible();
+  await expect(page.locator(".landing-feature-icon .ui-icon")).toHaveCount(3);
+  for (const feature of await page.locator(".landing-features p").all()) {
+    await readable(feature);
+  }
+  await page.screenshot({
+    path: test.info().outputPath("moonlit-landing.png"),
+    fullPage: true,
+  });
   await expect(page.locator(".moon-messenger")).toHaveCSS(
     "animation-name",
     "none",

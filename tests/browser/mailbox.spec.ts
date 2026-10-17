@@ -1091,7 +1091,12 @@ test("bulk selection stages consistent read and archive changes and discard rest
       exact: true,
     })
     .selectOption("4:true");
-  await expect(page.getByText("0 selected", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("combobox", {
+      name: "Actions for selected letters",
+      exact: true,
+    }),
+  ).toHaveCount(0);
   await expect(
     page.getByLabel("Unsaved mailbox changes", { exact: true }),
   ).toBeVisible();
@@ -1243,7 +1248,12 @@ test("bulk selection keeps messages reachable in a short desktop window", async 
       exact: true,
     })
     .selectOption("1:true");
-  await expect(page.getByText("0 selected", { exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("combobox", {
+      name: "Actions for selected letters",
+      exact: true,
+    }),
+  ).toHaveCount(0);
   await assertReadOnly(page, writes);
 });
 
@@ -1727,6 +1737,18 @@ test("compact composer searches favourites, correspondents and directory with mo
   ).toHaveCount(0);
   await input.fill("night");
   await input.press("ArrowDown");
+  const highlighted = await input.getAttribute("aria-activedescendant");
+  await input.dispatchEvent("compositionstart");
+  await input.dispatchEvent("keydown", { key: "ArrowDown", isComposing: true });
+  await expect(input).toHaveAttribute("aria-activedescendant", highlighted!);
+  await input.dispatchEvent("keydown", { key: "Enter", isComposing: true });
+  await input.dispatchEvent("keydown", { key: "Escape", isComposing: true });
+  await expect(page.locator(".compose-window")).not.toHaveClass(/minimized/);
+  await expect(input).toHaveAttribute("data-recipient-id", "");
+  await expect(
+    page.getByRole("listbox", { name: "Matching postboxes" }),
+  ).toBeVisible();
+  await input.dispatchEvent("compositionend");
   await input.press("Enter");
   await expect(input).toHaveAttribute("data-recipient-id", "work");
   await input.fill("Someone");
@@ -1759,6 +1781,72 @@ test("compact composer searches favourites, correspondents and directory with mo
   await input.click();
   await page.screenshot({
     path: test.info().outputPath("compact-recipient-picker.png"),
+  });
+  await assertReadOnly(page, writes);
+});
+
+test("mailbox view menu dismisses naturally and short windows keep mail controls reachable", async ({
+  page,
+}) => {
+  const writes = await mailboxFixture(
+    page,
+    "note-01",
+    true,
+    false,
+    false,
+    true,
+    false,
+    27,
+    true,
+  );
+  if (test.info().project.name === "desktop")
+    await page.setViewportSize({ width: 1280, height: 720 });
+  await page.goto("./#/postboxes");
+  await connect(page);
+  await unlock(page, "The midnight delivery");
+  const options = page.locator(".mailbox-view-options");
+  const toggle = options.locator("summary");
+  await toggle.click();
+  await expect(options).toHaveAttribute("open", "");
+  await page.getByRole("combobox", { name: "Sort letters" }).focus();
+  await page.keyboard.press("Escape");
+  await expect(options).not.toHaveAttribute("open", "");
+  await expect(toggle).toBeFocused();
+  await toggle.click();
+  await page.locator(".mailbox-list-header h2").click();
+  await expect(options).not.toHaveAttribute("open", "");
+  await page.getByRole("button", { name: "Next", exact: true }).click();
+  await expect(page.locator(".mailbox-range")).toHaveText(
+    "13–24 of 27 loaded letters",
+  );
+  await page.getByRole("button", { name: "Previous", exact: true }).click();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  await page
+    .getByRole("button", { name: "Compose letter", exact: true })
+    .click();
+  await page
+    .getByRole("combobox", { name: "Recipient postbox", exact: true })
+    .click();
+  await expect(
+    page.getByRole("listbox", { name: "Matching postboxes" }),
+  ).toBeVisible();
+  await page.locator(".compose-window-heading h1").click();
+  await expect(
+    page.getByRole("listbox", { name: "Matching postboxes" }),
+  ).toHaveCount(0);
+  await page.screenshot({
+    path: test.info().outputPath("polished-compose.png"),
+  });
+  await page
+    .getByRole("button", { name: "Close composer", exact: true })
+    .click();
+  await page.screenshot({
+    path: test.info().outputPath("polished-mailbox.png"),
+    fullPage: true,
   });
   await assertReadOnly(page, writes);
 });

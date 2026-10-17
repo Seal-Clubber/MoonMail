@@ -2544,6 +2544,8 @@ export function App() {
               if (
                 event.key === "Escape" &&
                 !event.defaultPrevented &&
+                !event.nativeEvent.isComposing &&
+                event.nativeEvent.keyCode !== 229 &&
                 !busy &&
                 !(event.target as HTMLElement).closest("dialog")
               ) {

@@ -84,6 +84,27 @@ export function MailboxWorkspace({
   const marks = new Map(state.draft.marks);
   const [checked, setChecked] = useState<string[]>([]);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const viewOptions = useRef<HTMLDetailsElement>(null);
+  useEffect(() => {
+    function dismiss(event: PointerEvent | KeyboardEvent) {
+      const menu = viewOptions.current;
+      if (!menu?.open) return;
+      if (event instanceof KeyboardEvent) {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        menu.open = false;
+        menu.querySelector("summary")?.focus();
+      } else if (!menu.contains(event.target as Node)) {
+        menu.open = false;
+      }
+    }
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", dismiss);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", dismiss);
+    };
+  }, []);
   useEffect(() => {
     if (state.loaded) onPreferences(box.id, state.draft);
   }, [box.id, state.loaded, state.draft, onPreferences]);
@@ -368,7 +389,7 @@ export function MailboxWorkspace({
             <span className="mailbox-mail-count">
               {views[folder].length} loaded
             </span>
-            <details className="mailbox-view-options">
+            <details className="mailbox-view-options" ref={viewOptions}>
               <summary>
                 <UiIcon name="settings" />
                 View options
@@ -450,7 +471,9 @@ export function MailboxWorkspace({
                 />{" "}
                 Select this page
               </label>
-              <span role="status">{checked.length} selected</span>
+              {!!checked.length && (
+                <span role="status">{checked.length} selected</span>
+              )}
               {!!checked.length && (
                 <>
                   <label>
