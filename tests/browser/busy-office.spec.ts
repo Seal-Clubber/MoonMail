@@ -369,3 +369,51 @@ test("a busy real Activity book filters legacy uncertain claims without promisin
   ).toBe(original);
   expect(inspect().writes).toBe(0);
 });
+
+test("Activity summary cards filter outcomes without changing history", async ({
+  page,
+}) => {
+  await unconfigured(page);
+  await page.goto("./#/activity");
+  await page
+    .getByRole("button", { name: "See sample activity", exact: true })
+    .click();
+  const original = await page.evaluate(() =>
+    localStorage.getItem("ghostdrop:pending:v1"),
+  );
+  await page
+    .locator(".activity-summary")
+    .getByRole("button")
+    .filter({ hasText: "Awaiting confirmation" })
+    .click();
+  await expect(
+    page.getByRole("combobox", { name: "Activity status", exact: true }),
+  ).toHaveValue("pending");
+  await expect(page.locator(".activity-confirmed")).toHaveCount(0);
+  await page
+    .locator(".activity-summary")
+    .getByRole("button")
+    .filter({ hasText: "Completed" })
+    .first()
+    .click();
+  await expect(
+    page.getByRole("combobox", { name: "Activity status", exact: true }),
+  ).toHaveValue("confirmed");
+  await expect(page.locator(".activity-action-icon").first()).toBeVisible();
+  const icon = await page
+    .locator(".activity-action-icon")
+    .first()
+    .boundingBox();
+  const title = await page
+    .locator(".activity-action-title")
+    .first()
+    .boundingBox();
+  expect(title!.x - (icon!.x + icon!.width)).toBeLessThan(18);
+  expect(
+    await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
+  ).toBe(original);
+  await page.screenshot({
+    path: test.info().outputPath("activity-refreshed.png"),
+    fullPage: true,
+  });
+});

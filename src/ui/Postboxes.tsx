@@ -35,7 +35,7 @@ export function Postboxes({
   task,
   onStatus,
   onConnect,
-  onActivity,
+  onSubmitted,
   onPublic,
   onPrivacy,
   onOpen,
@@ -72,7 +72,7 @@ export function Postboxes({
   task: (fn: () => Promise<void>) => Promise<void>;
   onStatus: (text: string) => void;
   onConnect: () => void;
-  onActivity: () => void;
+  onSubmitted: () => void;
   onPublic: () => void;
   onPrivacy: () => void;
   onOpen: (letter: Envelope) => void;
@@ -108,6 +108,8 @@ export function Postboxes({
     [draftId, setDraftId] = useState<string>(() => crypto.randomUUID()),
     [rotating, setRotating] = useState(false),
     [prepared, setPrepared] = useState<Pending>(),
+    [submittedPostbox, setSubmittedPostbox] = useState<string>(),
+    [submittedTransaction, setSubmittedTransaction] = useState<string>(),
     [viewApproved, setViewApproved] = useState(false);
 
   const nameError = postboxNameError(nickname);
@@ -123,6 +125,19 @@ export function Postboxes({
   const discoveredScope = useRef("");
   const sealed = deployment.contractProtocol === "unified-2";
   const progress = box ? discovery?.get(box.id) : undefined;
+  const submittedState = readPending(browserStorage).find(
+    (p) => p.id === submittedTransaction,
+  )?.state;
+  useEffect(() => {
+    if (
+      submittedPostbox &&
+      submittedState === "confirmed" &&
+      owned.some((p) => p.id === submittedPostbox)
+    ) {
+      choose(submittedPostbox);
+      setSubmittedPostbox(undefined);
+    }
+  }, [submittedPostbox, submittedState, owned.map((p) => p.id).join(",")]);
   useEffect(() => {
     if (!sealed || !box || !viewApproved || busy || !onDiscover) return;
     const scope = JSON.stringify([
@@ -382,12 +397,14 @@ export function Postboxes({
       browserStorage,
     );
     onStatus(
-      `Postbox change submitted. Check its confirmation in Activity. Transaction: ${tx}.`,
+      "Postbox change submitted. Stay here while Ootle confirms it; your mailbox will refresh automatically. Activity keeps the transaction details.",
     );
     setEditing(false);
     setPrepared(undefined);
     setRotating(false);
-    onActivity();
+    setSubmittedPostbox(id);
+    setSubmittedTransaction(tx);
+    onSubmitted();
   }
   const postboxPicker = owned.length > 0 && (
     <label className="postbox-switcher">
@@ -440,6 +457,26 @@ export function Postboxes({
           Your <em>haunted inbox.</em>
         </h1>
       </header>
+      {submittedPostbox && (
+        <div className="postbox-confirmation info" role="status">
+          <strong>
+            {submittedState === "rejected"
+              ? "Your postbox change did not complete."
+              : submittedState === "confirmed"
+                ? "Your postbox is confirmed. Refreshing your mailbox…"
+                : "Your postbox change is on its way."}
+          </strong>
+          <p>
+            {submittedState === "rejected"
+              ? "Check the original transaction and any fees in Activity before preparing another attempt."
+              : "Checking the original transaction. You can keep browsing; no further approval is requested here."}
+          </p>
+          <button disabled={busy} onClick={() => void task(onRefresh)}>
+            Refresh mailbox
+          </button>{" "}
+          <a href="#/activity">View activity ↗</a>
+        </div>
+      )}
       {(!box || editing) && (
         <p>
           A quiet place for letters meant just for you. Your Sapient wallet

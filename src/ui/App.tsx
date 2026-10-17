@@ -576,7 +576,12 @@ export function App() {
     };
   }, [d]);
   useEffect(() => {
-    if (view !== "activity" || !chain || busy || writeBlocked) {
+    if (
+      !["activity", "postboxes"].includes(view) ||
+      !chain ||
+      busy ||
+      writeBlocked
+    ) {
       setAutoChecking(false);
       return;
     }
@@ -590,6 +595,7 @@ export function App() {
         (p) =>
           p.network === d.network &&
           p.registry === d.registry &&
+          (view === "activity" || p.operation === "postbox") &&
           /^[a-f0-9]{64}$/.test(p.id) &&
           (p.state === "submitted" || p.state === "unknown"),
       );
@@ -3187,7 +3193,9 @@ export function App() {
             task={task}
             onStatus={setStatus}
             onConnect={() => setConnect(true)}
-            onActivity={() => navigate("activity")}
+            onSubmitted={() => {
+              if (view !== "postboxes") navigate("postboxes", true);
+            }}
             onPublic={() => navigate("hall")}
             onPrivacy={() => navigate("privacy")}
             writeBlocked={writeBlocked}

@@ -347,7 +347,7 @@ test("known receipt confirms automatically with no wallet or transaction submiss
     { ...d, transaction },
   );
   await page.goto("./#/activity");
-  await expect(page.locator(".delivery-card")).toContainText("Delivered");
+  await expect(page.locator(".delivery-card")).toContainText("Confirmed");
   expect(receiptReads).toBe(1);
   expect(writes).toBe(0);
   await page.getByRole("button", { name: "Public mail", exact: true }).click();
@@ -1370,4 +1370,102 @@ test("automatic fees reveal an adjustment only after a low preflight estimate, w
     ),
   ).toBe("300000");
   expect(writes).toBe(0);
+});
+
+test("postbox submission stays in My inbox and confirms without opening Activity", async ({
+  page,
+}) => {
+  const { controller } = await connectFixture(page);
+  const capsule = {
+    template: "1".repeat(64),
+    component: `component_${"2".repeat(64)}`,
+    resource: `resource_${"3".repeat(64)}`,
+  };
+  await page.route("**/deployment.json", (r) =>
+    r.fulfill({
+      json: {
+        ...d,
+        capsule,
+        evidence: { ...d.evidence, mailboxRecovery: true },
+      },
+    }),
+  );
+  const key = JSON.stringify({
+    version: "gd-postbox-1",
+    keyVersion: 1,
+    publicKey: "4".repeat(64),
+    recovery: "sapient-capsule-1",
+    capsule: { resource: capsule.resource, commitment: "5".repeat(64) },
+  });
+  let confirmed = false,
+    writes = 0;
+  await page.route(`${d.indexerUrl}**`, (r) => {
+    if (r.request().method() !== "GET") {
+      writes++;
+      return r.abort();
+    }
+    if (r.request().url().includes(`/transactions/${transaction}/result`)) {
+      confirmed = true;
+      return r.fulfill({
+        json: { result: { Finalized: { final_decision: "Commit" } } },
+      });
+    }
+    const result: any = ledger(r.request().url());
+    if (r.request().url().includes(d.registry))
+      result.substate.Component.body.state[2] = {
+        home: [
+          "home",
+          confirmed ? "Moonlit home" : "My home",
+          controller,
+          key,
+          true,
+        ],
+      };
+    return r.fulfill({ json: result });
+  });
+  await page.goto("./#/postboxes");
+  await page
+    .getByRole("button", { name: "Connect wallet", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Connect Sapient", exact: true })
+    .click();
+  await expect(
+    page.getByRole("combobox", { name: "My postboxes", exact: true }),
+  ).toHaveValue("home");
+  const notNow = page.getByRole("button", { name: "Not now", exact: true });
+  if (await notNow.isVisible()) await notNow.click();
+  await page.getByText("Postbox options", { exact: true }).click();
+  await page
+    .getByRole("button", { name: "Edit selected postbox", exact: true })
+    .click();
+  await page.getByLabel("Postbox name", { exact: true }).fill("Moonlit home");
+  await page
+    .getByRole("button", { name: "Save postbox changes", exact: true })
+    .click();
+  await expect(page).toHaveURL(/#\/postboxes$/);
+  await expect(
+    page.getByRole("heading", { name: "Your activity.", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByRole("combobox", { name: "My postboxes", exact: true }),
+  ).toContainText("Moonlit home");
+  await expect
+    .poll(() =>
+      page.evaluate(() =>
+        JSON.parse(localStorage.getItem("ghostdrop:pending:v1") || "[]")
+          .filter((p: any) => p.operation === "postbox")
+          .map((p: any) => p.state),
+      ),
+    )
+    .toEqual(["confirmed"]);
+  expect(writes).toBe(0);
+  expect(
+    await page.evaluate(
+      () =>
+        (window as any).walletCalls.filter(
+          (c: any) => c.method === "tari_submitTransactionRequest",
+        ).length,
+    ),
+  ).toBe(1);
 });

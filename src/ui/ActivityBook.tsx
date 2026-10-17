@@ -3,6 +3,7 @@ import type { Envelope } from "../core/types";
 import { tari } from "./AmountInput";
 import type { Pending } from "../core/pending";
 import { CopyField } from "./CopyField";
+import { UiIcon } from "./UiIcon";
 import {
   activityDetails,
   activityMatches,
@@ -71,22 +72,50 @@ export function ActivityBook({
         aria-label={sample ? "Sample activity summary" : "Activity summary"}
       >
         <div>
-          <strong>
-            {records.filter((p) => activityMatches(p, "pending")).length}
-          </strong>
-          <span>Awaiting confirmation</span>
+          <button
+            className="activity-summary-link"
+            aria-pressed={filter === "pending"}
+            onClick={() =>
+              change(() => setFilter(filter === "pending" ? "all" : "pending"))
+            }
+          >
+            <strong>
+              {records.filter((p) => activityMatches(p, "pending")).length}
+            </strong>
+            <span>Awaiting confirmation</span>
+          </button>
         </div>
         <div>
-          <strong>
-            {records.filter((p) => activityMatches(p, "confirmed")).length}
-          </strong>
-          <span>Delivered</span>
+          <button
+            className="activity-summary-link"
+            aria-pressed={filter === "confirmed"}
+            onClick={() =>
+              change(() =>
+                setFilter(filter === "confirmed" ? "all" : "confirmed"),
+              )
+            }
+          >
+            <strong>
+              {records.filter((p) => activityMatches(p, "confirmed")).length}
+            </strong>
+            <span>Completed</span>
+          </button>
         </div>
         <div>
-          <strong>
-            {records.filter((p) => p.state === "rejected").length}
-          </strong>
-          <span>Not completed</span>
+          <button
+            className="activity-summary-link"
+            aria-pressed={filter === "rejected"}
+            onClick={() =>
+              change(() =>
+                setFilter(filter === "rejected" ? "all" : "rejected"),
+              )
+            }
+          >
+            <strong>
+              {records.filter((p) => p.state === "rejected").length}
+            </strong>
+            <span>Not completed</span>
+          </button>
         </div>
       </div>
       <div className="activity-tools">
@@ -110,7 +139,7 @@ export function ActivityBook({
           >
             <option value="all">All statuses</option>
             <option value="pending">Awaiting confirmation</option>
-            <option value="confirmed">Delivered</option>
+            <option value="confirmed">Completed</option>
             <option value="rejected">Not completed</option>
           </select>
         </label>
@@ -172,7 +201,22 @@ export function ActivityBook({
               key={p.id}
             >
               <div className="activity-entry-heading">
-                <div>
+                <span className="activity-action-icon">
+                  <UiIcon
+                    name={
+                      p.operation === "publish"
+                        ? "sent"
+                        : p.operation === "claim"
+                          ? "gift"
+                          : p.operation === "capsule"
+                            ? "privacy"
+                            : p.operation === "mailbox"
+                              ? "settings"
+                              : "inbox"
+                    }
+                  />
+                </span>
+                <div className="activity-action-title">
                   {sample && (
                     <span className="activity-kind">SAMPLE ACTION</span>
                   )}

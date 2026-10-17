@@ -80,7 +80,9 @@ export function activityDetails(p: Pending) {
     unresolved,
     label:
       !unresolved && p.state === "confirmed"
-        ? "Delivered"
+        ? p.operation === "publish"
+          ? "Delivered"
+          : "Confirmed"
         : p.state === "rejected"
           ? "Not completed"
           : "Awaiting confirmation",
