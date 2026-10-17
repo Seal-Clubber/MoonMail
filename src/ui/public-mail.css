@@ -1,0 +1,639 @@
+/* Public discovery shares the mailbox's moonlit palette. */
+.app-shell.view-hall main {
+  max-width: 1320px;
+  padding-inline: 36px;
+}
+.app-shell .public-mail-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 100px auto;
+  gap: 30px;
+  align-items: center;
+  padding: 40px 0 32px;
+  text-align: left;
+}
+.app-shell .public-mail-header h1 {
+  font-size: clamp(32px, 4vw, 48px);
+  margin: 12px 0;
+}
+.app-shell .public-mail-intro > p:not(.kicker) {
+  font-size: 15px;
+  line-height: 1.7;
+  max-width: 650px;
+  margin: 0 0 16px;
+}
+.app-shell .public-mail-header .hero-rule {
+  display: flex;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 0;
+  font:
+    12px/1.6 Inter,
+    system-ui,
+    sans-serif;
+  color: #b4c5dd;
+  letter-spacing: 0;
+}
+.public-mail-welcome {
+  width: 100px;
+  opacity: 0.9;
+}
+.app-shell .public-mail-intro > .kicker {
+  margin: 0;
+  max-width: none;
+  text-align: left;
+}
+.app-shell .public-mail-header .hero-actions .text-button {
+  min-height: 32px;
+  padding: 4px;
+  font-size: 11px;
+  border-color: transparent;
+  background: transparent;
+}
+.public-mail-welcome .ghost-mark {
+  width: 100%;
+  height: auto;
+}
+.app-shell .public-mail-header .hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+}
+.app-shell .public-mail-header .hero-actions button {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 44px;
+  font-size: 13px;
+  padding: 10px 16px;
+}
+.app-shell .public-mail-header .hero-actions .ui-icon {
+  width: 18px;
+  height: 18px;
+}
+.app-shell.view-hall .hall {
+  background: #101e33;
+  border: 1px solid #364c69;
+  box-shadow: none;
+  border-radius: 16px;
+}
+.app-shell.view-hall .hall-heading {
+  padding: 22px 24px 16px;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+  border-bottom: 1px solid #2b405d;
+}
+.app-shell.view-hall .hall-heading .kicker {
+  display: none;
+}
+.app-shell.view-hall .hall-heading h2 {
+  font-size: 22px;
+  margin: 0;
+}
+.app-shell.view-hall .hall-tools {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.app-shell.view-hall .hall-tools button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.public-view-switch {
+  display: flex;
+  gap: 2px;
+  border: 1px solid #496183;
+  border-radius: 9px;
+  padding: 3px;
+  background: #0c192c;
+}
+.app-shell .public-view-switch button {
+  border: 0;
+  background: transparent;
+}
+.app-shell .public-view-switch button[aria-pressed="true"] {
+  background: #30486f;
+  color: #f1f5ff;
+}
+.app-shell.view-hall .mail-search {
+  margin: 0;
+  padding: 20px 24px 4px;
+  border: 0;
+  background: transparent;
+}
+.app-shell.view-hall .mail-search-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+.app-shell.view-hall .mail-search-fields label {
+  margin: 0;
+  font-size: 12px;
+  color: #c3d2e8;
+}
+.app-shell.view-hall .mail-search-fields input {
+  margin-top: 7px;
+  min-height: 46px;
+  font-size: 14px;
+}
+.public-mail-filters {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.app-shell .public-mail-filters button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-color: #405779;
+  color: #c3d2e8;
+  font-size: 12px;
+  min-height: 40px;
+  padding: 8px 13px;
+  border-radius: 22px;
+  background: #13243b;
+}
+.app-shell .public-mail-filters button[aria-pressed="true"] {
+  background: #30486f;
+  border-color: #93acdf;
+  color: #f1f5ff;
+}
+.public-mail-filters .ui-icon {
+  width: 15px;
+  height: 15px;
+}
+.app-shell.view-hall .search-summary {
+  font-size: 12px;
+  color: #b4c5dd;
+  margin: 14px 0 0;
+}
+.app-shell.view-hall .scene {
+  background: transparent;
+  padding: 22px 24px 26px;
+  min-height: 240px;
+}
+.app-shell.view-hall .scene::after {
+  display: none;
+}
+.app-shell.view-hall .envelope-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  padding: 0;
+}
+.app-shell.view-hall .envelope-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: 22px;
+  text-align: left;
+  background: linear-gradient(145deg, #192d48, #132238);
+  border: 1px solid #405779;
+  border-radius: 12px;
+  align-self: stretch;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+.app-shell.view-hall .envelope-card:hover {
+  background: #203653;
+  border-color: #91aaff;
+}
+.app-shell.view-hall .envelope-visual {
+  flex: none;
+  width: 100px;
+  height: 62px;
+  margin: 6px 0 24px;
+  background: linear-gradient(135deg, #dbe6fd, #adbfdf);
+  border-color: #b7cbed;
+  transform: rotate(-3deg);
+  animation: none;
+  box-shadow: 0 6px 18px #060d1d55;
+}
+.app-shell.view-hall .envelope-visual::after {
+  height: 32px;
+  background: #e0eaff;
+}
+.app-shell.view-hall .sealed .envelope-visual {
+  background: linear-gradient(135deg, #6283ad, #3b567e);
+  border-color: #8ba7d0;
+}
+.app-shell.view-hall .sealed .envelope-visual::after {
+  background: #7797c4;
+}
+.app-shell.view-hall .wax {
+  top: 23px;
+  left: 38px;
+  width: 25px;
+  height: 25px;
+  background: #415b98;
+  color: #e3ebff;
+  box-shadow: inset 0 0 0 2px #344878;
+}
+.app-shell.view-hall .wax .ui-icon {
+  width: 14px;
+  height: 14px;
+}
+.app-shell.view-hall .stamp {
+  top: 6px;
+  right: 7px;
+  font-size: 6px;
+  padding: 2px;
+  border-color: #586b94;
+  color: #455e86;
+}
+.app-shell.view-hall .envelope-caption {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.app-shell.view-hall .letter-kind {
+  color: #b8caff;
+  font:
+    650 10px/1.6 Inter,
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.1em;
+}
+.app-shell.view-hall .envelope-caption h3 {
+  color: #edf2ff;
+  font-size: 18px;
+  line-height: 1.45;
+  margin: 8px 0 10px;
+  overflow-wrap: anywhere;
+}
+.app-shell.view-hall .letter-excerpt {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  color: #bdcee5;
+  font:
+    14px/1.7 Inter,
+    system-ui,
+    sans-serif;
+  white-space: normal;
+  margin: 0 0 14px;
+}
+.app-shell.view-hall .public-gift-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid #547e80;
+  border-radius: 6px;
+  background: #1f3a40;
+  color: #d2eee8;
+  font:
+    500 12px/1.5 Inter,
+    system-ui,
+    sans-serif;
+  margin: 0 0 14px;
+}
+.public-gift-badge .ui-icon {
+  width: 15px;
+  height: 15px;
+}
+.app-shell.view-hall .public-gift-badge.collected {
+  color: #becfe5;
+  border-color: #4a607f;
+  background: #21334c;
+}
+.app-shell.view-hall .mail-row-meta {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  padding-top: 12px;
+  border-top: 1px solid #3c5270;
+}
+.app-shell.view-hall .mail-audience {
+  color: #cfdef7;
+  background: #233e60;
+  border-color: #536f96;
+  font-size: 10px;
+}
+.app-shell.view-hall .audience-link {
+  color: #e0d7fa;
+  background: #363354;
+  border-color: #7a6e9f;
+}
+.app-shell.view-hall .mail-row-reference {
+  color: #b4c5dd;
+  font-size: 10px;
+}
+.app-shell.view-hall .mail-row-no-gift {
+  color: #bdcee5;
+  font-size: 11px;
+}
+.app-shell.view-hall .mail-row-open {
+  display: block;
+  margin-top: 14px;
+  color: #c3d2ff;
+  font:
+    600 12px/1.6 Inter,
+    system-ui,
+    sans-serif;
+}
+.app-shell.view-hall .list-hall .envelope-grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+.app-shell.view-hall .list-hall .envelope-card {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr) 170px 90px;
+  align-items: center;
+  gap: 18px;
+  padding: 18px;
+}
+.app-shell.view-hall .list-hall .envelope-visual {
+  width: 60px;
+  height: 40px;
+  margin: 0;
+  transform: none;
+}
+.app-shell.view-hall .list-hall .envelope-visual::after {
+  height: 21px;
+}
+.app-shell.view-hall .list-hall .wax {
+  width: 19px;
+  height: 19px;
+  top: 15px;
+  left: 21px;
+}
+.app-shell.view-hall .list-hall .wax .ui-icon {
+  width: 11px;
+  height: 11px;
+}
+.app-shell.view-hall .list-hall .envelope-caption {
+  flex: none;
+}
+.app-shell.view-hall .list-hall .envelope-caption h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+.app-shell.view-hall .list-hall .letter-excerpt {
+  -webkit-line-clamp: 2;
+  margin-bottom: 0;
+}
+.app-shell.view-hall .list-hall .public-gift-badge {
+  margin: 9px 0 0;
+}
+.app-shell.view-hall .list-hall .mail-row-meta {
+  border: 0;
+  padding: 0;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.app-shell.view-hall .list-hall .mail-row-open {
+  margin: 0;
+  text-align: right;
+}
+.app-shell.view-hall .deployment-note {
+  margin: 18px 24px 0;
+  background: #13263d;
+  border-color: #466080;
+}
+.app-shell.view-hall .deployment-note strong {
+  color: #e0eaff;
+}
+.app-shell.view-hall .deployment-note p {
+  color: #b4c5dd;
+}
+.app-shell.view-hall .preview-banner {
+  margin: 18px 24px 0;
+  color: #ffe4b3;
+  background: #342e25;
+  border: 1px solid #9f8451;
+  font-size: 12px;
+}
+.app-shell.view-hall .empty-hall {
+  width: 100%;
+  max-width: none;
+  text-align: center;
+  padding: 35px 16px;
+}
+.app-shell.view-hall .empty-hall small {
+  color: #b4c5dd;
+}
+.app-shell.view-hall .mode-legend {
+  color: #b4c5dd;
+  border-color: #364c69;
+  font-size: 11px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.app-shell.view-hall .how-it-works {
+  margin-block: 30px;
+  border-color: #364c69;
+}
+.app-shell.view-hall .how-it-works > div {
+  background: #14243a;
+  border-color: #364c69;
+}
+.app-shell.view-hall .hall > button {
+  margin: 0 24px 20px;
+}
+.app-shell.view-hall .modal-backdrop {
+  background: #030b1cce;
+}
+.app-shell.view-hall .how-it-works h3 {
+  color: #e0eaff;
+}
+.app-shell.view-hall .how-it-works .number {
+  color: #b8caff;
+}
+.app-shell .public-letter-reader {
+  width: min(780px, calc(100vw - 48px));
+  padding: 42px 44px;
+  border-radius: 14px;
+}
+.app-shell .public-letter-reader h2 {
+  padding-right: 24px;
+  font:
+    500 clamp(26px, 3vw, 36px)/1.3 Georgia,
+    serif;
+}
+.app-shell .public-reader-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  padding-block: 14px;
+  border-block: 1px solid #8a8d7066;
+  color: #48523e;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.public-reader-meta .ui-icon {
+  width: 16px;
+  height: 16px;
+}
+.app-shell .public-letter-reader .letter-body {
+  font-size: 18px !important;
+  line-height: 1.9 !important;
+  margin-block: 26px;
+}
+.app-shell .letter-modal:not(.mailbox-letter) .check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.app-shell .letter-modal:not(.mailbox-letter) .check input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  min-height: 18px;
+  margin: 4px 0 0;
+  padding: 0;
+  flex: 0 0 18px;
+}
+@media (max-width: 1050px) {
+  .app-shell.view-hall .envelope-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .app-shell .public-mail-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .public-mail-welcome {
+    display: none;
+  }
+  .app-shell.view-hall .list-hall .envelope-card {
+    grid-template-columns: 60px minmax(0, 1fr) 145px;
+    gap: 14px;
+  }
+  .app-shell.view-hall .list-hall .mail-row-open {
+    display: none;
+  }
+}
+@media (max-width: 640px) {
+  .app-shell.view-hall main {
+    padding-inline: 14px;
+  }
+  .app-shell .public-mail-header {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 24px 2px;
+    gap: 18px;
+  }
+  .app-shell .public-mail-header .hero-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .app-shell .public-mail-header .hero-rule {
+    font-size: 11px;
+    align-items: flex-start;
+  }
+  .app-shell.view-hall .hall-heading {
+    padding: 18px 16px;
+    gap: 14px;
+  }
+  .app-shell.view-hall .hall-tools {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .app-shell.view-hall .hall-tools button {
+    padding-inline: 8px;
+    font-size: 11px;
+  }
+  .app-shell.view-hall .public-view-switch button span {
+    display: none;
+  }
+  .app-shell.view-hall .mail-search {
+    padding: 16px 16px 0;
+  }
+  .app-shell.view-hall .public-mail-filters {
+    gap: 6px;
+  }
+  .app-shell.view-hall .public-mail-filters button {
+    padding: 8px 10px;
+    font-size: 11px;
+  }
+  .app-shell.view-hall .scene {
+    padding: 18px 14px;
+  }
+  .app-shell.view-hall .envelope-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .app-shell.view-hall .envelope-card {
+    padding: 20px;
+  }
+  .app-shell.view-hall .envelope-visual {
+    width: 80px;
+    height: 52px;
+    margin-bottom: 18px;
+  }
+  .app-shell.view-hall .envelope-visual::after {
+    height: 27px;
+  }
+  .app-shell.view-hall .wax {
+    top: 20px;
+    left: 29px;
+  }
+  .app-shell.view-hall .list-hall .envelope-card {
+    grid-template-columns: 42px minmax(0, 1fr);
+    padding: 15px 12px;
+    gap: 10px;
+    align-items: start;
+  }
+  .app-shell.view-hall .list-hall .envelope-visual {
+    width: 38px;
+    height: 29px;
+    margin-top: 4px;
+  }
+  .app-shell.view-hall .list-hall .envelope-visual::after {
+    height: 15px;
+  }
+  .app-shell.view-hall .list-hall .wax {
+    width: 15px;
+    height: 15px;
+    top: 9px;
+    left: 12px;
+  }
+  .app-shell.view-hall .list-hall .stamp {
+    display: none;
+  }
+  .app-shell.view-hall .list-hall .envelope-caption h3 {
+    font-size: 15px;
+  }
+  .app-shell.view-hall .list-hall .letter-excerpt {
+    font-size: 13px;
+  }
+  .app-shell.view-hall .list-hall .mail-row-meta {
+    grid-column: 2;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .app-shell.view-hall .deployment-note {
+    margin-inline: 16px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .app-shell.view-hall .preview-banner {
+    margin-inline: 16px;
+  }
+  .app-shell .public-letter-reader {
+    width: calc(100vw - 24px);
+    padding: 30px 22px;
+  }
+  .app-shell .public-letter-reader .letter-body {
+    font-size: 17px !important;
+  }
+}

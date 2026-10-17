@@ -105,7 +105,7 @@ test("honest guest hall and reduced-motion visual preview", async ({
   await page.goto("./#/hall");
   await expect(
     page.getByRole("heading", {
-      name: "A little mystery. A little generosity.",
+      name: "Letters for anyone.",
     }),
   ).toBeVisible();
   await expect(
@@ -133,9 +133,9 @@ test("honest guest hall and reduced-motion visual preview", async ({
     page.getByRole("button", { name: "Review gift collection" }),
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Close letter" }).click();
-  await page.getByRole("button", { name: "☷ List view" }).click();
+  await page.getByRole("button", { name: "List view", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "✧ Scene view" }),
+    page.getByRole("button", { name: "Card view", exact: true }),
   ).toBeVisible();
   expect(
     await page.evaluate(
@@ -241,8 +241,12 @@ test("addressed mail explains Sapient recovery and remains gated", async ({
   await page.goto("./#/compose");
   await chooseMailMode(page, "⌘ Private link");
   await chooseMailMode(page, "▥ Private mail");
-  await expect(page.getByRole("combobox", { name: "Recipient postbox", exact: true })).toBeVisible();
-  await expect(page.getByText("Private sending is unavailable. Check Settings.")).toBeVisible();
+  await expect(
+    page.getByRole("combobox", { name: "Recipient postbox", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Private sending is unavailable. Check Settings."),
+  ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Review letter" }),
   ).toBeDisabled();

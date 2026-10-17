@@ -202,10 +202,9 @@ test("reduced motion freezes atmospheric layers and envelope artwork", async ({
   for (const selector of [
     ".haunting-mist",
     ".haunting-mote",
-    ".hero-sigil",
+    ".public-mail-welcome",
     ".brand-icon svg",
     ".envelope-visual",
-    ".ghost-clerk",
   ]) {
     const elements = page.locator(selector);
     expect(await elements.count(), selector).toBeGreaterThan(0);
@@ -236,10 +235,11 @@ test("busy lists and Activity keep small text, gift funding and every status rea
     ".search-summary",
   ])
     await readable(page.locator(selector + ":visible").first());
-  await page.getByLabel("Show mail", { exact: true }).selectOption("link");
+  await page
+    .getByRole("group", { name: "Show mail", exact: true })
+    .getByRole("button", { name: "Private invitations", exact: true })
+    .click();
   await readable(page.locator(".audience-link").first());
-  await page.getByLabel("Show mail", { exact: true }).selectOption("postbox");
-  await readable(page.locator(".audience-postbox").first());
   await page.getByRole("button", { name: "Activity", exact: true }).click();
   await page
     .getByRole("button", { name: "See sample activity", exact: true })

@@ -121,7 +121,7 @@ test("hall search filters public contents, keeps sealed contents private and res
   const fixture = await setup(page);
   await page.goto("./#/hall");
   const search = page.getByLabel("Find public mail", { exact: true });
-  const filter = page.getByLabel("Show mail", { exact: true });
+  const filter = page.getByRole("group", { name: "Show mail", exact: true });
   await expect(search).toBeVisible();
   await expect(page.locator(".search-summary")).toContainText("99 loaded");
   await page.getByRole("button", { name: "Next", exact: true }).click();
@@ -137,12 +137,16 @@ test("hall search filters public contents, keeps sealed contents private and res
   await page.getByRole("button", { name: "Clear search and filters" }).click();
   await expect(search).toHaveValue("");
   await expect(page.locator(".pagination")).toContainText("Page 1");
-  await filter.selectOption("link");
+  await filter
+    .getByRole("button", { name: "Private invitations", exact: true })
+    .click();
   await expect(page.locator(".envelope-card")).toHaveCount(1);
   await search.fill("letter-002");
   await expect(page.locator(".envelope-card")).toHaveCount(1);
   await search.fill("");
-  await filter.selectOption("gifts");
+  await filter
+    .getByRole("button", { name: "Public gifts", exact: true })
+    .click();
   await expect(page.locator(".envelope-card")).toHaveCount(1);
   await expect(
     page.getByRole("button", { name: /Moonlit letter 0/ }),
@@ -154,6 +158,78 @@ test("hall search filters public contents, keeps sealed contents private and res
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+});
+
+test("public layouts preserve filters and sealed boundaries without a clerk or wallet", async ({
+  page,
+}) => {
+  const fixture = await setup(page);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("./#/hall");
+  await expect(page.locator(".search-summary")).toContainText("99 loaded");
+  await expect(page.locator(".ghost-clerk, .clerk-tag")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Card view", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  const filters = page.getByRole("group", { name: "Show mail", exact: true });
+  await filters
+    .getByRole("button", { name: "Private invitations", exact: true })
+    .click();
+  await expect(page.locator(".envelope-card")).toHaveCount(1);
+  await expect(page.locator(".letter-excerpt")).toContainText(
+    "complete private link",
+  );
+  await expect(page.locator(".hall")).not.toContainText(
+    "secret subject must stay hidden",
+  );
+  await page.getByRole("button", { name: "List view", exact: true }).click();
+  await expect(
+    filters.getByRole("button", { name: "Private invitations", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await filters
+    .getByRole("button", { name: "Public gifts", exact: true })
+    .click();
+  await expect(page.locator(".envelope-card")).toHaveCount(1);
+  await expect(page.locator(".public-gift-badge")).toContainText(
+    "1 TARI gift · available",
+  );
+  await page.locator(".envelope-card").click();
+  await expect(page.getByRole("dialog")).toContainText(
+    "Reading never collects a gift",
+  );
+  await expect(page.getByRole("dialog").locator(".letter-body")).toHaveText(
+    "Kindness travels quietly.",
+  );
+  await page.screenshot({
+    path: test.info().outputPath("public-reader-fictional.png"),
+  });
+  await page.getByRole("button", { name: "Close letter", exact: true }).click();
+  await filters.getByRole("button", { name: "All mail", exact: true }).click();
+  await page.screenshot({
+    path: test.info().outputPath("public-list-fictional.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Card view", exact: true }).click();
+  for (const width of test.info().project.name === "desktop"
+    ? [1440, 768, 320]
+    : [390]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.evaluate(() => scrollTo(0, 0));
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+    await page.screenshot({
+      path: test.info().outputPath(`public-cards-fictional-${width}.png`),
+      fullPage: true,
+    });
+    await page.screenshot({
+      path: test.info().outputPath(`public-top-fictional-${width}.png`),
+    });
+  }
+  expect(fixture.writes()).toBe(0);
+  expect(await page.evaluate(() => !!(window as any).tari)).toBe(false);
 });
 
 test("loading another chain page extends local search without signing", async ({

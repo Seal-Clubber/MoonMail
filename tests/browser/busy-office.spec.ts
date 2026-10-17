@@ -73,7 +73,7 @@ async function noOverflow(page: Page) {
     ),
   ).toBe(true);
 }
-test("36 sample letters paginate, filter and read in list view without any gift or wallet action", async ({
+test("30 public and link sample letters paginate, filter and read in list view without any gift or wallet action", async ({
   page,
 }) => {
   await unconfigured(page);
@@ -84,7 +84,7 @@ test("36 sample letters paginate, filter and read in list view without any gift 
     .click();
   await page.getByRole("button", { name: "List view", exact: false }).click();
   await expect(page.locator(".envelope-card")).toHaveCount(12);
-  await expect(page.locator(".search-summary")).toContainText("1–12 of 36");
+  await expect(page.locator(".search-summary")).toContainText("1–12 of 30");
   await expect(page.locator(".preview-banner")).toContainText("fictional");
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.locator(".pagination")).toContainText("Page 2 of 3");
@@ -94,24 +94,18 @@ test("36 sample letters paginate, filter and read in list view without any gift 
   await expect(
     page.getByRole("button", { name: "Next", exact: true }),
   ).toBeDisabled();
-  await page.getByLabel("Show mail", { exact: true }).selectOption("postbox");
-  await expect(page.locator(".envelope-card")).toHaveCount(6);
-  const addressed = page.getByRole("button", {
-    name: "For the keeper of this postbox",
-    exact: false,
-  });
-  await addressed.click();
-  await expect(page.locator(".letter-body")).toContainText(
-    "Sample addressed mail",
-  );
   await expect(
-    page.getByRole("button", { name: "Review gift collection", exact: true }),
+    page.getByRole("button", { name: "Sample postbox mail", exact: true }),
   ).toHaveCount(0);
-  await expect(
-    page.getByRole("button", { name: "Retry opening letter", exact: true }),
-  ).toHaveCount(0);
-  await page.getByRole("button", { name: "Close letter", exact: true }).click();
-  await page.getByLabel("Show mail", { exact: true }).selectOption("link");
+  await page
+    .getByLabel("Find public mail", { exact: true })
+    .fill("For the keeper of this postbox");
+  await expect(page.locator(".envelope-card")).toHaveCount(0);
+  await page.getByLabel("Find public mail", { exact: true }).fill("");
+  await page
+    .getByRole("group", { name: "Show mail", exact: true })
+    .getByRole("button", { name: "Private invitations", exact: true })
+    .click();
   await page.getByLabel("Find public mail", { exact: true }).fill("midnight");
   await page
     .getByRole("button", { name: "Do not open until midnight", exact: false })
@@ -121,7 +115,10 @@ test("36 sample letters paginate, filter and read in list view without any gift 
   );
   await page.getByRole("button", { name: "Close letter", exact: true }).click();
   await page.getByLabel("Find public mail", { exact: true }).fill("");
-  await page.getByLabel("Show mail", { exact: true }).selectOption("gifts");
+  await page
+    .getByRole("group", { name: "Show mail", exact: true })
+    .getByRole("button", { name: "Public gifts", exact: true })
+    .click();
   const coffee = page.getByRole("button", {
     name: "Coffee for the night shift",
     exact: false,

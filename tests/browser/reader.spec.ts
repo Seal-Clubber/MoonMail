@@ -100,7 +100,7 @@ test("configured public reader retries an initial outage without a page reload",
     page.getByRole("button", { name: "Explore preview" }),
   ).toHaveCount(0);
   unavailable = false;
-  await page.getByRole("button", { name: "↻ Refresh", exact: true }).click();
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
   await expect(
     page.getByRole("button", { name: subject, exact: false }),
   ).toBeVisible();
@@ -148,7 +148,7 @@ test("a delayed initial read cannot load letters after the selected network chan
     page.getByRole("button", { name: subject, exact: false }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("button", { name: "↻ Refresh", exact: true }),
+    page.getByRole("button", { name: "Refresh", exact: true }),
   ).toBeDisabled();
 });
 
@@ -516,7 +516,7 @@ test("a failed refresh keeps loaded mail visible with an honest retry notice", a
   const letter = page.getByRole("button", { name: subject, exact: false });
   await expect(letter).toBeVisible();
   failing = true;
-  await page.getByRole("button", { name: "↻ Refresh", exact: true }).click();
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
   await expect(page.getByText("Mail could not be refreshed.")).toBeVisible();
   await expect(
     page.getByText(
@@ -528,7 +528,7 @@ test("a failed refresh keeps loaded mail visible with an honest retry notice", a
     page.getByRole("status").filter({ hasText: "Mail is up to date" }),
   ).toHaveCount(0);
   failing = false;
-  await page.getByRole("button", { name: "↻ Refresh", exact: true }).click();
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
   await expect(page.getByText("Mail could not be refreshed.")).toHaveCount(0);
   await expect(page.getByRole("alert")).toHaveCount(0);
   await expect(
@@ -887,7 +887,7 @@ for (const target of ["identity", "registry"] as const)
     await expect(page.getByRole("alert")).toContainText(
       "Could not read the post office",
     );
-    const retry = page.getByRole("button", { name: "↻ Refresh", exact: true });
+    const retry = page.getByRole("button", { name: "Refresh", exact: true });
     await expect(retry).toBeEnabled();
     await expect(
       page.getByRole("button", { name: subject, exact: false }),
@@ -933,7 +933,7 @@ test("a stalled hall refresh retains previously verified mail and releases its r
   });
   await page.goto("./#/hall");
   const letter = page.getByRole("button", { name: subject, exact: false }),
-    retry = page.getByRole("button", { name: "↻ Refresh", exact: true });
+    retry = page.getByRole("button", { name: "Refresh", exact: true });
   await expect(letter).toBeVisible();
   await page.clock.install();
   hold = true;

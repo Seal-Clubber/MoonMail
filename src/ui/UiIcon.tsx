@@ -16,6 +16,8 @@ export type IconName =
   | "back"
   | "refresh"
   | "search"
+  | "cards"
+  | "list"
   | "activity";
 const paths: Record<IconName, string> = {
   inbox: "M4 4h16l2 12v4H2v-4L4 4ZM2 15h6l2 3h4l2-3h6",
@@ -35,6 +37,8 @@ const paths: Record<IconName, string> = {
   back: "m14 5-7 7 7 7",
   refresh: "M20 5v6h-6M4 19v-6h6M20 11a8 8 0 0 0-14-6M4 13a8 8 0 0 0 14 6",
   search: "M11 3a8 8 0 1 0 0 16 8 8 0 0 0 0-16Zm6 14 5 5",
+  cards: "M3 3h7v7H3V3Zm11 0h7v7h-7V3ZM3 14h7v7H3v-7Zm11 0h7v7h-7v-7Z",
+  list: "M3 5h2m3 0h13M3 12h2m3 0h13M3 19h2m3 0h13",
   activity: "M6 9a6 6 0 0 1 12 0v6l3 3H3l3-3V9Zm4 12h4M12 1v2",
 };
 export function UiIcon({ name }: { name: IconName }) {

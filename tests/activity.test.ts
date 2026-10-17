@@ -167,9 +167,14 @@ it("fictional private subjects are searchable only in sample mode, never in the 
   expect(
     filterHallMail(sampleMail, "all", subject).map((e) => e.id),
   ).not.toContain(privateLetter.id);
+  expect(filterSampleMail("all", "").every((e) => e.mode !== "postbox")).toBe(
+    true,
+  );
+  expect(filterSampleMail("all", "")).toHaveLength(30);
+  const postbox = sampleMail.find((e) => e.mode === "postbox")!;
   expect(
-    filterSampleMail("postbox", "").every((e) => e.mode === "postbox"),
-  ).toBe(true);
+    filterSampleMail("all", sampleLetter(postbox.id)!.subject),
+  ).toHaveLength(0);
   expect(
     filterSampleMail("gifts", "").every(
       (e) => e.mode === "public" && !e.claimed && BigInt(e.gift) > 0n,

@@ -768,7 +768,7 @@ for (const denied of ["getter", "writes"] as const) {
     await page.goto("./#/hall");
     await expect(
       page.getByRole("heading", {
-        name: "A little mystery. A little generosity.",
+        name: "Letters for anyone.",
       }),
     ).toBeVisible();
     await expect(

@@ -6,10 +6,12 @@ import { createPortal } from "react-dom";
 import { GhostMark } from "./GhostMark";
 import { UiIcon } from "./UiIcon";
 import { Landing } from "./Landing";
+import { PublicMailCard } from "./PublicMailCard";
+import { PublicMailFilters } from "./PublicMailFilters";
 import { PrivacyView } from "./PrivacyView";
 import { ActivityBook } from "./ActivityBook";
 import {
-  sampleMail,
+  publicSampleMail as sampleMail,
   sampleLetter,
   sampleActivity,
   filterSampleMail,
@@ -1549,11 +1551,7 @@ export function App() {
     : letters.filter((e) => e.mode !== "postbox");
   const shown = preview
     ? filterSampleMail(mailFilter, mailQuery)
-    : filterHallMail(
-        hallLetters,
-        mailFilter === "postbox" ? "all" : mailFilter,
-        mailQuery,
-      );
+    : filterHallMail(hallLetters, mailFilter, mailQuery);
   const visiblePage = Math.min(page, Math.max(1, Math.ceil(shown.length / 12)));
   const current = wallet?.accounts[account];
   const draftPostbox =
@@ -2001,7 +1999,7 @@ export function App() {
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
-        {!["welcome", "privacy", "compose"].includes(view) &&
+        {!["welcome", "privacy", "compose", "hall"].includes(view) &&
           (!mailboxView || !owned.length) && (
             <div className="privacy-shortcut">
               <button
@@ -2148,29 +2146,37 @@ export function App() {
         )}
         {view === "hall" && (
           <>
-            <section className="hero">
-              <div className="hero-sigil" aria-hidden="true">
+            <section className="hero public-mail-header">
+              <div className="public-mail-intro">
+                <p className="kicker">MOONMAIL · THE PUBLIC HALL</p>
+                <h1>
+                  Letters for <em>anyone.</em>
+                </h1>
+                <p>
+                  A thought for a stranger. A story for the night. A little
+                  kindness, left where someone might find it.
+                </p>
+                <div className="hero-rule">
+                  <UiIcon name="globe" /> Read without a wallet · Opening a
+                  letter never claims a gift
+                </div>
+              </div>
+              <div className="public-mail-welcome" aria-hidden="true">
                 <GhostMark />
               </div>
-              <p className="kicker">SOME THINGS ARE BETTER LEFT UNSEALED.</p>
-              <h1>
-                A little mystery.
-                <br />A little <em>generosity.</em>
-              </h1>
-              <p>
-                Letters from strangers. Gifts from ghosts.
-                <br />A little kindness, delivered through Sapient.
-              </p>
               <div className="hero-actions">
                 <button className="primary" onClick={() => navigate("compose")}>
-                  Leave a little kindness <span>↗</span>
+                  <UiIcon name="compose" /> Write a letter
                 </button>
                 <button onClick={() => navigate("postboxes")}>
-                  Open my inbox <span>✉</span>
+                  Open my inbox <UiIcon name="inbox" />
                 </button>
-              </div>
-              <div className="hero-rule">
-                <span /> READ WITHOUT A WALLET · SEND WITH SAPIENT <span />
+                <button
+                  className="text-button"
+                  onClick={() => navigate("privacy")}
+                >
+                  What can others see?
+                </button>
               </div>
             </section>
             <section
@@ -2180,7 +2186,7 @@ export function App() {
               <div className="hall-heading">
                 <div>
                   <span className="kicker">PUBLIC MAIL</span>
-                  <h2>Letters left for anyone.</h2>
+                  <h2>Explore the hall</h2>
                 </div>
                 <div className="hall-tools">
                   {d.registry && (
@@ -2188,14 +2194,35 @@ export function App() {
                       {preview ? "Leave preview" : "Try sample mail"}
                     </button>
                   )}
-                  <button aria-pressed={list} onClick={() => setList(!list)}>
-                    {list ? "✧ Scene view" : "☷ List view"}
-                  </button>
+                  <div
+                    className="public-view-switch"
+                    role="group"
+                    aria-label="Mail layout"
+                  >
+                    <button
+                      aria-label="Card view"
+                      title="Card view"
+                      aria-pressed={!list}
+                      onClick={() => setList(false)}
+                    >
+                      <UiIcon name="cards" />
+                      <span>Cards</span>
+                    </button>
+                    <button
+                      aria-label="List view"
+                      title="List view"
+                      aria-pressed={list}
+                      onClick={() => setList(true)}
+                    >
+                      <UiIcon name="list" />
+                      <span>List</span>
+                    </button>
+                  </div>
                   <button
                     onClick={() => void task(refresh)}
                     disabled={preview || !d.registry || !d.indexerUrl || busy}
                   >
-                    ↻ Refresh
+                    <UiIcon name="refresh" /> Refresh
                   </button>
                 </div>
               </div>
@@ -2236,8 +2263,8 @@ export function App() {
                   states are fictional.
                   <span>
                     Browse {sampleMail.length} examples, including private
-                    invitations and postbox mail. Every sample can be read here;
-                    real sealed mail requires its link or controlling wallet.
+                    invitations. Every sample can be read here; real sealed mail
+                    requires its link or controlling wallet.
                   </span>
                 </p>
               )}
@@ -2257,27 +2284,13 @@ export function App() {
                         }}
                       />
                     </label>
-                    <div>
-                      <label htmlFor="hall-mail-filter">Show mail</label>
-                      <select
-                        id="hall-mail-filter"
-                        value={mailFilter}
-                        onChange={(event) => {
-                          setMailFilter(event.target.value as SampleMailFilter);
-                          setPage(1);
-                        }}
-                      >
-                        <option value="all">
-                          {preview ? "All sample mail" : "All hall mail"}
-                        </option>
-                        <option value="public">Public letters</option>
-                        <option value="link">Sealed invitations</option>
-                        <option value="gifts">Uncollected public gifts</option>
-                        {preview && (
-                          <option value="postbox">Sample postbox mail</option>
-                        )}
-                      </select>
-                    </div>
+                    <PublicMailFilters
+                      value={mailFilter}
+                      onChange={(value) => {
+                        setMailFilter(value);
+                        setPage(1);
+                      }}
+                    />
                   </div>
                   <p
                     className="search-summary"
@@ -2303,25 +2316,15 @@ export function App() {
                 />
               )}
               <div className="scene">
-                <div className="scene-moon" />
-                <div className="scene-stars" aria-hidden="true">
-                  ✧ · ✦ · ✧
-                </div>
-                <div className="ghost-clerk" aria-hidden="true">
-                  <span className="ghost-eyes" />
-                </div>
-                <div className="clerk-tag">
-                  <span>YOUR SPECTRAL CLERK</span>
-                  <small>“Kindness travels further than you think.”</small>
-                </div>
                 <div className="envelope-grid">
                   {shown
                     .slice((visiblePage - 1) * 12, visiblePage * 12)
-                    .map((e, i) => (
-                      <button
-                        className={`envelope-card envelope-${i % 3} ${e.mode !== "public" ? "sealed" : ""}`}
+                    .map((e) => (
+                      <PublicMailCard
                         key={e.id}
-                        onClick={() => {
+                        envelope={e}
+                        sample={preview ? sampleLetter(e.id) : undefined}
+                        onOpen={() => {
                           setCreateAccount(false);
                           setActive(e);
                           setPlain(
@@ -2332,92 +2335,7 @@ export function App() {
                                 : undefined,
                           );
                         }}
-                      >
-                        <div className="envelope-visual" aria-hidden="true">
-                          <span className="wax">
-                            {e.mode === "public" ? "✧" : "⌘"}
-                          </span>
-                          <span className="stamp">
-                            GD
-                            <br />✦
-                          </span>
-                        </div>
-                        <div className="envelope-caption">
-                          <span className="letter-kind">
-                            {e.mode === "public"
-                              ? "OPEN LETTER"
-                              : e.mode === "postbox"
-                                ? "SAMPLE POSTBOX MAIL"
-                                : "PRIVATE INVITATION"}
-                          </span>
-                          <h3>
-                            {preview
-                              ? sampleLetter(e.id)!.subject
-                              : e.mode === "public"
-                                ? (e.payload as Letter).subject
-                                : "A sealed little secret"}
-                          </h3>
-                          <p>
-                            {e.mode === "public"
-                              ? "Anyone may read"
-                              : e.mode === "postbox"
-                                ? "Fictional addressed example"
-                                : "Requires its private link"}
-                          </p>
-                          {list && (
-                            <p className="letter-excerpt">
-                              {preview
-                                ? sampleLetter(e.id)!
-                                    .body.replace(/\s+/g, " ")
-                                    .slice(0, 150)
-                                : e.mode === "public"
-                                  ? (e.payload as Letter).body
-                                      .replace(/\s+/g, " ")
-                                      .slice(0, 150)
-                                  : "Sealed contents stay private. Open with the sender’s complete private link."}
-                            </p>
-                          )}
-                          {BigInt(e.gift) > 0n && (
-                            <small>
-                              {preview
-                                ? e.claimed
-                                  ? "Sample gift · collected"
-                                  : `${tari(e.gift)} sample TARI gift`
-                                : e.claimed
-                                  ? "Collected"
-                                  : e.mode === "public"
-                                    ? `${tari(e.gift)} TARI gift`
-                                    : "Gift availability recorded on chain"}
-                            </small>
-                          )}
-                        </div>
-                        {list && (
-                          <>
-                            <div className="mail-row-meta">
-                              <span
-                                className={`mail-audience audience-${e.mode}`}
-                              >
-                                {e.mode === "public"
-                                  ? "Public letter"
-                                  : e.mode === "link"
-                                    ? "Private link"
-                                    : "Postbox mail"}
-                              </span>
-                              <span className="mail-row-reference">
-                                {preview ? "Sample" : "Letter"} {short(e.id)}
-                              </span>
-                              {BigInt(e.gift) === 0n && (
-                                <span className="mail-row-no-gift">
-                                  Letter only
-                                </span>
-                              )}
-                            </div>
-                            <span className="mail-row-open" aria-hidden="true">
-                              ↗
-                            </span>
-                          </>
-                        )}
-                      </button>
+                      />
                     ))}
                 </div>
                 {!shown.length && (
@@ -2498,12 +2416,7 @@ export function App() {
               <div className="mode-legend">
                 <span>✧ Public letters</span>
                 <span>⌘ Sealed invitations</span>
-                <span>
-                  ▥{" "}
-                  {preview
-                    ? "Sample postbox mail"
-                    : "Personal postboxes live in My inbox"}
-                </span>
+                <span>▥ Personal postboxes live in My inbox</span>
               </div>
             </section>
             <section className="how-it-works">
@@ -3787,7 +3700,7 @@ export function App() {
               }
             >
               <section
-                className={`letter-modal ${inlinePostboxReader ? "mailbox-letter" : "modal"}`}
+                className={`letter-modal ${inlinePostboxReader ? "mailbox-letter" : "modal"} ${active.mode === "public" ? "public-letter-reader" : ""}`}
                 role={inlinePostboxReader ? "region" : "dialog"}
                 aria-modal={inlinePostboxReader ? undefined : true}
                 tabIndex={-1}
@@ -3813,6 +3726,17 @@ export function App() {
                 <h2 id="letter-title" tabIndex={-1}>
                   {plain?.subject || "A sealed little secret"}
                 </h2>
+                {active.mode === "public" && (
+                  <div className="public-reader-meta">
+                    <UiIcon name="globe" />
+                    <span>
+                      {activeSample
+                        ? "Sample letter · no real funds"
+                        : "Anyone can read this letter"}
+                    </span>
+                    <span>Reading never collects a gift</span>
+                  </div>
+                )}
                 {inlinePostboxReader && (
                   <div className="letter-participants">
                     <span className="letter-avatar" aria-hidden="true">
