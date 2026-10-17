@@ -50,6 +50,45 @@ The interface uses a moonlit dark-blue theme, readable text, responsive layouts
 and animations that respect reduced-motion preferences. Compose stays at the
 bottom-right on desktop and opens full-screen on phones.
 
+## Native Sapient integration
+
+MoonMail puts Sapient's native privacy features to work in an Ootle mailbox.
+The integration covers the full journey from connecting a wallet to recovering
+encrypted conversations and paying a private request:
+
+- **Direct browser connection.** Uses Sapient's `window.tari` provider to connect
+  the selected account, check the network and detect supported features. No
+  separate bridge program is needed.
+- **Separate, revocable private-view access.** Mail recovery uses an explicit
+  account-wide reading grant. It can reveal private output amounts and memos,
+  including other resources; it never grants permission to spend.
+- **Encrypted memo recovery.** Postbox decryption keys are backed up in encrypted
+  Ootle output memos addressed to your wallet. Sapient's private-output APIs let
+  the same restored wallet recover Inbox, Sent and historical mailbox access.
+- **Private postage.** Sapient can pay transaction fees from private funds.
+  MoonMail enforces the selected funding type and never silently substitutes
+  public funding for a private operation. Fee amounts remain observable.
+- **Native private TARI payments.** Encrypted payment requests use Sapient's
+  `sendPrivately` transaction requests. Encrypted receipts deliver the output
+  reference needed to verify/import the payment and check its exact amount and
+  memo, without another spending approval.
+- **Wallet ownership proofs.** Sapient signs context-bound ownership challenges
+  for supported wallet-controlled gift claims, without exporting its signing key.
+- **Resumable approvals.** Persisted wallet request IDs let MoonMail inspect and
+  resume the original approved operation after an interruption instead of
+  silently creating a replacement. Valid connection/view grants can be reused
+  after a reload; revocation and account changes are checked.
+
+MoonMail encrypts letter content and inner addressing locally. Sapient protects
+wallet signing keys and supplies approved private-output access and spending.
+After a view grant, recovered **mailbox decryption keys** are handled in browser
+memory; your **wallet seed and signing keys** are never requested. Public
+signers, postbox registrations and other chain metadata still remain visible.
+
+The [Sapient integration guide](docs/SAPIENT-INTEGRATION.md) maps these features
+to the actual APIs, implementation and stock-wallet test evidence. See
+[What can others see?](#what-can-others-see) for the privacy boundary.
+
 ## Try it
 
 1. **[Open MoonMail](https://seal-clubber.github.io/MoonMail/)** and choose
