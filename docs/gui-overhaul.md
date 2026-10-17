@@ -4,6 +4,10 @@ MoonMail's interface now uses one navy and lunar-blue design across the mailbox,
 
 ## Everyday controls
 
+The separate [public hall refresh](public-mail-gui.md) adds cards/list layouts and
+quick filters, removes the clerk character, and excludes private postbox examples
+from public browsing. Private-link invitations remain.
+
 - Switch between **My postboxes** in the mailbox sidebar. **Compose letter** starts from the selected postbox. Inbox, Unread, Starred, Sent, Archive and existing gift views remain available; counts describe loaded mail, not an unbounded full-chain total.
 - Search the current folder from the header. **View options** contains sorting; compact spacing keeps a one-line message preview. **Postbox options** contains creation, refresh and editing and starts collapsed on desktop and phones. Public mail/gifts and the privacy explanation remain directly reachable in the sidebar. **Mailbox settings** contains saved message spacing and reload controls after settings have loaded.
 - Opening a successfully decrypted incoming letter stages its read mark. Select letters and choose a bulk read/unread, star or archive action. The amber **Unsaved mailbox changes** bar remains visible until saved or discarded. Saving requires a separate Sapient transaction approval; reloading can lose unsaved changes.

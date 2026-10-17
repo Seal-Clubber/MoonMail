@@ -30,6 +30,12 @@ A payment and its mail receipt are not atomic. [Real testnet verification](priva
 
 ## Public letters and gifts
 
+Public mail offers **Cards** and **List**, search and quick filters for public
+letters, public gifts and private-link invitations. Private postbox mail belongs
+in My inbox and is absent even from the hall's sample preview. **Try sample mail**
+offers 30 fictional public/link examples with no real funded gifts. The large clerk
+character is removed. [Public hall guide and verification](public-mail-gui.md).
+
 Choose public mail or a private link deliberately. Public publication requires its own content acknowledgement; editing clears it. Public gifts have a visible amount and separately funded collection reserve. The recipient gets the full gift when its reserve covers execution. No expiry/refunds; unused reserves stay locked.
 
 For a private link, save the complete link before publishing and confirm that you saved it. Anyone with it can read/collect; the link is scrubbed from history and is not stored as a draft or transaction-journal secret. Refreshing/closing can lose an unsaved link.
