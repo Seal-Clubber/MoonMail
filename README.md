@@ -1,72 +1,189 @@
-# MoonMail
+<p align="center">
+  <img src="public/favicon.svg" alt="" width="80" height="80">
+</p>
 
-“Your words, under cover of night.”
+<h1 align="center">MoonMail</h1>
 
-A moonlit private mailbox on Tari Ootle: encrypted letters, Inbox, recoverable Sent, reply conversations, contacts/favourites and native private payments. Visitors use the [website](https://seal-clubber.github.io/MoonMail/) and their normal [Sapient wallet](https://sapient.tari.mw/). No extra bridge program or central MoonMail backend.
+<p align="center"><strong>Your words, under cover of night.</strong></p>
 
-## Open your mailbox
+<p align="center">
+  A familiar private mailbox, built on Tari Ootle.<br>
+  Encrypted letters. Recoverable conversations. A little moonlight.
+</p>
 
-Choose **Open mailbox**, connect Sapient and create a postbox. Creation has two clearly separated spending approvals: save the encrypted recovery backup, then register the postbox. Reading mail requires a separate, explicit account-wide private-view permission; it does not approve spending. Never enter your wallet seed or signing keys into MoonMail.
+<p align="center">
+  <a href="https://seal-clubber.github.io/MoonMail/"><strong>Open MoonMail</strong></a>
+  &nbsp; · &nbsp;
+  <a href="docs/DEMO.md">Demo walkthrough</a>
+  &nbsp; · &nbsp;
+  <a href="docs/private-email.md">Privacy explained</a>
+</p>
 
-Compose defaults to encrypted private mail. The workspace has folders, a message list, conversation reader, selection actions, read/unread, archive and encrypted settings. Opening a successfully decrypted letter stages it as read. Changed settings/read marks have a prominent save action because saving them is an Ootle transaction. There is no drafts folder or saved drafts. Restore the same Sapient wallet on another device to recover mailbox keys, Sent, historical keys and saved preferences.
+---
 
-All registered postboxes are searchable in the directory. There is no hide/unlisted control: names, IDs and controlling public keys are public on Ootle. [Postbox visibility](docs/public-postboxes.md) explains the boundary.
+MoonMail brings an email-style inbox to Ootle: a folder sidebar, message list,
+conversation reader and a compact Compose window. Private mail is the default.
+Letters and encrypted mailbox state live on chain; your wallet recovers access
+when you move to another device.
 
-The single default is the verified V4 sealed Esmeralda office in `public/deployment.json`. Old testnet postboxes and messages are not carried over or selected. Earlier app versions remain in backup branches; historical evidence retains the exact build and contract it tested. This is testnet software with finite storage/discovery limits, not a production email replacement.
+Use the website and your normal [Sapient wallet](https://sapient.tari.mw/).
+There is no central MoonMail backend or extra bridge program. The static website
+runs on GitHub Pages over HTTPS and reads Ootle through public indexers.
 
-## Private payments and public gifts
+**Currently on Esmeralda testnet.** MoonMail sends between Ootle postboxes, not
+ordinary email addresses. It is experimental software with bounded storage and
+discovery, not a production email replacement. Use test funds.
 
-**Request a private payment** adds the requesting wallet's receiving address and amount inside the encrypted letter. Sending a request pays postage only. Paying it requires three Sapient approvals: authorize the native private transfer, save its encrypted recovery intent, then deliver the encrypted receipt. The payment uses private funds/fees with a zero minimum-value promise. MoonMail resumes the original approved request after an interruption and never silently substitutes a replacement. The recipient verifies/imports through private-view permission with no spending approval or transaction.
+## A mailbox that feels familiar
 
-This is not an atomic mail-and-payment operation. If payment succeeds before receipt delivery, resume the original request. Losing the original Sapient installation and missing result before receipt delivery can prevent automatic discovery. [Payment protocol and limits](docs/private-payments.md).
+| Feature                  | What you can do                                                                                                             |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| Private by default       | Send encrypted subjects and messages with sealed recipient and reply addressing.                                            |
+| Inbox and Sent           | Read conversations, reply, search loaded mail and recover your own sent letters.                                            |
+| Everyday organisation    | Select letters, mark read/unread, star and archive. Opening a decrypted letter stages it as read.                           |
+| Easy addressing          | Type a name or postbox ID; matching favourites appear first, then recent correspondents and the public directory.           |
+| Wallet recovery          | Restore the same Sapient wallet to recover mailbox keys, historical access, Sent and saved preferences.                     |
+| Private payment requests | Request TARI inside an encrypted letter; review and pay through Sapient, then verify the encrypted receipt.                 |
+| A public hall            | Explore public letters, gifts and private-link invitations in cards or a list. Private postbox letters stay in the mailbox. |
 
-Public mail and public gifts are secondary views and require an explicit choice before publication. Public/private-link gifts use the public gift vault, with visible amounts and payout routing. A private link is a bearer capability: anyone with the complete link can open the letter and collect its gift. Opening alone never collects. Keep that link safe; it is scrubbed from browser history and cannot be recovered after closing the session.
+The interface uses a moonlit dark-blue theme, readable text, responsive layouts
+and animations that respect reduced-motion preferences. Compose stays at the
+bottom-right on desktop and opens full-screen on phones.
+
+## Try it
+
+1. **[Open MoonMail](https://seal-clubber.github.io/MoonMail/)** and choose
+   **Open mailbox**. To browse without connecting a wallet, choose
+   **Explore public mail** instead.
+2. **Connect Sapient.** Before recovering private mail, review the separate
+   account-wide private-view permission. It can expose private output summaries,
+   including amounts and memos for other resources. It grants no spending permission.
+3. **Create a postbox.** Sapient asks for two separate transaction approvals:
+   **Save recovery backup**, then **Open my postbox**. The setup explains each
+   step before you approve it.
+4. **Compose a letter.** Choose a recipient, write your message and review it.
+   Encrypted private mail is selected by default. Sapient approves spending;
+   the website cannot approve it for you.
+
+Opening mail sends no transaction. Read marks, archive changes, favourites and
+preferences are staged until you explicitly **Save** them on chain; an amber
+bar makes unsaved changes visible. Unsent text stays only in the current tab:
+there are no saved drafts, and reloading loses that text.
+
+Never enter your wallet seed or signing keys into MoonMail. See the
+[walkthrough](docs/DEMO.md) for recovery, permissions and interrupted operations.
 
 ## What can others see?
 
-Sealed mail encrypts subjects, bodies, recipient/reply addressing, conversation keys, payment requests/amounts/receiving addresses/memos and mailbox settings. Transaction signers, timing, office/contract identities, opaque letter IDs, padded size buckets, fees, output commitments, postbox registrations/controller associations and updates remain observable. Multi-step timing can correlate payment and mail. Public gifts retain public amounts/routing. Indexers and the website host see connection information; the client does not verify consensus proofs. **MoonMail does not provide anonymity.** [Privacy capabilities](docs/private-email.md) and [sealed protocol limits](docs/sealed-mail-protocol.md).
+**Encrypted content does not mean anonymity.** The app's **What can others see?**
+view explains these boundaries without asking for wallet access.
 
-Private postage is selected when the current Sapient account supports it; a deliberate public-funding choice remains available. Unsupported private operations fail closed instead of silently spending public funds. Permission to read is separate from each spending approval.
+| Protected by encryption                                         | Still observable                                                                         |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Private subjects, messages and inner recipient/reply addressing | Transaction signers, timing, office/template identities and opaque letter IDs            |
+| Conversation keys and thread links                              | Padded size buckets, fees and output commitments                                         |
+| Saved mailbox preferences                                       | Changes to encrypted state; public postbox names, IDs, controllers and key registrations |
+| Native private-payment amounts, receiving addresses and memos   | Payment/mail timing patterns; public-gift amounts and payout routing                     |
 
-Network fees use automatic defaults. Routine fee editors are hidden; a verified pre-submission fee shortage reveals an adjustment, while existing approvals remain protected from replacement. Cost summaries stay visible before approval. [Fee behavior](docs/automatic-fees.md).
+Postboxes are publicly registered and searchable; a private letter does not make
+its postbox identity secret. Conversation-specific reply keys are automatic for
+new private letters, but do not hide transaction signers or provide forward
+secrecy after compromise of historical mailbox secrets. Website hosts and
+indexers see connection information, and the client does not verify consensus
+proofs. Read the [privacy guide](docs/private-email.md),
+[postbox visibility guide](docs/public-postboxes.md) and
+[sealed-mail protocol](docs/sealed-mail-protocol.md) for the full limits.
 
-## Verification
+Permission to read private mail stays separate from permission to spend.
+Private postage is selected when supported by the connected account; public
+funding requires a deliberate choice. Unsupported private operations fail closed.
+Fees use automatic defaults, with an adjustment shown if a verified
+pre-submission shortage requires it. Costs remain visible before approval.
 
-The [moonlit GUI overhaul](docs/gui-overhaul.md) provides the responsive mailbox, guided options and clearer approval steps. Its [verification scope](docs/gui-overhaul-evidence.json) includes the full browser suite and stock Sapient read-only acceptance against real Esmeralda mail.
+## Payments, gifts and public mail
 
-The application targets Ootle **0.46.0**, TypeScript SDK **0.9.0**, crypto WASM **0.46.0** and the inspected unmodified stock Sapient **0.6.6**. Current-account capabilities are checked at runtime. The single [V4 template](contracts/moonmail-v4/README.md) stores sealed letters, postboxes, historical recovery keys, encrypted settings and public gift rules.
+**Private payments start with an encrypted request.** Sending a request pays
+postage only. Paying it requires three Sapient approvals: authorize the native
+private transfer, save its encrypted recovery record, then deliver the encrypted
+receipt. The receiver verifies/imports the payment using view permission without
+a spending approval.
 
-- [Final sealed-default verification](docs/sealed-default-verification.md): desktop/mobile checks and zero-spend stock-Sapient/real-ledger acceptance.
-- [Sealed-mail Esmeralda evidence](docs/sealed-mail-evidence.json): real encrypted letters/replies, rotation, independently restored Inbox/Sent, settings and native private postage.
-- [Private-payment Esmeralda evidence](docs/private-payment-evidence.json): one 0.1-test-TARI payment, deliberate loss of its success response, receipt-only recovery, exact amount/memo verification in a separately restored wallet, and repeat checks without another payment.
-- [Ootle upgrade verification](docs/ootle-v046-upgrade.md): dependency pins and engine compatibility.
-- [Demo walkthrough](docs/DEMO.md): permissions, setup, everyday mail and payments.
+Payment and receipt delivery are not atomic. If interrupted, resume the original
+request. Losing the original Sapient installation and its missing result before
+receipt delivery can prevent automatic discovery. There is no atomic private
+gift escrow or claim-by-deadline/refund flow. See
+[payment behaviour and recovery limits](docs/private-payments.md).
 
-Local-build acceptance uses reviewed frontend assets on the Pages HTTPS origin with actual ledger responses. This does not mean those assets are already published. GitHub pushes remain under the user's control. The Pages workflow runs on pushes to `main`, tests/builds and publishes the static `/MoonMail/` site over HTTPS.
+**Public publication is an explicit choice.** Public letters are readable by
+anyone. Public and private-link gifts use a public vault: gift amounts and payout
+routing are visible, and there is no expiry or sender refund. Opening a letter
+never collects its gift; collection has its own review and confirmation.
+Public/private-link gifts support receiving without a connected wallet.
 
-## Develop
+A complete private link is a bearer capability: anyone with it can open the
+letter and collect its gift. Keep it safe. MoonMail scrubs it from browser
+history and cannot recover it after the session closes. The
+[public hall guide](docs/public-mail-gui.md) explains browsing and visibility.
 
-Node 24.19+ and pnpm 11.19.0:
+## Built and verified on Ootle
+
+The current default is one **V4 sealed office on Esmeralda**, configured in
+[`public/deployment.json`](public/deployment.json). The
+[single template](contracts/moonmail-v4/README.md) handles sealed letters,
+postboxes, historical recovery keys, encrypted settings and public gift rules.
+Native private transfers are separate wallet operations. Old testnet mail is
+not migrated or selected; earlier app versions remain in backup branches.
+
+The checked stack targets **Ootle 0.46.0**, **TypeScript SDK 0.9.0** and
+**crypto WASM 0.46.0**, with unmodified **Sapient 0.6.6**. Available operations
+also depend on the connected account's runtime capabilities.
+
+Recorded verification as of **17 October 2026** includes:
+
+- **270 unit tests and 308 desktop/mobile browser checks**, strict TypeScript and
+  the Pages build. [Latest GUI evidence](docs/public-mail-gui-evidence.json).
+- **Real Esmeralda mail and wallet recovery:** encrypted letters/replies, key
+  rotation, independently restored Inbox/Sent, saved settings and native private
+  postage. [Sealed-mail evidence](docs/sealed-mail-evidence.json).
+- **A real private payment with interrupted-result recovery:** one 0.1-test-TARI
+  transfer, no duplicate payment, exact amount/memo verification and an
+  independently restored recipient. [Payment evidence](docs/private-payment-evidence.json).
+- **Guest public-mail reads against the real ledger**, with no wallet, financial
+  requests or broadcasts. [Public hall verification](docs/public-mail-gui.md).
+
+Local-build checks on the Pages HTTPS origin do not establish that those assets
+are already published. The evidence records each test's scope;
+[upgrade verification](docs/ootle-v046-upgrade.md) covers the dependency pins and
+engine compatibility.
+
+## Run locally
+
+Use **Node 24.19+** and **pnpm 11.19.0**:
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm dev
+```
+
+To check the frontend:
+
+```sh
 pnpm test
 pnpm build
 pnpm exec playwright install chromium
 pnpm test:browser
 ```
 
-Assets, fonts and crypto WASM are served with the app. An unconfigured development instance offers a clearly labelled sample preview; configured offices use actual chain reads and honest loading/empty/error states.
+Fonts, artwork and crypto WASM ship with the app. Configured offices read the
+actual chain; **Try sample mail** is a clearly labelled fictional preview, with
+no funded gifts. Loading and network failures are not disguised as sample mail.
 
-Rust 1.97.1, `wasm32-unknown-unknown` and template-lib 0.34 are pinned. Run native engine checks on Linux/WSL; upstream Wasmer 7.5 Cranelift does not support Windows:
+See the [development guide](docs/DEVELOPMENT.md) for contract checks, repository
+layout and GitHub Pages setup. The [Pages workflow](.github/workflows/pages.yml)
+tests, builds and deploys on pushes to `main`, with manual dispatch also available.
 
-```sh
-cargo test --manifest-path contracts/postbox-claim-tests/Cargo.toml --locked -- --include-ignored
-```
+## License
 
-The SDK bridge checks require Node and installed JS dependencies. With Windows Node under WSL, supply Windows paths for `GHOSTDROP_TEST_POSTBOX_SIGNER`, `GHOSTDROP_MAILBOX_SIGNER`, `GHOSTDROP_CAPSULE_FIXTURE` and `MOONMAIL_SEALED_FIXTURE`, plus the Node executable and TS loader paths. No visitor needs these development tools. Developer funding/keeper utilities remain optional isolated tooling and are never started by the site.
-
-Keep wallet data, private links, API keys and development credentials out of Git/build variables. [Historical architecture](docs/ARCHITECTURE.md), [earlier evidence](docs/EVIDENCE.md) and [brand/cryptographic naming](docs/branding.md) preserve their original context. Current formats retain domain separation; renaming the app does not rename cryptographic domains.
-
-MIT licensed. Tari libraries retain their upstream licenses. The moonlit scene uses local SVG/CSS and original text. The bundled, unmodified Inter variable font is distributed under its included [SIL Open Font License](public/fonts/LICENSE.txt).
+[MIT](LICENSE). Tari libraries retain their upstream licenses. The moonlit scene
+uses local SVG/CSS and original text. The bundled, unmodified Inter font includes
+its [SIL Open Font License](public/fonts/LICENSE.txt).
