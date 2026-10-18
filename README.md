@@ -181,11 +181,12 @@ The checked stack targets **Ootle 0.46.0**, **TypeScript SDK 0.9.0** and
 **crypto WASM 0.46.0**, with unmodified **Sapient 0.6.6**. Available operations
 also depend on the connected account's runtime capabilities.
 
-Recorded verification as of **17 October 2026** includes:
+Recorded verification as of **19 October 2026** includes:
 
-- **270 unit tests and 316 desktop/mobile browser checks**, strict TypeScript and
-  the Pages build. [Wallet connection verification](docs/wallet-connection.md#verification)
-  and [earlier public GUI evidence](docs/public-mail-gui-evidence.json).
+- **270 unit tests and 320 desktop/mobile browser checks**, strict TypeScript and
+  the Pages build. [Activity and postbox verification](docs/activity-gui.md#verification),
+  [wallet connection verification](docs/wallet-connection.md#verification) and
+  [earlier public GUI evidence](docs/public-mail-gui-evidence.json).
 - **Real Esmeralda mail and wallet recovery:** encrypted letters/replies, key
   rotation, independently restored Inbox/Sent, saved settings and native private
   postage. [Sealed-mail evidence](docs/sealed-mail-evidence.json).

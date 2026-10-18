@@ -136,6 +136,9 @@ export function Postboxes({
     ) {
       choose(submittedPostbox);
       setSubmittedPostbox(undefined);
+      onStatus(
+        "Your postbox change is confirmed. You’re back in your mailbox.",
+      );
     }
   }, [submittedPostbox, submittedState, owned.map((p) => p.id).join(",")]);
   useEffect(() => {

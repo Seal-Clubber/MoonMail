@@ -1399,12 +1399,17 @@ test("postbox submission stays in My inbox and confirms without opening Activity
   });
   let confirmed = false,
     writes = 0;
-  await page.route(`${d.indexerUrl}**`, (r) => {
+  let releaseReceipt!: () => void;
+  const receiptReady = new Promise<void>((resolve) => {
+    releaseReceipt = resolve;
+  });
+  await page.route(`${d.indexerUrl}**`, async (r) => {
     if (r.request().method() !== "GET") {
       writes++;
       return r.abort();
     }
     if (r.request().url().includes(`/transactions/${transaction}/result`)) {
+      await receiptReady;
       confirmed = true;
       return r.fulfill({
         json: { result: { Finalized: { final_decision: "Commit" } } },
@@ -1444,6 +1449,21 @@ test("postbox submission stays in My inbox and confirms without opening Activity
     .getByRole("button", { name: "Save postbox changes", exact: true })
     .click();
   await expect(page).toHaveURL(/#\/postboxes$/);
+  await expect(page.locator(".postbox-confirmation")).toContainText(
+    "Your postbox change is on its way",
+  );
+  expect(
+    await page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem("ghostdrop:pending:v1") || "[]").find(
+          (p: any) => p.operation === "postbox",
+        ).state,
+    ),
+  ).toBe("submitted");
+  releaseReceipt();
+  await expect(page.locator(".message.status")).toContainText(
+    /Your postbox change is confirmed|Mail is up to date\./,
+  );
   await expect(
     page.getByRole("heading", { name: "Your activity.", exact: true }),
   ).toHaveCount(0);

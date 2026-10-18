@@ -1451,7 +1451,7 @@ test("a known pending claim offers its original Activity receipt instead of anot
   await expect(card).toContainText("Awaiting confirmation");
   confirmed = true;
   await check.click();
-  await expect(card).toContainText("Delivered");
+  await expect(card).toContainText("Confirmed");
   expect(
     await page.evaluate(
       () => JSON.parse(localStorage.getItem("ghostdrop:pending:v1")!)[0],

@@ -25,3 +25,21 @@ using a synthetic postbox edit, confirming it in the mailbox with one wallet
 submission and no indexer writes. Summary filters leave the journal unchanged.
 Actual two-step new-postbox setup retains its earlier checks and stock-wallet
 evidence; this UI pass does not claim a new funded creation or deployment.
+
+## Verification
+
+The final 19 October 2026 build passed strict TypeScript, the Pages-base
+production build, 270 unit tests and all 320 desktop/mobile browser checks.
+The postbox regression deliberately holds the original receipt pending: the
+page stays in My inbox and shows a submitted record before confirmation. After
+the receipt commits and the directory refreshes, the mailbox remains selected
+and the journal is confirmed, with exactly one simulated wallet submission and
+no indexer writes. The terminal status replaces the old submission message.
+
+Activity screenshots and alignment checks cover 320, 390, 768 and 1440 pixels.
+The icons and titles align on the same row; status filters, pagination, contrast
+and uncertain-outcome protections remain covered. These screenshots use clearly
+labelled fictional activity, not newly published testnet transactions. Contract,
+wallet adapter, deployment profile and dependency sources did not change in
+this UI pass. Earlier native-engine and funded stock-wallet evidence retains
+its original scope.
