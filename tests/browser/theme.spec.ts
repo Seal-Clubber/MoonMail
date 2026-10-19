@@ -169,11 +169,9 @@ test("theme keeps utility, parchment and nested dark text readable", async ({
       .getByRole("dialog")
       .getByText("Ootle receiving address", { exact: true }),
   );
-  await readable(
-    page
-      .getByRole("dialog")
-      .getByText("Existing built-in account component", { exact: true }),
-  );
+  await expect(
+    page.getByLabel("Existing built-in account component"),
+  ).toHaveCount(0);
   expect(writes).toBe(0);
 });
 

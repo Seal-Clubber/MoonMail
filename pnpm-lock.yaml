@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@noble/hashes':
+        specifier: 2.4.0
+        version: 2.4.0
       '@tari-project/ootle':
         specifier: 0.9.0
         version: 0.9.0
@@ -237,6 +240,10 @@ packages:
     peerDependencies:
       '@emnapi/core': ^1.7.1 || ^2.0.0-alpha.4
       '@emnapi/runtime': ^1.7.1 || ^2.0.0-alpha.4
+
+  '@noble/hashes@2.4.0':
+    resolution: {integrity: sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA==}
+    engines: {node: '>= 20.19.0'}
 
   '@oxc-project/types@0.120.0':
     resolution: {integrity: sha512-k1YNu55DuvAip/MGE1FTsIuU3FUCn6v/ujG9V7Nq5Df/kX2CWb13hhwD0lmJGMGqE+bE1MXvv9SZVnMzEXlWcg==}
@@ -846,6 +853,8 @@ snapshots:
       '@emnapi/runtime': 1.11.3
       '@tybys/wasm-util': 0.10.4
     optional: true
+
+  '@noble/hashes@2.4.0': {}
 
   '@oxc-project/types@0.120.0': {}
 

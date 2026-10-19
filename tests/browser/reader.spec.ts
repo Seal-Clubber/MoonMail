@@ -1,3 +1,4 @@
+import { accountForOwner } from "../../src/core/receiving-address";
 import {
   openInboxComposer,
   chooseMailMode,
@@ -312,8 +313,36 @@ test("guest gift review requires a separate confirmation and forgets abandoned d
   await page.route("**/deployment.json", (r) =>
     r.fulfill({ json: giftDeployment }),
   );
-  let posts = 0;
+  let posts = 0,
+    exists = true;
+  const owner = generateKeypair(),
+    viewKey = generateKeypair();
+  const receiveAddress = generateOotleAddress(
+    owner.public_key,
+    viewKey.public_key,
+    38,
+  );
+  const receiveAccount = accountForOwner(owner.public_key);
+  const controller = Buffer.from(owner.public_key).toString("hex");
+  owner.free();
+  viewKey.free();
   await page.route(`${deployment.indexerUrl}**`, (r) => {
+    if (r.request().url().includes(receiveAccount))
+      return exists
+        ? r.fulfill({
+            json: {
+              substate: {
+                Component: {
+                  header: {
+                    template_address: "0".repeat(64),
+                    owner_rule: { ByPublicKey: controller },
+                  },
+                  body: { state: [] },
+                },
+              },
+            },
+          })
+        : r.fulfill({ status: 404, body: "Not found" });
     if (r.request().method() !== "GET") posts++;
     const response = state(r.request().url());
     if (r.request().url().includes(envelope)) {
@@ -349,12 +378,25 @@ test("guest gift review requires a separate confirmation and forgets abandoned d
     name: "Review gift collection",
   });
   await expect(reviewButton).toBeDisabled();
-  const receiveAddress = "otl_esm_fixture_full_destination";
-  const receiveAccount = `component_${"9".repeat(64)}`;
-  await dialog.getByLabel("Ootle receiving address").fill(receiveAddress);
+  await expect(
+    dialog.getByRole("checkbox", { name: "Create a new receiving account" }),
+  ).toHaveCount(0);
+  await expect(
+    dialog.getByLabel("Existing built-in account component"),
+  ).toHaveCount(0);
   await dialog
-    .getByLabel("Existing built-in account component")
-    .fill(receiveAccount);
+    .getByLabel("Ootle receiving address")
+    .fill("not-a-wallet-address");
+  await reviewButton.click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "Enter a valid Ootle wallet address",
+  );
+  await expect(
+    dialog.getByRole("button", { name: "Confirm & collect gift" }),
+  ).toHaveCount(0);
+
+  await dialog.getByLabel("Ootle receiving address").fill(receiveAddress);
+
   await reviewButton.click();
   const review = dialog.getByRole("region", {
     name: "Send this gift to your wallet?",
@@ -363,7 +405,7 @@ test("guest gift review requires a separate confirmation and forgets abandoned d
   await expect(review).toContainText("0.1 TARI, from the sender’s reserve");
   await expect(review).toContainText("Esmeralda testnet");
   await expect(review).toContainText(receiveAddress);
-  await expect(review).toContainText(receiveAccount);
+  await expect(review).not.toContainText("component_");
   await expect(dialog.getByLabel("Ootle receiving address")).toBeDisabled();
   await expect(
     dialog.getByRole("button", { name: "Connect Sapient to receive" }),
@@ -372,19 +414,19 @@ test("guest gift review requires a separate confirmation and forgets abandoned d
     review.getByRole("button", { name: "Confirm & collect gift" }),
   ).toBeEnabled();
   await review.getByRole("button", { name: "Change destination" }).click();
-  await dialog.getByLabel("Create a new receiving account").check();
+  exists = false;
   await reviewButton.click();
   await expect(review).toContainText(
-    "Create a new built-in account for this address",
+    "MoonMail will set up receiving for this address",
   );
   await expect(review).not.toContainText(receiveAccount);
   await dialog.getByRole("button", { name: "Close letter" }).click();
   await letter.click();
   await expect(review).toHaveCount(0);
   await expect(dialog.getByLabel("Ootle receiving address")).toHaveValue("");
-  await expect(
-    dialog.getByLabel("Create a new receiving account"),
-  ).not.toBeChecked();
+  await expect(dialog.getByLabel("Create a new receiving account")).toHaveCount(
+    0,
+  );
   await expect(reviewButton).toBeDisabled();
   expect(posts).toBe(0);
   expect(await page.evaluate(() => (window as any).walletCalls)).toBe(0);
@@ -1221,9 +1263,9 @@ for (const movedFocus of [false, true])
       view = generateKeypair();
     const address = generateOotleAddress(owner.public_key, view.public_key, 38);
     const controller = Buffer.from(owner.public_key).toString("hex");
+    const account = accountForOwner(owner.public_key);
     owner.free();
     view.free();
-    const account = `component_${"9".repeat(64)}`;
     const d = {
       ...deployment,
       resource: `resource_${"01".repeat(32)}`,
@@ -1237,7 +1279,8 @@ for (const movedFocus of [false, true])
     let started!: () => void, release!: () => void;
     const requested = new Promise<void>((r) => (started = r)),
       held = new Promise<void>((r) => (release = r));
-    let writes = 0;
+    let writes = 0,
+      accountReads = 0;
     await page.route(`${d.indexerUrl}**`, async (r) => {
       if (r.request().method() !== "GET") {
         writes++;
@@ -1245,8 +1288,10 @@ for (const movedFocus of [false, true])
       }
       const response = state(r.request().url());
       if (r.request().url().includes(account)) {
-        started();
-        await held;
+        if (++accountReads > 1) {
+          started();
+          await held;
+        }
         return r.fulfill({
           json: {
             substate: {
@@ -1271,9 +1316,7 @@ for (const movedFocus of [false, true])
     await page.getByRole("button", { name: subject, exact: false }).click();
     const dialog = page.getByRole("dialog");
     await dialog.getByLabel("Ootle receiving address").fill(address);
-    await dialog
-      .getByLabel("Existing built-in account component")
-      .fill(account);
+
     await dialog
       .getByRole("button", { name: "Review gift collection" })
       .click();
@@ -1306,7 +1349,7 @@ for (const movedFocus of [false, true])
     );
     await expect(
       dialog.getByLabel("Existing built-in account component"),
-    ).toHaveValue(account);
+    ).toHaveCount(0);
     expect(writes).toBe(0);
     expect(
       await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),

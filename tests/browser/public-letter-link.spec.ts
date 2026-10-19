@@ -1,3 +1,4 @@
+import { accountForOwner } from "../../src/core/receiving-address";
 import { test, expect, type Page } from "@playwright/test";
 import {
   generateKeypair,
@@ -19,6 +20,7 @@ const d = {
     ...emptyDeployment.evidence,
     engineClaims: true,
     guestPayout: true,
+    guestAccountCreation: true,
   },
 };
 const id = "a-public-letter",
@@ -353,15 +355,29 @@ async function receivingDestination(dialog: ReturnType<Page["getByRole"]>) {
   const owner = generateKeypair(),
     view = generateKeypair();
   const address = generateOotleAddress(owner.public_key, view.public_key, 38);
+  const account = accountForOwner(owner.public_key);
+  const controller = Buffer.from(owner.public_key).toString("hex");
   owner.free();
   view.free();
-  const account = `component_${"e".repeat(64)}`;
+  await dialog.page().route("**/*" + account + "*", (r) =>
+    r.fulfill({
+      json: {
+        substate: {
+          Component: {
+            header: {
+              template_address: "0".repeat(64),
+              owner_rule: { ByPublicKey: controller },
+            },
+            body: { state: [] },
+          },
+        },
+      },
+    }),
+  );
   await dialog
     .getByLabel("Ootle receiving address", { exact: true })
     .fill(address);
-  await dialog
-    .getByLabel("Existing built-in account component", { exact: true })
-    .fill(account);
+
   return { address, account };
 }
 
@@ -429,7 +445,7 @@ test("an availability outage preserves the collection destination for a read-onl
   ).toHaveValue(destination.address);
   await expect(
     dialog.getByLabel("Existing built-in account component", { exact: true }),
-  ).toHaveValue(destination.account);
+  ).toHaveCount(0);
   await expect(
     dialog.getByRole("button", { name: "Confirm & collect gift" }),
   ).toHaveCount(0);
@@ -440,7 +456,7 @@ test("an availability outage preserves the collection destination for a read-onl
   });
   await expect(review).toBeVisible();
   await expect(review).toContainText(destination.address);
-  await expect(review).toContainText(destination.account);
+  await expect(review).not.toContainText("component_");
   await expect(dialog.getByRole("alert")).toHaveCount(0);
   await noSpending(page, writes);
 });
@@ -471,7 +487,7 @@ test("leaving a letter during an availability check ignores the late result", as
   await dialog.getByRole("button", { name: "Review gift collection" }).click();
   await requested;
   await expect(
-    dialog.getByRole("button", { name: "Checking gift…" }),
+    dialog.getByRole("button", { name: "Checking gift and address…" }),
   ).toBeDisabled();
   await page.evaluate(() => (location.hash = "#/activity"));
   await expect(dialog).toHaveCount(0);

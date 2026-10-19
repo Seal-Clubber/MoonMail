@@ -270,7 +270,6 @@ export function App() {
     [autoChecking, setAutoChecking] = useState(false);
   const [address, setAddress] = useState(""),
     [destination, setDestination] = useState(""),
-    [createAccount, setCreateAccount] = useState(false),
     [destMode, setDestMode] = useState("manual"),
     [route, setRoute] = useState<LinkRoute>();
   const [postboxInvitation, setPostboxInvitation] = useState<PostboxRoute>();
@@ -736,7 +735,6 @@ export function App() {
   useEffect(() => {
     if (!active) return;
     setClaimReview(undefined);
-    setCreateAccount(false);
     if (current) {
       setDestMode("wallet");
       setAddress(current.address);
@@ -1104,7 +1102,6 @@ export function App() {
     setRoute(undefined);
     setLinkState("idle");
     setLinkError("");
-    setCreateAccount(false);
   }
   async function refresh() {
     if (!d.registry || !d.indexerUrl) return;
@@ -1699,7 +1696,6 @@ export function App() {
     setReview(false);
     setLinkSaved(false);
     setReply("");
-    setCreateAccount(false);
     setStatus(
       "Disconnected from Sapient. Private session state was cleared; manage site permissions in your wallet.",
     );
@@ -2336,7 +2332,6 @@ export function App() {
                         envelope={e}
                         sample={preview ? sampleLetter(e.id) : undefined}
                         onOpen={() => {
-                          setCreateAccount(false);
                           setActive(e);
                           setPlain(
                             preview
@@ -3517,7 +3512,6 @@ export function App() {
                   closeLetter();
                   setActive(letter);
                   setPlain(letter.payload as Letter);
-                  setCreateAccount(false);
                 }}
                 onInbox={() => navigate("postboxes")}
               />
@@ -3957,35 +3951,36 @@ export function App() {
                             </button>
                           </div>
                         )}
-                        <div className="mode-switch">
-                          <button
-                            disabled={busy || !!claimReview}
-                            aria-pressed={destMode === "manual"}
-                            onClick={() => {
-                              setDestMode("manual");
-                              setAddress("");
-                              setDestination("");
-                            }}
-                          >
-                            Use another address
-                          </button>
-                          <button
-                            disabled={busy || !!claimReview || !wallet}
-                            aria-pressed={destMode === "wallet"}
-                            onClick={() => {
-                              setDestMode("wallet");
-                              setCreateAccount(false);
-                              if (current) {
-                                setAddress(current.address);
-                                setDestination(
-                                  current.account.component_address,
-                                );
-                              }
-                            }}
-                          >
-                            Choose from connected wallet
-                          </button>
-                        </div>
+                        {wallet && (
+                          <div className="mode-switch">
+                            <button
+                              disabled={busy || !!claimReview}
+                              aria-pressed={destMode === "manual"}
+                              onClick={() => {
+                                setDestMode("manual");
+                                setAddress("");
+                                setDestination("");
+                              }}
+                            >
+                              Use another address
+                            </button>
+                            <button
+                              disabled={busy || !!claimReview || !wallet}
+                              aria-pressed={destMode === "wallet"}
+                              onClick={() => {
+                                setDestMode("wallet");
+                                if (current) {
+                                  setAddress(current.address);
+                                  setDestination(
+                                    current.account.component_address,
+                                  );
+                                }
+                              }}
+                            >
+                              Choose from connected wallet
+                            </button>
+                          </div>
+                        )}
                         {destMode === "wallet" &&
                           wallet &&
                           wallet.accounts.length > 1 && (
@@ -4026,36 +4021,6 @@ export function App() {
                                 onChange={(e) => setAddress(e.target.value)}
                               />
                             </label>
-                            {active.mode !== "postbox" && (
-                              <label className="check">
-                                <input
-                                  type="checkbox"
-                                  checked={createAccount}
-                                  disabled={
-                                    busy ||
-                                    !!claimReview ||
-                                    !claimsReady(d, true)
-                                  }
-                                  onChange={(e) => {
-                                    setCreateAccount(e.target.checked);
-                                    setDestination("");
-                                  }}
-                                />
-                                Create a new receiving account
-                              </label>
-                            )}
-                            {!createAccount && (
-                              <label>
-                                Existing built-in account component
-                                <input
-                                  disabled={busy || !!claimReview}
-                                  value={destination}
-                                  onChange={(e) =>
-                                    setDestination(e.target.value)
-                                  }
-                                />
-                              </label>
-                            )}
                           </>
                         )}
                         <p className="fine-print">
@@ -4067,9 +4032,7 @@ export function App() {
                             : active.mode === "postbox" &&
                                 wallet?.kind === "sapient"
                               ? "Postbox collection is not enabled for this deployment. Your connected wallet must control this postbox."
-                              : createAccount
-                                ? "Use an Ootle address whose built-in account does not exist yet. The gift reserve pays account creation and collection fees; your receiving keys stay in your wallet."
-                                : "Guests may use an existing compatible account without connecting its wallet. L1 XTM addresses, raw keys and arbitrary components are unsupported."}
+                              : "Paste your Ootle wallet address. MoonMail checks the receiving account for you. Collection fees come from the sender’s reserve."}
                         </p>
                         {!claimReview && (
                           <button
@@ -4080,13 +4043,12 @@ export function App() {
                               !chain ||
                               !address ||
                               writeBlocked ||
-                              (!createAccount && !destination) ||
                               !(active.mode === "postbox"
                                 ? postboxClaimsReady(
                                     d,
                                     wallet?.kind ?? "sapient",
                                   )
-                                : claimsReady(d, createAccount)) ||
+                                : claimsReady(d)) ||
                               (active.mode === "postbox" &&
                                 !wallet?.accounts.some(
                                   (a) =>
@@ -4101,8 +4063,11 @@ export function App() {
                                 const sequence = openSequence.current;
                                 const reviewed = {
                                   address: address.trim(),
-                                  destination: destination.trim(),
-                                  createAccount,
+                                  destination:
+                                    destMode === "wallet"
+                                      ? destination.trim()
+                                      : "",
+                                  createAccount: false,
                                 };
                                 setCheckingGift(true);
                                 try {
@@ -4129,7 +4094,18 @@ export function App() {
                                         : letter,
                                     ),
                                   );
-                                  if (!latest.claimed) setClaimReview(reviewed);
+                                  if (!latest.claimed) {
+                                    const resolved =
+                                      destMode === "manual"
+                                        ? await chain.resolveReceivingAddress(
+                                            reviewed.address,
+                                            latest.mode !== "postbox",
+                                          )
+                                        : reviewed;
+                                    if (sequence !== openSequence.current)
+                                      return;
+                                    setClaimReview(resolved);
+                                  }
                                 } finally {
                                   setCheckingGift(false);
                                 }
@@ -4137,7 +4113,7 @@ export function App() {
                             }
                           >
                             {checkingGift
-                              ? "Checking gift…"
+                              ? "Checking gift and address…"
                               : "Review gift collection"}
                           </button>
                         )}
@@ -4168,15 +4144,13 @@ export function App() {
                               <dd>
                                 <code>{claimReview.address}</code>
                               </dd>
-                              <dt>Receiving account</dt>
-                              <dd>
-                                {claimReview.createAccount ? (
-                                  "Create a new built-in account for this address"
-                                ) : (
-                                  <code>{claimReview.destination}</code>
-                                )}
-                              </dd>
                             </dl>
+                            {claimReview.createAccount && (
+                              <p className="fine-print">
+                                MoonMail will set up receiving for this address
+                                using the gift’s fee reserve.
+                              </p>
+                            )}
                             <p className="fine-print">
                               {active.mode === "postbox"
                                 ? "Confirming asks Sapient to approve a proof for this gift and destination. Only then can MoonMail submit the collection."

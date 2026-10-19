@@ -237,7 +237,7 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
           }),
         ).toBeFocused();
         await expect(review).toContainText(address);
-        await expect(review).toContainText(account);
+        await expect(review).not.toContainText("component_");
         await expect(review).toContainText("1 test TARI");
         await expect(review).toContainText(
           "0.1 TARI, from the sender’s reserve",

@@ -38,6 +38,7 @@ import {
   postboxClaimExpiry,
 } from "./postbox-claim";
 import { hex } from "./crypto";
+import { receivingAddress } from "./receiving-address";
 import {
   claimTransaction,
   claimToNewAccountTransaction,
@@ -284,6 +285,54 @@ export class PostOfficeClient {
       "mailbox",
       `mailbox:${box.id}`,
     );
+  }
+  async resolveReceivingAddress(address: string, allowCreation: boolean) {
+    const resolved = receivingAddress(address, this.deployment.network);
+    let r;
+    try {
+      r = await readWithTimeout(
+        this.provider.getSubstate(resolved.destination),
+      );
+    } catch (error) {
+      // Only an explicit not-found response can enable account creation. An
+      // outage, timeout or malformed reply must never be treated as absence.
+      if (
+        !error ||
+        typeof error !== "object" ||
+        !("status" in error) ||
+        error.status !== 404
+      )
+        throw new Error(
+          "Could not check this wallet address right now. Try again; nothing was submitted.",
+        );
+      if (!allowCreation)
+        throw new Error(
+          "This address is not ready to receive a postbox gift. Choose your connected Sapient account.",
+        );
+      if (!claimsReady(this.deployment, true))
+        throw new Error(
+          "Receiving at a new address is not enabled for this post office. Connect Sapient to choose an existing account.",
+        );
+      return { ...resolved, createAccount: true };
+    }
+    const v = r?.substate as unknown as {
+      Component?: {
+        header: {
+          owner_rule: { ByPublicKey?: unknown };
+          template_address: string;
+        };
+      };
+    };
+    const header = v?.Component?.header;
+    if (
+      typeof header?.template_address !== "string" ||
+      header.template_address.replace(/^template_/, "") !== "0".repeat(64) ||
+      bytes(header.owner_rule?.ByPublicKey) !== resolved.owner
+    )
+      throw new Error(
+        "This wallet address could not be verified as a compatible receiving account. Nothing was submitted.",
+      );
+    return { ...resolved, createAccount: false };
   }
   async validateDestination(address: string, component: string) {
     const parsed = parseOotleAddress(address);

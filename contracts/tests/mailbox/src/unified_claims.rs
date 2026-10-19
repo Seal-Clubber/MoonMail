@@ -214,6 +214,64 @@ mod unified_claims {
         );
     }
     #[test]
+    fn address_only_derivation_matches_the_current_engine() {
+        use tari_engine_types::component::derive_component_address_from_public_key;
+        for (key, expected) in [
+            (
+                "44f53520926ec81fbd5a387845beb7df85a96a24ece18738bdcfa6a7822a176d",
+                "component_23e5679a3e55e58e32318b94e258b73e72e3164b658f187fe5de833a861e2d45",
+            ),
+            (
+                "0707070707070707070707070707070707070707070707070707070707070707",
+                "component_0f987d031de55aee41a7233426059b1c3506408832f3283eb2bdaed15a314021",
+            ),
+            (
+                "f6f89e316e6ba5f05e5250ddd4a5d3ed39dcd038cf812cc6a154b6ec0951d25f",
+                "component_26cf65a80010d961aa64950a5677fd9d3852adcf3618aa7fe171f6dda8b961ae",
+            ),
+        ] {
+            assert_eq!(
+                derive_component_address_from_public_key(
+                    &Default::default(),
+                    &key.parse().unwrap()
+                )
+                .to_string(),
+                expected
+            );
+        }
+    }
+    #[test]
+    fn v2_address_only_existing_account_receives_public_and_private_link_gifts() {
+        use tari_template_test_tooling::crypto::{PublicKey, RistrettoPublicKey};
+        for mode in [0u8, 1u8] {
+            let mut f = fixture_mode(100_000, mode);
+            let owner = RistrettoPublicKey::from_secret_key(&f.destination_key).to_byte_type();
+            let relay = f.t.new_key_pair(96).0;
+            f.t.enable_fees();
+            let tx =
+                f.t.transaction()
+                    .with_fee_instructions_builder(|b| {
+                        b.create_account(owner)
+                            .put_last_instruction_output_on_workspace("receiving_account")
+                            .call_method(
+                                f.envelope,
+                                "claim_and_pay_fee",
+                                args![Workspace("receiving_account"), 16u8],
+                            )
+                    })
+                    .build_and_seal(if mode == 0 { &relay } else { f.t.secret_key() });
+            let result = f.t.execute_expect_success(tx, vec![]);
+            assert!(result.finalize.total_fees_required <= 100_000);
+            let claimed = state(&mut f);
+            assert!(claimed.claimed);
+            assert_eq!(
+                claimed.destination.unwrap().to_string(),
+                f.destination.to_string()
+            );
+            assert_eq!(balance(&f, f.destination), Amount::from(1_000_000u64));
+        }
+    }
+    #[test]
     fn v2_public_and_private_link_guests_preserve_full_payout_and_authority() {
         for mode in [0u8, 1u8] {
             let mut f = fixture_mode(100_000, mode);

@@ -55,6 +55,11 @@ keeps **My inbox**, **Public mail** and **Activity** labelled at every screen
 size. Routine mail-sync status sits quietly above the content; transaction
 outcomes and errors keep their own notices.
 
+To collect a public or private-link gift, paste your **Ootle wallet address** and
+review the destination. MoonMail finds the account for you and, when needed,
+sets it up from the gift’s fee reserve. Connecting Sapient fills the address
+automatically. You never need to look up an account component ID.
+
 ## Native Sapient integration
 
 MoonMail puts Sapient's native privacy features to work in an Ootle mailbox.
@@ -188,7 +193,7 @@ also depend on the connected account's runtime capabilities.
 
 Recorded verification as of **19 October 2026** includes:
 
-- **270 unit tests and 322 desktop/mobile browser checks**, strict TypeScript and
+- **282 unit tests and 322 desktop/mobile browser checks**, strict TypeScript and
   the Pages build. [Activity and postbox verification](docs/activity-gui.md#verification),
   [wallet connection verification](docs/wallet-connection.md#verification) and
   [earlier public GUI evidence](docs/public-mail-gui-evidence.json).
