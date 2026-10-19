@@ -11,7 +11,8 @@ export interface Pending {
   id: string;
   network: number;
   registry: string;
-  operation: "publish" | "claim" | "postbox" | "capsule" | "mailbox";
+  operation: "publish" | "claim" | "postbox" | "capsule" | "mailbox" | "pot";
+  potAction?: "open" | "contribute" | "draw" | "claim" | "refund";
   envelopeId: string;
   state: "submitted" | "confirmed" | "rejected" | "unknown";
   createdAt?: number;
@@ -59,9 +60,14 @@ function strictPending(storage: Pick<Storage, "getItem">): Pending[] {
           typeof p.envelopeId !== "string" ||
           typeof p.registry !== "string" ||
           !Number.isInteger(p.network) ||
-          !["publish", "claim", "postbox", "capsule", "mailbox"].includes(
-            p.operation,
-          ) ||
+          ![
+            "publish",
+            "claim",
+            "postbox",
+            "capsule",
+            "mailbox",
+            "pot",
+          ].includes(p.operation) ||
           (p.sealedBinding !== undefined &&
             (p.operation !== "publish" ||
               !p.sealedBinding ||
@@ -77,10 +83,15 @@ function strictPending(storage: Pick<Storage, "getItem">): Pending[] {
           (p.postboxAction !== undefined &&
             (p.operation !== "postbox" ||
               !["create", "edit", "rotate"].includes(p.postboxAction))) ||
+          (p.operation === "pot" &&
+            !["open", "contribute", "draw", "claim", "refund"].includes(
+              p.potAction || "",
+            )) ||
+          (p.operation !== "pot" && p.potAction !== undefined) ||
           !validCapsule(p) ||
           (p.walletRequest !== undefined &&
             (!(
-              ["publish", "postbox", "mailbox"].includes(p.operation) ||
+              ["publish", "postbox", "mailbox", "pot"].includes(p.operation) ||
               (p.operation === "capsule" &&
                 p.capsule?.descriptor.recovery === "sapient-capsule-1" &&
                 p.walletRequest.account === p.capsule.account)

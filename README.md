@@ -30,6 +30,11 @@ Use the website and your normal [Sapient wallet](https://sapient.tari.mw/).
 There is no central MoonMail backend or extra bridge program. The static website
 runs on GitHub Pages over HTTPS and reads Ootle through public indexers.
 
+The separate **Moon Pot** tab previews an experimental weekly community pot,
+with public contribution messages and amount-weighted shares. Its contract and
+Sapient flow are in development; no pot is deployed or accepting contributions
+in the default configuration. [Status, rules and draw limitations](docs/moon-pot.md).
+
 **Currently on Esmeralda testnet.** MoonMail sends between Ootle postboxes, not
 ordinary email addresses. It is experimental software with bounded storage and
 discovery, not a production email replacement. Use test funds.
@@ -55,7 +60,7 @@ or unsuccessful sends keep your text, and a late confirmation never clears a
 newer letter you have started.
 
 Choose **Compose letter** inside **My inbox** to open it. The top navigation
-keeps **My inbox**, **Public mail** and **Activity** labelled at every screen
+keeps **My inbox**, **Public mail**, **Moon Pot** and **Activity** labelled at every screen
 size. Routine mail-sync status sits in the top bar to the left of the wallet controls; transaction
 outcomes and errors keep their own notices.
 

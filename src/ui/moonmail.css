@@ -1214,7 +1214,7 @@ body {
   .app-shell .topbar nav {
     gap: 2px;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .app-shell .topbar nav button {
     padding: 9px 3px;
@@ -2436,5 +2436,328 @@ body {
   }
   .app-shell .compose-window-content {
     padding: 18px 18px max(24px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Public community pot. Example data is opt-in and never reaches a wallet. */
+.moon-pot-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.pot-page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+  margin: 18px 0 32px;
+}
+.app-shell .pot-page-heading h1 {
+  font-size: clamp(36px, 5vw, 56px);
+  margin: 8px 0 12px;
+}
+.pot-page-heading p {
+  max-width: 620px;
+  line-height: 1.7;
+}
+.pot-testnet,
+.pot-preview-badge {
+  color: #c9d8f3;
+  background: #20344e;
+  padding: 8px 12px;
+  border: 1px solid #536d93;
+  border-radius: 999px;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.pot-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 24px;
+  align-items: start;
+}
+.pot-main,
+.pot-sidebar {
+  min-width: 0;
+}
+.pot-hero {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  padding: 34px 24px 0;
+  border: 1px solid #506a91;
+  border-radius: 16px;
+  background: radial-gradient(
+    ellipse at 50% 10%,
+    #304169 0%,
+    #182b48 42%,
+    #101e34 80%
+  );
+}
+.pot-moon {
+  position: absolute;
+  right: 30px;
+  top: 12px;
+  color: #e4ddff;
+  font-size: 66px;
+  transform: rotate(-15deg);
+}
+.pot-cauldron {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 120px;
+  height: 100px;
+  margin: 16px auto 20px;
+  border: 2px solid #7897c7;
+  border-top: 8px solid #9db8e8;
+  border-radius: 18px 18px 44px 44px;
+  background: linear-gradient(#34507c, #142840);
+  box-shadow:
+    0 0 45px #8d9fff33,
+    inset 0 7px 18px #b8c8ff18;
+}
+.pot-cauldron::before,
+.pot-cauldron::after {
+  content: "";
+  position: absolute;
+  width: 22px;
+  height: 32px;
+  border: 3px solid #7897c7;
+  border-radius: 50%;
+  top: 20px;
+  z-index: 0;
+}
+.pot-cauldron::before {
+  left: -23px;
+  border-right: 0;
+}
+.pot-cauldron::after {
+  right: -23px;
+  border-left: 0;
+}
+.pot-cauldron > .ui-icon {
+  width: 36px;
+  height: 36px;
+  color: #dbe4ff;
+}
+.pot-cauldron > span {
+  position: absolute;
+  top: -28px;
+  left: 28px;
+  color: #c9c3ff;
+  animation: pot-spark 4s ease-in-out infinite;
+}
+.pot-cauldron > span:nth-child(2) {
+  left: 70px;
+  top: -40px;
+  animation-delay: -1.5s;
+}
+.pot-cauldron > span:nth-child(3) {
+  left: 50px;
+  top: -16px;
+  animation-delay: -2.8s;
+}
+.pot-total {
+  display: block;
+  margin: 16px 0;
+  font-size: clamp(38px, 6vw, 60px);
+  color: #f0efff;
+  font-variant-numeric: tabular-nums;
+}
+.pot-total small {
+  font-size: 18px;
+  font-weight: 400;
+  color: #c4d1e9;
+}
+.pot-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 24px -24px 0;
+  border-top: 1px solid #3f577c;
+  background: #0d1b2d77;
+}
+.pot-stats > div {
+  padding: 20px 6px;
+  min-width: 0;
+}
+.pot-stats strong,
+.pot-stats span {
+  display: block;
+}
+.pot-stats strong {
+  color: #e5eaff;
+  font-size: 21px;
+  margin-bottom: 7px;
+}
+.pot-stats span {
+  color: #b9cae2;
+  font-size: 12px;
+}
+.pot-list-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 28px 0 16px;
+}
+.app-shell .pot-list-heading h2 {
+  font-size: 20px;
+  margin: 0;
+}
+.pot-entry,
+.pot-sidebar > section {
+  background: #122239;
+  border: 1px solid #405b7d;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.pot-entry-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pot-entry-heading strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #dbe7ff;
+  overflow-wrap: anywhere;
+}
+.pot-entry-heading > span {
+  color: #e7d6a3;
+}
+.pot-entry p {
+  line-height: 1.75;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.pot-entry-share {
+  color: #b2c7e7;
+  font-size: 12px;
+}
+.app-shell .pot-sidebar h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+}
+.pot-how ol {
+  padding-left: 19px;
+  margin: 0;
+}
+.pot-how li {
+  color: #b9cbe3;
+  padding-left: 5px;
+  margin-bottom: 17px;
+  line-height: 1.7;
+}
+.pot-how li strong {
+  color: #e2eaff;
+}
+.pot-sidebar p {
+  line-height: 1.7;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.pot-round-picker {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 0 0 20px;
+}
+.pot-round-picker label {
+  flex: 1 1 260px;
+  min-width: 0;
+  margin: 0;
+}
+.pot-contribute select,
+.pot-contribute textarea {
+  width: 100%;
+  min-width: 0;
+}
+.pot-contribute label.checkbox {
+  align-items: start;
+  line-height: 1.6;
+}
+.pot-experimental {
+  border-left: 3px solid #d3b778;
+  padding-left: 12px;
+  margin-bottom: 20px;
+}
+.pot-experimental > strong {
+  color: #efdbb1;
+}
+.pot-contribute .review {
+  margin-top: 16px;
+}
+.pot-contribute .review button {
+  margin-top: 8px;
+  width: 100%;
+}
+.app-shell .pot-preparation {
+  border-color: #827251;
+  background: #29283a;
+}
+.pot-preview-toggle {
+  width: 100%;
+  min-height: 44px;
+}
+@keyframes pot-spark {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-9px);
+  }
+}
+@media (max-width: 900px) {
+  .pot-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pot-sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+  }
+  .pot-sidebar > section {
+    margin: 0;
+  }
+  .pot-sidebar > .fine-print {
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 600px) {
+  .pot-page-heading {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .pot-sidebar {
+    display: block;
+  }
+  .pot-sidebar > section {
+    margin-bottom: 16px;
+  }
+  .pot-hero {
+    padding: 34px 16px 0;
+  }
+  .pot-stats {
+    margin-inline: -16px;
+  }
+  .pot-list-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .pot-moon {
+    right: 14px;
+    font-size: 48px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pot-cauldron > span {
+    animation: none;
   }
 }

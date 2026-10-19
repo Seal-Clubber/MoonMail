@@ -1,0 +1,11 @@
+[package]
+name = "moonmail_pot_engine_tests"
+version = "0.1.0"
+edition = "2024"
+license = "MIT"
+[dependencies]
+tari_template_test_tooling = "=0.46.0"
+tari_engine_types = "=0.46.0"
+tari_template_lib = "=0.34.0"
+moonmail_pot = { path = "../../moonmail-pot" }
+serde_json = "=1.0.151"

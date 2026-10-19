@@ -10,6 +10,7 @@ import { PublicMailCard } from "./PublicMailCard";
 import { PublicMailFilters } from "./PublicMailFilters";
 import { PrivacyView } from "./PrivacyView";
 import { ActivityBook } from "./ActivityBook";
+import { MoonPot } from "./MoonPot";
 import {
   publicSampleMail as sampleMail,
   sampleLetter,
@@ -495,6 +496,7 @@ export function App() {
               "welcome",
               "privacy",
               "hall",
+              "pot",
               "compose",
               "postboxes",
               "ledger",
@@ -1852,9 +1854,9 @@ export function App() {
     await task(async () => {
       if (!chain) return;
       if (p.id.startsWith("attempt:")) {
-        if (["postbox", "capsule", "mailbox"].includes(p.operation)) {
+        if (["postbox", "capsule", "mailbox", "pot"].includes(p.operation)) {
           setStatus(
-            "This wallet submission has no transaction ID. Inspect the controlling wallet's transaction history before resolving it; matching postbox state alone cannot identify the submitted transaction. Retrying remains blocked.",
+            "This wallet submission has no transaction ID. Inspect the controlling wallet's transaction history before resolving it; matching on-chain state alone cannot identify the submitted transaction. Retrying remains blocked.",
           );
           return;
         }
@@ -1985,6 +1987,7 @@ export function App() {
           {[
             ["postboxes", "My inbox"],
             ["hall", "Public mail"],
+            ["pot", "Moon Pot"],
             ["activity", "Activity"],
           ].map(([v, label]) => (
             <button
@@ -2009,7 +2012,9 @@ export function App() {
                     ? "inbox"
                     : v === "hall"
                       ? "globe"
-                      : "activity"
+                      : v === "pot"
+                        ? "gift"
+                        : "activity"
                 }
               />
               <span className="nav-label">{label}</span>
@@ -2187,6 +2192,22 @@ export function App() {
           <PrivacyView
             sealed={d.contractProtocol === "unified-2"}
             payments={privatePaymentsEnabled}
+          />
+        )}
+        {view === "pot" && (
+          <MoonPot
+            deployment={d}
+            wallet={wallet instanceof SapientSession ? wallet : undefined}
+            postboxes={boxes}
+            fee={fee}
+            busy={busy}
+            task={task}
+            onConnect={() => setConnect(true)}
+            onActivity={() => navigate("activity")}
+            feeProblem={
+              feeProblem?.operation === "pot" ? feeProblem : undefined
+            }
+            onFeeChange={setFee}
           />
         )}
         {view === "hall" && (
@@ -3561,6 +3582,7 @@ export function App() {
                   setPlain(letter.payload as Letter);
                 }}
                 onInbox={() => navigate("postboxes")}
+                onPot={() => navigate("pot")}
               />
             )}
             {privateLink && (

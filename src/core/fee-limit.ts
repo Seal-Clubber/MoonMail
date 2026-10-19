@@ -4,6 +4,7 @@ export type FeeOperation =
   | "postbox"
   | "capsule"
   | "mailbox"
+  | "pot"
   | "private-payment";
 export interface FeeProblem {
   operation: FeeOperation;
