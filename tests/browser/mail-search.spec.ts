@@ -220,6 +220,16 @@ test("public layouts preserve filters and sealed boundaries without a clerk or w
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
+    const sync = await page.locator(".topbar .mail-sync-status").boundingBox();
+    const connect = await page
+      .getByRole("button", { name: "Connect wallet", exact: true })
+      .boundingBox();
+    expect(sync).not.toBeNull();
+    expect(connect).not.toBeNull();
+    expect(sync!.x + sync!.width).toBeLessThanOrEqual(connect!.x);
+    expect(
+      Math.abs(sync!.y + sync!.height / 2 - connect!.y - connect!.height / 2),
+    ).toBeLessThan(2);
     expect(
       await page
         .locator(".mode-legend")

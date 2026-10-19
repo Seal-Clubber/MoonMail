@@ -52,7 +52,7 @@ bottom-right on desktop and opens full-screen on phones.
 
 Choose **Compose letter** inside **My inbox** to open it. The top navigation
 keeps **My inbox**, **Public mail** and **Activity** labelled at every screen
-size. Routine mail-sync status sits in the top bar below the wallet controls; transaction
+size. Routine mail-sync status sits in the top bar to the left of the wallet controls; transaction
 outcomes and errors keep their own notices.
 
 To collect a public or private-link gift, paste your **Ootle wallet address** and

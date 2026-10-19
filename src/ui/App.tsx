@@ -1988,6 +1988,11 @@ export function App() {
           ))}
         </nav>
         <div className="wallet-actions">
+          {status === "Mail is up to date." && view !== "compose" && (
+            <div role="status" className="mail-sync-status">
+              <UiIcon name="check" /> {status}
+            </div>
+          )}
           <div className="wallet-controls">
             {wallet && current && (
               <button
@@ -2007,11 +2012,6 @@ export function App() {
               {wallet ? "Disconnect wallet" : "Connect wallet"}
             </button>
           </div>
-          {status === "Mail is up to date." && view !== "compose" && (
-            <div role="status" className="mail-sync-status">
-              <UiIcon name="check" /> {status}
-            </div>
-          )}
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
