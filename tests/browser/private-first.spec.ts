@@ -17,9 +17,10 @@ test("MoonMail landing opens the mailbox and public mail deliberately, without w
   await expect(
     page.getByRole("heading", { name: "MoonMail", exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByText("Your words, under cover of night.", { exact: true }),
-  ).toBeVisible();
+  await expect(page.locator(".landing-tagline")).toBeVisible();
+  await expect(page.getByRole("contentinfo")).toContainText(
+    "Your words, under cover of night.",
+  );
   await readable(page.locator(".landing-tagline"));
   await readable(page.locator(".landing-intro"));
   await expect(page.locator(".landing-moon")).toBeVisible();

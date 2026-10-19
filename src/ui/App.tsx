@@ -3590,7 +3590,7 @@ export function App() {
       </main>
       <footer>
         <span className="footer-brand">✦ MOONMAIL</span>
-        <p>Made for the generous souls among us.</p>
+        <p>Your words, under cover of night.</p>
         <button onClick={() => navigate("network")}>Settings ↗</button>
         <span className="footer-note">ESMERALDA TESTNET · SAPIENT</span>
       </footer>
