@@ -1,4 +1,5 @@
 import {
+  openInboxComposer,
   chooseMailMode,
   selectRecipient,
   openDeliveryOptions,
@@ -1400,7 +1401,7 @@ test("opening decrypted incoming mail stages read once, keeps edits through comp
     .getByRole("button", { name: "Open letter: Letter 10", exact: true })
     .click();
   await expect(row).toHaveClass(/read/);
-  await page.getByRole("button", { name: "Compose", exact: true }).click();
+  await openInboxComposer(page);
   await expect(
     page.getByRole("button", { name: "Save mailbox changes", exact: true }),
   ).toBeVisible();

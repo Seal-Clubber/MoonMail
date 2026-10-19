@@ -1,4 +1,5 @@
 import {
+  openInboxComposer,
   chooseMailMode,
   openDeliveryOptions,
   connectFromVisibleControl,
@@ -217,7 +218,7 @@ test("a connected funded public review stays gated until explicit publication ch
   await expect(publish).toBeEnabled();
   await minimizeComposer(page);
   await page.getByRole("button", { name: "Activity", exact: true }).click();
-  await page.getByRole("button", { name: "Compose", exact: true }).click();
+  await openInboxComposer(page);
   await page.getByRole("button", { name: "Review letter" }).click();
   await expect(consent).not.toBeChecked();
   await expect(publish).toBeDisabled();
@@ -372,7 +373,7 @@ test("damaged delivery history is retained, explained and cannot authorize sendi
   await expect(
     page.getByRole("heading", { name: "No deliveries yet." }),
   ).toHaveCount(0);
-  await page.getByRole("button", { name: "Compose", exact: true }).click();
+  await openInboxComposer(page);
   await chooseMailMode(page, "✧ Public mail");
   await connectFromVisibleControl(page);
   await page
@@ -779,7 +780,7 @@ for (const denied of ["getter", "writes"] as const) {
         .getByRole("alert")
         .filter({ hasText: "Browser storage needs permission" }),
     ).toBeVisible();
-    await page.getByRole("button", { name: "Compose", exact: true }).click();
+    await openInboxComposer(page);
     await connectFromVisibleControl(page);
     await page
       .getByRole("button", { name: "Connect Sapient", exact: true })
@@ -791,7 +792,7 @@ for (const denied of ["getter", "writes"] as const) {
     });
     if (denied === "writes") await expect(resume).toBeDisabled();
     else await expect(resume).toHaveCount(0);
-    await page.getByRole("button", { name: "Compose", exact: true }).click();
+    await openInboxComposer(page);
     await chooseMailMode(page, "⌘ Private link");
     await page.getByLabel("Subject", { exact: true }).fill("A fixture letter");
     await page.getByLabel("Your letter").fill("Read without writable storage");
@@ -1461,9 +1462,11 @@ test("postbox submission stays in My inbox and confirms without opening Activity
     ),
   ).toBe("submitted");
   releaseReceipt();
-  await expect(page.locator(".message.status")).toContainText(
-    /Your postbox change is confirmed|Mail is up to date\./,
-  );
+  await expect(
+    page.getByRole("status").filter({
+      hasText: /Your postbox change is confirmed|Mail is up to date\./,
+    }),
+  ).toContainText(/Your postbox change is confirmed|Mail is up to date\./);
   await expect(
     page.getByRole("heading", { name: "Your activity.", exact: true }),
   ).toHaveCount(0);

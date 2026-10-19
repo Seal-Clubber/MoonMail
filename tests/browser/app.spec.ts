@@ -1,4 +1,4 @@
-import { chooseMailMode } from "./support/composer";
+import { openInboxComposer, chooseMailMode } from "./support/composer";
 import { test, expect } from "@playwright/test";
 import { emptyDeployment } from "../../src/core/config";
 import {
@@ -13,7 +13,7 @@ test("hash links and browser Back keep the selected page in sync", async ({
     r.fulfill({ json: emptyDeployment }),
   );
   await page.goto("./#/hall");
-  await page.getByRole("button", { name: "Compose", exact: true }).click();
+  await openInboxComposer(page);
   await expect(page.locator(".compose")).toBeVisible();
   await page
     .getByRole("button", { name: "Minimize composer", exact: true })

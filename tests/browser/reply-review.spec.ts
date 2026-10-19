@@ -280,7 +280,19 @@ test("changing offices clears old reply routing even when the new office has the
   await page.getByText("Advanced connection settings", { exact: true }).click();
   const registry = `component_${"e".repeat(64)}`;
   await page.getByLabel("Registry component", { exact: true }).fill(registry);
-  await page.getByRole("button", { name: "Compose", exact: true }).click();
+  await page
+    .getByRole("navigation", { name: "Main navigation", exact: true })
+    .getByRole("button", { name: "My inbox", exact: true })
+    .click();
+  // A different office asks separately for reading access. Composing can still
+  // continue after declining that request; it must not silently grant access.
+  await page
+    .getByRole("dialog", { name: "Unlock your private inbox", exact: true })
+    .getByRole("button", { name: "Not now", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Compose letter", exact: true })
+    .click();
   await openDeliveryOptions(page);
   await expect(fixture.toggle).toBeEnabled();
   await expect(fixture.toggle).not.toBeChecked();

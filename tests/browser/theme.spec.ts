@@ -1,3 +1,4 @@
+import { openInboxComposer } from "./support/composer";
 import { test, expect } from "@playwright/test";
 import { readable } from "./support/contrast";
 import { emptyDeployment } from "../../src/core/config";
@@ -7,6 +8,58 @@ test.beforeEach(async ({ page }) => {
   await page.route("**/deployment.json", (route) =>
     route.fulfill({ json: emptyDeployment }),
   );
+});
+
+test("navigation keeps full labels and composing belongs to the inbox", async ({
+  page,
+}) => {
+  await page.goto("./#/postboxes");
+  const navigation = page.getByRole("navigation", {
+    name: "Main navigation",
+    exact: true,
+  });
+  await expect(navigation.getByRole("button")).toHaveCount(3);
+  await expect(
+    navigation.getByRole("button", { name: "Compose", exact: true }),
+  ).toHaveCount(0);
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const label of ["My inbox", "Public mail", "Activity"]) {
+      const tab = navigation.getByRole("button", { name: label, exact: true });
+      await expect(tab).toBeVisible();
+      expect(
+        await tab.locator(".nav-label").evaluate((el) => {
+          const style = getComputedStyle(el),
+            bounds = el.getBoundingClientRect();
+          return (
+            style.clipPath === "none" &&
+            parseFloat(style.fontSize) >= 13 &&
+            bounds.width > 35 &&
+            bounds.height >= 15
+          );
+        }),
+      ).toBe(true);
+    }
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  }
+  await page
+    .getByRole("button", { name: "Compose letter", exact: true })
+    .click();
+  await expect(page.locator(".compose-window")).toBeVisible();
+  await expect(
+    navigation.getByRole("button", { name: "My inbox", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
+  await page
+    .getByRole("button", { name: "Close composer", exact: true })
+    .click();
+  await expect(page).toHaveURL(/#\/postboxes$/);
+  await expect(
+    page.getByRole("button", { name: "Compose letter", exact: true }),
+  ).toBeFocused();
 });
 
 test("theme keeps utility, parchment and nested dark text readable", async ({
@@ -20,10 +73,7 @@ test("theme keeps utility, parchment and nested dark text readable", async ({
     ".empty-hall small",
   ])
     await readable(page.locator(selector).first());
-  await page
-    .getByRole("button", { name: "Compose", exact: true })
-    .first()
-    .click();
+  await openInboxComposer(page);
   await readable(
     page.getByLabel("Your letter", { exact: true }),
     "::placeholder",

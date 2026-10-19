@@ -1,5 +1,16 @@
 import type { Page } from "@playwright/test";
 
+export async function openInboxComposer(page: Page) {
+  await minimizeComposer(page);
+  await page
+    .getByRole("navigation", { name: "Main navigation", exact: true })
+    .getByRole("button", { name: "My inbox", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Compose letter", exact: true })
+    .click();
+}
+
 export async function connectFromVisibleControl(page: Page) {
   const inline = page
     .locator(".compose")

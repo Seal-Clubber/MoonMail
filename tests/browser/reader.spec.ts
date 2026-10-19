@@ -1,4 +1,8 @@
-import { chooseMailMode, minimizeComposer } from "./support/composer";
+import {
+  openInboxComposer,
+  chooseMailMode,
+  minimizeComposer,
+} from "./support/composer";
 import { test, expect, type Page } from "@playwright/test";
 import {
   generateKeypair,
@@ -1000,7 +1004,7 @@ for (const damage of ["context", "identifier", "path"] as const)
       "complete private link",
     );
     await expect(page.getByRole("dialog")).toHaveCount(0);
-    await page.getByRole("button", { name: "Compose", exact: true }).click();
+    await openInboxComposer(page);
     await page.goBack();
     expect(page.url().includes(sealed.capability)).toBe(false);
     await page.reload();

@@ -1952,7 +1952,6 @@ export function App() {
         <nav aria-label="Main navigation">
           {[
             ["postboxes", "My inbox"],
-            ["compose", "Compose"],
             ["hall", "Public mail"],
             ["activity", "Activity"],
           ].map(([v, label]) => (
@@ -1960,27 +1959,25 @@ export function App() {
               key={v}
               disabled={busy}
               title={label}
-              className={`${view === v ? "nav-active" : ""} ${v === "compose" ? "nav-compose" : ""}`}
-              aria-current={view === v ? "page" : undefined}
-              onClick={() =>
-                v === "compose" &&
-                owned.length &&
-                !subject &&
-                !body &&
-                gift === "0"
-                  ? composeFromPostbox(owned[0])
-                  : navigate(v)
+              className={
+                view === v || (v === "postboxes" && mailboxView)
+                  ? "nav-active"
+                  : ""
               }
+              aria-current={
+                view === v || (v === "postboxes" && mailboxView)
+                  ? "page"
+                  : undefined
+              }
+              onClick={() => navigate(v)}
             >
               <UiIcon
                 name={
                   v === "postboxes"
                     ? "inbox"
-                    : v === "compose"
-                      ? "compose"
-                      : v === "hall"
-                        ? "globe"
-                        : "activity"
+                    : v === "hall"
+                      ? "globe"
+                      : "activity"
                 }
               />
               <span className="nav-label">{label}</span>
@@ -2008,6 +2005,11 @@ export function App() {
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
+        {status === "Mail is up to date." && view !== "compose" && (
+          <div role="status" className="mail-sync-status">
+            <UiIcon name="check" /> {status}
+          </div>
+        )}
         {!["welcome", "privacy", "compose", "hall"].includes(view) &&
           (!mailboxView || !owned.length) && (
             <div className="privacy-shortcut">
@@ -3201,7 +3203,12 @@ export function App() {
             writeBlocked={writeBlocked}
             onOpen={(e) => void task(() => openPostbox(e))}
             onClose={closeLetter}
-            onCompose={composeFromPostbox}
+            onCompose={(box) =>
+              !subject && !body && gift === "0"
+                ? composeFromPostbox(box)
+                : navigate("compose")
+            }
+            onNewLetter={() => navigate("compose")}
             onReply={(e, letter) => {
               if (e.replyPostbox)
                 beginAddressedDraft(e.replyPostbox, letter.subject, e, letter);
@@ -3534,7 +3541,7 @@ export function App() {
             {error}
           </div>
         )}
-        {status && view !== "compose" && (
+        {status && status !== "Mail is up to date." && view !== "compose" && (
           <div role="status" className="message status">
             {status}
           </div>
@@ -3569,6 +3576,10 @@ export function App() {
             >
               ×
             </button>
+            <div className="wallet-welcome-mark" aria-hidden="true">
+              <UiIcon name="mail" />
+              <span className="wallet-welcome-moon" />
+            </div>
             <span className="kicker">YOUR SAPIENT WALLET</span>
             <h2 id="wallet-title">
               {wallet && current ? "Your Sapient wallet" : "Connect Sapient"}

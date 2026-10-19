@@ -1,7 +1,37 @@
-.app-shell .wallet-dialog {
-  width: min(500px, 100%);
-  padding: 30px;
-  border-radius: 20px;
+.app-shell .modal.wallet-dialog {
+  width: min(480px, 100%);
+  padding: 32px;
+  border-radius: 24px;
+  background:
+    radial-gradient(ellipse at 12% 0, #263d62 0, transparent 55%), #111f35;
+  border-color: #536e96;
+  box-shadow: 0 24px 90px #030a19b3;
+}
+.wallet-welcome-mark {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 60px;
+  margin-bottom: 22px;
+  border: 1px solid #6684b6;
+  border-radius: 18px;
+  color: #e0eaff;
+  background: #233d63;
+}
+.wallet-welcome-mark .ui-icon {
+  width: 28px;
+  height: 28px;
+}
+.wallet-welcome-moon {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  box-shadow: -6px 4px 0 0 #c9d8ff;
+  transform: rotate(-20deg);
 }
 .wallet-dialog .kicker {
   color: #adc5ef;
@@ -25,8 +55,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  background: #172c48;
-  border: 1px solid #48668b;
+  background: #14263f;
+  border: 1px solid #4c658a;
   border-radius: 12px;
   padding: 15px;
 }
@@ -55,17 +85,22 @@
   font-size: 16px;
 }
 .wallet-provider-card > div > span {
-  font-size: 11px;
+  font-size: 12px;
   color: #bbcee9;
 }
 .wallet-detection {
   margin-left: auto;
-  font-size: 10px;
+  font-size: 11px;
   color: #d0dcf0;
   white-space: nowrap;
+  border: 1px solid #536888;
+  border-radius: 20px;
+  padding: 5px 8px;
 }
 .wallet-detection.detected {
   color: #bce9db;
+  border-color: #4c7c73;
+  background: #183a39;
 }
 .wallet-connected-badge {
   display: inline-flex;
@@ -95,7 +130,7 @@
 .wallet-connect-steps {
   list-style: none;
   display: grid;
-  gap: 18px;
+  gap: 20px;
   padding: 0;
   margin: 24px 0;
 }
@@ -107,12 +142,12 @@
 .wallet-connect-steps li > span {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   color: #d8e5ff;
   background: #284064;
-  font-size: 11px;
+  font-size: 12px;
   flex-shrink: 0;
 }
 .wallet-connect-steps strong {
@@ -215,9 +250,17 @@
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  border-top: 1px solid #3b5272;
-  padding-top: 18px;
+  border: 1px solid #3b5272;
+  border-radius: 12px;
+  background: #102039;
+  padding: 14px;
   margin-top: 22px;
+}
+.app-shell .wallet-permission-note h3 {
+  margin: 0 0 5px;
+  color: #e5edff;
+  font-size: 12px;
+  letter-spacing: 0;
 }
 .wallet-permission-note .ui-icon {
   flex-shrink: 0;
@@ -244,17 +287,24 @@
   color: #d6e4ff;
 }
 @media (max-width: 540px) {
-  .app-shell .wallet-dialog {
+  .app-shell .modal.wallet-dialog {
     padding: 24px 20px;
   }
   .wallet-connect-actions {
     flex-direction: column;
   }
   .wallet-provider-card {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr);
     padding: 12px;
     gap: 9px;
   }
   .wallet-detection {
-    font-size: 10px;
+    grid-column: 2;
+    justify-self: start;
+    margin-left: 0;
+  }
+  .wallet-welcome-mark {
+    margin-bottom: 18px;
   }
 }

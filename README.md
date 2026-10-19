@@ -50,6 +50,11 @@ The interface uses a moonlit dark-blue theme, readable text, responsive layouts
 and animations that respect reduced-motion preferences. Compose stays at the
 bottom-right on desktop and opens full-screen on phones.
 
+Choose **Compose letter** inside **My inbox** to open it. The top navigation
+keeps **My inbox**, **Public mail** and **Activity** labelled at every screen
+size. Routine mail-sync status sits quietly above the content; transaction
+outcomes and errors keep their own notices.
+
 ## Native Sapient integration
 
 MoonMail puts Sapient's native privacy features to work in an Ootle mailbox.
@@ -183,7 +188,7 @@ also depend on the connected account's runtime capabilities.
 
 Recorded verification as of **19 October 2026** includes:
 
-- **270 unit tests and 320 desktop/mobile browser checks**, strict TypeScript and
+- **270 unit tests and 322 desktop/mobile browser checks**, strict TypeScript and
   the Pages build. [Activity and postbox verification](docs/activity-gui.md#verification),
   [wallet connection verification](docs/wallet-connection.md#verification) and
   [earlier public GUI evidence](docs/public-mail-gui-evidence.json).

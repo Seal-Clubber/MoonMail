@@ -101,8 +101,8 @@ export function WalletConnection({
   return (
     <div className="wallet-connection">
       <p className="wallet-intro">
-        Your wallet connects you to your postbox. You stay in control of every
-        permission and payment.
+        Your key to your MoonMail inbox. Connect your wallet, then choose what
+        to approve in Sapient.
       </p>
       <div className="wallet-provider-card">
         <span className="wallet-provider-icon">
@@ -110,7 +110,7 @@ export function WalletConnection({
         </span>
         <div>
           <strong>Sapient</strong>
-          <span>Wallet for Tari Ootle</span>
+          <span>Tari Ootle · {network} testnet</span>
         </div>
         <span className={`wallet-detection ${available ? "detected" : ""}`}>
           {available ? "Detected" : "Not detected"}
@@ -236,13 +236,16 @@ export function WalletConnection({
       )}
       <div className="wallet-permission-note">
         <UiIcon name="privacy" />
-        <p>
-          Connecting shares your wallet address.{" "}
-          <strong>
-            Reading private mail and spending funds need separate approvals.
-          </strong>{" "}
-          MoonMail never asks for your recovery phrase.
-        </p>
+        <div>
+          <h3>You’re in control</h3>
+          <p>
+            Connecting shares your wallet address.{" "}
+            <strong>
+              Reading private mail and spending funds need separate approvals.
+            </strong>{" "}
+            MoonMail never asks for your recovery phrase.
+          </p>
+        </div>
       </div>
       <p className="wallet-guest-note">
         Just looking around? Public letters and private links open without a

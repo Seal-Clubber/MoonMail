@@ -41,6 +41,7 @@ export function Postboxes({
   onOpen,
   onClose,
   onCompose,
+  onNewLetter,
   onReply,
   onPreferences,
   onRead,
@@ -78,6 +79,7 @@ export function Postboxes({
   onOpen: (letter: Envelope) => void;
   onClose: () => void;
   onCompose: (box: Postbox) => void;
+  onNewLetter: () => void;
   onReply: (e: Envelope, letter: Letter) => void;
   onPreferences: (id: string, p: MailboxPreferences) => void;
   onRead: (letter: Envelope) => Promise<Letter>;
@@ -460,6 +462,15 @@ export function Postboxes({
           Your <em>haunted inbox.</em>
         </h1>
       </header>
+      {(!box || editing) && (
+        <button
+          className="primary inbox-compose"
+          disabled={busy}
+          onClick={onNewLetter}
+        >
+          <UiIcon name="compose" /> Compose letter
+        </button>
+      )}
       {submittedPostbox && (
         <div className="postbox-confirmation info" role="status">
           <strong>

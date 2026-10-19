@@ -1,4 +1,8 @@
-import { selectRecipient, openDeliveryOptions } from "./support/composer";
+import {
+  openInboxComposer,
+  selectRecipient,
+  openDeliveryOptions,
+} from "./support/composer";
 import { test, expect, type Page } from "@playwright/test";
 import {
   generateKeypair,
@@ -449,7 +453,7 @@ test("sending above an open conversation keeps approval controls locked and retu
     .getByRole("button", { name: "Open letter: A sealed hello", exact: true })
     .click();
   await expect(page.locator(".letter-body")).toBeVisible();
-  await page.getByRole("button", { name: "Compose", exact: true }).click();
+  await openInboxComposer(page);
   await selectRecipient(page, "foreign");
   await page.getByLabel("Subject", { exact: true }).fill("One simulated reply");
   await page
@@ -515,10 +519,7 @@ test("sealed composition includes recoverable Sent and automatic reply identitie
 }) => {
   const f = await fixture(page);
   await connect(page);
-  await page
-    .getByRole("button", { name: "Compose", exact: true })
-    .last()
-    .click();
+  await openInboxComposer(page);
   await selectRecipient(page, "foreign");
   await page
     .getByRole("textbox", { name: "Subject", exact: true })
@@ -661,10 +662,7 @@ test("composing an encrypted payment request includes an address and amount with
 }) => {
   const f = await fixture(page, true, true);
   await connect(page);
-  await page
-    .getByRole("button", { name: "Compose", exact: true })
-    .last()
-    .click();
+  await openInboxComposer(page);
   await selectRecipient(page, "foreign");
   await page
     .getByRole("textbox", { name: "Subject", exact: true })
@@ -695,10 +693,7 @@ test("unverified V4 evidence cannot enable sending or silently switch back to le
 }) => {
   const f = await fixture(page, false);
   await connect(page);
-  await page
-    .getByRole("button", { name: "Compose", exact: true })
-    .last()
-    .click();
+  await openInboxComposer(page);
   await selectRecipient(page, "foreign");
   await page
     .getByRole("textbox", { name: "Subject", exact: true })

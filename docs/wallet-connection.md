@@ -38,8 +38,13 @@ UI change does not add wallet APIs, change contracts or claim new funded testing
 
 ## Verification
 
-The 17 October 2026 refresh passed strict TypeScript, the Pages-base production
-build, 270 unit tests and all 316 desktop/mobile browser checks. Eight new browser
+The 19 October 2026 refresh adds a compact moon-and-mail welcome, a clearer
+network/provider card, detection badge and a separate permission explanation.
+The dialog reflows on phones and retains install, retry, pending and connected
+states. No additional wallet permission is requested by this visual refresh.
+
+Verification passed strict TypeScript, the Pages-base production
+build, 270 unit tests and all 322 desktop/mobile browser checks. Eight connection
 cases cover missing/late providers, safe external links, actionable connection
 errors (including provider error codes), successful connection, pending-request
 locking and ignored late approval after dismissal. Layout and contrast checks

@@ -174,9 +174,16 @@ test("a real office finishing its read cannot turn an open sample gift into a li
   const response = page.waitForResponse((r) => r.url().includes(component));
   release();
   await response;
-  await expect(page.locator(".message.status")).toContainText(
+  await expect(page.locator(".mail-sync-status")).toContainText(
     "Mail is up to date",
   );
+  await expect(page.locator(".message.status")).toHaveCount(0);
+  expect(
+    await page.locator(".mail-sync-status").evaluate((el) => {
+      const main = document.querySelector("main")!;
+      return main.firstElementChild === el;
+    }),
+  ).toBe(true);
   await expect(page.getByRole("dialog")).toContainText("VISUAL PREVIEW");
   await expect(
     page.getByRole("button", { name: "Review gift collection", exact: true }),
