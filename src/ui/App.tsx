@@ -1988,31 +1988,33 @@ export function App() {
           ))}
         </nav>
         <div className="wallet-actions">
-          {wallet && current && (
+          <div className="wallet-controls">
+            {wallet && current && (
+              <button
+                className="wallet-details-button"
+                disabled={busy}
+                onClick={() => setConnect(true)}
+              >
+                Wallet details
+              </button>
+            )}
             <button
-              className="wallet-details-button"
+              className="wallet-button"
               disabled={busy}
-              onClick={() => setConnect(true)}
+              onClick={() => (wallet ? disconnect() : setConnect(true))}
             >
-              Wallet details
+              <span className={wallet ? "dot live" : "dot"} />
+              {wallet ? "Disconnect wallet" : "Connect wallet"}
             </button>
+          </div>
+          {status === "Mail is up to date." && view !== "compose" && (
+            <div role="status" className="mail-sync-status">
+              <UiIcon name="check" /> {status}
+            </div>
           )}
-          <button
-            className="wallet-button"
-            disabled={busy}
-            onClick={() => (wallet ? disconnect() : setConnect(true))}
-          >
-            <span className={wallet ? "dot live" : "dot"} />
-            {wallet ? "Disconnect wallet" : "Connect wallet"}
-          </button>
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
-        {status === "Mail is up to date." && view !== "compose" && (
-          <div role="status" className="mail-sync-status">
-            <UiIcon name="check" /> {status}
-          </div>
-        )}
         {!["welcome", "privacy", "compose", "hall"].includes(view) &&
           (!mailboxView || !owned.length) && (
             <div className="privacy-shortcut">

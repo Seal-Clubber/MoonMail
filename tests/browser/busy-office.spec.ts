@@ -174,8 +174,9 @@ test("a real office finishing its read cannot turn an open sample gift into a li
   await expect(page.locator(".message.status")).toHaveCount(0);
   expect(
     await page.locator(".mail-sync-status").evaluate((el) => {
-      const main = document.querySelector("main")!;
-      return main.firstElementChild === el;
+      return (
+        el.closest(".topbar .wallet-actions") !== null && !el.closest("main")
+      );
     }),
   ).toBe(true);
   await expect(page.getByRole("dialog")).toContainText("VISUAL PREVIEW");

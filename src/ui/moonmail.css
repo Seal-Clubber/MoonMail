@@ -183,12 +183,20 @@ body {
   box-shadow: inset 0 -2px #91aaff;
 }
 .app-shell .topbar > .wallet-actions {
+  display: grid;
   order: 2;
   margin: 0;
   padding: 0;
   width: auto;
   flex: 0 1 auto;
+  gap: 4px;
+}
+.app-shell .wallet-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
+  min-width: 0;
 }
 .app-shell .wallet-actions button {
   padding: 10px 12px;
@@ -1058,10 +1066,11 @@ body {
   align-items: center;
   justify-content: flex-end;
   gap: 6px;
-  padding: 10px 24px 0;
+  padding: 0;
   color: #b6d9d4;
   font-size: 12px;
   line-height: 1.5;
+  white-space: nowrap;
 }
 .mail-sync-status .ui-icon {
   width: 15px;
@@ -1192,6 +1201,9 @@ body {
     padding: 8px;
     font-size: 11px;
     min-height: 40px;
+  }
+  .app-shell .wallet-controls {
+    gap: 4px;
   }
   .app-shell .topbar nav {
     gap: 2px;
