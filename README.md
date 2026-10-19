@@ -60,6 +60,10 @@ review the destination. MoonMail finds the account for you and, when needed,
 sets it up from the gift’s fee reserve. Connecting Sapient fills the address
 automatically. You never need to look up an account component ID.
 
+When sharing a private letter, use **Copy private link** inside the letter.
+MoonMail removes the private key from the browser address after opening it, so
+keep the original complete link to reopen it after a reload.
+
 ## Native Sapient integration
 
 MoonMail puts Sapient's native privacy features to work in an Ootle mailbox.
@@ -193,7 +197,7 @@ also depend on the connected account's runtime capabilities.
 
 Recorded verification as of **19 October 2026** includes:
 
-- **282 unit tests and 322 desktop/mobile browser checks**, strict TypeScript and
+- **284 unit tests and 330 desktop/mobile browser checks**, strict TypeScript and
   the Pages build. [Activity and postbox verification](docs/activity-gui.md#verification),
   [wallet connection verification](docs/wallet-connection.md#verification) and
   [earlier public GUI evidence](docs/public-mail-gui-evidence.json).

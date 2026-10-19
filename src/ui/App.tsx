@@ -516,11 +516,18 @@ export function App() {
       routeOnce.current = true;
       readHash();
     }
-    window.addEventListener("hashchange", readHash);
+    const readChangedHash = (event: HashChangeEvent) => {
+      // popstate can already have consumed this navigation and scrubbed its
+      // capability. Ignore that stale hashchange instead of parsing the short
+      // address again. Keep popstate for Back/Forward, including equal hashes.
+      if (event.newURL !== location.href) return;
+      readHash();
+    };
+    window.addEventListener("hashchange", readChangedHash);
     window.addEventListener("popstate", readHash);
     return () => {
       cancelled = true;
-      window.removeEventListener("hashchange", readHash);
+      window.removeEventListener("hashchange", readChangedHash);
       window.removeEventListener("popstate", readHash);
     };
   }, []);

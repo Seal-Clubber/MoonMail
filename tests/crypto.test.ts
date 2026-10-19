@@ -12,6 +12,34 @@ const context = {
   template: "b".repeat(64),
 };
 describe("private link gd-link-1", () => {
+  it.each(["\\&", "%5C&"])(
+    "accepts a pasted %s context separator without changing the capability",
+    async (separator) => {
+      const sealed = await sealLetter(
+        { subject: "Fixture", body: "Local only" },
+        context,
+        "pasted-link",
+      );
+      const link = new URL(
+        createGiftLink("https://example.com/MoonMail/", {
+          id: "pasted-link",
+          capability: sealed.capability,
+          context,
+        }),
+      );
+      const original = parseGiftLink(link.hash)!;
+      const pasted = link.hash.replaceAll("&", separator);
+      expect(parseGiftLink(pasted)).toEqual(original);
+      expect(() =>
+        parseGiftLink(pasted.replace(context.template, "bad")),
+      ).toThrow();
+      expect(() =>
+        parseGiftLink(
+          pasted.replace(sealed.capability, sealed.capability + "\\"),
+        ),
+      ).toThrow();
+    },
+  );
   it("encrypts subject and message, unwraps a real Tari claim key in a second client", async () => {
     const { payload, capability } = await sealLetter(
       { subject: "Secret subject", body: "Never publish this plaintext" },

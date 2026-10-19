@@ -1004,6 +1004,93 @@ test("a stalled hall refresh retains previously verified mail and releases its r
   ).toBeNull();
 });
 
+for (const [initialView, separator] of [
+  ["hall", "&"],
+  ["postboxes", "&"],
+  ["hall", "\\&"],
+  ["hall", "%5C&"],
+] as const)
+  test(`an already-open ${initialView} tab opens a private link with ${separator} separators once and preserves safe history`, async ({
+    page,
+  }) => {
+    await configure(page);
+    const sealed = await sealLetter(
+      {
+        subject: "A same-tab private letter",
+        body: "Generated test plaintext, never public.",
+      },
+      deployment,
+      "recovered",
+    );
+    let writes = 0,
+      reads = 0;
+    const requests: string[] = [];
+    page.on("request", (r) => requests.push(r.url()));
+    await page.route(`${deployment.indexerUrl}**`, (r) => {
+      if (r.request().method() !== "GET") {
+        writes++;
+        return r.abort();
+      }
+      const response = state(r.request().url());
+      if (r.request().url().includes(envelope)) {
+        reads++;
+        const data = response.substate!.Component.body.state;
+        data[2] = 1;
+        data[3] = JSON.stringify(sealed.payload);
+        data[7] = sealed.payload.claimPublicKey;
+      }
+      return r.fulfill({ json: response });
+    });
+    await page.goto(`./#/${initialView}`);
+    await expect(
+      page.getByRole("navigation", { name: "Main navigation", exact: true }),
+    ).toBeVisible();
+    await page.evaluate(() => {
+      (window as any).samePrivateLinkDocument = true;
+    });
+    const url = createGiftLink(String(test.info().project.use.baseURL), {
+      id: "recovered",
+      capability: sealed.capability,
+      context: deployment,
+    }).replaceAll("&", separator);
+    await page.goto(url);
+    await expect(page.locator(".letter-body")).toContainText(
+      "Generated test plaintext, never public.",
+    );
+    expect(
+      await page.evaluate(() => (window as any).samePrivateLinkDocument),
+    ).toBe(true);
+    await expect(page.getByRole("alert")).toHaveCount(0);
+    expect(page.url()).not.toContain(sealed.capability);
+    // Reopening the full link while a private letter is already open must also
+    // work. Back then traverses equal, scrubbed hashes, so popstate is required.
+    const before = reads;
+    await page.goto(url);
+    await expect.poll(() => reads).toBeGreaterThan(before);
+    await expect(page.locator(".letter-body")).toContainText(
+      "Generated test plaintext, never public.",
+    );
+    await page.goBack();
+    await expect(page.getByRole("alert")).toContainText(
+      "complete private link",
+    );
+    await expect(page.locator(".letter-body")).toHaveCount(0);
+    await page.goBack();
+    await expect(page).toHaveURL(new RegExp(`#/${initialView}$`));
+    await page.goForward();
+    await expect(page.getByRole("alert")).toContainText(
+      "complete private link",
+    );
+    await page.reload();
+    await expect(page.getByRole("alert")).toContainText(
+      "complete private link",
+    );
+    expect(requests.some((url) => url.includes(sealed.capability))).toBe(false);
+    expect(await page.evaluate(() => localStorage.length)).toBe(0);
+    expect(await page.evaluate(() => !!(window as any).tari)).toBe(false);
+    expect(writes).toBe(0);
+  });
+
 for (const damage of ["context", "identifier", "path"] as const)
   test(`a damaged private ${damage} link clears its secret before rejection and history navigation`, async ({
     page,

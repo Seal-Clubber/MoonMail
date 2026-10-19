@@ -33,7 +33,12 @@ export function parseGiftLink(hash: string): LinkRoute | null {
   const raw = fromBase64url(capability);
   if (raw.length !== 32 || base64url(raw) !== capability)
     throw new Error("Invalid private-link capability");
-  const q = new URLSearchParams(query);
+  // Some Markdown editors escape query separators when links are pasted.
+  // Normalize only the separator before our known context fields; never
+  // alter the private capability, identifier or the authenticated context.
+  const q = new URLSearchParams(
+    query?.replace(/(?:\\|%5c)&(?=(?:network|registry|template)=)/gi, "&"),
+  );
   const network = Number(q.get("network"));
   const registry = q.get("registry") || "",
     template = q.get("template") || "";
