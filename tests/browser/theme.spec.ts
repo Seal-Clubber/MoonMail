@@ -283,11 +283,8 @@ test("busy lists and Activity keep small text, gift funding and every status rea
     ".search-summary",
   ])
     await readable(page.locator(selector + ":visible").first());
-  await page
-    .getByRole("group", { name: "Show mail", exact: true })
-    .getByRole("button", { name: "Private invitations", exact: true })
-    .click();
-  await readable(page.locator(".audience-link").first());
+  await expect(page.locator(".audience-link")).toHaveCount(0);
+  await readable(page.locator(".mode-legend button"));
   await page.getByRole("button", { name: "Activity", exact: true }).click();
   await page
     .getByRole("button", { name: "See sample activity", exact: true })

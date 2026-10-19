@@ -123,7 +123,7 @@ test("hall search filters public contents, keeps sealed contents private and res
   const search = page.getByLabel("Find public mail", { exact: true });
   const filter = page.getByRole("group", { name: "Show mail", exact: true });
   await expect(search).toBeVisible();
-  await expect(page.locator(".search-summary")).toContainText("99 loaded");
+  await expect(page.locator(".search-summary")).toContainText("98 loaded");
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await expect(page.locator(".pagination")).toContainText("Page 2");
   await search.fill("Needle from the far hall");
@@ -137,12 +137,11 @@ test("hall search filters public contents, keeps sealed contents private and res
   await page.getByRole("button", { name: "Clear search and filters" }).click();
   await expect(search).toHaveValue("");
   await expect(page.locator(".pagination")).toContainText("Page 1");
-  await filter
-    .getByRole("button", { name: "Private invitations", exact: true })
-    .click();
-  await expect(page.locator(".envelope-card")).toHaveCount(1);
+  await expect(
+    filter.getByRole("button", { name: "Private invitations", exact: true }),
+  ).toHaveCount(0);
   await search.fill("letter-002");
-  await expect(page.locator(".envelope-card")).toHaveCount(1);
+  await expect(page.locator(".envelope-card")).toHaveCount(0);
   await search.fill("");
   await filter
     .getByRole("button", { name: "Public gifts", exact: true })
@@ -166,25 +165,24 @@ test("public layouts preserve filters and sealed boundaries without a clerk or w
   const fixture = await setup(page);
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("./#/hall");
-  await expect(page.locator(".search-summary")).toContainText("99 loaded");
+  await expect(page.locator(".search-summary")).toContainText("98 loaded");
   await expect(page.locator(".ghost-clerk, .clerk-tag")).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Card view", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   const filters = page.getByRole("group", { name: "Show mail", exact: true });
-  await filters
-    .getByRole("button", { name: "Private invitations", exact: true })
-    .click();
-  await expect(page.locator(".envelope-card")).toHaveCount(1);
-  await expect(page.locator(".letter-excerpt")).toContainText(
-    "complete private link",
-  );
+  await expect(
+    filters.getByRole("button", { name: "Private invitations", exact: true }),
+  ).toHaveCount(0);
   await expect(page.locator(".hall")).not.toContainText(
     "secret subject must stay hidden",
   );
+  await expect(page.locator(".audience-link, .audience-postbox")).toHaveCount(
+    0,
+  );
   await page.getByRole("button", { name: "List view", exact: true }).click();
   await expect(
-    filters.getByRole("button", { name: "Private invitations", exact: true }),
+    filters.getByRole("button", { name: "All public mail", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await filters
     .getByRole("button", { name: "Public gifts", exact: true })
@@ -204,7 +202,9 @@ test("public layouts preserve filters and sealed boundaries without a clerk or w
     path: test.info().outputPath("public-reader-fictional.png"),
   });
   await page.getByRole("button", { name: "Close letter", exact: true }).click();
-  await filters.getByRole("button", { name: "All mail", exact: true }).click();
+  await filters
+    .getByRole("button", { name: "All public mail", exact: true })
+    .click();
   await page.screenshot({
     path: test.info().outputPath("public-list-fictional.png"),
     fullPage: true,
@@ -220,6 +220,17 @@ test("public layouts preserve filters and sealed boundaries without a clerk or w
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
+    expect(
+      await page
+        .locator(".mode-legend")
+        .evaluate((el) => el.scrollWidth <= el.clientWidth),
+    ).toBe(true);
+    await expect(page.locator(".mode-legend")).toContainText(
+      "Public letters and gifts only",
+    );
+    await expect(page.locator(".mode-legend")).not.toContainText(
+      "Sealed invitations",
+    );
     await page.screenshot({
       path: test.info().outputPath(`public-cards-fictional-${width}.png`),
       fullPage: true,
@@ -228,6 +239,10 @@ test("public layouts preserve filters and sealed boundaries without a clerk or w
       path: test.info().outputPath(`public-top-fictional-${width}.png`),
     });
   }
+  await page
+    .getByRole("button", { name: "Your postboxes in My inbox", exact: false })
+    .click();
+  await expect(page).toHaveURL(/#\/postboxes$/);
   expect(fixture.writes()).toBe(0);
   expect(await page.evaluate(() => !!(window as any).tari)).toBe(false);
 });
@@ -247,7 +262,7 @@ test("loading another chain page extends local search without signing", async ({
   await expect(
     page.getByRole("button", { name: /Moonlit letter 100/ }),
   ).toBeVisible();
-  await expect(page.locator(".search-summary")).toContainText("100 loaded");
+  await expect(page.locator(".search-summary")).toContainText("99 loaded");
   await expect(
     page.getByRole("button", { name: "Load more chain mail" }),
   ).toHaveCount(0);
@@ -295,6 +310,6 @@ test("retry includes unreadable letters on previously loaded later pages", async
     page.getByRole("button", { name: /Moonlit letter 100/ }),
   ).toBeVisible();
   await expect(page.locator(".mail-read-notice")).toHaveCount(0);
-  await expect(page.locator(".search-summary")).toContainText("100 loaded");
+  await expect(page.locator(".search-summary")).toContainText("99 loaded");
   expect(fixture.writes()).toBe(0);
 });

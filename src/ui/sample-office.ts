@@ -249,14 +249,12 @@ export function sampleLetter(id: string): Letter | undefined {
     : { subject: stories[index][0], body: stories[index][1] };
 }
 export const publicSampleMail = sampleMail.filter(
-  (letter) => letter.mode !== "postbox",
+  (letter) => letter.mode === "public",
 );
 export type SampleMailFilter = MailFilter;
 export function filterSampleMail(filter: SampleMailFilter, query: string) {
   const needle = query.trim().toLowerCase();
   return publicSampleMail.filter((letter) => {
-    if (filter === "public" && letter.mode !== "public") return false;
-    if (filter === "link" && letter.mode !== "link") return false;
     if (
       filter === "gifts" &&
       (letter.mode !== "public" || letter.claimed || BigInt(letter.gift) <= 0n)

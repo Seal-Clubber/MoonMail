@@ -9,10 +9,8 @@ export function PublicMailFilters({
   onChange: (value: SampleMailFilter) => void;
 }) {
   const filters: { value: SampleMailFilter; label: string }[] = [
-    { value: "all", label: "All mail" },
-    { value: "public", label: "Public letters" },
+    { value: "all", label: "All public mail" },
     { value: "gifts", label: "Public gifts" },
-    { value: "link", label: "Private invitations" },
   ];
   return (
     <div className="public-mail-filters" role="group" aria-label="Show mail">

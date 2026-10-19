@@ -64,10 +64,10 @@ const letters: Envelope[] = [
   },
 ];
 describe("public hall discovery", () => {
-  it("never includes addressed mail in any public hall filter", () => {
-    for (const filter of ["all", "public", "link", "gifts"] as const)
+  it("never includes private-link or addressed mail in any public hall filter", () => {
+    for (const filter of ["all", "gifts"] as const)
       expect(
-        filterHallMail(letters, filter, "").some((e) => e.mode === "postbox"),
+        filterHallMail(letters, filter, "").some((e) => e.mode !== "public"),
       ).toBe(false);
   });
   it("searches public subjects and messages locally with trimmed case-insensitive text", () => {
@@ -75,13 +75,13 @@ describe("public hall discovery", () => {
       filterHallMail(letters, "all", "  MOONLIT  ").map((e) => e.id),
     ).toEqual(["public-moon"]);
     expect(
-      filterHallMail(letters, "public", "wandering").map((e) => e.id),
+      filterHallMail(letters, "all", "wandering").map((e) => e.id),
     ).toEqual(["public-moon"]);
   });
-  it("can find a sealed letter by its public ID without indexing sealed contents", () => {
+  it("omits sealed IDs as well as encrypted contents from public search", () => {
     expect(
-      filterHallMail(letters, "link", "SEALED-ID").map((e) => e.id),
-    ).toEqual(["sealed-id"]);
+      filterHallMail(letters, "all", "SEALED-ID").map((e) => e.id),
+    ).toEqual([]);
     for (const secret of [
       "hidden secret subject",
       "private iv",
@@ -96,7 +96,7 @@ describe("public hall discovery", () => {
   });
   it("combines audience and search without changing source data or order", () => {
     const before = JSON.stringify(letters);
-    expect(filterHallMail(letters, "public", "SEALED-ID")).toEqual([]);
+    expect(filterHallMail(letters, "all", "SEALED-ID")).toEqual([]);
     expect(
       filterHallMail(letters, "gifts", "small light").map((e) => e.id),
     ).toEqual(["public-gift"]);

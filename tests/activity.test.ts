@@ -158,19 +158,19 @@ it("the busy sample office contains 36 unique readable examples, all audiences a
   expect(sampleMail.every((e) => !!sampleLetter(e.id)?.body)).toBe(true);
   expect(sampleActivity).toHaveLength(28);
 });
-it("fictional private subjects are searchable only in sample mode, never in the real public-mail search", () => {
+it("public previews and real search both omit private links and postbox mail", () => {
   const privateLetter = sampleMail.find((e) => e.mode === "link")!;
   const subject = sampleLetter(privateLetter.id)!.subject;
-  expect(filterSampleMail("link", subject).map((e) => e.id)).toContain(
+  expect(filterSampleMail("all", subject).map((e) => e.id)).not.toContain(
     privateLetter.id,
   );
   expect(
     filterHallMail(sampleMail, "all", subject).map((e) => e.id),
   ).not.toContain(privateLetter.id);
-  expect(filterSampleMail("all", "").every((e) => e.mode !== "postbox")).toBe(
+  expect(filterSampleMail("all", "").every((e) => e.mode === "public")).toBe(
     true,
   );
-  expect(filterSampleMail("all", "")).toHaveLength(30);
+  expect(filterSampleMail("all", "")).toHaveLength(20);
   const postbox = sampleMail.find((e) => e.mode === "postbox")!;
   expect(
     filterSampleMail("all", sampleLetter(postbox.id)!.subject),

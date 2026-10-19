@@ -73,7 +73,7 @@ async function noOverflow(page: Page) {
     ),
   ).toBe(true);
 }
-test("30 public and link sample letters paginate, filter and read in list view without any gift or wallet action", async ({
+test("20 public sample letters paginate, filter and read in list view without any gift or wallet action", async ({
   page,
 }) => {
   await unconfigured(page);
@@ -84,13 +84,12 @@ test("30 public and link sample letters paginate, filter and read in list view w
     .click();
   await page.getByRole("button", { name: "List view", exact: false }).click();
   await expect(page.locator(".envelope-card")).toHaveCount(12);
-  await expect(page.locator(".search-summary")).toContainText("1–12 of 30");
+  await expect(page.locator(".search-summary")).toContainText("1–12 of 20");
   await expect(page.locator(".preview-banner")).toContainText("fictional");
   await page.getByRole("button", { name: "Next", exact: true }).click();
-  await expect(page.locator(".pagination")).toContainText("Page 2 of 3");
+  await expect(page.locator(".pagination")).toContainText("Page 2 of 2");
   await expect(page.locator(".search-summary")).toBeFocused();
-  await page.getByRole("button", { name: "Next", exact: true }).click();
-  await expect(page.locator(".pagination")).toContainText("Page 3 of 3");
+
   await expect(
     page.getByRole("button", { name: "Next", exact: true }),
   ).toBeDisabled();
@@ -102,18 +101,13 @@ test("30 public and link sample letters paginate, filter and read in list view w
     .fill("For the keeper of this postbox");
   await expect(page.locator(".envelope-card")).toHaveCount(0);
   await page.getByLabel("Find public mail", { exact: true }).fill("");
+  await expect(
+    page.getByRole("button", { name: "Private invitations", exact: true }),
+  ).toHaveCount(0);
   await page
-    .getByRole("group", { name: "Show mail", exact: true })
-    .getByRole("button", { name: "Private invitations", exact: true })
-    .click();
-  await page.getByLabel("Find public mail", { exact: true }).fill("midnight");
-  await page
-    .getByRole("button", { name: "Do not open until midnight", exact: false })
-    .click();
-  await expect(page.locator(".letter-body")).toContainText(
-    "By the time you read this",
-  );
-  await page.getByRole("button", { name: "Close letter", exact: true }).click();
+    .getByLabel("Find public mail", { exact: true })
+    .fill("Do not open until midnight");
+  await expect(page.locator(".envelope-card")).toHaveCount(0);
   await page.getByLabel("Find public mail", { exact: true }).fill("");
   await page
     .getByRole("group", { name: "Show mail", exact: true })

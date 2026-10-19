@@ -119,9 +119,9 @@ test("honest guest hall and reduced-motion visual preview", async ({
   await expect(
     page.getByText("VISUAL PREVIEW · These example letters", { exact: false }),
   ).toBeVisible();
-  await page
-    .getByRole("button", { name: "✧ Public letters", exact: false })
-    .count();
+  await expect(
+    page.getByRole("button", { name: "All public mail", exact: true }),
+  ).toBeVisible();
   await page
     .getByRole("button", {
       name: "To whoever needs a little light",

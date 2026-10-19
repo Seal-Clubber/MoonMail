@@ -1561,7 +1561,7 @@ export function App() {
   }
   const hallLetters = preview
     ? sampleMail
-    : letters.filter((e) => e.mode !== "postbox");
+    : letters.filter((e) => e.mode === "public");
   const shown = preview
     ? filterSampleMail(mailFilter, mailQuery)
     : filterHallMail(hallLetters, mailFilter, mailQuery);
@@ -2276,9 +2276,8 @@ export function App() {
                   and contain no funded gifts. Sample amounts and collection
                   states are fictional.
                   <span>
-                    Browse {sampleMail.length} examples, including private
-                    invitations. Every sample can be read here; real sealed mail
-                    requires its link or controlling wallet.
+                    Browse {sampleMail.length} public letters and gifts. Private
+                    letters are not listed in the public hall.
                   </span>
                 </p>
               )}
@@ -2367,7 +2366,7 @@ export function App() {
                       <br />
                       <small>
                         {mailQuery.trim() || mailFilter !== "all"
-                          ? "Try another word or show all hall mail. Sealed contents stay private."
+                          ? "Try another word or show all public mail."
                           : unavailableLetterIds.length
                             ? "Use Retry unavailable mail above. Unverified letters are never shown as available gifts."
                             : readState === "failed"
@@ -2427,9 +2426,15 @@ export function App() {
                 </button>
               )}
               <div className="mode-legend">
-                <span>✧ Public letters</span>
-                <span>⌘ Sealed invitations</span>
-                <span>▥ Personal postboxes live in My inbox</span>
+                <span>
+                  <UiIcon name="globe" /> Public letters and gifts only
+                </span>
+                <button
+                  className="text-button"
+                  onClick={() => navigate("postboxes")}
+                >
+                  <UiIcon name="inbox" /> Your postboxes in My inbox ↗
+                </button>
               </div>
             </section>
             <section className="how-it-works">

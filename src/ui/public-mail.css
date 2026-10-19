@@ -431,11 +431,32 @@
   color: #b4c5dd;
 }
 .app-shell.view-hall .mode-legend {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   color: #b4c5dd;
   border-color: #364c69;
-  font-size: 11px;
+  font-size: 13px;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px 20px;
+  padding: 14px 20px;
+}
+.app-shell.view-hall .mode-legend :is(span, button) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  line-height: 1.6;
+}
+.app-shell.view-hall .mode-legend button {
+  min-height: 44px;
+  padding: 8px 0;
+  font-size: 13px;
+  white-space: normal;
+}
+.app-shell.view-hall .mode-legend .ui-icon {
+  width: 18px;
+  height: 18px;
 }
 .app-shell.view-hall .how-it-works {
   margin-block: 30px;

@@ -1,6 +1,6 @@
 import type { Envelope, Letter } from "./types";
 
-export type MailFilter = "all" | "public" | "link" | "gifts";
+export type MailFilter = "all" | "gifts";
 
 // Search only public letter contents and public identifiers. Ciphertext and
 // decrypted postbox/link contents must never become a public search index.
@@ -11,9 +11,7 @@ export function filterHallMail(
 ) {
   const search = query.trim().toLowerCase();
   return letters.filter((letter) => {
-    if (letter.mode === "postbox") return false;
-    if (filter === "public" && letter.mode !== "public") return false;
-    if (filter === "link" && letter.mode !== "link") return false;
+    if (letter.mode !== "public") return false;
     if (
       filter === "gifts" &&
       (letter.mode !== "public" || letter.claimed || BigInt(letter.gift) <= 0n)
@@ -21,7 +19,6 @@ export function filterHallMail(
       return false;
     if (!search) return true;
     if (letter.id.toLowerCase().includes(search)) return true;
-    if (letter.mode !== "public") return false;
     const publicLetter = letter.payload as Letter;
     return (
       publicLetter.subject.toLowerCase().includes(search) ||

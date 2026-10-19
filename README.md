@@ -36,15 +36,15 @@ discovery, not a production email replacement. Use test funds.
 
 ## A mailbox that feels familiar
 
-| Feature                  | What you can do                                                                                                             |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------- |
-| Private by default       | Send encrypted subjects and messages with sealed recipient and reply addressing.                                            |
-| Inbox and Sent           | Read conversations, reply, search loaded mail and recover your own sent letters.                                            |
-| Everyday organisation    | Select letters, mark read/unread, star and archive. Opening a decrypted letter stages it as read.                           |
-| Easy addressing          | Type a name or postbox ID; matching favourites appear first, then recent correspondents and the public directory.           |
-| Wallet recovery          | Restore the same Sapient wallet to recover mailbox keys, historical access, Sent and saved preferences.                     |
-| Private payment requests | Request TARI inside an encrypted letter; review and pay through Sapient, then verify the encrypted receipt.                 |
-| A public hall            | Explore public letters, gifts and private-link invitations in cards or a list. Private postbox letters stay in the mailbox. |
+| Feature                  | What you can do                                                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| Private by default       | Send encrypted subjects and messages with sealed recipient and reply addressing.                                         |
+| Inbox and Sent           | Read conversations, reply, search loaded mail and recover your own sent letters.                                         |
+| Everyday organisation    | Select letters, mark read/unread, star and archive. Opening a decrypted letter stages it as read.                        |
+| Easy addressing          | Type a name or postbox ID; matching favourites appear first, then recent correspondents and the public directory.        |
+| Wallet recovery          | Restore the same Sapient wallet to recover mailbox keys, historical access, Sent and saved preferences.                  |
+| Private payment requests | Request TARI inside an encrypted letter; review and pay through Sapient, then verify the encrypted receipt.              |
+| A public hall            | Explore public letters and gifts in cards or a list. Private-link letters are omitted; postbox letters stay in My inbox. |
 
 The interface uses a moonlit dark-blue theme, readable text, responsive layouts
 and animations that respect reduced-motion preferences. Compose stays at the
