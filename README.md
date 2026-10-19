@@ -49,6 +49,10 @@ discovery, not a production email replacement. Use test funds.
 The interface uses a moonlit dark-blue theme, readable text, responsive layouts
 and animations that respect reduced-motion preferences. Compose stays at the
 bottom-right on desktop and opens full-screen on phones.
+Delivery options stay visible below the message. Once delivery is confirmed,
+Compose clears that letter and returns to private mail for the next one. Pending
+or unsuccessful sends keep your text, and a late confirmation never clears a
+newer letter you have started.
 
 Choose **Compose letter** inside **My inbox** to open it. The top navigation
 keeps **My inbox**, **Public mail** and **Activity** labelled at every screen

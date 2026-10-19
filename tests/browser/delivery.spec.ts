@@ -229,85 +229,194 @@ test("a connected funded public review stays gated until explicit publication ch
   ).toBe(false);
   expect(writes).toBe(0);
 });
-test("private link must be saved before one approved publication; confirmation reveals the same link", async ({
+for (const outcome of ["confirmed", "new letter", "rejected"] as const)
+  test(`private link publication preserves its link and resets only the confirmed letter (${outcome})`, async ({
+    page,
+  }) => {
+    await configure(page);
+    await connectFixture(page);
+    let receiptReady = false,
+      writes = 0;
+    await page.route(`${d.indexerUrl}**`, (r) => {
+      if (r.request().method() !== "GET") {
+        writes++;
+        return r.abort();
+      }
+      return r.fulfill({
+        json: r.request().url().includes(`/transactions/${transaction}/result`)
+          ? {
+              result: receiptReady
+                ? {
+                    Finalized: {
+                      final_decision:
+                        outcome === "rejected"
+                          ? { Abort: "Synthetic rejection" }
+                          : "Commit",
+                    },
+                  }
+                : "Pending",
+            }
+          : ledger(r.request().url()),
+      });
+    });
+    await page.goto("./#/compose");
+    await chooseMailMode(page, "⌘ Private link");
+    await connectFromVisibleControl(page);
+    await page
+      .getByRole("button", { name: "Connect Sapient", exact: true })
+      .click();
+    await page
+      .getByLabel("Subject", { exact: true })
+      .fill("Private subject stays on device");
+    await page.getByLabel("Your letter").fill("A private thought for a friend");
+    await page
+      .getByRole("button", { name: "Review letter", exact: false })
+      .click();
+    const link = await page
+      .getByLabel("Private link to save", { exact: true })
+      .inputValue();
+    const publish = page.getByRole("button", {
+      name: /Send encrypted letter|Publish publicly/,
+    });
+    await expect(publish).toBeDisabled();
+    expect(
+      await page.evaluate(() =>
+        (window as any).walletCalls.some(
+          (c: any) => c.method === "tari_createTransactionRequest",
+        ),
+      ),
+    ).toBe(false);
+    await page
+      .getByRole("checkbox", { name: "I saved my private link somewhere safe" })
+      .check();
+    await expect(publish).toBeEnabled();
+    await publish.click();
+    await expect(
+      page.getByRole("heading", { name: "Your activity." }),
+    ).toBeVisible();
+    await expect(page.locator(".delivery-card")).toContainText(
+      "Awaiting confirmation",
+    );
+    await openInboxComposer(page);
+    await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(
+      "Private subject stays on device",
+    );
+    await expect(page.getByLabel("Your letter", { exact: true })).toHaveValue(
+      "A private thought for a friend",
+    );
+    if (outcome === "new letter") {
+      await page.getByLabel("Subject", { exact: true }).fill("My next letter");
+      await page
+        .getByLabel("Your letter", { exact: true })
+        .fill("Keep this newer message.");
+    }
+    await minimizeComposer(page);
+    await page.getByRole("button", { name: "Activity", exact: true }).click();
+    receiptReady = true;
+    await page
+      .getByRole("button", { name: "Check status", exact: true })
+      .click();
+    await expect(page.locator(".delivery-card")).toContainText(
+      outcome === "rejected" ? "Not completed" : "Delivered",
+    );
+    if (outcome !== "rejected")
+      await expect(
+        page.getByLabel("Confirmed private link", { exact: true }),
+      ).toHaveValue(link);
+    const journal = await page.evaluate(
+      () => localStorage.getItem("ghostdrop:pending:v1")!,
+    );
+    expect(journal).not.toContain("Private subject");
+    expect(journal).not.toContain(link.split("/").pop()!.split("?")[0]);
+    const calls = await page.evaluate(() => (window as any).walletCalls);
+    expect(
+      calls.filter((c: any) => c.method === "tari_createTransactionRequest"),
+    ).toHaveLength(1);
+    expect(
+      calls.filter((c: any) => c.method === "tari_submitTransactionRequest"),
+    ).toHaveLength(1);
+    expect(writes).toBe(0);
+    await openInboxComposer(page);
+    await expect(page.getByLabel("Subject", { exact: true })).toHaveValue(
+      outcome === "confirmed"
+        ? ""
+        : outcome === "new letter"
+          ? "My next letter"
+          : "Private subject stays on device",
+    );
+    await expect(page.getByLabel("Your letter", { exact: true })).toHaveValue(
+      outcome === "confirmed"
+        ? ""
+        : outcome === "new letter"
+          ? "Keep this newer message."
+          : "A private thought for a friend",
+    );
+    await expect(page.locator(".compose .review")).toHaveCount(0);
+    if (outcome === "confirmed")
+      await expect(
+        page.getByRole("button", { name: "▥ Private mail", exact: true }),
+      ).toHaveAttribute("aria-pressed", "true");
+  });
+
+test("automatic public delivery clears text and gift without carrying public consent into the next letter", async ({
   page,
 }) => {
   await configure(page);
   await connectFixture(page);
-  let receiptReady = false,
-    writes = 0;
-  await page.route(`${d.indexerUrl}**`, (r) => {
-    if (r.request().method() !== "GET") {
-      writes++;
-      return r.abort();
-    }
-    return r.fulfill({
+  await page.route(`${d.indexerUrl}**`, (r) =>
+    r.fulfill({
       json: r.request().url().includes(`/transactions/${transaction}/result`)
-        ? {
-            result: receiptReady
-              ? { Finalized: { final_decision: "Commit" } }
-              : "Pending",
-          }
+        ? { result: { Finalized: { final_decision: "Commit" } } }
         : ledger(r.request().url()),
-    });
-  });
+    }),
+  );
   await page.goto("./#/compose");
-  await chooseMailMode(page, "⌘ Private link");
   await connectFromVisibleControl(page);
   await page
     .getByRole("button", { name: "Connect Sapient", exact: true })
     .click();
+  await chooseMailMode(page, "✧ Public mail");
   await page
     .getByLabel("Subject", { exact: true })
-    .fill("Private subject stays on device");
-  await page.getByLabel("Your letter").fill("A private thought for a friend");
+    .fill("One public fixture letter");
   await page
-    .getByRole("button", { name: "Review letter", exact: false })
-    .click();
-  const link = await page
-    .getByLabel("Private link to save", { exact: true })
-    .inputValue();
-  const publish = page.getByRole("button", {
-    name: /Send encrypted letter|Publish publicly/,
-  });
-  await expect(publish).toBeDisabled();
-  expect(
-    await page.evaluate(() =>
-      (window as any).walletCalls.some(
-        (c: any) => c.method === "tari_createTransactionRequest",
-      ),
-    ),
-  ).toBe(false);
+    .getByLabel("Your letter", { exact: true })
+    .fill("A simulated gift, never sent to the network.");
   await page
-    .getByRole("checkbox", { name: "I saved my private link somewhere safe" })
+    .getByRole("textbox", { name: "Gift amount (optional)", exact: true })
+    .fill("0.1");
+  await page.getByRole("button", { name: /^Review letter/ }).click();
+  await page
+    .getByRole("checkbox", { name: "I choose to publish this subject" })
     .check();
-  await expect(publish).toBeEnabled();
-  await publish.click();
-  await expect(
-    page.getByRole("heading", { name: "Your activity." }),
-  ).toBeVisible();
-  await expect(page.locator(".delivery-card")).toContainText(
-    "Awaiting confirmation",
-  );
-  receiptReady = true;
-  await page.getByRole("button", { name: "Check status", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Publish publicly", exact: true })
+    .click();
   await expect(page.locator(".delivery-card")).toContainText("Delivered");
+  await openInboxComposer(page);
+  await expect(page.getByLabel("Subject", { exact: true })).toHaveValue("");
+  await expect(page.getByLabel("Your letter", { exact: true })).toHaveValue("");
   await expect(
-    page.getByLabel("Confirmed private link", { exact: true }),
-  ).toHaveValue(link);
-  const journal = await page.evaluate(
-    () => localStorage.getItem("ghostdrop:pending:v1")!,
-  );
-  expect(journal).not.toContain("Private subject");
-  expect(journal).not.toContain(link.split("/").pop()!.split("?")[0]);
-  const calls = await page.evaluate(() => (window as any).walletCalls);
-  expect(
-    calls.filter((c: any) => c.method === "tari_createTransactionRequest"),
-  ).toHaveLength(1);
-  expect(
-    calls.filter((c: any) => c.method === "tari_submitTransactionRequest"),
-  ).toHaveLength(1);
-  expect(writes).toBe(0);
+    page.getByRole("button", { name: "▥ Private mail", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await chooseMailMode(page, "✧ Public mail");
+  await expect(
+    page.getByRole("textbox", { name: "Gift amount (optional)", exact: true }),
+  ).toHaveValue("0");
+  await expect(page.locator(".compose .review")).toHaveCount(0);
+  await page
+    .getByLabel("Subject", { exact: true })
+    .fill("An unsent next letter");
+  await page
+    .getByLabel("Your letter", { exact: true })
+    .fill("Changing delivery options must not submit the form.");
+  await chooseMailMode(page, "⌘ Private link");
+  await expect(page.locator(".compose .review")).toHaveCount(0);
+  await chooseMailMode(page, "✧ Public mail");
+  await page.getByRole("button", { name: /^Review letter/ }).click();
+  await expect(
+    page.getByRole("checkbox", { name: "I choose to publish this subject" }),
+  ).not.toBeChecked();
 });
 
 test("known receipt confirms automatically with no wallet or transaction submission", async ({

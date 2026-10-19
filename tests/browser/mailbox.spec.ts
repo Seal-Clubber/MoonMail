@@ -1710,10 +1710,13 @@ test("compact composer searches favourites, correspondents and directory with mo
     name: "Recipient postbox",
     exact: true,
   });
-  await expect(page.locator(".compose-options")).not.toHaveAttribute(
-    "open",
-    "",
-  );
+  await expect(
+    page.getByRole("heading", { name: "Delivery options" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "Mail mode", exact: true }),
+  ).toBeVisible();
+  await expect(page.locator("details.compose-options")).toHaveCount(0);
   await expect(page.locator("main > .eyebrow")).toHaveCount(0);
   await input.click();
   await expect(page.locator(".recipient-group-title")).toHaveText([

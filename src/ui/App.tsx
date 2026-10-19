@@ -261,6 +261,7 @@ export function App() {
   const [review, setReview] = useState(false),
     [prepared, setPrepared] = useState<{
       envelope: Envelope;
+      draftSnapshot: string;
       capability?: string;
       sealedReview?: Awaited<ReturnType<SealedMailboxSession["prepare"]>>;
     }>(),
@@ -323,6 +324,7 @@ export function App() {
     [page, setPage] = useState(1),
     openSequence = useRef(0),
     draftSequence = useRef(0),
+    currentDraftSnapshot = useRef(""),
     readSequence = useRef(0),
     connectionSequence = useRef(0),
     retryReader = useRef<PostOfficeClient | undefined>(undefined),
@@ -626,7 +628,8 @@ export function App() {
             setDeliveryRevision((revision) => revision + 1);
             if (next.state === "confirmed") {
               delivered = true;
-              if (next.operation === "publish") shareConfirmed(next.envelopeId);
+              if (next.operation === "publish")
+                finishPublication(next.envelopeId);
             }
           } catch {
             // Not yet indexed or temporarily offline. Keep the original attempt.
@@ -1080,15 +1083,32 @@ export function App() {
       `Writing to ${postbox.nickname}. ${keptDraft ? "Your existing draft is kept. " : ""}Review the recipient and gift before publishing.`,
     );
   }
-  function shareConfirmed(id: string) {
-    if (prepared?.envelope.id !== id || !prepared.capability) return;
-    setPrivateLink(
-      createGiftLink(new URL(import.meta.env.BASE_URL, location.href).href, {
-        id,
-        capability: prepared.capability,
-        context: d,
-      }),
-    );
+  function finishPublication(id: string) {
+    if (prepared?.envelope.id !== id) return;
+    if (prepared.capability)
+      setPrivateLink(
+        createGiftLink(new URL(import.meta.env.BASE_URL, location.href).href, {
+          id,
+          capability: prepared.capability,
+          context: d,
+        }),
+      );
+    // A delayed receipt must never erase a newer letter in the composer.
+    if (prepared.draftSnapshot !== currentDraftSnapshot.current) return;
+    draftSequence.current += 1;
+    setSubject("");
+    setBody("");
+    setRecipient("");
+    setThread(undefined);
+    setGift("0");
+    setReserve("0");
+    setRequestPayment(false);
+    setRequestedAmount("0");
+    setPublicConfirmed(false);
+    setMode("postbox");
+    setReview(false);
+    setPrepared(undefined);
+    setLinkSaved(false);
   }
   function closeLetter() {
     setPaymentReview(undefined);
@@ -1625,6 +1645,15 @@ export function App() {
     recipientPostbox: draftPostbox?.id,
     claimAuthority: draftPostbox?.controller,
   };
+  const draftSnapshot = JSON.stringify([
+    draftSequence.current,
+    draftLetter,
+    draftMetadata,
+    saveSent,
+    requestPayment,
+    requestedAmount,
+  ]);
+  currentDraftSnapshot.current = draftSnapshot;
   let draftSize: number | undefined;
   try {
     if (sealedCompose && sendingBox && draftPostbox) {
@@ -1770,7 +1799,7 @@ export function App() {
         reserve: "0",
         claimed: false,
       };
-      setPrepared({ envelope, sealedReview });
+      setPrepared({ envelope, sealedReview, draftSnapshot });
       setReview(true);
       return;
     }
@@ -1805,7 +1834,7 @@ export function App() {
     assertEnvelopeSize(envelope, letterLimit(d));
     if (draftSequence.current !== sequence) return;
     setLinkSaved(false);
-    setPrepared({ envelope, capability: sealed?.capability });
+    setPrepared({ envelope, capability: sealed?.capability, draftSnapshot });
     setReview(true);
   }
   function turnMailPage(next: number) {
@@ -1837,7 +1866,7 @@ export function App() {
             state: "confirmed",
           });
           await refresh();
-          if (p.operation === "publish") shareConfirmed(p.envelopeId);
+          if (p.operation === "publish") finishPublication(p.envelopeId);
           setStatus(
             "Envelope state confirms delivery/publication. For missing or ambiguous attempts inspect donor/account history before retrying.",
           );
@@ -1858,7 +1887,7 @@ export function App() {
       await refresh();
       setStatus(`Transaction ${short(p.id)}: ${state}.`);
       if (state === "confirmed" && p.operation === "publish")
-        shareConfirmed(p.envelopeId);
+        finishPublication(p.envelopeId);
     });
   }
   async function resumeActivity(p: Pending) {
@@ -2738,8 +2767,11 @@ export function App() {
                     </p>
                   )}
                 </div>
-                <details className="compose-options">
-                  <summary>Delivery options</summary>
+                <section
+                  className="compose-options"
+                  aria-labelledby="delivery-options-title"
+                >
+                  <h3 id="delivery-options-title">Delivery options</h3>
                   <div
                     className="mode-switch"
                     role="group"
@@ -2747,6 +2779,7 @@ export function App() {
                   >
                     {(["postbox", "link", "public"] as const).map((m) => (
                       <button
+                        type="button"
                         aria-pressed={mode === m}
                         disabled={busy}
                         className={mode === m ? "selected" : ""}
@@ -2949,7 +2982,7 @@ export function App() {
                         </select>
                       </label>
                     )}
-                </details>
+                </section>
                 <FeeAdjustment
                   problem={
                     feeProblem?.operation === "publish" ? feeProblem : undefined

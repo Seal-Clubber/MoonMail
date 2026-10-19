@@ -2281,14 +2281,15 @@ body {
 }
 .app-shell .compose-window .compose-options {
   margin: 10px 0;
+  padding-bottom: 8px;
   font-size: 13px;
 }
-.app-shell .compose-window .compose-options > summary {
+.app-shell .compose-window .compose-options > h3 {
   color: #c2d2ee;
+  margin: 0;
   padding: 4px 0;
-}
-.app-shell .compose-window .compose-options[open] {
-  padding-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
 }
 .app-shell .compose-window .compose-options .mode-switch {
   margin-top: 10px;

@@ -31,9 +31,9 @@ export async function minimizeComposer(page: Page) {
 }
 
 export async function openDeliveryOptions(page: Page) {
-  const options = page.locator(".compose-options");
-  if ((await options.getAttribute("open")) === null)
-    await options.locator(":scope > summary").click();
+  await page
+    .getByRole("region", { name: "Delivery options", exact: true })
+    .waitFor();
 }
 
 export async function chooseMailMode(page: Page, name: string) {
