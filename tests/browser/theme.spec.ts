@@ -18,13 +18,13 @@ test("navigation keeps full labels and composing belongs to the inbox", async ({
     name: "Main navigation",
     exact: true,
   });
-  await expect(navigation.getByRole("button")).toHaveCount(4);
+  await expect(navigation.getByRole("button")).toHaveCount(3);
   await expect(
     navigation.getByRole("button", { name: "Compose", exact: true }),
   ).toHaveCount(0);
   for (const width of [320, 390, 768, 1440]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const label of ["My inbox", "Public mail", "Moon Pot", "Activity"]) {
+    for (const label of ["My inbox", "Public mail", "Activity"]) {
       const tab = navigation.getByRole("button", { name: label, exact: true });
       await expect(tab).toBeVisible();
       expect(

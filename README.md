@@ -30,11 +30,6 @@ Use the website and your normal [Sapient wallet](https://sapient.tari.mw/).
 There is no central MoonMail backend or extra bridge program. The static website
 runs on GitHub Pages over HTTPS and reads Ootle through public indexers.
 
-The separate **Moon Pot** tab previews an experimental weekly community pot,
-with public contribution messages and amount-weighted shares. Its contract and
-Sapient flow are in development; no pot is deployed or accepting contributions
-in the default configuration. [Status, rules and draw limitations](docs/moon-pot.md).
-
 **Currently on Esmeralda testnet.** MoonMail sends between Ootle postboxes, not
 ordinary email addresses. It is experimental software with bounded storage and
 discovery, not a production email replacement. Use test funds.
@@ -60,7 +55,7 @@ or unsuccessful sends keep your text, and a late confirmation never clears a
 newer letter you have started.
 
 Choose **Compose letter** inside **My inbox** to open it. The top navigation
-keeps **My inbox**, **Public mail**, **Moon Pot** and **Activity** labelled at every screen
+keeps **My inbox**, **Public mail** and **Activity** labelled at every screen
 size. Routine mail-sync status sits in the top bar to the left of the wallet controls; transaction
 outcomes and errors keep their own notices.
 
@@ -204,9 +199,9 @@ The checked stack targets **Ootle 0.47.0**, **TypeScript SDK 0.11.1** and
 **crypto WASM 0.47.0**, with unmodified **Sapient 0.6.14** from the Chrome Web Store. Available operations
 also depend on the connected account's runtime capabilities.
 
-Recorded verification as of **28 October 2026** includes:
+Recorded verification as of **29 October 2026** includes:
 
-- **323 unit tests, 340 desktop/mobile browser checks and 67 native engine checks**,
+- **295 unit tests, 336 desktop/mobile browser checks and 63 native engine checks**,
   strict TypeScript and the Pages build. The exact previously published V4 binary
   also executes mail/settings writes on the 0.47 engine in isolated local state.
   [Current upgrade verification](docs/ootle-v047-upgrade.md),

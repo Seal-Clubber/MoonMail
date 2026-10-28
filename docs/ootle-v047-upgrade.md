@@ -26,7 +26,7 @@ Dependency lockfiles are committed; package age exceptions name exact versions.
 
 The 0.47 indexer returns `state.up.substate` or `state.down` instead of a
 top-level `substate`. All office, letter, settings, account, recovery carrier,
-private-payment output and pot reads use a strict shared live-state decoder.
+and private-payment output reads use a strict shared live-state decoder.
 Down, malformed and obsolete responses are rejected. Only an explicit HTTP 404
 can enable the existing gift-funded account-creation path; a down response is
 not a new account.
@@ -58,8 +58,6 @@ was loaded directly into the 0.47 engine: creating a postbox, writing encrypted
 settings, rejecting a foreign settings writer and publishing/reading sealed
 mail all succeeded in isolated state. This check used the original binary,
 not a rebuild assigned its former address.
-The Moon Pot remains a separate, undeployed experiment with `deployment: null`;
-this upgrade does not enable pot payments or resolve its randomness limitations.
 
 ## Verification
 
@@ -68,9 +66,11 @@ execution, real chain reads and stock-wallet recovery. The full browser suite
 covers desktop and mobile, private links, public mail, Compose, threads, mailbox
 selection/settings and wallet permissions. Native checks execute actual SDK/WASM
 signing, fee payment, private capsules, sender binding, ownership, payouts,
-rollback, replay protection and experimental pot claims/refunds.
-Results: 323 unit tests, 340 desktop/mobile browser cases, 67 checks across the
-four native engine suites, plus the separate original-binary compatibility probe.
+rollback and replay protection.
+Results: 295 unit tests, 336 desktop/mobile browser cases, 63 checks across the
+three native engine suites, plus the separate original-binary compatibility probe.
+Frontend checks and stock-wallet acceptance were refreshed on 29 October 2026;
+the native evidence covers the same unchanged mail contracts from the upgrade.
 
 The official Chrome Web Store package tested was unmodified **Sapient 0.6.14**.
 The upstream source tree reported 0.6.16; that source version is not asserted to
@@ -93,11 +93,9 @@ pnpm test
 pnpm build
 pnpm test:browser
 cargo build --manifest-path contracts/moonmail-v4/Cargo.toml --target wasm32-unknown-unknown --release --locked
-cargo build --manifest-path contracts/moonmail-pot/Cargo.toml --target wasm32-unknown-unknown --release --locked
 cargo test --manifest-path contracts/tests/mailbox/Cargo.toml --locked -- --include-ignored
 cargo test --manifest-path contracts/tests/legacy-mail/Cargo.toml --locked -- --include-ignored
 cargo test --manifest-path contracts/tests/recovery/Cargo.toml --locked
-cargo test --manifest-path contracts/tests/pot/Cargo.toml --locked
 ```
 
 Run native engine checks on Linux/WSL; Wasmer 7.5 Cranelift does not support
@@ -114,5 +112,5 @@ variables to Windows absolute paths beneath the checkout:
 | `GHOSTDROP_CAPSULE_FIXTURE`     | `tools/capsule-engine-fixture.ts`     |
 | `MOONMAIL_SEALED_FIXTURE`       | `tools/sealed-engine-fixture.ts`      |
 
-Defaults work when Node runs natively on the engine host. CI runs all four
-engine suites, including the undeployed pot; it does not deploy templates.
+Defaults work when Node runs natively on the engine host. CI runs all three
+engine suites; it does not deploy templates.

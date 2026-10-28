@@ -1,6 +1,6 @@
 {
-  "checkedAt": "2026-10-28T22:58:24.457Z",
-  "scope": "Ootle 0.47 upgrade; local engine execution and reviewed local production assets on the real Pages HTTPS origin with actual stock Sapient and Esmeralda. No public transactions or website publication.",
+  "checkedAt": "2026-10-28T23:15:08.451Z",
+  "scope": "Current Ootle 0.47 mail application: fresh frontend tests and reviewed local production assets on the real Pages HTTPS origin with stock Sapient and Esmeralda. Native evidence covers the unchanged mail contracts from the upgrade. No public transactions or publication.",
   "release": "https://github.com/tari-project/tari-ootle/releases/tag/v0.47.0",
   "packages": {
     "@noble/hashes": "2.4.0",
@@ -22,22 +22,22 @@
   },
   "localChecks": {
     "typescript": true,
-    "unitTests": 323,
-    "unitFiles": 36,
-    "browserCases": 340,
+    "unitTests": 295,
+    "unitFiles": 34,
+    "browserCases": 336,
     "desktopAndMobile": true,
     "pagesBaseBuild": true,
     "frozenPnpmInstall": true,
     "rustLockedBuilds": true,
     "additionalTemplateUnitTests": 12,
-    "ciIncludesPot": true,
     "nativeEngine": {
       "mailbox": 49,
       "legacyMail": 13,
       "recovery": 1,
-      "pot": 4,
-      "total": 67,
-      "ignoredSdkCasesIncluded": true
+      "total": 63,
+      "ignoredSdkCasesIncluded": true,
+      "unchangedContractEvidenceReused": true,
+      "evidenceSourceCommit": "debb7292610ef8511fb5c026d4b0f8c6bb206dcf"
     }
   },
   "originalPublishedArtifact": {
@@ -61,19 +61,13 @@
       "bytes": 545725,
       "sha256": "62d141a67bb1d733b27ebf53cca58970056277390f9c983b8080e6de05261eac",
       "published": false
-    },
-    {
-      "name": "moonmail_pot",
-      "bytes": 210819,
-      "sha256": "7edb84a7c9b51b2c1fc1b341a4484d44f5e5e90214c9516f1568e0ed055cb432",
-      "published": false
     }
   ],
   "actualNetworkRead": {
-    "checkedAt": "2026-10-28T22:41:44.217Z",
+    "checkedAt": "2026-10-28T23:12:47.110Z",
     "indexer": {
       "network": "esmeralda",
-      "epoch": 12697,
+      "epoch": 12698,
       "version": "0.47.0",
       "symbol": "tTARI"
     },
@@ -90,7 +84,7 @@
     "browserIndependentlyVerifiesConsensusProofs": false
   },
   "actualSapientRead": {
-    "checkedAt": "2026-10-28T22:46:21.590Z",
+    "checkedAt": "2026-10-28T23:13:26.295Z",
     "stockVersion": "0.6.14",
     "source": "Official Chrome Web Store CRX via clients2.google.com",
     "crxSha256": "e40e92527fc676bd4911b850512e27e65415dace0df3aec75a34c97a52bc7bf3",
@@ -121,12 +115,12 @@
   },
   "reviewedProductionAssets": [
     {
-      "path": "assets/index-BldODEYe.css",
-      "sha256": "2e52791369668a826ab3809f1d9a6f8fe9e9bdafc453412314a71cde04a50aa5"
+      "path": "assets/index-BU7kgyVP.js",
+      "sha256": "9dd3547c7fd2c0c202be16b0dd081c9d257cebd5a7836b7baf8ee004adf4140c"
     },
     {
-      "path": "assets/index-DIiZrszf.js",
-      "sha256": "d62a103fb2f58d3c26512237cde71de56955c5de85ecece55248e47855d94bb0"
+      "path": "assets/index-D8rVWnGP.css",
+      "sha256": "65fb696befdc951b911b387d7d423dfcd35a094ad584f18dca0f612c45cd4532"
     },
     {
       "path": "assets/ootle_wasm-CMqyAW7b.js",
@@ -174,22 +168,16 @@
     },
     {
       "path": "index.html",
-      "sha256": "92cce8677ad7f1c7f801b01385c0c7026f7de1f095095e6a7843b143117f7e41"
-    },
-    {
-      "path": "moon-pot.json",
-      "sha256": "356672a6d114811ae5220e0092f6caeb522f7df5fc8b5e8ccdc849b0d1caaa86"
+      "sha256": "152a9ce7cd908aea9564dfb8e16c07bec7c15bb55b183e2ceee889ba94b05eaa"
     }
   ],
   "originalDeploymentRetained": true,
   "newTemplatePublished": false,
-  "potDeployment": null,
   "githubPush": false,
   "privacyBoundary": "The browser trusts its selected indexer. The indexer verified flag is not independent browser verification of committee or Merkle proofs. View permission remains separate from spending.",
   "limitations": [
     "No new funded send, payout or template publication was broadcast during this upgrade.",
     "Local-build testing on the real Pages origin does not mean these assets are already published.",
-    "The undeployed pot remains experimental; no randomness or stock-wallet funded-pot evidence was added.",
     "Historical regression templates were rebuilt with 0.35; their rebuilt bytes are not the old published artifacts."
   ]
 }

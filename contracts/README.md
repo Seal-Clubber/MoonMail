@@ -8,7 +8,6 @@ separate Sapient operations.
 ```text
 contracts/
 ├── moonmail-v4/   Current application template
-├── moonmail-pot/  Experimental public pot; not deployed
 ├── tests/        Native engine and SDK integration suites
 └── legacy/       Earlier templates retained for regression checks
 ```
@@ -16,7 +15,6 @@ contracts/
 | Directory                               | Purpose                                                                                           |
 | --------------------------------------- | ------------------------------------------------------------------------------------------------- |
 | [moonmail-v4](moonmail-v4/)             | Current sealed-mail contract and its locked dependencies                                          |
-| [moonmail-pot](moonmail-pot/)           | Additive weekly pot prototype using existing postboxes; experimental entropy, not deployed        |
 | [tests/mailbox](tests/mailbox/)         | V4 sealed delivery, Inbox/Sent recovery, key history, mailbox state and earlier claim regressions |
 | [tests/legacy-mail](tests/legacy-mail/) | Original public/link gift and SDK transaction checks                                              |
 | [tests/recovery](tests/recovery/)       | Standalone recovery-capsule engine/SDK checks                                                     |
@@ -38,7 +36,6 @@ cargo build --manifest-path contracts/moonmail-v4/Cargo.toml --target wasm32-unk
 cargo test --manifest-path contracts/tests/mailbox/Cargo.toml --locked -- --include-ignored
 cargo test --manifest-path contracts/tests/legacy-mail/Cargo.toml --locked -- --include-ignored
 cargo test --manifest-path contracts/tests/recovery/Cargo.toml --locked
-cargo test --manifest-path contracts/tests/pot/Cargo.toml --locked
 ```
 
 The [development guide](../docs/DEVELOPMENT.md) and

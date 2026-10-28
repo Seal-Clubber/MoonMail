@@ -22,7 +22,6 @@ export function ActivityBook({
   onResume,
   onRead,
   onInbox,
-  onPot,
   sample = false,
 }: {
   records: Pending[];
@@ -35,7 +34,6 @@ export function ActivityBook({
   onResume: (pending: Pending) => void;
   onRead: (id: string) => void;
   onInbox: () => void;
-  onPot?: () => void;
   sample?: boolean;
 }) {
   const range = useRef<HTMLParagraphElement>(null);
@@ -153,7 +151,6 @@ export function ActivityBook({
           >
             <option value="all">All actions</option>
             <option value="publish">Letters sent</option>
-            <option value="pot">Moon Pot</option>
             <option value="claim">Gift collections</option>
             <option value="mailbox">Mailbox settings</option>
             <option value="postbox">Postbox changes</option>
@@ -287,11 +284,6 @@ export function ActivityBook({
                       Open My inbox ↗
                     </button>
                   )}
-                {!sample && p.operation === "pot" && onPot && (
-                  <button disabled={busy} onClick={onPot}>
-                    Open Moon Pot ↗
-                  </button>
-                )}
               </div>
               <details className="activity-receipt">
                 <summary>
