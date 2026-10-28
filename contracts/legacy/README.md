@@ -16,6 +16,10 @@ not these older offices. No legacy testnet mail migration is implied.
 The engine suites formerly at `contracts/engine-tests`,
 `contracts/postbox-claim-tests` and `contracts/capsule-tests` now live at
 `contracts/tests/legacy-mail`, `contracts/tests/mailbox` and
-`contracts/tests/recovery`, respectively. Package names and lockfiles are
-preserved. Historical evidence records retain the paths and versions tested at
-the time; current instructions and CI use the new layout.
+`contracts/tests/recovery`, respectively. Each crate keeps its package name and
+a committed lockfile. The regression copies now rebuild against template-lib 0.35 for Ootle
+0.47, including its changed native ABI. Their contract logic is preserved; the
+rebuilt binaries have new identities and are not substitutions for published
+templates. Original dependency pins remain in the backup branches. Historical
+evidence records retain the paths and versions tested at the time; current
+instructions and CI use the new layout.

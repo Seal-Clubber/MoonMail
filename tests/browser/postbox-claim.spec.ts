@@ -106,17 +106,24 @@ for (const protocol of ["sapient-proof-1", undefined] as const) {
         return r.fulfill({
           json: {
             version: 0,
-            substate: {
-              Component: {
-                header: {
-                  template_address: registry
-                    ? d.template
-                    : recipient
-                      ? "0".repeat(64)
-                      : d.envelopeTemplate,
-                  owner_rule: recipient ? { ByPublicKey: controller } : "None",
+            verified: false,
+            state: {
+              up: {
+                substate: {
+                  Component: {
+                    header: {
+                      template_address: registry
+                        ? d.template
+                        : recipient
+                          ? "0".repeat(64)
+                          : d.envelopeTemplate,
+                      owner_rule: recipient
+                        ? { ByPublicKey: controller }
+                        : "None",
+                    },
+                    body: { state },
+                  },
                 },
-                body: { state },
               },
             },
           },

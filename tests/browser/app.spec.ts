@@ -312,14 +312,25 @@ test("postbox private view access requires explicit account-wide consent and nev
   await page.route("https://fixture-indexer.invalid/**", (route) =>
     route.fulfill({
       json: {
-        substate: {
-          Component: {
-            header: {
-              template_address: deployment.template,
-              owner_rule: "None",
-            },
-            body: {
-              state: [38, {}, {}, `template_${deployment.envelopeTemplate}`],
+        version: 0,
+        verified: false,
+        state: {
+          up: {
+            substate: {
+              Component: {
+                header: {
+                  template_address: deployment.template,
+                  owner_rule: "None",
+                },
+                body: {
+                  state: [
+                    38,
+                    {},
+                    {},
+                    `template_${deployment.envelopeTemplate}`,
+                  ],
+                },
+              },
             },
           },
         },

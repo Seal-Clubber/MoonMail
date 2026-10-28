@@ -54,7 +54,8 @@ requirements and are never launched by the website.
 ## Contracts and native engine checks
 
 [`rust-toolchain.toml`](../rust-toolchain.toml) pins Rust 1.97.1 and
-`wasm32-unknown-unknown`; the current template uses template-lib 0.34. Run native
+`wasm32-unknown-unknown`; templates use template-lib 0.35 and engine checks use
+Ootle 0.47. Run native
 engine checks on Linux or WSL: upstream Wasmer 7.5 Cranelift does not support
 Windows.
 
@@ -67,7 +68,7 @@ Windows Node under WSL, provide the Node executable and TypeScript loader paths,
 and Windows absolute paths for the signer/fixture variables such as
 `GHOSTDROP_TEST_POSTBOX_SIGNER`, `GHOSTDROP_MAILBOX_SIGNER`,
 `GHOSTDROP_CAPSULE_FIXTURE` and `MOONMAIL_SEALED_FIXTURE`. The
-[Ootle upgrade guide](ootle-v046-upgrade.md#build-and-engine-checks) documents
+[Ootle upgrade guide](ootle-v047-upgrade.md#build-and-engine-checks) documents
 the exact path conventions and additional engine suites. The
 [V4 template guide](../contracts/moonmail-v4/README.md) describes its bounded
 storage and SDK fixture.

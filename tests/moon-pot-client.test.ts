@@ -128,10 +128,19 @@ async function fixture() {
   const indexer = {
     getCurrentEpoch: vi.fn(async () => 200),
     getSubstate: vi.fn(async (id: string) => ({
-      substate: {
-        Component: {
-          header: { template_address: profile.potTemplate, owner_rule: "None" },
-          body: { state: id === profile.catalog ? catalog : raw },
+      version: 0,
+      verified: false,
+      state: {
+        up: {
+          substate: {
+            Component: {
+              header: {
+                template_address: profile.potTemplate,
+                owner_rule: "None",
+              },
+              body: { state: id === profile.catalog ? catalog : raw },
+            },
+          },
         },
       },
     })),
@@ -254,10 +263,16 @@ test("changed pot identity, unsupported network and a missed contribution deadli
 test("template and owner checks reject an untrusted live component before preparing any wallet request", async () => {
   const f = await fixture();
   f.indexer.getSubstate.mockResolvedValue({
-    substate: {
-      Component: {
-        header: { template_address: "0".repeat(64), owner_rule: "None" },
-        body: { state: f.catalog },
+    version: 0,
+    verified: false,
+    state: {
+      up: {
+        substate: {
+          Component: {
+            header: { template_address: "0".repeat(64), owner_rule: "None" },
+            body: { state: f.catalog },
+          },
+        },
       },
     },
   });

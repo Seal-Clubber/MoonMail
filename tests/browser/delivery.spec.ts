@@ -38,18 +38,23 @@ function ledger(url: string) {
     return { network: "Esmeralda", network_byte: 38, epoch: 100 };
   return {
     version: 0,
-    substate: {
-      Component: {
-        header: {
-          template_address: path.includes(d.registry)
-            ? d.template
-            : "0".repeat(64),
-          owner_rule: "None",
-        },
-        body: {
-          state: path.includes(d.registry)
-            ? [38, {}, {}, `template_${d.envelopeTemplate}`]
-            : [],
+    verified: false,
+    state: {
+      up: {
+        substate: {
+          Component: {
+            header: {
+              template_address: path.includes(d.registry)
+                ? d.template
+                : "0".repeat(64),
+              owner_rule: "None",
+            },
+            body: {
+              state: path.includes(d.registry)
+                ? [38, {}, {}, `template_${d.envelopeTemplate}`]
+                : [],
+            },
+          },
         },
       },
     },
@@ -1527,7 +1532,7 @@ test("postbox submission stays in My inbox and confirms without opening Activity
     }
     const result: any = ledger(r.request().url());
     if (r.request().url().includes(d.registry))
-      result.substate.Component.body.state[2] = {
+      result.state.up.substate.Component.body.state[2] = {
         home: [
           "home",
           confirmed ? "Moonlit home" : "My home",

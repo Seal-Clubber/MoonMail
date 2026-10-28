@@ -86,3 +86,23 @@ jobs:
             contracts/tests/recovery -> target
       - run: cargo build --manifest-path contracts/legacy/recovery-capsule/Cargo.toml --target wasm32-unknown-unknown --release --locked
       - run: cargo test --manifest-path contracts/tests/recovery/Cargo.toml --locked
+  moon-pot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: "11.19.0" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "24", cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - uses: dtolnay/rust-toolchain@master
+        with: { toolchain: "1.97.1", targets: wasm32-unknown-unknown }
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            contracts/moonmail-v4 -> target
+            contracts/moonmail-pot -> target
+            contracts/tests/pot -> target
+      - run: cargo build --manifest-path contracts/moonmail-v4/Cargo.toml --target wasm32-unknown-unknown --release --locked
+      - run: cargo build --manifest-path contracts/moonmail-pot/Cargo.toml --target wasm32-unknown-unknown --release --locked
+      - run: cargo test --manifest-path contracts/tests/pot/Cargo.toml --locked

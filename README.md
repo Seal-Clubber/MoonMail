@@ -200,19 +200,25 @@ not migrated or selected; earlier app versions remain in backup branches.
 The [contract guide](contracts/README.md) separates the current implementation,
 engine tests and historical templates.
 
-The checked stack targets **Ootle 0.46.0**, **TypeScript SDK 0.9.0** and
-**crypto WASM 0.46.0**, with unmodified **Sapient 0.6.6**. Available operations
+The checked stack targets **Ootle 0.47.0**, **TypeScript SDK 0.11.1** and
+**crypto WASM 0.47.0**, with unmodified **Sapient 0.6.14** from the Chrome Web Store. Available operations
 also depend on the connected account's runtime capabilities.
 
-Recorded verification as of **19 October 2026** includes:
+Recorded verification as of **28 October 2026** includes:
 
-- **284 unit tests and 330 desktop/mobile browser checks**, strict TypeScript and
-  the Pages build. [Activity and postbox verification](docs/activity-gui.md#verification),
+- **323 unit tests, 340 desktop/mobile browser checks and 67 native engine checks**,
+  strict TypeScript and the Pages build. The exact previously published V4 binary
+  also executes mail/settings writes on the 0.47 engine in isolated local state.
+  [Current upgrade verification](docs/ootle-v047-upgrade.md),
+  [activity and postbox verification](docs/activity-gui.md#verification),
   [wallet connection verification](docs/wallet-connection.md#verification) and
   [earlier public GUI evidence](docs/public-mail-gui-evidence.json).
 - **Real Esmeralda mail and wallet recovery:** encrypted letters/replies, key
   rotation, independently restored Inbox/Sent, saved settings and native private
   postage. [Sealed-mail evidence](docs/sealed-mail-evidence.json).
+- **Current stock Sapient recovery on Ootle 0.47:** real encrypted Inbox/Sent,
+  saved settings and existing private access after reload, checked without
+  financial requests. [Upgrade evidence](docs/ootle-v047-evidence.json).
 - **A real private payment with interrupted-result recovery:** one 0.1-test-TARI
   transfer, no duplicate payment, exact amount/memo verification and an
   independently restored recipient. [Payment evidence](docs/private-payment-evidence.json).
@@ -221,7 +227,7 @@ Recorded verification as of **19 October 2026** includes:
 
 Local-build checks on the Pages HTTPS origin do not establish that those assets
 are already published. The evidence records each test's scope;
-[upgrade verification](docs/ootle-v046-upgrade.md) covers the dependency pins and
+[upgrade verification](docs/ootle-v047-upgrade.md) covers the dependency pins and
 engine compatibility.
 
 ## Run locally

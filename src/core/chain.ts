@@ -1,3 +1,4 @@
+import { liveSubstate } from "./substate";
 import { readWithTimeout } from "./read-timeout";
 import { postboxNameError } from "./postbox-name";
 import { IndexerProvider } from "@tari-project/ootle-indexer";
@@ -91,7 +92,7 @@ export class PostOfficeClient {
     const r = await readWithTimeout(
       this.provider.getSubstate(this.deployment.registry),
     );
-    const v = r.substate as unknown as {
+    const v = liveSubstate(r) as unknown as {
       Component?: {
         header: { template_address: string; owner_rule: unknown };
         body: { state: unknown };
@@ -167,7 +168,7 @@ export class PostOfficeClient {
     }
     const r = await readWithTimeout(this.provider.getSubstate(component));
     const c = (
-      r.substate as unknown as {
+      liveSubstate(r) as unknown as {
         Component?: {
           header: { template_address: string; owner_rule: unknown };
           body: { state: unknown };
@@ -223,7 +224,7 @@ export class PostOfficeClient {
     if (!component) return { revision: "0", ciphertext: "" };
     const r = await readWithTimeout(this.provider.getSubstate(component));
     const c = (
-      r.substate as unknown as {
+      liveSubstate(r) as unknown as {
         Component?: {
           header: { template_address: string; owner_rule: unknown };
           body: { state: unknown };
@@ -315,7 +316,7 @@ export class PostOfficeClient {
         );
       return { ...resolved, createAccount: true };
     }
-    const v = r?.substate as unknown as {
+    const v = liveSubstate(r) as unknown as {
       Component?: {
         header: {
           owner_rule: { ByPublicKey?: unknown };
@@ -344,7 +345,7 @@ export class PostOfficeClient {
           "Enter the receiving account component as well as its Ootle address",
         );
       const r = await readWithTimeout(this.provider.getSubstate(component));
-      const v = r.substate as unknown as {
+      const v = liveSubstate(r) as unknown as {
         Component?: {
           header: {
             owner_rule: { ByPublicKey?: unknown };

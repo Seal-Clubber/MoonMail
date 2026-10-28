@@ -1,3 +1,4 @@
+import { liveSubstate } from "./substate";
 // Separate protocol/codec: V4 has eleven positional fields; V3 has nine.
 // No current deployment selects this client. Evidence is an activation interlock,
 // not a substitute for checking the on-chain template and owner rules.
@@ -335,7 +336,7 @@ export function sealedPublishTransaction(
     .buildUnsignedTransaction();
 }
 function component(value: unknown, template: string) {
-  const c = record(record(record(value).substate).Component),
+  const c = record(liveSubstate(value).Component),
     header = record(c.header);
   if (
     typeof header.template_address !== "string" ||

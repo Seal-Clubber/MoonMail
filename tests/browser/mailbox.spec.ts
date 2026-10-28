@@ -465,13 +465,19 @@ async function mailboxFixture(
       state = [...state, { home: stateComponent }, 0, null, null, resource];
     return r.fulfill({
       json: {
-        substate: {
-          Component: {
-            header: {
-              owner_rule: "None",
-              template_address: child ? d.envelopeTemplate : d.template,
+        version: 0,
+        verified: false,
+        state: {
+          up: {
+            substate: {
+              Component: {
+                header: {
+                  owner_rule: "None",
+                  template_address: child ? d.envelopeTemplate : d.template,
+                },
+                body: { state },
+              },
             },
-            body: { state },
           },
         },
       },

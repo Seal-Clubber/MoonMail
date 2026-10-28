@@ -115,44 +115,50 @@ test("a stalled private inbox read can retry in its letter without signing or lo
     }
     return r.fulfill({
       json: {
-        substate: {
-          Component: {
-            header: {
-              owner_rule: "None",
-              template_address: url.includes(d.registry)
-                ? d.template
-                : d.envelopeTemplate,
-            },
-            body: {
-              state: url.includes(d.registry)
-                ? [
-                    38,
-                    { [id]: child },
-                    {
-                      box: [
-                        "box",
-                        "Moonlit box",
+        version: 0,
+        verified: false,
+        state: {
+          up: {
+            substate: {
+              Component: {
+                header: {
+                  owner_rule: "None",
+                  template_address: url.includes(d.registry)
+                    ? d.template
+                    : d.envelopeTemplate,
+                },
+                body: {
+                  state: url.includes(d.registry)
+                    ? [
+                        38,
+                        { [id]: child },
+                        {
+                          box: [
+                            "box",
+                            "Moonlit box",
+                            controller,
+                            JSON.stringify(descriptor),
+                            true,
+                          ],
+                        },
+                        `template_${d.envelopeTemplate}`,
+                      ]
+                    : [
+                        38,
+                        id,
+                        2,
+                        JSON.stringify(payload),
+                        "0",
+                        "0",
+                        false,
                         controller,
-                        JSON.stringify(descriptor),
-                        true,
+                        "box",
+                        "",
+                        "f".repeat(64),
+                        "",
                       ],
-                    },
-                    `template_${d.envelopeTemplate}`,
-                  ]
-                : [
-                    38,
-                    id,
-                    2,
-                    JSON.stringify(payload),
-                    "0",
-                    "0",
-                    false,
-                    controller,
-                    "box",
-                    "",
-                    "f".repeat(64),
-                    "",
-                  ],
+                },
+              },
             },
           },
         },

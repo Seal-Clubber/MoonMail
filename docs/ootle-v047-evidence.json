@@ -1,0 +1,195 @@
+{
+  "checkedAt": "2026-10-28T22:58:24.457Z",
+  "scope": "Ootle 0.47 upgrade; local engine execution and reviewed local production assets on the real Pages HTTPS origin with actual stock Sapient and Esmeralda. No public transactions or website publication.",
+  "release": "https://github.com/tari-project/tari-ootle/releases/tag/v0.47.0",
+  "packages": {
+    "@noble/hashes": "2.4.0",
+    "@tari-project/ootle": "0.11.1",
+    "@tari-project/ootle-indexer": "0.11.1",
+    "@tari-project/ootle-secret-key-wallet": "0.11.1",
+    "@tari-project/ootle-wasm": "0.47.0",
+    "@tari-project/wallet_jrpc_client": "1.26.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "rust": {
+    "engine": "0.47.0",
+    "testTooling": "0.47.0",
+    "templateLib": "0.35.0",
+    "toolchain": "1.97.1",
+    "historicalRegressionCopiesRebuiltWithCurrentAbi": true,
+    "contractLogicChanged": false
+  },
+  "localChecks": {
+    "typescript": true,
+    "unitTests": 323,
+    "unitFiles": 36,
+    "browserCases": 340,
+    "desktopAndMobile": true,
+    "pagesBaseBuild": true,
+    "frozenPnpmInstall": true,
+    "rustLockedBuilds": true,
+    "additionalTemplateUnitTests": 12,
+    "ciIncludesPot": true,
+    "nativeEngine": {
+      "mailbox": 49,
+      "legacyMail": 13,
+      "recovery": 1,
+      "pot": 4,
+      "total": 67,
+      "ignoredSdkCasesIncluded": true
+    }
+  },
+  "originalPublishedArtifact": {
+    "sha256": "b3363d4c0394eb43db5572f59bd0939a6a807c271748221f105aa67cb1bec902",
+    "template": "e0c2b09b5d172542e7196f54625fbf78a5150aa77cead67d0b8737bd436d2f0c",
+    "loadedFromPreservedBinary": true,
+    "rebuilt": false,
+    "engine": "0.47.0",
+    "checks": [
+      "Create postbox",
+      "Write and recover mailbox settings",
+      "Reject foreign settings writer",
+      "Publish and read sealed mail"
+    ],
+    "isolatedEngineOnly": true,
+    "tests": 1
+  },
+  "rebuiltTemplateArtifacts": [
+    {
+      "name": "moonmail_v4",
+      "bytes": 545725,
+      "sha256": "62d141a67bb1d733b27ebf53cca58970056277390f9c983b8080e6de05261eac",
+      "published": false
+    },
+    {
+      "name": "moonmail_pot",
+      "bytes": 210819,
+      "sha256": "7edb84a7c9b51b2c1fc1b341a4484d44f5e5e90214c9516f1568e0ed055cb432",
+      "published": false
+    }
+  ],
+  "actualNetworkRead": {
+    "checkedAt": "2026-10-28T22:41:44.217Z",
+    "indexer": {
+      "network": "esmeralda",
+      "epoch": 12697,
+      "version": "0.47.0",
+      "symbol": "tTARI"
+    },
+    "registry": "component_47b0dddced08140d37448b79bbf1f545907344b65bfa28b5f10ffe27f8132ebe",
+    "template": "e0c2b09b5d172542e7196f54625fbf78a5150aa77cead67d0b8737bd436d2f0c",
+    "totalLoadedLetters": 34,
+    "publicLetters": 1,
+    "sealedLetters": 30,
+    "postboxes": 4,
+    "financialTransactions": 0,
+    "readOnly": true,
+    "sdk": "0.11.1",
+    "wasm": "0.47.0",
+    "browserIndependentlyVerifiesConsensusProofs": false
+  },
+  "actualSapientRead": {
+    "checkedAt": "2026-10-28T22:46:21.590Z",
+    "stockVersion": "0.6.14",
+    "source": "Official Chrome Web Store CRX via clients2.google.com",
+    "crxSha256": "e40e92527fc676bd4911b850512e27e65415dace0df3aec75a34c97a52bc7bf3",
+    "unmodifiedWalletCode": true,
+    "copiedIndependentRestoredDevelopmentProfile": true,
+    "localBuildOnPagesHttpsOrigin": true,
+    "ledgerResponsesOverridden": false,
+    "checks": [
+      {
+        "actualSealedLetterDecrypted": true,
+        "independentRestoredWallet": true,
+        "encryptedSettingsRecovered": true
+      },
+      {
+        "reloadRestoredWallet": true,
+        "privateGrantReused": true,
+        "repeatPermissionRequests": 0,
+        "actualSentDecrypted": true
+      }
+    ],
+    "runtimeCapabilities": {
+      "supportsPrivateFees": true,
+      "privateSpend": true
+    },
+    "financialWalletRequests": 0,
+    "financialBroadcasts": 0,
+    "completed": true
+  },
+  "reviewedProductionAssets": [
+    {
+      "path": "assets/index-BldODEYe.css",
+      "sha256": "2e52791369668a826ab3809f1d9a6f8fe9e9bdafc453412314a71cde04a50aa5"
+    },
+    {
+      "path": "assets/index-DIiZrszf.js",
+      "sha256": "d62a103fb2f58d3c26512237cde71de56955c5de85ecece55248e47855d94bb0"
+    },
+    {
+      "path": "assets/ootle_wasm-CMqyAW7b.js",
+      "sha256": "c822ba7801df9f045cdd48ecde974a9b4e890c0ab9579916ed576a8d67b65246"
+    },
+    {
+      "path": "assets/ootle_wasm-DxWCt1zQ.js",
+      "sha256": "cce8a5de98645c1f23df1126913fba9abdbc0e63b6ec745986a2dacc26539b2c"
+    },
+    {
+      "path": "assets/ootle_wasm_bg-B1X73Zl9.wasm",
+      "sha256": "99a7ce558a9ea821b5154245e18c7a6aaa428e8c2cf5ef878178901e7ece3974"
+    },
+    {
+      "path": "assets/sealed-view-BipT7bE0.js",
+      "sha256": "e1b2efd44a7899ffd670c2d780b117ffa4106d07a23b9f9354f7217eb017f984"
+    },
+    {
+      "path": "assets/sealed-view-DIX5msf6.js",
+      "sha256": "ec115ad0567fda7db3349032bfb8644902b5e24ea803e5f7ee91da8a827a80e7"
+    },
+    {
+      "path": "deployment-v2.json",
+      "sha256": "7f56cbeded7ddb07d1046cda1f4841ecaf5dad2f1995f4418df11661d4664921"
+    },
+    {
+      "path": "deployment-v4.json",
+      "sha256": "1199ba73180004530df0c74083ae48a558aa6cf05607898843c5d2ba0f1ac589"
+    },
+    {
+      "path": "deployment.json",
+      "sha256": "1199ba73180004530df0c74083ae48a558aa6cf05607898843c5d2ba0f1ac589"
+    },
+    {
+      "path": "favicon.svg",
+      "sha256": "9cb5342d2c18d7286c4931d048098864bcca1e474695d4e78d5bae77e9fb0ec2"
+    },
+    {
+      "path": "fonts/InterVariable.woff2",
+      "sha256": "693b77d4f32ee9b8bfc995589b5fad5e99adf2832738661f5402f9978429a8e3"
+    },
+    {
+      "path": "fonts/LICENSE.txt",
+      "sha256": "262481e844521b326f5ecd053e59b98c8b2da78c8ee1bdbb6e8174305e54935a"
+    },
+    {
+      "path": "index.html",
+      "sha256": "92cce8677ad7f1c7f801b01385c0c7026f7de1f095095e6a7843b143117f7e41"
+    },
+    {
+      "path": "moon-pot.json",
+      "sha256": "356672a6d114811ae5220e0092f6caeb522f7df5fc8b5e8ccdc849b0d1caaa86"
+    }
+  ],
+  "originalDeploymentRetained": true,
+  "newTemplatePublished": false,
+  "potDeployment": null,
+  "githubPush": false,
+  "privacyBoundary": "The browser trusts its selected indexer. The indexer verified flag is not independent browser verification of committee or Merkle proofs. View permission remains separate from spending.",
+  "limitations": [
+    "No new funded send, payout or template publication was broadcast during this upgrade.",
+    "Local-build testing on the real Pages origin does not mean these assets are already published.",
+    "The undeployed pot remains experimental; no randomness or stock-wallet funded-pot evidence was added.",
+    "Historical regression templates were rebuilt with 0.35; their rebuilt bytes are not the old published artifacts."
+  ]
+}

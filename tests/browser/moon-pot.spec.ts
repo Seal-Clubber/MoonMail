@@ -180,16 +180,21 @@ test("configured experimental pot requires acknowledgement and a separate public
     return r.fulfill({
       json: {
         version: 0,
-        substate: {
-          Component: {
-            header: {
-              template_address:
-                path.includes(catalog) || path.includes(round)
-                  ? template
-                  : d.template,
-              owner_rule: "None",
+        verified: false,
+        state: {
+          up: {
+            substate: {
+              Component: {
+                header: {
+                  template_address:
+                    path.includes(catalog) || path.includes(round)
+                      ? template
+                      : d.template,
+                  owner_rule: "None",
+                },
+                body: { state: raw },
+              },
             },
-            body: { state: raw },
           },
         },
       },

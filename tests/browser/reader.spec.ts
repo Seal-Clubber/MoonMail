@@ -33,46 +33,61 @@ async function configure(page: Page) {
 function state(url: string) {
   if (url.includes(deployment.registry))
     return {
-      substate: {
-        Component: {
-          header: { template_address: deployment.template, owner_rule: "None" },
-          body: {
-            state: [
-              38,
-              { recovered: envelope } as Record<string, string>,
-              {},
-              `template_${deployment.envelopeTemplate}`,
-            ],
+      version: 0,
+      verified: false,
+      state: {
+        up: {
+          substate: {
+            Component: {
+              header: {
+                template_address: deployment.template,
+                owner_rule: "None",
+              },
+              body: {
+                state: [
+                  38,
+                  { recovered: envelope } as Record<string, string>,
+                  {},
+                  `template_${deployment.envelopeTemplate}`,
+                ],
+              },
+            },
           },
         },
       },
     };
   if (url.includes(envelope))
     return {
-      substate: {
-        Component: {
-          header: {
-            template_address: deployment.envelopeTemplate,
-            owner_rule: "None",
-          },
-          body: {
-            state: [
-              38,
-              "recovered",
-              0,
-              JSON.stringify({
-                subject,
-                body: "The selected post office is back.",
-              }),
-              "0",
-              "0",
-              false,
-              "",
-              "",
-              "",
-              "5".repeat(64),
-              "",
-            ],
+      version: 0,
+      verified: false,
+      state: {
+        up: {
+          substate: {
+            Component: {
+              header: {
+                template_address: deployment.envelopeTemplate,
+                owner_rule: "None",
+              },
+              body: {
+                state: [
+                  38,
+                  "recovered",
+                  0,
+                  JSON.stringify({
+                    subject,
+                    body: "The selected post office is back.",
+                  }),
+                  "0",
+                  "0",
+                  false,
+                  "",
+                  "",
+                  "",
+                  "5".repeat(64),
+                  "",
+                ],
+              },
+            },
           },
         },
       },
@@ -209,34 +224,40 @@ test("directory searches all public registrations despite old unlisted flags and
   await page.route(`${deployment.indexerUrl}**`, (r) =>
     r.fulfill({
       json: {
-        substate: {
-          Component: {
-            header: {
-              template_address: deployment.template,
-              owner_rule: "None",
-            },
-            body: {
-              state: [
-                38,
-                {},
-                {
-                  friendly: [
-                    "friendly",
-                    "Moonlit Friend",
-                    "7".repeat(64),
-                    key,
-                    true,
-                  ],
-                  secret: [
-                    "secret",
-                    "Unlisted Friend",
-                    "8".repeat(64),
-                    key,
-                    false,
+        version: 0,
+        verified: false,
+        state: {
+          up: {
+            substate: {
+              Component: {
+                header: {
+                  template_address: deployment.template,
+                  owner_rule: "None",
+                },
+                body: {
+                  state: [
+                    38,
+                    {},
+                    {
+                      friendly: [
+                        "friendly",
+                        "Moonlit Friend",
+                        "7".repeat(64),
+                        key,
+                        true,
+                      ],
+                      secret: [
+                        "secret",
+                        "Unlisted Friend",
+                        "8".repeat(64),
+                        key,
+                        false,
+                      ],
+                    },
+                    `template_${deployment.envelopeTemplate}`,
                   ],
                 },
-                `template_${deployment.envelopeTemplate}`,
-              ],
+              },
             },
           },
         },
@@ -331,13 +352,19 @@ test("guest gift review requires a separate confirmation and forgets abandoned d
       return exists
         ? r.fulfill({
             json: {
-              substate: {
-                Component: {
-                  header: {
-                    template_address: "0".repeat(64),
-                    owner_rule: { ByPublicKey: controller },
+              version: 0,
+              verified: false,
+              state: {
+                up: {
+                  substate: {
+                    Component: {
+                      header: {
+                        template_address: "0".repeat(64),
+                        owner_rule: { ByPublicKey: controller },
+                      },
+                      body: { state: [] },
+                    },
                   },
-                  body: { state: [] },
                 },
               },
             },
@@ -346,7 +373,7 @@ test("guest gift review requires a separate confirmation and forgets abandoned d
     if (r.request().method() !== "GET") posts++;
     const response = state(r.request().url());
     if (r.request().url().includes(envelope)) {
-      const data = response.substate!.Component.body.state;
+      const data = response.state!.up.substate.Component.body.state;
       data[4] = "2500000";
       data[5] = "100000";
     }
@@ -456,7 +483,7 @@ for (const problem of ["unavailable", "malformed"] as const) {
       const url = r.request().url();
       if (url.includes(deployment.registry)) {
         const response = state(url);
-        response.substate!.Component.body.state[1] = {
+        response.state!.up.substate.Component.body.state[1] = {
           recovered: envelope,
           unavailable: broken,
         };
@@ -466,7 +493,7 @@ for (const problem of ["unavailable", "malformed"] as const) {
         if (failing && problem === "unavailable")
           return r.fulfill({ status: 503, body: "Fixture outage" });
         const response = state(`/${envelope}`);
-        const data = response.substate!.Component.body.state;
+        const data = response.state!.up.substate.Component.body.state;
         data[1] = "unavailable";
         data[3] = failing
           ? "invalid encrypted-or-public JSON"
@@ -618,7 +645,7 @@ for (const failure of ["outage", "ciphertext"] as const) {
         const payload = { ...sealed.payload };
         if (reads > 1 && failing && failure === "ciphertext")
           payload.ciphertext = `${payload.ciphertext[0] === "A" ? "B" : "A"}${payload.ciphertext.slice(1)}`;
-        const data = response.substate!.Component.body.state;
+        const data = response.state!.up.substate.Component.body.state;
         data[2] = 1;
         data[3] = JSON.stringify(payload);
         data[7] = payload.claimPublicKey;
@@ -691,7 +718,7 @@ test("dismissing an opening private link cancels late decryption results", async
         started();
         await held;
       }
-      const data = response.substate!.Component.body.state;
+      const data = response.state!.up.substate.Component.body.state;
       data[2] = 1;
       data[3] = JSON.stringify(sealed.payload);
       data[7] = sealed.payload.claimPublicKey;
@@ -737,7 +764,7 @@ test("optional Sapient connection returns to the same public gift and restores i
     }
     const response = state(r.request().url());
     if (r.request().url().includes(envelope)) {
-      const data = response.substate!.Component.body.state;
+      const data = response.state!.up.substate.Component.body.state;
       data[4] = "1000000";
       data[5] = "100000";
     }
@@ -776,7 +803,7 @@ async function configureReply(page: Page, registered = true) {
   await page.route(`${deployment.indexerUrl}**`, (r) => {
     if (r.request().method() !== "GET") writes++;
     const response = state(r.request().url());
-    const data = response.substate?.Component.body.state as
+    const data = response.state?.up.substate?.Component.body.state as
       | unknown[]
       | undefined;
     if (data && r.request().url().includes(deployment.registry)) {
@@ -1034,7 +1061,7 @@ for (const [initialView, separator] of [
       const response = state(r.request().url());
       if (r.request().url().includes(envelope)) {
         reads++;
-        const data = response.substate!.Component.body.state;
+        const data = response.state!.up.substate.Component.body.state;
         data[2] = 1;
         data[3] = JSON.stringify(sealed.payload);
         data[7] = sealed.payload.claimPublicKey;
@@ -1111,7 +1138,7 @@ for (const damage of ["context", "identifier", "path"] as const)
       // The ordinary hall is empty; a rejected private route must never read its target.
       const response = state(r.request().url());
       if (r.request().url().includes(deployment.registry))
-        response.substate!.Component.body.state[1] = {};
+        response.state!.up.substate.Component.body.state[1] = {};
       return r.fulfill({ json: response });
     });
     const u = new URL(
@@ -1307,7 +1334,7 @@ test("retrying the first settings load retains an incoming private link only in 
     if (r.request().method() !== "GET") writes++;
     const response = state(r.request().url());
     if (r.request().url().includes(envelope)) {
-      const data = response.substate!.Component.body.state;
+      const data = response.state!.up.substate.Component.body.state;
       data[2] = 1;
       data[3] = JSON.stringify(sealed.payload);
       data[7] = sealed.payload.claimPublicKey;
@@ -1381,21 +1408,27 @@ for (const movedFocus of [false, true])
         }
         return r.fulfill({
           json: {
-            substate: {
-              Component: {
-                header: {
-                  template_address: "0".repeat(64),
-                  owner_rule: { ByPublicKey: controller },
+            version: 0,
+            verified: false,
+            state: {
+              up: {
+                substate: {
+                  Component: {
+                    header: {
+                      template_address: "0".repeat(64),
+                      owner_rule: { ByPublicKey: controller },
+                    },
+                    body: { state: [] },
+                  },
                 },
-                body: { state: [] },
               },
             },
           },
         });
       }
       if (r.request().url().includes(envelope)) {
-        response.substate!.Component.body.state[4] = "100000";
-        response.substate!.Component.body.state[5] = "50000";
+        response.state!.up.substate.Component.body.state[4] = "100000";
+        response.state!.up.substate.Component.body.state[5] = "50000";
       }
       return r.fulfill({ json: response });
     });
@@ -1473,9 +1506,9 @@ for (const { claimed, savedState } of [
       if (r.request().method() !== "GET") writes++;
       const response = state(r.request().url());
       if (r.request().url().includes(envelope)) {
-        response.substate!.Component.body.state[4] = "100000";
-        response.substate!.Component.body.state[5] = "50000";
-        response.substate!.Component.body.state[6] = claimed;
+        response.state!.up.substate.Component.body.state[4] = "100000";
+        response.state!.up.substate.Component.body.state[5] = "50000";
+        response.state!.up.substate.Component.body.state[6] = claimed;
       }
       return r.fulfill({ json: response });
     });
@@ -1560,9 +1593,9 @@ test("a known pending claim offers its original Activity receipt instead of anot
       });
     const response = state(r.request().url());
     if (r.request().url().includes(envelope)) {
-      response.substate!.Component.body.state[4] = "100000";
-      response.substate!.Component.body.state[5] = "50000";
-      response.substate!.Component.body.state[6] = confirmed;
+      response.state!.up.substate.Component.body.state[4] = "100000";
+      response.state!.up.substate.Component.body.state[5] = "50000";
+      response.state!.up.substate.Component.body.state[6] = confirmed;
     }
     return r.fulfill({ json: response });
   });
@@ -1617,7 +1650,7 @@ test("long unbroken public letters wrap without clipping the hall or reading con
     }
     const data = state(route.request().url());
     if (route.request().url().includes(envelope))
-      data.substate!.Component.body.state[3] = JSON.stringify({
+      data.state!.up.substate.Component.body.state[3] = JSON.stringify({
         subject: title,
         body,
       });

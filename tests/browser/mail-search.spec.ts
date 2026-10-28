@@ -93,13 +93,18 @@ async function setup(page: Page, delayedLast = false, unavailableLast = false) {
     return r.fulfill({
       json: {
         version: 0,
-        substate: {
-          Component: {
-            header: {
-              template_address: registry ? d.template : d.envelopeTemplate,
-              owner_rule: "None",
+        verified: false,
+        state: {
+          up: {
+            substate: {
+              Component: {
+                header: {
+                  template_address: registry ? d.template : d.envelopeTemplate,
+                  owner_rule: "None",
+                },
+                body: { state },
+              },
             },
-            body: { state },
           },
         },
       },

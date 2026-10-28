@@ -1,4 +1,5 @@
 import { readWithTimeout } from "./read-timeout";
+import { liveSubstate } from "./substate";
 import type {
   Letter,
   MailboxContext,
@@ -12,9 +13,7 @@ import { mailboxAAD, mailboxKey, openMailbox } from "./mailbox";
 import { recoverMailboxCapsule } from "./capsules";
 import { denyAllCarrierRoot } from "./native-mailbox";
 
-export type CapsuleSubstateReader = (
-  id: string,
-) => Promise<{ substate: unknown }>;
+export type CapsuleSubstateReader = (id: string) => Promise<unknown>;
 export interface CapsuleWalletPort {
   network: number;
   account: WalletAccount;
@@ -39,7 +38,7 @@ export async function verifyPermanentCarrier(
     throw new Error("Invalid permanent capsule reference");
   await verifyCapsuleResource(reference.resource, read);
   const id = `utxo_${reference.resource.slice("resource_".length)}_${reference.commitment}`;
-  const utxo = object(object((await readWithTimeout(read(id))).substate).Utxo);
+  const utxo = object(liveSubstate(await readWithTimeout(read(id))).Utxo);
   const output = object(utxo.output),
     auth = object(output.auth);
   if (
@@ -55,7 +54,7 @@ async function verifyCapsuleResource(
   read: CapsuleSubstateReader,
 ) {
   const resource = object(
-    object((await readWithTimeout(read(address))).substate).Resource,
+    liveSubstate(await readWithTimeout(read(address))).Resource,
   );
   const rules = object(resource.access_rules);
   if (
@@ -92,8 +91,7 @@ export async function verifyCapsuleDeployment(
   )
     throw new Error("Invalid capsule deployment identity");
   const component = object(
-    object((await readWithTimeout(read(deployment.component))).substate)
-      .Component,
+    liveSubstate(await readWithTimeout(read(deployment.component))).Component,
   );
   const header = object(component.header);
   if (

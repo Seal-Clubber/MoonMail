@@ -1,5 +1,8 @@
 # Ootle v0.46 compatibility
 
+> Historical verification from 14 October 2026. See the
+> [Ootle v0.47 guide](ootle-v047-upgrade.md) for the current dependencies and checks.
+
 MoonMail targets [Tari Ootle v0.46.0](https://github.com/tari-project/tari-ootle/releases/tag/v0.46.0), released on 13 October 2026 as a prerelease. The public Esmeralda indexer was verified at v0.46.0, epoch 12243, past the Protocol V2 activation at epoch 12220. The static site continues to use Sapient, with no MoonMail backend or visitor bridge.
 
 ## Pinned dependencies

@@ -20,11 +20,11 @@
   },
   "dependencies": {
     "@noble/hashes": "2.4.0",
-    "@tari-project/ootle": "0.9.0",
-    "@tari-project/ootle-indexer": "0.9.0",
-    "@tari-project/ootle-secret-key-wallet": "0.9.0",
-    "@tari-project/ootle-wasm": "0.46.0",
-    "@tari-project/wallet_jrpc_client": "1.25.0",
+    "@tari-project/ootle": "0.11.1",
+    "@tari-project/ootle-indexer": "0.11.1",
+    "@tari-project/ootle-secret-key-wallet": "0.11.1",
+    "@tari-project/ootle-wasm": "0.47.0",
+    "@tari-project/wallet_jrpc_client": "1.26.0",
     "react": "19.2.0",
     "react-dom": "19.2.0"
   },

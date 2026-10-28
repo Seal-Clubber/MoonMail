@@ -121,39 +121,45 @@ test("theme keeps utility, parchment and nested dark text readable", async ({
     const registry = route.request().url().includes(deployment.registry);
     return route.fulfill({
       json: {
-        substate: {
-          Component: {
-            header: {
-              template_address: registry
-                ? deployment.template
-                : deployment.envelopeTemplate,
-              owner_rule: "None",
-            },
-            body: {
-              state: registry
-                ? [
-                    38,
-                    { "readable-gift": envelope },
-                    {},
-                    `template_${deployment.envelopeTemplate}`,
-                  ]
-                : [
-                    38,
-                    "readable-gift",
-                    0,
-                    JSON.stringify({
-                      subject: "Readable moonlit gift",
-                      body: "Only synthetic display data.",
-                    }),
-                    "1000000",
-                    "100000",
-                    false,
-                    "5".repeat(64),
-                    "",
-                    "",
-                    "8".repeat(64),
-                    "",
-                  ],
+        version: 0,
+        verified: false,
+        state: {
+          up: {
+            substate: {
+              Component: {
+                header: {
+                  template_address: registry
+                    ? deployment.template
+                    : deployment.envelopeTemplate,
+                  owner_rule: "None",
+                },
+                body: {
+                  state: registry
+                    ? [
+                        38,
+                        { "readable-gift": envelope },
+                        {},
+                        `template_${deployment.envelopeTemplate}`,
+                      ]
+                    : [
+                        38,
+                        "readable-gift",
+                        0,
+                        JSON.stringify({
+                          subject: "Readable moonlit gift",
+                          body: "Only synthetic display data.",
+                        }),
+                        "1000000",
+                        "100000",
+                        false,
+                        "5".repeat(64),
+                        "",
+                        "",
+                        "8".repeat(64),
+                        "",
+                      ],
+                },
+              },
             },
           },
         },

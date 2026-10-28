@@ -231,10 +231,15 @@ async function fixture(page: Page, enabled = true, payments = false) {
     return r.fulfill({
       json: {
         version: 0,
-        substate: {
-          Component: {
-            header: { template_address: d.template, owner_rule: "None" },
-            body: { state: child ? states[child] : root },
+        verified: false,
+        state: {
+          up: {
+            substate: {
+              Component: {
+                header: { template_address: d.template, owner_rule: "None" },
+                body: { state: child ? states[child] : root },
+              },
+            },
           },
         },
       },

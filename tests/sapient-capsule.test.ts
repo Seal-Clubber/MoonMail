@@ -151,25 +151,28 @@ test("mutable resources, spendable outputs, missing outputs and frozen carriers 
   for (const change of [
     (data: typeof ledger) => {
       (
-        data[resource as keyof typeof ledger].substate as any
+        data[resource as keyof typeof ledger].state.up.substate as any
       ).Resource.owner_rule = "Owner";
     },
     (data: typeof ledger) => {
       (
-        data[resource as keyof typeof ledger].substate as any
+        data[resource as keyof typeof ledger].state.up.substate as any
       ).Resource.access_rules.recall_updater = "Owner";
     },
     (data: typeof ledger) => {
-      (data[utxo as keyof typeof ledger].substate as any).Utxo.output.auth =
-        "KeyPath";
+      (
+        data[utxo as keyof typeof ledger].state.up.substate as any
+      ).Utxo.output.auth = "KeyPath";
     },
     (data: typeof ledger) => {
       (
-        data[utxo as keyof typeof ledger].substate as any
+        data[utxo as keyof typeof ledger].state.up.substate as any
       ).Utxo.output.auth.Script = "0".repeat(64);
     },
     (data: typeof ledger) => {
-      (data[utxo as keyof typeof ledger].substate as any).Utxo.is_frozen = true;
+      (
+        data[utxo as keyof typeof ledger].state.up.substate as any
+      ).Utxo.is_frozen = true;
     },
     (data: typeof ledger) => {
       delete (data as any)[utxo];

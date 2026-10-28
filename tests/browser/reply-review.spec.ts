@@ -46,28 +46,34 @@ async function connectFixture(page: Page) {
     }
     return r.fulfill({
       json: {
-        substate: {
-          Component: {
-            header: { template_address: d.template, owner_rule: "None" },
-            body: {
-              state: [
-                38,
-                {},
-                {
-                  [replyId]: [
-                    replyId,
-                    "My Reply Home",
-                    controller,
-                    JSON.stringify({
-                      version: "gd-postbox-1",
-                      keyVersion: 1,
-                      publicKey: "6".repeat(64),
-                    }),
-                    false,
+        version: 0,
+        verified: false,
+        state: {
+          up: {
+            substate: {
+              Component: {
+                header: { template_address: d.template, owner_rule: "None" },
+                body: {
+                  state: [
+                    38,
+                    {},
+                    {
+                      [replyId]: [
+                        replyId,
+                        "My Reply Home",
+                        controller,
+                        JSON.stringify({
+                          version: "gd-postbox-1",
+                          keyVersion: 1,
+                          publicKey: "6".repeat(64),
+                        }),
+                        false,
+                      ],
+                    },
+                    `template_${d.envelopeTemplate}`,
                   ],
                 },
-                `template_${d.envelopeTemplate}`,
-              ],
+              },
             },
           },
         },

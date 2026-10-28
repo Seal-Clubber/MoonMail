@@ -1,3 +1,4 @@
+import { liveSubstate } from "./substate";
 import { IndexerProvider } from "@tari-project/ootle-indexer";
 import {
   Network,
@@ -167,7 +168,7 @@ export class MoonPotClient {
   }
   private async state(component: string) {
     const r = await readWithTimeout(this.provider.getSubstate(component));
-    const v = r.substate as unknown as {
+    const v = liveSubstate(r) as unknown as {
       Component?: {
         header: { template_address: string; owner_rule: unknown };
         body: { state: unknown };

@@ -15,21 +15,30 @@ function fixture(count = 3) {
     (_, i) => `letter-${String(i).padStart(3, "0")}`,
   );
   const response = {
-    substate: {
-      Component: {
-        header: { template_address: d.template, owner_rule: "None" as unknown },
-        body: {
-          state: [
-            38,
-            Object.fromEntries(
-              ids.map((id, i) => [
-                id,
-                `component_${(i + 20).toString(16).padStart(64, "0")}`,
-              ]),
-            ),
-            {},
-            `template_${d.envelopeTemplate}`,
-          ],
+    version: 0,
+    verified: false,
+    state: {
+      up: {
+        substate: {
+          Component: {
+            header: {
+              template_address: d.template,
+              owner_rule: "None" as unknown,
+            },
+            body: {
+              state: [
+                38,
+                Object.fromEntries(
+                  ids.map((id, i) => [
+                    id,
+                    `component_${(i + 20).toString(16).padStart(64, "0")}`,
+                  ]),
+                ),
+                {},
+                `template_${d.envelopeTemplate}`,
+              ],
+            },
+          },
         },
       },
     },
@@ -89,9 +98,10 @@ it.each(["template", "owner"])(
   async (bad) => {
     const f = fixture();
     if (bad === "template")
-      f.response.substate.Component.header.template_address = "4".repeat(64);
+      f.response.state.up.substate.Component.header.template_address =
+        "4".repeat(64);
     else
-      f.response.substate.Component.header.owner_rule = {
+      f.response.state.up.substate.Component.header.owner_rule = {
         ByPublicKey: "5".repeat(64),
       };
     await expect(
@@ -134,9 +144,10 @@ it.each(["template", "owner"])(
     const f = fixture();
     f.read.mockRestore();
     if (bad === "template")
-      f.response.substate.Component.header.template_address = "4".repeat(64);
+      f.response.state.up.substate.Component.header.template_address =
+        "4".repeat(64);
     else
-      f.response.substate.Component.header.owner_rule = {
+      f.response.state.up.substate.Component.header.owner_rule = {
         ByPublicKey: "5".repeat(64),
       };
     await expect(f.client.readLetter(f.ids[0])).rejects.toThrow(

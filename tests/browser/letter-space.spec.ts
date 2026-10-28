@@ -36,24 +36,30 @@ for (const mode of ["public", "link", "postbox"] as const) {
       }
       return r.fulfill({
         json: {
-          substate: {
-            Component: {
-              header: { template_address: d.template, owner_rule: "None" },
-              body: {
-                state: [
-                  38,
-                  {},
-                  {
-                    friendly: [
-                      "friendly",
-                      "Moonlit Friend",
-                      "7".repeat(64),
-                      JSON.stringify(key),
-                      true,
+          version: 0,
+          verified: false,
+          state: {
+            up: {
+              substate: {
+                Component: {
+                  header: { template_address: d.template, owner_rule: "None" },
+                  body: {
+                    state: [
+                      38,
+                      {},
+                      {
+                        friendly: [
+                          "friendly",
+                          "Moonlit Friend",
+                          "7".repeat(64),
+                          JSON.stringify(key),
+                          true,
+                        ],
+                      },
+                      `template_${d.envelopeTemplate}`,
                     ],
                   },
-                  `template_${d.envelopeTemplate}`,
-                ],
+                },
               },
             },
           },

@@ -12,37 +12,43 @@ const component = `component_${"4".repeat(64)}`;
 function ledger(url: string) {
   const registry = url.includes(d.registry);
   return {
-    substate: {
-      Component: {
-        header: {
-          template_address: registry ? d.template : d.envelopeTemplate,
-          owner_rule: "None",
-        },
-        body: {
-          state: registry
-            ? [
-                38,
-                { "live-letter": component },
-                {},
-                `template_${d.envelopeTemplate}`,
-              ]
-            : [
-                38,
-                "live-letter",
-                0,
-                JSON.stringify({
-                  subject: "Actual fixture letter",
-                  body: "This is read-only fixture mail, separate from the sample office.",
-                }),
-                "1000000",
-                "100000",
-                true,
-                "5".repeat(64),
-                "",
-                "",
-                "8".repeat(64),
-                "",
-              ],
+    version: 0,
+    verified: false,
+    state: {
+      up: {
+        substate: {
+          Component: {
+            header: {
+              template_address: registry ? d.template : d.envelopeTemplate,
+              owner_rule: "None",
+            },
+            body: {
+              state: registry
+                ? [
+                    38,
+                    { "live-letter": component },
+                    {},
+                    `template_${d.envelopeTemplate}`,
+                  ]
+                : [
+                    38,
+                    "live-letter",
+                    0,
+                    JSON.stringify({
+                      subject: "Actual fixture letter",
+                      body: "This is read-only fixture mail, separate from the sample office.",
+                    }),
+                    "1000000",
+                    "100000",
+                    true,
+                    "5".repeat(64),
+                    "",
+                    "",
+                    "8".repeat(64),
+                    "",
+                  ],
+            },
+          },
         },
       },
     },

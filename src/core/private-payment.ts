@@ -1,3 +1,4 @@
+import { liveSubstate } from "./substate";
 import { parseOotleAddress } from "@tari-project/ootle-wasm";
 import { hex } from "./crypto";
 import type { Context } from "./types";
@@ -201,13 +202,13 @@ export function verifyPaymentOutput(receipt: PaymentReceipt, result: unknown) {
 // This proves current committed output existence, not its claimed tx reference.
 // The receiver must still verify the amount/memo/ownership through Sapient.
 export function verifyLivePaymentOutput(result: unknown) {
-  const r = result as {
-    substate?: { Utxo?: { is_frozen?: boolean; output?: unknown } };
+  const r = liveSubstate(result) as {
+    Utxo?: { is_frozen?: boolean; output?: unknown };
   };
   if (
-    r?.substate?.Utxo?.is_frozen !== false ||
-    !r.substate.Utxo.output ||
-    typeof r.substate.Utxo.output !== "object"
+    r.Utxo?.is_frozen !== false ||
+    !r.Utxo.output ||
+    typeof r.Utxo.output !== "object"
   )
     throw new Error("The private payment output is unavailable or frozen");
 }

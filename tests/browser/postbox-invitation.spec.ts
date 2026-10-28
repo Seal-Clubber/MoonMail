@@ -25,18 +25,24 @@ const key = JSON.stringify({
 });
 function ledger(controller = "7".repeat(64), include = true) {
   return {
-    substate: {
-      Component: {
-        header: { template_address: d.template, owner_rule: "None" },
-        body: {
-          state: [
-            38,
-            {},
-            include
-              ? { [id]: [id, "Moonlit Friend", controller, key, false] }
-              : {},
-            `template_${d.envelopeTemplate}`,
-          ],
+    version: 0,
+    verified: false,
+    state: {
+      up: {
+        substate: {
+          Component: {
+            header: { template_address: d.template, owner_rule: "None" },
+            body: {
+              state: [
+                38,
+                {},
+                include
+                  ? { [id]: [id, "Moonlit Friend", controller, key, false] }
+                  : {},
+                `template_${d.envelopeTemplate}`,
+              ],
+            },
+          },
         },
       },
     },

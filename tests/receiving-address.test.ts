@@ -52,11 +52,17 @@ function fixture() {
     },
   };
   const response = {
-    substate: {
-      Component: {
-        header: {
-          template_address: "0".repeat(64),
-          owner_rule: { ByPublicKey: target.owner },
+    version: 0,
+    verified: false,
+    state: {
+      up: {
+        substate: {
+          Component: {
+            header: {
+              template_address: "0".repeat(64),
+              owner_rule: { ByPublicKey: target.owner },
+            },
+          },
         },
       },
     },
@@ -107,12 +113,12 @@ it.each(["owner", "template", "malformed"])(
   async (problem) => {
     const f = fixture();
     if (problem === "owner")
-      f.response.substate.Component.header.owner_rule.ByPublicKey = "9".repeat(
-        64,
-      );
+      f.response.state.up.substate.Component.header.owner_rule.ByPublicKey =
+        "9".repeat(64);
     else if (problem === "template")
-      f.response.substate.Component.header.template_address = "9".repeat(64);
-    else f.response.substate = {} as any;
+      f.response.state.up.substate.Component.header.template_address =
+        "9".repeat(64);
+    else f.response.state.up.substate = {} as any;
     await expect(
       f.client.resolveReceivingAddress(f.address, true),
     ).rejects.toThrow("could not be verified");
@@ -126,3 +132,18 @@ it("rejects invalid or wrong-network addresses before any indexer lookup", async
   expect(() => receivingAddress(f.address, 36)).toThrow("another network");
   expect(f.provider.getSubstate).not.toHaveBeenCalled();
 });
+
+it.each([
+  { version: 2, verified: true, state: { down: {} } },
+  { version: 2, verified: false, state: {} },
+])(
+  "a down or malformed 0.47 response never enables account creation: %j",
+  async (response) => {
+    const f = fixture();
+    f.provider.getSubstate.mockResolvedValue(response as any);
+    await expect(
+      f.client.resolveReceivingAddress(f.address, true),
+    ).rejects.toThrow();
+    expect(f.provider.getSubstate).toHaveBeenCalledOnce();
+  },
+);

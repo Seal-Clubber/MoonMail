@@ -142,10 +142,19 @@ async function fixture(count = 1) {
   const getSubstate = vi.fn(async (address: string) => {
     if (!states.has(address)) throw new Error("Missing fixture substate");
     return {
-      substate: {
-        Component: {
-          header: { template_address: profile.template, owner_rule: "None" },
-          body: { state: states.get(address) },
+      version: 0,
+      verified: false,
+      state: {
+        up: {
+          substate: {
+            Component: {
+              header: {
+                template_address: profile.template,
+                owner_rule: "None",
+              },
+              body: { state: states.get(address) },
+            },
+          },
         },
       },
     };
@@ -306,13 +315,19 @@ test("root trust checks stay strict, read cancellation and page limits fail befo
   ).rejects.toThrow();
   expect(f.provider.getSubstate).not.toHaveBeenCalled();
   f.provider.getSubstate.mockResolvedValueOnce({
-    substate: {
-      Component: {
-        header: {
-          template_address: profile.template,
-          owner_rule: "ByPublicKey",
+    version: 0,
+    verified: false,
+    state: {
+      up: {
+        substate: {
+          Component: {
+            header: {
+              template_address: profile.template,
+              owner_rule: "ByPublicKey",
+            },
+            body: { state: f.office },
+          },
         },
-        body: { state: f.office },
       },
     },
   });

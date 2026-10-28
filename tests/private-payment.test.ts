@@ -493,13 +493,23 @@ test("receiving binds invoice, intent, receipt, authenticated participants and d
 test("pruned transaction history can only fall back to an existing unfrozen output, never a missing or frozen one", () => {
   expect(() =>
     verifyLivePaymentOutput({
-      substate: { Utxo: { is_frozen: false, output: {} } },
+      version: 0,
+      verified: false,
+      state: { up: { substate: { Utxo: { is_frozen: false, output: {} } } } },
     }),
   ).not.toThrow();
   for (const r of [
     {},
-    { substate: { Utxo: { is_frozen: true, output: {} } } },
-    { substate: { Utxo: { is_frozen: false } } },
+    {
+      version: 0,
+      verified: false,
+      state: { up: { substate: { Utxo: { is_frozen: true, output: {} } } } },
+    },
+    {
+      version: 0,
+      verified: false,
+      state: { up: { substate: { Utxo: { is_frozen: false } } } },
+    },
   ])
     expect(() => verifyLivePaymentOutput(r)).toThrow();
 });

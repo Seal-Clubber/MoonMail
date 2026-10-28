@@ -38,10 +38,11 @@ cargo build --manifest-path contracts/moonmail-v4/Cargo.toml --target wasm32-unk
 cargo test --manifest-path contracts/tests/mailbox/Cargo.toml --locked -- --include-ignored
 cargo test --manifest-path contracts/tests/legacy-mail/Cargo.toml --locked -- --include-ignored
 cargo test --manifest-path contracts/tests/recovery/Cargo.toml --locked
+cargo test --manifest-path contracts/tests/pot/Cargo.toml --locked
 ```
 
 The [development guide](../docs/DEVELOPMENT.md) and
-[engine setup](../docs/ootle-v046-upgrade.md#build-and-engine-checks) explain the
+[engine setup](../docs/ootle-v047-upgrade.md#build-and-engine-checks) explain the
 SDK signer/fixture paths, including Windows Node under WSL. Tests use isolated
 engine state and synthetic keys; these commands do not broadcast transactions.
 

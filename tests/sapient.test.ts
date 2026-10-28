@@ -21,8 +21,8 @@ async function capsuleFixture() {
   )!;
   const resourceState = (capsuleLedger as any)[resource];
   const component =
-    resourceState.substate.Resource.access_rules.mint.Restricted.Require.Require
-      .ScopedToComponent;
+    resourceState.state.up.substate.Resource.access_rules.mint.Restricted
+      .Require.Require.ScopedToComponent;
   const deployment = { component, resource, template: "f".repeat(64) };
   const context = {
     network: 38,
@@ -37,11 +37,17 @@ async function capsuleFixture() {
       if (id === resource) return structuredClone(resourceState);
       if (id === component)
         return {
-          substate: {
-            Component: {
-              header: {
-                template_address: deployment.template,
-                owner_rule: "None",
+          version: 0,
+          verified: false,
+          state: {
+            up: {
+              substate: {
+                Component: {
+                  header: {
+                    template_address: deployment.template,
+                    owner_rule: "None",
+                  },
+                },
               },
             },
           },
@@ -503,16 +509,22 @@ test("Sapient publication declares the registry and funding dependencies before 
       resolveInputs: async (inputs: any[]) =>
         inputs.map((input) => ({ ...input, version: 7 })),
       getSubstate: async () => ({
-        substate: {
-          Component: {
-            body: {
-              state: [
-                {
-                  "@cbor": "tag",
-                  tag: 132,
-                  value: { "@cbor": "bytes", hex: vault },
+        version: 0,
+        verified: false,
+        state: {
+          up: {
+            substate: {
+              Component: {
+                body: {
+                  state: [
+                    {
+                      "@cbor": "tag",
+                      tag: 132,
+                      value: { "@cbor": "bytes", hex: vault },
+                    },
+                  ],
                 },
-              ],
+              },
             },
           },
         },
@@ -826,16 +838,22 @@ test("postbox registration declares account and fee vault dependencies before Sa
       resolveInputs: async (inputs: any[]) =>
         inputs.map((input) => ({ ...input, version: 7 })),
       getSubstate: async () => ({
-        substate: {
-          Component: {
-            body: {
-              state: [
-                {
-                  "@cbor": "tag",
-                  tag: 132,
-                  value: { "@cbor": "bytes", hex: "e".repeat(64) },
+        version: 0,
+        verified: false,
+        state: {
+          up: {
+            substate: {
+              Component: {
+                body: {
+                  state: [
+                    {
+                      "@cbor": "tag",
+                      tag: 132,
+                      value: { "@cbor": "bytes", hex: "e".repeat(64) },
+                    },
+                  ],
                 },
-              ],
+              },
             },
           },
         },

@@ -50,29 +50,35 @@ function ledger(url: string, mode = 0) {
               ciphertext: "fixture",
             };
   return {
-    substate: {
-      Component: {
-        header: {
-          template_address: registry ? d.template : d.envelopeTemplate,
-          owner_rule: "None",
-        },
-        body: {
-          state: registry
-            ? [38, { [id]: child }, {}, `template_${d.envelopeTemplate}`]
-            : [
-                38,
-                id,
-                mode,
-                JSON.stringify(payload),
-                "1000000",
-                "100000",
-                false,
-                "5".repeat(64),
-                mode === 2 ? "friend" : "",
-                "",
-                "8".repeat(64),
-                "",
-              ],
+    version: 0,
+    verified: false,
+    state: {
+      up: {
+        substate: {
+          Component: {
+            header: {
+              template_address: registry ? d.template : d.envelopeTemplate,
+              owner_rule: "None",
+            },
+            body: {
+              state: registry
+                ? [38, { [id]: child }, {}, `template_${d.envelopeTemplate}`]
+                : [
+                    38,
+                    id,
+                    mode,
+                    JSON.stringify(payload),
+                    "1000000",
+                    "100000",
+                    false,
+                    "5".repeat(64),
+                    mode === 2 ? "friend" : "",
+                    "",
+                    "8".repeat(64),
+                    "",
+                  ],
+            },
+          },
         },
       },
     },
@@ -318,8 +324,9 @@ for (const bad of ["template", "owner"])
       const state = ledger(r.request().url());
       if (r.request().url().includes(child)) {
         if (bad === "template")
-          state.substate.Component.header.template_address = "0".repeat(64);
-        else state.substate.Component.header.owner_rule = "Upgradable";
+          state.state.up.substate.Component.header.template_address =
+            "0".repeat(64);
+        else state.state.up.substate.Component.header.owner_rule = "Upgradable";
       }
       return r.fulfill({ json: state });
     });
@@ -362,13 +369,19 @@ async function receivingDestination(dialog: ReturnType<Page["getByRole"]>) {
   await dialog.page().route("**/*" + account + "*", (r) =>
     r.fulfill({
       json: {
-        substate: {
-          Component: {
-            header: {
-              template_address: "0".repeat(64),
-              owner_rule: { ByPublicKey: controller },
+        version: 0,
+        verified: false,
+        state: {
+          up: {
+            substate: {
+              Component: {
+                header: {
+                  template_address: "0".repeat(64),
+                  owner_rule: { ByPublicKey: controller },
+                },
+                body: { state: [] },
+              },
             },
-            body: { state: [] },
           },
         },
       },
@@ -393,7 +406,7 @@ test("collection review discovers an already-collected gift without signing and 
     const value = ledger(r.request().url());
     if (r.request().url().includes(child)) {
       reads++;
-      value.substate.Component.body.state[6] = collected;
+      value.state.up.substate.Component.body.state[6] = collected;
     }
     return r.fulfill({ json: value });
   });
@@ -524,7 +537,7 @@ test("a private gift availability check preserves decrypted text without leaking
     if (r.request().method() !== "GET") writes++;
     const value = ledger(r.request().url(), 1);
     if (r.request().url().includes(child)) {
-      const data = value.substate.Component.body.state;
+      const data = value.state.up.substate.Component.body.state;
       data[3] = JSON.stringify(sealed.payload);
       data[6] = collected;
       data[7] = sealed.payload.claimPublicKey;
@@ -569,8 +582,8 @@ test("an untrusted availability response cannot replace a verified letter or ope
     if (r.request().method() !== "GET") writes++;
     const value = ledger(r.request().url());
     if (untrusted && r.request().url().includes(child)) {
-      value.substate.Component.header.owner_rule = "Upgradable";
-      value.substate.Component.body.state[3] = JSON.stringify({
+      value.state.up.substate.Component.header.owner_rule = "Upgradable";
+      value.state.up.substate.Component.body.state[3] = JSON.stringify({
         subject: "Untrusted replacement",
         body: "Do not show this.",
       });
