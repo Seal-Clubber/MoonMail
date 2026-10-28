@@ -40,7 +40,7 @@ The wallet adapter uses official `authenticateWithApiKey`, disables reauthentica
 
 ## Mailbox recovery boundary
 
-**Current Sapient status:** postbox writes, addressed mail and addressed claims remain disabled. The stock provider has not proved permanent memo carrier creation or historical key recovery; the following native-memo and legacy-extension evidence is preserved without claiming Sapient compatibility. See [the precise blocker](SAPIENT.md#postbox-recovery-remains-incomplete).
+**Historical Sapient status at this design stage:** postbox writes, addressed mail and addressed claims were disabled. Permanent memo carrier creation and historical key recovery had not yet been proved through the stock provider. That blocker was subsequently resolved by the current V4 integration; see the [current architecture and evidence](../README.md#architecture-and-trust-boundaries) and [Sapient integration guide](SAPIENT-INTEGRATION.md). The daemon/native-memo and legacy-extension descriptions below remain historical, including their different recovery resource/value rules.
 
 New keys use the [standard-wallet memo adapter](STANDARD-WALLET-POSTBOXES.md). The browser generates a random mailbox key and sends it to its controlling wallet in an ordinary encrypted native memo on a script-only `DenyAll` output worth 1 µTARI. The financial seed and private view key stay in the daemon. Account-scoped `stealth_utxos.list` returns decrypted memos, including the mailbox key, to page memory. MoonMail verifies the output is on chain, has the exact script-only condition root and value, and matches the complete context and published public key. The key never enters browser storage. That permission can also reveal other private payment memos within the granted account.
 

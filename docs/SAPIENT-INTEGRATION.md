@@ -4,8 +4,12 @@ MoonMail uses stock Sapient as the wallet for its Ootle mailbox. The website
 connects directly through the injected `window.tari` provider. No custom wallet,
 local bridge service or central MoonMail backend is required.
 
-The recorded compatibility target is unmodified **Sapient 0.6.6** with
-**Ootle 0.46.0**. MoonMail checks the selected account, network and capabilities
+The current checked compatibility target is unmodified **Sapient 0.6.14** with
+**Ootle 0.47.0**; the [upgrade evidence](ootle-v047-evidence.json) covers read-only
+Inbox/Sent/settings recovery and grant reuse, with financial requests blocked.
+The earlier funded mail and payment campaigns below used **Sapient 0.6.6** with
+the **Ootle 0.46** application. They are not new funded tests on 0.47.
+MoonMail checks the selected account, network and capabilities
 at runtime; a supported API name alone is not proof that an account can perform
 the operation.
 
@@ -67,6 +71,10 @@ receipt is delivered, automatic discovery is not guaranteed. See
 
 ## What has been verified
 
+- [Current Ootle 0.47 compatibility](ootle-v047-upgrade.md) and
+  [stock Sapient 0.6.14 evidence](ootle-v047-evidence.json): actual-network
+  Inbox/Sent/settings recovery and valid grants after reload. Local reviewed
+  assets on the Pages origin; zero financial requests or broadcasts.
 - [Sealed-mail Esmeralda evidence](sealed-mail-evidence.json): stock Sapient,
   encrypted publication/replies, independent wallet restoration, Inbox/Sent,
   historical keys, saved settings and private postage.

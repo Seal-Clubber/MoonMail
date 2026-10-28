@@ -31,16 +31,16 @@ A payment and its mail receipt are not atomic. [Real testnet verification](priva
 ## Public letters and gifts
 
 Public mail offers **Cards** and **List**, search and quick filters for public
-letters, public gifts and private-link invitations. Private postbox mail belongs
-in My inbox and is absent even from the hall's sample preview. **Try sample mail**
-offers 30 fictional public/link examples with no real funded gifts. The large clerk
-character is removed. [Public hall guide and verification](public-mail-gui.md).
+letters and public gifts. Private-link letters are omitted from the listing,
+search and counts. Private postbox mail belongs in My inbox and is absent even
+from the hall's sample preview. **Try sample mail** offers 20 fictional public
+examples with no real funded gifts. [Public hall guide and verification](public-mail-gui.md).
 
 Choose public mail or a private link deliberately. Public publication requires its own content acknowledgement; editing clears it. Public gifts have a visible amount and separately funded collection reserve. The recipient gets the full gift when its reserve covers execution. No expiry/refunds; unused reserves stay locked.
 
 For a private link, save the complete link before publishing and confirm that you saved it. Anyone with it can read/collect; the link is scrubbed from history and is not stored as a draft or transaction-journal secret. Refreshing/closing can lose an unsaved link.
 
-Opening a letter never collects its gift. **Review gift collection** shows the exact payout, destination and sender-funded reserve before **Confirm & collect gift**. Public/private-link gifts can be received without connecting a wallet, using supported existing/fresh account options. Native private payments use the different encrypted request/receipt flow above.
+Opening a letter never collects its gift. Paste an Ootle receiving address; the app derives and verifies its account, without an account-ID field or account-creation checkbox. When deployment evidence permits and the account is explicitly absent, the gift reserve can fund account setup. **Review gift collection** shows the exact payout, destination and sender-funded reserve before **Confirm & collect gift**. Public/private-link gifts can be received without connecting a wallet. Native private payments use the different encrypted request/receipt flow above.
 
 ## Explain the privacy honestly
 
