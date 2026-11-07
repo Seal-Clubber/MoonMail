@@ -67,16 +67,21 @@ pub mod ghostdrop {
                 "Invalid nickname"
             );
             let p = self.postboxes.get_mut(&id).expect("Unknown postbox");
-            let proof = CallerContext::get_signer_proof_for_public_key(p.controller);
-            proof.drop();
+            CallerContext::assert_badge_in_scope(&NonFungibleAddress::from_public_key(
+                p.controller,
+            ));
             p.nickname = nickname;
             p.discoverable = discoverable;
         }
         pub fn rotate_postbox_key(&mut self, id: String, encryption_key: String) {
-            assert!(!encryption_key.is_empty() && encryption_key.len() <= 512, "Invalid encryption key");
+            assert!(
+                !encryption_key.is_empty() && encryption_key.len() <= 512,
+                "Invalid encryption key"
+            );
             let p = self.postboxes.get_mut(&id).expect("Unknown postbox");
-            let proof = CallerContext::get_signer_proof_for_public_key(p.controller);
-            proof.drop();
+            CallerContext::assert_badge_in_scope(&NonFungibleAddress::from_public_key(
+                p.controller,
+            ));
             p.encryption_key = encryption_key;
         }
         pub fn publish(
@@ -95,8 +100,9 @@ pub mod ghostdrop {
             assert!(!self.letters.contains_key(&id), "Duplicate envelope ID");
             if !reply.is_empty() {
                 let p = self.postboxes.get(&reply).expect("Unknown reply postbox");
-                let proof = CallerContext::get_signer_proof_for_public_key(p.controller);
-                proof.drop();
+                CallerContext::assert_badge_in_scope(&NonFungibleAddress::from_public_key(
+                    p.controller,
+                ));
             }
             if mode == 2 {
                 let p = self.postboxes.get(&recipient).expect("Unknown recipient");

@@ -40,7 +40,7 @@ export function receivingAddress(value: string, network: number) {
       throw new Error(
         "This wallet address is for another network. Use an address on this post office’s network.",
       );
-    if (parsed.memo?.length)
+    if (parsed.destination_tag?.length)
       throw new Error(
         "Use your plain Ootle wallet address without a payment reference.",
       );

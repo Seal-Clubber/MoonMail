@@ -237,8 +237,7 @@ pub mod moonmail_v4 {
                 "Invalid nickname"
             );
             let p = self.postboxes.get_mut(&id).expect("Unknown postbox");
-            let proof = CallerContext::get_signer_proof_for_public_key(p.controller);
-            proof.drop();
+            CallerContext::assert_badge_in_scope(&NonFungibleAddress::from_public_key(p.controller));
             p.nickname = nickname;
             p.discoverable = discoverable;
         }
@@ -281,8 +280,7 @@ pub mod moonmail_v4 {
                 "Rotation needs a fresh recovery capsule"
             );
             let p = self.postboxes.get_mut(&id).expect("Unknown postbox");
-            let proof = CallerContext::get_signer_proof_for_public_key(p.controller);
-            proof.drop();
+            CallerContext::assert_badge_in_scope(&NonFungibleAddress::from_public_key(p.controller));
             p.encryption_history.push(p.encryption_key.clone());
             p.encryption_key = encryption_key;
         }
@@ -310,8 +308,7 @@ pub mod moonmail_v4 {
             );
             if !reply.is_empty() {
                 let p = self.postboxes.get(&reply).expect("Unknown reply postbox");
-                let proof = CallerContext::get_signer_proof_for_public_key(p.controller);
-                proof.drop();
+                CallerContext::assert_badge_in_scope(&NonFungibleAddress::from_public_key(p.controller));
             }
             if mode == 2 {
                 let p = self.postboxes.get(&recipient).expect("Unknown recipient");
@@ -525,7 +522,7 @@ pub mod moonmail_v4 {
                 "Mailbox ciphertext exceeds limit"
             );
             let controller = self.postbox_controller(postbox.clone());
-            CallerContext::get_signer_proof_for_public_key(controller).drop();
+            CallerContext::assert_badge_in_scope(&NonFungibleAddress::from_public_key(controller));
             let mut child = Self::blank(self.network, self.envelope_template, 2);
             child.mailbox = Some(MailboxState {
                 postbox: postbox.clone(),
@@ -573,7 +570,7 @@ pub mod moonmail_v4 {
             let controller: RistrettoPublicKeyBytes =
                 registry.call("postbox_controller", args![state.postbox.clone()]);
             assert_eq!(state.controller, controller, "Controller changed");
-            CallerContext::get_signer_proof_for_public_key(controller).drop();
+            CallerContext::assert_badge_in_scope(&NonFungibleAddress::from_public_key(controller));
             assert_eq!(
                 state.revision, expected_revision,
                 "Mailbox state changed; reload before saving"

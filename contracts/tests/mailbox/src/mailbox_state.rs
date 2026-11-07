@@ -35,7 +35,10 @@ fn only_the_registered_controller_can_create_and_update_mailbox_state_and_stale_
             .build_and_seal(&foreign),
         vec![],
     );
-    assert!(denied.to_string().contains("signer badge"), "{denied}");
+    assert!(
+        denied.to_string().contains("does not carry the badge"),
+        "{denied}"
+    );
     let absent: Option<ComponentAddress> = t.call_method(
         directory,
         "mailbox_address",
@@ -64,7 +67,7 @@ fn only_the_registered_controller_can_create_and_update_mailbox_state_and_stale_
             2u64,
             "foreign-write".to_string(),
             foreign.clone(),
-            "signer badge",
+            "does not carry the badge",
         ),
         (
             1u64,

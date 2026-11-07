@@ -1,10 +1,13 @@
+import { decodeSubstateValue } from "@tari-project/ootle";
+
 function object(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new Error("Unsupported indexer substate response");
   return value as Record<string, unknown>;
 }
 
-// Ootle 0.47 returns state.up or state.down. A down state is never usable
+// Ootle 0.49 serves the live value as base64 CBOR; decoded provider fixtures
+// may supply an object. A down state is never usable
 // account, payment or recovery data. The verified flag is an indexer assertion;
 // this reader does not independently verify committee or Merkle proofs.
 export function liveSubstate(value: unknown): Record<string, unknown> {
@@ -21,5 +24,9 @@ export function liveSubstate(value: unknown): Record<string, unknown> {
   const up = object(state.up);
   if (Object.keys(up).length !== 1 || !("substate" in up))
     throw new Error("Unsupported live substate response");
-  return object(up.substate);
+  return object(
+    typeof up.substate === "string"
+      ? decodeSubstateValue(up.substate)
+      : up.substate,
+  );
 }

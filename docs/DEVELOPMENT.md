@@ -54,8 +54,8 @@ requirements and are never launched by the website.
 ## Contracts and native engine checks
 
 [`rust-toolchain.toml`](../rust-toolchain.toml) pins Rust 1.97.1 and
-`wasm32-unknown-unknown`; templates use template-lib 0.35 and engine checks use
-Ootle 0.47. Run native
+`wasm32-unknown-unknown`; templates use template-lib 0.37 and engine checks use
+Ootle 0.49.2. Run native
 engine checks on Linux or WSL: upstream Wasmer 7.5 Cranelift does not support
 Windows.
 

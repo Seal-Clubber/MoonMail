@@ -46,7 +46,11 @@ function fixture() {
   let token = "test-session";
   const transfer = vi
     .fn<Client["stealthTransfer"]>()
-    .mockResolvedValue({ transaction_id: "1".repeat(64) });
+    .mockResolvedValue({
+      transaction_id: "1".repeat(64),
+      required_fees: null,
+      dry_run_result: null,
+    });
   const list = vi
     .fn<Client["stealthUtxosList"]>()
     .mockResolvedValue({ utxos: [] });
@@ -251,7 +255,11 @@ test("setup uses only standard transfers, locks one microTARI and journals only 
   const f = fixture();
   f.transfer.mockImplementation(async (req) => {
     if (!req.dry_run) expect(readPending(f.storage)[0].state).toBe("unknown");
-    return { transaction_id: (req.dry_run ? "1" : "2").repeat(64) };
+    return {
+      transaction_id: (req.dry_run ? "1" : "2").repeat(64),
+      required_fees: null,
+      dry_run_result: null,
+    };
   });
   const stored = await f
     .adapter()
@@ -291,7 +299,12 @@ test("uncertain broadcast survives reload and blocks a second key or transfer", 
   let memo = "";
   f.transfer.mockImplementation(async (req) => {
     memo = (req.transfers[0].output_memo as { Message: string }).Message;
-    if (req.dry_run) return { transaction_id: "1".repeat(64) };
+    if (req.dry_run)
+      return {
+        transaction_id: "1".repeat(64),
+        required_fees: null,
+        dry_run_result: null,
+      };
     throw new Error(memo);
   });
   await expect(
@@ -339,7 +352,11 @@ test("session changes during dry run cannot authorize a subsequent broadcast", a
   const f = fixture();
   f.transfer.mockImplementation(async () => {
     f.session("new-session");
-    return { transaction_id: "1".repeat(64) };
+    return {
+      transaction_id: "1".repeat(64),
+      required_fees: null,
+      dry_run_result: null,
+    };
   });
   await expect(
     f

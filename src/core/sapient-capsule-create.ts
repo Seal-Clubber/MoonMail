@@ -29,7 +29,7 @@ export async function prepareSapientCapsule(
   try {
     if (
       address.network !== context.network ||
-      address.memo?.length ||
+      address.destination_tag?.length ||
       account.account.owner_public_key !== context.controller ||
       hex(address.owner_key) !== context.controller
     )

@@ -12,6 +12,7 @@ import {
   generateOotleAddress,
 } from "@tari-project/ootle-wasm";
 import { emptyDeployment } from "../../src/core/config";
+import wire from "../fixtures/ootle-049-cbor.json" with { type: "json" };
 
 // These are UI/provider fixtures, never real transactions or wallet secrets.
 const d = {
@@ -33,6 +34,12 @@ const account = `component_${"d".repeat(64)}`,
   transaction = "e".repeat(64);
 function ledger(url: string) {
   const path = new URL(url).pathname;
+  if (path.endsWith(account))
+    return {
+      version: 0,
+      verified: false,
+      state: { up: { substate: wire.components.e } },
+    };
   if (path === "/epoch-manager/stats") return { current_epoch: 100 };
   if (path === "/network")
     return { network: "Esmeralda", network_byte: 38, epoch: 100 };
@@ -257,6 +264,8 @@ for (const outcome of ["confirmed", "new letter", "rejected"] as const)
                         outcome === "rejected"
                           ? { Abort: "Synthetic rejection" }
                           : "Commit",
+                      execution_result:
+                        outcome === "rejected" ? wire.executions.Reject : null,
                     },
                   }
                 : "Pending",

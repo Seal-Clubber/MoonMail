@@ -165,7 +165,7 @@ export class SapientSession {
         throw new Error("Invalid Sapient receiving address");
       const parsed = parseOotleAddress(address);
       try {
-        if (parsed.network !== network || parsed.memo?.length)
+        if (parsed.network !== network || parsed.destination_tag?.length)
           throw new Error("Sapient returned an address for another network");
         session.accounts.push({
           address,

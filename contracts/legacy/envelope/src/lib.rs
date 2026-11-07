@@ -118,8 +118,7 @@ pub mod envelope {
             assert_eq!(network, self.network, "Wrong network");
             assert!(!self.claimed && self.gift > 0, "No claimable gift");
             if let Some(pk) = self.authority {
-                let proof = CallerContext::get_signer_proof_for_public_key(pk);
-                proof.drop();
+                CallerContext::assert_badge_in_scope(&NonFungibleAddress::from_public_key(pk));
             }
             let account = ComponentManager::get(destination);
             assert_eq!(

@@ -13,6 +13,7 @@ import { publishTransaction } from "../src/core/transactions";
 import { PostOfficeClient } from "../src/core/chain";
 import { readPending } from "../src/core/pending";
 import capsuleLedger from "./fixtures/capsule-carrier.json";
+import wire from "./fixtures/ootle-049-cbor.json";
 async function capsuleFixture() {
   const f = fixture(),
     wallet = await SapientSession.connect(38, f.provider);
@@ -513,19 +514,7 @@ test("Sapient publication declares the registry and funding dependencies before 
         verified: false,
         state: {
           up: {
-            substate: {
-              Component: {
-                body: {
-                  state: [
-                    {
-                      "@cbor": "tag",
-                      tag: 132,
-                      value: { "@cbor": "bytes", hex: vault },
-                    },
-                  ],
-                },
-              },
-            },
+            substate: wire.components.e,
           },
         },
       }),
@@ -842,19 +831,7 @@ test("postbox registration declares account and fee vault dependencies before Sa
         verified: false,
         state: {
           up: {
-            substate: {
-              Component: {
-                body: {
-                  state: [
-                    {
-                      "@cbor": "tag",
-                      tag: 132,
-                      value: { "@cbor": "bytes", hex: "e".repeat(64) },
-                    },
-                  ],
-                },
-              },
-            },
+            substate: wire.components.e,
           },
         },
       }),

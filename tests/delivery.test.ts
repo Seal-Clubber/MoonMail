@@ -1,4 +1,5 @@
 import { PostOfficeClient } from "../src/core/chain";
+import wire from "./fixtures/ootle-049-cbor.json";
 import { expect, it, vi } from "vitest";
 import { readDelivery } from "../src/core/delivery";
 import {
@@ -79,7 +80,7 @@ it.each([
   ["AcceptFeeRejectRest", "unknown"],
   ["Reject", "rejected"],
 ])(
-  "classifies Ootle 0.46 %s receipts without template return values",
+  "classifies Ootle 0.49 CBOR %s receipts without template return values",
   async (outcome, state) => {
     const finalized =
       outcome === "Accept"
@@ -93,7 +94,8 @@ it.each([
           Finalized: {
             final_decision:
               outcome === "Accept" ? "Commit" : { Abort: "execution failed" },
-            execution_result: { finalize: { result: finalized } },
+            execution_result:
+              wire.executions[outcome as keyof typeof wire.executions],
           },
         },
       }),

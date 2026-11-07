@@ -200,11 +200,19 @@ not migrated or selected; earlier app versions remain in backup branches.
 The [contract guide](contracts/README.md) separates the current implementation,
 engine tests and historical templates.
 
-The checked stack targets **Ootle 0.47.0**, **TypeScript SDK 0.11.1** and
-**crypto WASM 0.47.0**, with unmodified **Sapient 0.6.14** from the Chrome Web Store. Available operations
-also depend on the connected account's runtime capabilities.
+The current stack targets **Ootle 0.49.2**, **TypeScript SDK 0.13.0** and
+**crypto WASM 0.49.1**. Stock **Sapient 0.7.2** is available from the Chrome Web
+Store. The reset Esmeralda office was republished on **7 November 2026**; create a
+new postbox. [Current deployment, compatibility and verification scope](docs/ootle-v049-upgrade.md).
+Available operations also depend on the account's runtime capabilities. A fresh
+funded stock-0.7.2 private-mail/payment acceptance campaign remains to be recorded;
+the older wallet evidence below is historical.
 
-Recorded verification as of **29 October 2026** separates these scopes:
+Current local verification includes **297 unit checks, 336 desktop/mobile browser
+cases and 63 native engine checks**. Real transactions confirmed the new template,
+office and a public demonstration letter/gift; see
+[0.49 evidence](docs/ootle-v049-evidence.json). The following **29 October 2026**
+records remain historical and are not evidence of a fresh 0.49 wallet campaign:
 
 | Evidence                                                              | Environment and result                                                                                                                                                 | What it establishes                                                                                                                                                          |
 | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -304,9 +312,9 @@ losing the original wallet installation and its unavailable result.
 Current deployment identities are versioned in
 [`public/deployment.json`](public/deployment.json): network **38 / Esmeralda**,
 protocol **`unified-2`**, registry
-`component_47b0dddced08140d37448b79bbf1f545907344b65bfa28b5f10ffe27f8132ebe`
+`component_ed2b9dc6193daae03312aa9ae64355c305cf5ea0c280ff86a9bbddc6140a1b79`
 and template
-`e0c2b09b5d172542e7196f54625fbf78a5150aa77cead67d0b8737bd436d2f0c`.
+`053d83393b3bb23df607cc758ff5082257f034fef8415262811ab916877677af`.
 Rebuilt WASM has a different identity; a source build is not automatically a new
 deployment or a replacement for the recorded published binary.
 

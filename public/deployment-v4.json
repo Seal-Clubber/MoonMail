@@ -1,16 +1,16 @@
 {
   "network": 38,
-  "registry": "component_47b0dddced08140d37448b79bbf1f545907344b65bfa28b5f10ffe27f8132ebe",
-  "template": "e0c2b09b5d172542e7196f54625fbf78a5150aa77cead67d0b8737bd436d2f0c",
-  "envelopeTemplate": "e0c2b09b5d172542e7196f54625fbf78a5150aa77cead67d0b8737bd436d2f0c",
+  "registry": "component_ed2b9dc6193daae03312aa9ae64355c305cf5ea0c280ff86a9bbddc6140a1b79",
+  "template": "053d83393b3bb23df607cc758ff5082257f034fef8415262811ab916877677af",
+  "envelopeTemplate": "053d83393b3bb23df607cc758ff5082257f034fef8415262811ab916877677af",
   "contractProtocol": "unified-2",
   "resource": "resource_0101010101010101010101010101010101010101010101010101010101010101",
   "postboxClaimProtocol": "sapient-proof-1",
   "indexerUrl": "https://ootle-indexer-a.tari.com/",
   "capsule": {
-    "template": "e0c2b09b5d172542e7196f54625fbf78a5150aa77cead67d0b8737bd436d2f0c",
-    "component": "component_47b0dddced08140d37448b79bbf1f545907344b65bfa28b5f10ffe27f8132ebe",
-    "resource": "resource_47bfdda5de155f1dc614e15fe8b1b1f89d66ba136ebf1041ae0e6174a40c67f8"
+    "template": "053d83393b3bb23df607cc758ff5082257f034fef8415262811ab916877677af",
+    "component": "component_ed2b9dc6193daae03312aa9ae64355c305cf5ea0c280ff86a9bbddc6140a1b79",
+    "resource": "resource_ed17af29e78ef47328739f074d3f2f05d63a17fad68e9bc009d4fd77ea11c4a1"
   },
   "sealedDelivery": {
     "engine": true,

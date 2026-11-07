@@ -102,7 +102,7 @@ export class NativeMailboxAdapter {
     try {
       if (
         parsed.network !== this.network ||
-        parsed.memo?.length ||
+        parsed.destination_tag?.length ||
         hex(parsed.owner_key) !== context.controller
       )
         throw new Error("Invalid controlling account receiving address");
@@ -148,7 +148,7 @@ export class NativeMailboxAdapter {
             output_memo: encoded.memo,
             pay_to: { AccessRule: "DenyAll" },
             attach_sender_address: false,
-            pay_ref: null,
+            destination_tag: null,
           },
         ],
         max_fee: feeCap,

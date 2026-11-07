@@ -63,7 +63,7 @@ export function publishTransaction(
   return TransactionBuilder.new(d.network as Network, epoch + 10)
     .feeTransactionPayFromComponent(account, money(fee))
     .withInputs(
-      [d.template, d.envelopeTemplate].map((id) => ({
+      [...new Set([d.template, d.envelopeTemplate])].map((id) => ({
         substate_id: `template_${id}`,
         version: null,
         is_write: false,

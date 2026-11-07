@@ -57,7 +57,7 @@ export function paymentAddress(
   try {
     if (
       parsed.network !== network ||
-      parsed.memo?.length ||
+      parsed.destination_tag?.length ||
       (owner && hex(parsed.owner_key) !== owner)
     )
       throw new Error(

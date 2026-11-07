@@ -1,5 +1,6 @@
 import { emptyDeployment, endpoint } from "./config";
 import type { Deployment } from "./types";
+import { decodeResource } from "@tari-project/ootle";
 
 export const publicIndexer = "https://ootle-indexer-a.tari.com/";
 export const testTariResource = `resource_${"01".repeat(32)}`;
@@ -43,6 +44,10 @@ export async function checkPublicIndexer(deployment: Deployment) {
     read("health"),
     read(`resources/${deployment.resource}`),
   ]);
+  const resource =
+    typeof asset.resource === "string"
+      ? decodeResource(asset.resource)
+      : asset.resource;
   if (network.network_byte !== deployment.network)
     throw new Error(
       "Indexer is on a different network; choose matching settings",
@@ -59,13 +64,13 @@ export async function checkPublicIndexer(deployment: Deployment) {
   if (
     !Number.isSafeInteger(network.epoch) ||
     network.epoch < 0 ||
-    typeof asset.resource?.metadata?.SYMBOL !== "string"
+    typeof resource?.metadata?.SYMBOL !== "string"
   )
     throw new Error("Unsupported indexer network or resource response");
   return {
     network: String(network.network),
     epoch: network.epoch as number,
     version: String(health.version),
-    symbol: String(asset.resource.metadata.SYMBOL),
+    symbol: String(resource.metadata.SYMBOL),
   };
 }

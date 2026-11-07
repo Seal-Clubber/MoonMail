@@ -6,7 +6,12 @@ The single current mailbox is the V4 sealed Esmeralda office. Create a new postb
 
 ## Verified stock Sapient support
 
-The current checked target is unmodified stock Sapient 0.6.14 with Ootle 0.47. [Current evidence](ootle-v047-evidence.json) covers real-network Inbox/Sent/settings recovery and grant reuse without financial requests. Earlier funded mail and private-payment campaigns used Sapient 0.6.6 with the Ootle 0.46 application. The [inspected provider API](https://github.com/chironbuilds/tari-wallet/blob/7ad3c4f117a76c64d472fd371b7d75bbe297abec/docs/integration/provider-api.md) is a pinned historical reference; live account capabilities also determine available operations. The website cannot approve transactions itself. Visitors need only the website and Sapient, with no extra bridge or backend.
+The reset office was republished for Ootle 0.49 on 7 November 2026; stock Sapient
+0.7.2 is available. See the [current deployment and test scope](ootle-v049-upgrade.md).
+The wallet recovery/financial campaigns described below are historical; a fresh
+stock-0.7.2 private-mail/payment acceptance campaign is still pending.
+
+The earlier unmodified stock Sapient 0.6.14 / Ootle 0.47 [evidence](ootle-v047-evidence.json) covers real-network Inbox/Sent/settings recovery and grant reuse without financial requests. Earlier funded mail and private-payment campaigns used Sapient 0.6.6 with the Ootle 0.46 application. The [inspected provider API](https://github.com/chironbuilds/tari-wallet/blob/7ad3c4f117a76c64d472fd371b7d75bbe297abec/docs/integration/provider-api.md) is a pinned historical reference; live account capabilities also determine available operations. The website cannot approve transactions itself. Visitors need only the website and Sapient, with no extra bridge or backend.
 
 - Private postage uses a persisted transaction request with `feeType: "private"` and `enforceFeeType: true`. Unsupported accounts fail closed. Reading permission is separate from spending approval.
 - Native private payments use `sendPrivately`, private funding/fees and `minimumValuePromise: "0"`. An encrypted request, unique recovery intent and receipt bind the original wallet approval to the exact receiving output. [Protocol and recovery limits](private-payments.md).

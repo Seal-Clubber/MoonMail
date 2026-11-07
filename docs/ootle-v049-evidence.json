@@ -1,0 +1,92 @@
+{
+  "checkedAt": "2026-11-07T02:31:04.381Z",
+  "release": "https://github.com/tari-project/tari-ootle/releases/tag/v0.49.2",
+  "targetEngine": "0.49.2",
+  "templateLibrary": "0.37.0",
+  "sdk": "0.13.0",
+  "cryptoWasm": "0.49.1",
+  "borWasm": "0.49.2",
+  "network": {
+    "network": "esmeralda",
+    "epoch": 12921,
+    "version": "0.49.1",
+    "symbol": "tTARI"
+  },
+  "registry": "component_ed2b9dc6193daae03312aa9ae64355c305cf5ea0c280ff86a9bbddc6140a1b79",
+  "template": "053d83393b3bb23df607cc758ff5082257f034fef8415262811ab916877677af",
+  "recoveryResource": "resource_ed17af29e78ef47328739f074d3f2f05d63a17fad68e9bc009d4fd77ea11c4a1",
+  "templateSha256": "2845b2c2d736a5a69b0af952cad6fb5531dfb698fe1f6e0f840a7d456d3114c2",
+  "templateBytes": 543714,
+  "sourceRebuildMatchesPublishedBinary": true,
+  "localChecks": {
+    "unitTests": 297,
+    "unitFiles": 35,
+    "browserCases": 336,
+    "nativeEngine": {
+      "mailbox": 49,
+      "legacyMail": 13,
+      "recovery": 1,
+      "total": 63
+    },
+    "typescript": true,
+    "pagesBuild": true,
+    "frozenInstall": true,
+    "lockedRustBuilds": true
+  },
+  "transactions": [
+    {
+      "operation": "publication",
+      "transactionId": "8bcc4fc1f18acdc16d92798ca90f7ddc39b9d56af759f16ca7f9d01654038a60",
+      "feeMicroTari": "21425799"
+    },
+    {
+      "operation": "office",
+      "transactionId": "739d3b2143274fe0ccc7ea1c6dbce35413de2504fad02d1340735d4b6c631e4a",
+      "feeMicroTari": "13238"
+    },
+    {
+      "operation": "public-smoke",
+      "transactionId": "fcf38dd19d88b91d466b9ffc0f26a6cd76dea00204f819313dce311f1b0ef9e1",
+      "feeMicroTari": "14674"
+    }
+  ],
+  "totalFeeMicroTari": "21453711",
+  "giftMicroTari": "100000",
+  "reserveMicroTari": "100000",
+  "remainingOperatorRevealedMicroTari": "8346289",
+  "realPublicMailRead": {
+    "letterId": "32825394-7139-4457-92f1-5ab875446c38",
+    "total": 1,
+    "postboxes": 0
+  },
+  "stockSapient": {
+    "version": "0.7.2",
+    "crxSha256": "dec42531cc3d4f3b9df7a19f92692caa4881cfe87a937b3b5255b7c35c0d9939",
+    "packageChecked": true,
+    "newFundedPrivateMailboxAcceptance": false
+  },
+  "githubPush": false,
+  "limitations": [
+    "Fresh stock Sapient 0.7.2 private-postbox/recovery/private-payment financial acceptance remains pending.",
+    "Earlier Sapient financial evidence is historical.",
+    "GitHub Pages configuration updates only when the user pushes main.",
+    "Browser trusts selected indexer; encrypted content does not provide anonymity."
+  ],
+  "actualPublicBrowser": {
+    "checkedAt": "2026-11-07T02:34:29.497Z",
+    "actualLedger": true,
+    "localProductionAssets": true,
+    "views": [
+      {
+        "width": 1440,
+        "overflow": false
+      },
+      {
+        "width": 390,
+        "overflow": false
+      }
+    ],
+    "broadcasts": 0,
+    "letterSubject": "A new moon over Esmeralda"
+  }
+}

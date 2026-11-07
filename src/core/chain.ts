@@ -9,6 +9,7 @@ import {
   sealTransaction,
   classifyOutcome,
   getVaultIdsForAccount,
+  decodeExecuteResult,
 } from "@tari-project/ootle";
 import {
   EphemeralKeySigner,
@@ -338,7 +339,10 @@ export class PostOfficeClient {
   async validateDestination(address: string, component: string) {
     const parsed = parseOotleAddress(address);
     try {
-      if (parsed.network !== this.deployment.network || parsed.memo?.length)
+      if (
+        parsed.network !== this.deployment.network ||
+        parsed.destination_tag?.length
+      )
         throw new Error("Wrong network or unsupported memo address");
       if (!/^component_[a-f0-9]{64}$/.test(component))
         throw new Error(
@@ -520,7 +524,10 @@ export class PostOfficeClient {
     if (createAccount) {
       const parsed = parseOotleAddress(address);
       try {
-        if (parsed.network !== this.deployment.network || parsed.memo?.length)
+        if (
+          parsed.network !== this.deployment.network ||
+          parsed.destination_tag?.length
+        )
           throw new Error("Wrong network or unsupported memo address");
         ownerPublicKey = hex(parsed.owner_key);
       } finally {
@@ -982,7 +989,10 @@ export class PostOfficeClient {
         };
       }>("transactions/dry-run", { transaction: dryEnvelope }),
     );
-    const execution = dry.result;
+    const execution =
+      typeof dry.result === "string"
+        ? decodeExecuteResult(dry.result)
+        : dry.result;
     if (!execution || !("Accept" in execution.finalize.result))
       throw new Error(
         "Proof claim simulation rejected; no claim was broadcast",
