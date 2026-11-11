@@ -19,7 +19,7 @@ function connectionHelp(error: unknown, network: string) {
   if (/choose a supported network/i.test(message))
     return {
       title: "This office uses an unsupported network",
-      text: "Open MoonMail’s Settings and restore the Esmeralda defaults, then connect again.",
+      text: "Choose Mainnet or Esmeralda in MoonMail’s Settings, then connect again.",
     };
   if (/one selected account|account changed|different account/i.test(message))
     return {
@@ -33,8 +33,8 @@ function connectionHelp(error: unknown, network: string) {
     };
   if (/switch sapient|another network|wrong.*network/i.test(message))
     return {
-      title: `Choose ${network} in Sapient`,
-      text: `Open Sapient’s settings, switch to ${network} testnet, then try connecting again.`,
+      title: `Choose ${network.replace(/ testnet$/, "")} in Sapient`,
+      text: `Open Sapient’s settings, switch to ${network}, then try connecting again.`,
     };
   if (code === 4001 || /reject|declin|cancel|denied/i.test(message))
     return {
@@ -110,7 +110,7 @@ export function WalletConnection({
         </span>
         <div>
           <strong>Sapient</strong>
-          <span>Tari Ootle · {network} testnet</span>
+          <span>Tari Ootle · {network}</span>
         </div>
         <span className={`wallet-detection ${available ? "detected" : ""}`}>
           {available ? "Detected" : "Not detected"}
@@ -124,7 +124,7 @@ export function WalletConnection({
               <div>
                 <strong>Open and unlock Sapient</strong>
                 <p>
-                  Choose your account on <b>{network} testnet</b>.
+                  Choose your account on <b>{network}</b>.
                 </p>
               </div>
             </li>

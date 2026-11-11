@@ -1,22 +1,25 @@
 import { emptyDeployment, endpoint } from "./config";
 import type { Deployment } from "./types";
 import { decodeResource } from "@tari-project/ootle";
+import { ESMERALDA, MAINNET, supportedNetwork } from "./network-id";
 
 export const publicIndexer = "https://ootle-indexer-a.tari.com/";
-export const testTariResource = `resource_${"01".repeat(32)}`;
+export const mainnetIndexer = "https://indexer-a.ootle.tari.com/";
+const nativeTariResource = `resource_${"01".repeat(32)}`;
 export function networkPreset(network: number): Deployment {
-  if (![16, 36, 38].includes(network))
-    throw new Error("Unsupported test network");
+  if (!supportedNetwork(network)) throw new Error("Unsupported Ootle network");
   return {
     ...emptyDeployment,
     network,
     indexerUrl:
-      network === 38
+      network === ESMERALDA
         ? publicIndexer
-        : network === 16
-          ? "http://localhost:12500/"
-          : "",
-    resource: testTariResource,
+        : network === MAINNET
+          ? mainnetIndexer
+          : network === 16
+            ? "http://localhost:12500/"
+            : "",
+    resource: nativeTariResource,
     evidence: { ...emptyDeployment.evidence },
   };
 }
@@ -27,7 +30,7 @@ export async function checkPublicIndexer(deployment: Deployment) {
   );
   if (!base.pathname.endsWith("/")) base.pathname += "/";
   if (!/^resource_[a-f0-9]{64}$/.test(deployment.resource))
-    throw new Error("Choose a valid test asset resource");
+    throw new Error("Choose a valid asset resource");
   const signal = AbortSignal.timeout(10000);
   async function read(path: string) {
     const response = await fetch(new URL(path, base), {

@@ -30,9 +30,11 @@ Use the website and your normal [Sapient wallet](https://sapient.tari.mw/).
 There is no central MoonMail backend or extra bridge program. The static website
 runs on GitHub Pages over HTTPS and reads Ootle through public indexers.
 
-**Currently on Esmeralda testnet.** MoonMail sends between Ootle postboxes, not
-ordinary email addresses. It is experimental software with bounded storage and
-discovery, not a production email replacement. Use test funds.
+**Mainnet is the default network.** The Mainnet template is published and its
+office setup is pending. Choose **Esmeralda** in the network settings to read
+live mail, create a postbox and try gifts with test TARI. MoonMail addresses
+letters to Ootle postboxes. It is experimental software with bounded storage
+and discovery.
 
 For technical review, start with [architecture and trust boundaries](#architecture-and-trust-boundaries),
 the [Sapient API map](#sapient-api-map), [implementation and test map](#implementation-and-test-map)
@@ -190,8 +192,8 @@ history and cannot recover it after the session closes. The
 
 ## Built and verified on Ootle
 
-The current default is one **V4 sealed office on Esmeralda**, configured in
-[`public/deployment.json`](public/deployment.json). The
+The live **V4 sealed office on Esmeralda** is configured in
+[`public/deployment-v4.json`](public/deployment-v4.json). The
 [single template](contracts/moonmail-v4/README.md) handles sealed letters,
 postboxes, historical recovery keys, encrypted settings and public gift rules.
 Native private transfers are separate wallet operations. Old testnet mail is
@@ -309,14 +311,19 @@ losing the original wallet installation and its unavailable result.
 | Deletion and archiving | Archive/read changes organise a mailbox. They do not erase immutable chain history or other people's copies.                                                                                                                                 |
 | Availability           | Requires a reachable compatible indexer, Ootle network and supported Sapient account. Capacity exhaustion needs a new office/deployment strategy; this is not unlimited production email.                                                    |
 
-Current deployment identities are versioned in
-[`public/deployment.json`](public/deployment.json): network **38 / Esmeralda**,
+Esmeralda deployment identities are versioned in
+[`public/deployment-v4.json`](public/deployment-v4.json). Network **38 / Esmeralda**,
 protocol **`unified-2`**, registry
 `component_ed2b9dc6193daae03312aa9ae64355c305cf5ea0c280ff86a9bbddc6140a1b79`
 and template
 `053d83393b3bb23df607cc758ff5082257f034fef8415262811ab916877677af`.
 Rebuilt WASM has a different identity; a source build is not automatically a new
 deployment or a replacement for the recorded published binary.
+
+The default [Mainnet profile](public/deployment.json) records network **0** and
+the [published Mainnet template](https://explorer.tari.mw/template/d4ed44d36e79e85ea7a8705170d0227a34b9fb3afba556b00112ff785b6da8c8).
+Read the [deployment guide](docs/DEPLOYMENT.md#public-network-presets) for the
+remaining office setup and verification.
 
 ## Sapient API map
 
@@ -397,9 +404,8 @@ cargo test --manifest-path contracts/tests/recovery/Cargo.toml --locked
 
 Native engine checks need Node and installed JavaScript dependencies for the SDK
 fixtures. See the [engine setup and Windows/WSL paths](docs/ootle-v047-upgrade.md#build-and-engine-checks).
-These tests use isolated state and synthetic keys; they do not publish templates
-or spend live funds. Running the actual application against its default profile
-does use Esmeralda, so approving a wallet transaction there spends testnet funds.
+These tests use isolated state and synthetic keys. To try transactions with
+test TARI in the actual application, choose Esmeralda in **Settings**.
 
 Fonts, artwork and crypto WASM ship with the app. Configured offices read the
 actual chain; **Try sample mail** is a clearly labelled fictional preview, with

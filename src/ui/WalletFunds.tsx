@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { SapientSession } from "../core/sapient";
 import { tari } from "./AmountInput";
+import { tariUnit } from "../core/network-id";
 
 export function WalletFunds({
   wallet,
@@ -40,8 +41,8 @@ export function WalletFunds({
       <h3>Funds for MoonMail</h3>
       <p className="fine-print">
         Sending, attached gift vaults and postbox setup currently use public
-        test TARI. Native private postage is paused after a stock Sapient
-        signing failure. Sapient shows private funds separately.
+        {tariUnit(wallet.network)}. Native private postage is paused after a
+        stock Sapient signing failure. Sapient shows private funds separately.
       </p>
       <button
         type="button"

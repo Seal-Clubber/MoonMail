@@ -38,7 +38,7 @@ it("public parsing rejects incomplete, private, polluted and invalid deployment 
     hash + "&capability=secret",
     hash + "&network=38",
     hash.replace(context.registry, "component_bad"),
-    hash.replace("network=38", "network=0"),
+    hash.replace("network=38", "network=1"),
     hash.replace("/public?", "/%ZZ?"),
   ])
     expect(() => parsePublicLetterLink(value)).toThrow(

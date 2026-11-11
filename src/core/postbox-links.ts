@@ -1,4 +1,5 @@
 import type { Context } from "./types";
+import { supportedNetwork } from "./network-id";
 
 export interface PostboxRoute {
   id: string;
@@ -13,7 +14,7 @@ function validId(id: string) {
 }
 function validContext(context: Context) {
   return (
-    [16, 38, 36].includes(context.network) &&
+    supportedNetwork(context.network) &&
     /^component_[a-f0-9]{64}$/.test(context.registry) &&
     /^[a-f0-9]{64}$/.test(context.template)
   );
@@ -60,7 +61,7 @@ export function parsePostboxLink(hash: string): PostboxRoute | null {
       ["network", "registry", "template"].some(
         (key) => q.getAll(key).length !== 1,
       ) ||
-      !/^(16|38|36)$/.test(q.get("network") || "")
+      !/^(0|16|38|36)$/.test(q.get("network") || "")
     )
       throw new Error();
     const route = {

@@ -1,5 +1,6 @@
 import type { Context } from "./types";
 import { fromBase64url, base64url } from "./crypto";
+import { supportedNetwork } from "./network-id";
 export interface LinkRoute {
   id: string;
   capability: string;
@@ -25,7 +26,7 @@ export function createGiftLink(base: string, route: LinkRoute) {
 }
 export function parseGiftLink(hash: string): LinkRoute | null {
   if (!hash.startsWith("#/letter/")) return null;
-  const [path, query] = hash.slice(1).split("?");
+  const [path, query, extra] = hash.slice(1).split("?");
   const parts = path.split("/");
   if (parts.length !== 4 || !parts[2] || !parts[3])
     throw new Error("A private letter needs its complete private link");
@@ -39,12 +40,17 @@ export function parseGiftLink(hash: string): LinkRoute | null {
   const q = new URLSearchParams(
     query?.replace(/(?:\\|%5c)&(?=(?:network|registry|template)=)/gi, "&"),
   );
-  const network = Number(q.get("network"));
+  const rawNetwork = q.get("network");
+  const network = Number(rawNetwork);
   const registry = q.get("registry") || "",
     template = q.get("template") || "";
   if (
-    !q.has("network") ||
-    ![16, 38, 36].includes(network) ||
+    extra !== undefined ||
+    rawNetwork !== String(network) ||
+    ["network", "registry", "template"].some(
+      (key) => q.getAll(key).length !== 1,
+    ) ||
+    !supportedNetwork(network) ||
     !/^component_[a-f0-9]{64}$/.test(registry) ||
     !/^[a-f0-9]{64}$/.test(template)
   )

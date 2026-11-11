@@ -4,7 +4,10 @@ The midnight design is published at `c49d79d`: HTTPS is enforced, Pages and all 
 
 **Current wallet target: Sapient.** Visitors use the static website and stock Sapient browser wallet. No daemon credentials, custom wallet build, separate MoonMail extension, bridge program or file import is required. Public reading and public/private-link gift collection allow guests; sending and postbox setup require Sapient. [Sapient setup and limits](SAPIENT.md) describe the supported provider and approval flow.
 
-The current `public/deployment.json` selects the verified Esmeralda Sapient V2 office, including its registry, envelope and recovery capsule identities. `sapientWallet`, `mailboxRecovery` and `postboxClaims` are enabled by the recorded [V2 campaign](postbox-v2-esmeralda-evidence.json). Postbox creation, key rotation, restored-wallet recovery, ownership-proof collection into a zero-TARI account and independent payout spending passed actual public tests. The original office is not selectable and old mail is not migrated.
+The [Esmeralda profile](../public/deployment-v4.json) selects the current V4
+Sapient office. See the [0.49 redeployment evidence](ootle-v049-upgrade.md)
+for its identities and checks. The [earlier V2 campaign](postbox-v2-esmeralda-evidence.json)
+records the original ownership-proof collection and recovery work.
 
 The current hosted checkpoint is `11dca65`. Its Pages and all four Verify jobs succeeded; all nine HTTPS assets match the exact artifact. Stock Sapient connection, inbox permission wording, two-approval setup and unsent reply/disconnect flows passed against actual HTTPS without signing, transactions or private-view grants. [Published checkpoint evidence](inbox-permission-published-evidence.json) records this scope. Later local reliability and privacy checkpoints await the human-controlled push.
 
@@ -14,11 +17,26 @@ The same published release also passed a separately approved four-transaction Sa
 
 ## Public network presets
 
-The website defaults to Esmeralda (network byte 38), `https://ootle-indexer-a.tari.com/`, and native test TARI resource `resource_0101010101010101010101010101010101010101010101010101010101010101`. The HTTPS endpoint is the [official wallet CLI default](https://github.com/tari-project/ootle-wallet-cli), also present in the pinned SDK. Read-only checks on 2026-10-06 confirm health OK, network 38, daemon/indexer 0.43.0, the test TARI resource, and browser CORS support.
+| Network              | Site profile                                       | Public indexer                      | State                                                                     |
+| -------------------- | -------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------- |
+| Mainnet (0), default | [deployment.json](../public/deployment.json)       | `https://indexer-a.ootle.tari.com/` | Template published. Office and real-fund operations pending verification. |
+| Esmeralda (38)       | [deployment-v4.json](../public/deployment-v4.json) | `https://ootle-indexer-a.tari.com/` | Live V4 office for test TARI.                                             |
 
-Open `#/network` directly. **Check indexer connection** checks the selected network, service health and resource with credential-free GET requests; it sends no transaction and enables no evidence flag. Localnet prefills the official SDK's `http://localhost:12500/`; Igor requires an operator-provided endpoint. Switching networks clears MoonMail contract identities, evidence and wallet credentials. Custom compatible HTTPS indexers remain editable.
+Choose a network in **Settings**. Sapient must use the same
+network. A switch clears the active wallet session and transaction review.
+**Check indexer connection** reads network, health and asset metadata without
+a wallet. Both profiles use the native TARI resource identity. Localnet and
+Igor remain available for custom connection settings.
 
-The default configuration includes confirmed Esmeralda registry/template identities from the authorized public deployment. Localnet evidence addresses belong to a separate chain and must never be inserted into the public preset. Contract publication alone does not verify gifts, wallet scope enforcement, recovery or hosted wallet transport; record each deployment-specific check before enabling its gate.
+To activate Mainnet, find or create the office from the
+[published template](https://explorer.tari.mw/template/d4ed44d36e79e85ea7a8705170d0227a34b9fb3afba556b00112ff785b6da8c8).
+Its on-chain ABI declares `new(network: U8, template: TemplateAddress)`.
+Use network byte `0` and that same published template address. An operator
+must review and authorize any Mainnet transaction fee. Record the confirmed
+transaction, the resulting component address and the recovery resource.
+Verify the deployed code, component ownership and upgrade rules, and
+Mainnet-specific wallet and gift behavior before enabling the corresponding
+evidence flags. A successful Esmeralda test applies only to that deployment.
 
 ## Historical local deployment tooling
 
@@ -48,7 +66,7 @@ pnpm deploy:local -- deployment-plan.local.json --create-registry --submit
 ```
 
 5. Reconcile the created registry component and check owner rule `None`, both template identities and test network. The tool preserves public uncertain attempts in ignored `.deployment-state.local.json`; an existing attempt blocks repeated submission. Inspect history before changing a journal entry. A timeout does not prove rejection. Publication and registry creation were successfully exercised on isolated localnet; see the evidence document.
-6. Fill `public/deployment.json` with network, registry, registry template, envelope template, actual indexer endpoint and native test TARI resource. No seeds, API credentials, capabilities or donor configuration belong in this file.
+6. Keep the isolated network, registry, template identities, indexer endpoint and asset resource in local connection settings. Keep wallet seeds, API credentials, capabilities and donor configuration out of the public profiles.
 
 ## Required evidence before enabling spending
 

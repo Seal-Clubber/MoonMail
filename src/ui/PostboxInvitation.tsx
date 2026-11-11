@@ -6,6 +6,7 @@ import { sameContext } from "../core/links";
 export function PostboxInvitation({
   invitation,
   deployment,
+  settingsPending,
   boxes,
   ready,
   failed,
@@ -16,6 +17,7 @@ export function PostboxInvitation({
 }: {
   invitation: PostboxRoute;
   deployment: Context;
+  settingsPending: boolean;
   boxes: Postbox[];
   ready: boolean;
   failed: boolean;
@@ -45,7 +47,7 @@ export function PostboxInvitation({
         {box ? `Write to ${box.nickname}` : "A friend left you a postbox."}
       </h2>
       <p role="status">
-        {!deployment.registry
+        {settingsPending
           ? "Loading the selected post office. If this continues, reload the page to retrieve its settings."
           : !matching
             ? "This invitation belongs to a different post office or network. Ask your friend for a link to this office, or review your settings. Nothing has been switched automatically."

@@ -3,9 +3,11 @@ import { validFee, type FeeProblem } from "../core/fee-limit";
 import type { PrivatePayment } from "../core/private-payment";
 import { tari } from "./AmountInput";
 import { CopyField } from "./CopyField";
+import { tariUnit } from "../core/network-id";
 
 export function PrivatePaymentCard({
   payment,
+  network,
   feeProblem,
   busy = false,
   onPay,
@@ -18,6 +20,7 @@ export function PrivatePaymentCard({
   notice,
 }: {
   payment: PrivatePayment;
+  network: number;
   feeProblem?: FeeProblem;
   busy?: boolean;
   onPay?: () => void;
@@ -37,7 +40,7 @@ export function PrivatePaymentCard({
           : payment.kind === "intent"
             ? "Private payment recovery record"
             : "Private payment receipt"}{" "}
-        · {tari(payment.amount)} test TARI
+        · {tari(payment.amount)} {tariUnit(network)}
       </strong>
       <p>
         {payment.kind === "request"

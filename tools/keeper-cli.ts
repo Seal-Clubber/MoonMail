@@ -26,7 +26,7 @@ const configPath =
 const c: KeeperConfig = JSON.parse(await fs.readFile(configPath, "utf8"));
 validateKeeper(c);
 const d: Deployment = JSON.parse(
-  await fs.readFile("public/deployment.json", "utf8"),
+  await fs.readFile("public/deployment-v4.json", "utf8"),
 );
 const journalContext = JSON.stringify([d.network, d.registry, c.campaign]);
 let journal: Journal;

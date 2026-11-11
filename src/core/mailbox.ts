@@ -1,3 +1,4 @@
+import { supportedNetwork } from "./network-id";
 import type {
   Envelope,
   Letter,
@@ -77,7 +78,7 @@ export function mailboxAAD(
   capsule?: CapsuleReference,
 ) {
   if (
-    ![16, 36, 38].includes(context.network) ||
+    !supportedNetwork(context.network) ||
     !/^component_[a-f0-9]{64}$/.test(context.registry) ||
     !/^[a-f0-9]{64}$/.test(context.template) ||
     !/^[a-f0-9]{64}$/.test(context.controller) ||

@@ -1,34 +1,21 @@
 {
-  "network": 38,
-  "registry": "component_ed2b9dc6193daae03312aa9ae64355c305cf5ea0c280ff86a9bbddc6140a1b79",
-  "template": "053d83393b3bb23df607cc758ff5082257f034fef8415262811ab916877677af",
-  "envelopeTemplate": "053d83393b3bb23df607cc758ff5082257f034fef8415262811ab916877677af",
-  "contractProtocol": "unified-2",
+  "network": 0,
+  "registry": "",
+  "template": "d4ed44d36e79e85ea7a8705170d0227a34b9fb3afba556b00112ff785b6da8c8",
+  "envelopeTemplate": "d4ed44d36e79e85ea7a8705170d0227a34b9fb3afba556b00112ff785b6da8c8",
   "resource": "resource_0101010101010101010101010101010101010101010101010101010101010101",
-  "postboxClaimProtocol": "sapient-proof-1",
-  "indexerUrl": "https://ootle-indexer-a.tari.com/",
-  "capsule": {
-    "template": "053d83393b3bb23df607cc758ff5082257f034fef8415262811ab916877677af",
-    "component": "component_ed2b9dc6193daae03312aa9ae64355c305cf5ea0c280ff86a9bbddc6140a1b79",
-    "resource": "resource_ed17af29e78ef47328739f074d3f2f05d63a17fad68e9bc009d4fd77ea11c4a1"
-  },
-  "sealedDelivery": {
-    "engine": true,
-    "recovery": true,
-    "stockSapient": true,
-    "sentAndReplies": true
-  },
+  "indexerUrl": "https://indexer-a.ootle.tari.com/",
   "evidence": {
-    "engineClaims": true,
-    "guestPayout": true,
-    "guestAccountCreation": true,
+    "engineClaims": false,
+    "guestPayout": false,
+    "guestAccountCreation": false,
     "daemonScopes": false,
     "httpsWallet": false,
-    "sapientWallet": true,
-    "mailboxRecovery": true,
-    "postboxClaims": true,
-    "mailboxState": true,
-    "nativePrivatePostage": true,
-    "nativePrivatePayments": true
+    "sapientWallet": false,
+    "mailboxRecovery": false,
+    "postboxClaims": false,
+    "mailboxState": false,
+    "nativePrivatePostage": false,
+    "nativePrivatePayments": false
   }
 }

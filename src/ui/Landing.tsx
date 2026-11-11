@@ -2,10 +2,12 @@ import { GhostMark } from "./GhostMark";
 import { MoonlitScene, UiIcon } from "./UiIcon";
 
 export function Landing({
+  network,
   onOpen,
   onPublic,
   onPrivacy,
 }: {
+  network: string;
   onOpen: () => void;
   onPublic: () => void;
   onPrivacy: () => void;
@@ -14,7 +16,7 @@ export function Landing({
     <section className="moonmail-landing" aria-labelledby="landing-title">
       <div className="landing-copy">
         <span className="kicker">
-          PRIVATE LETTERS · TARI OOTLE · ESMERALDA TESTNET
+          PRIVATE LETTERS · TARI OOTLE · {network.toUpperCase()}
         </span>
         <h1 id="landing-title">MoonMail</h1>
         <p className="landing-tagline">Your words, under cover of night.</p>

@@ -568,7 +568,7 @@ test("a receipt that finishes after a network change cannot confirm the old deli
   await requested;
   await page.getByRole("button", { name: /Settings/ }).click();
   await page.getByText("Advanced connection settings", { exact: true }).click();
-  await page.getByLabel("Ootle test network").selectOption("16");
+  await page.getByLabel("Ootle network").selectOption("16");
   const returned = page.waitForResponse((r) =>
     r.url().includes(`/transactions/${transaction}/result`),
   );

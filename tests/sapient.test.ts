@@ -63,15 +63,19 @@ async function capsuleFixture() {
   };
   return { ...f, wallet, deployment, capsuleContext: context, funding };
 }
-function fixture() {
+function fixture(networkByte = 38) {
   const owner = generateKeypair(),
     view = generateKeypair();
-  const address = generateOotleAddress(owner.public_key, view.public_key, 38);
+  const address = generateOotleAddress(
+    owner.public_key,
+    view.public_key,
+    networkByte,
+  );
   owner.free();
   view.free();
   const component = `component_${"d".repeat(64)}`,
     id = "request_123";
-  let network = "esmeralda",
+  let network = networkByte === 0 ? "mainnet" : "esmeralda",
     selected = component,
     status = "approved",
     submitError = false,
@@ -226,6 +230,21 @@ test("Sapient connection rejects the wrong network before requesting permission"
   expect(
     f.request.mock.calls.some(([a]) => a.method === "tari_requestAccounts"),
   ).toBe(false);
+});
+test("Mainnet binds to a Mainnet wallet address and rejects a later wallet network switch", async () => {
+  const f = fixture(0);
+  const wallet = await SapientSession.connect(0, f.provider);
+  expect(wallet.network).toBe(0);
+  expect(wallet.accounts[0].address).toMatch(/^otl_1/);
+  f.setNetwork("esmeralda");
+  await expect(wallet.assertCurrent()).rejects.toThrow("network changed");
+  f.request.mockClear();
+  await expect(SapientSession.connect(0, f.provider)).rejects.toThrow(
+    "Switch Sapient",
+  );
+  expect(f.request.mock.calls.map(([request]) => request.method)).toEqual([
+    "tari_getNetwork",
+  ]);
 });
 test("Sapient connection is separate from legacy daemon evidence and does not enable postboxes", () => {
   const f = fixture();

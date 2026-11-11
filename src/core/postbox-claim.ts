@@ -1,3 +1,4 @@
+import { supportedNetwork } from "./network-id";
 import {
   TransactionBuilder,
   Network,
@@ -37,7 +38,7 @@ export function postboxClaimChallenge(
     !/^component_[a-f0-9]{64}$/.test(envelope.component || "") ||
     !/^component_[a-f0-9]{64}$/.test(envelope.context.registry) ||
     !/^component_[a-f0-9]{64}$/.test(destination) ||
-    ![16, 36, 38].includes(envelope.context.network) ||
+    !supportedNetwork(envelope.context.network) ||
     !/^[a-f0-9]{64}$/.test(envelope.claimAuthority || "") ||
     !Number.isSafeInteger(validUntil) ||
     validUntil < 0 ||

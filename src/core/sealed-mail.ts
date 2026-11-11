@@ -1,3 +1,4 @@
+import { supportedNetwork } from "./network-id";
 // V4 protocol. No recipient or sender-mailbox locator is public.
 // Two indistinguishable key slots unlock one padded message: Inbox and Sent.
 import type { Context, Letter } from "./types";
@@ -147,7 +148,7 @@ function associated(
   ephemeral: string,
 ) {
   if (
-    ![16, 36, 38].includes(context.network) ||
+    !supportedNetwork(context.network) ||
     !/^component_[a-f0-9]{64}$/.test(context.registry)
   )
     throw new Error("Invalid sealed deployment");

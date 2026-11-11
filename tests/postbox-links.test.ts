@@ -9,6 +9,16 @@ const route = { id: "a-friend", context };
 const hash = new URL(createPostboxLink("https://example.com/MoonMail/", route))
   .hash;
 describe("public postbox invitations", () => {
+  it("preserves Mainnet's network byte in a shared invitation", () => {
+    const mainnet = { ...route, context: { ...context, network: 0 } };
+    const link = new URL(
+      createPostboxLink("https://example.com/MoonMail/", mainnet),
+    );
+    expect(parsePostboxLink(link.hash)).toEqual(mainnet);
+    expect(() =>
+      parsePostboxLink(link.hash.replace("network=0", "network=")),
+    ).toThrow();
+  });
   it("preserves a Pages or mirror path and uses only the fragment for the recipient and context", () => {
     for (const base of [
       "https://example.com/MoonMail/?discard=1#/old",
@@ -64,7 +74,7 @@ describe("public postbox invitations", () => {
         )?.context.network,
       ).toBe(network);
     for (const change of [
-      { network: 0 },
+      { network: 1 },
       { registry: "anything" },
       { template: "template_" + context.template },
     ])
@@ -81,7 +91,7 @@ describe("public postbox invitations", () => {
   it("rejects missing, duplicated, aliased and unsupported deployment parameters", () => {
     for (const bad of [
       hash.replace("network=38", "network=038"),
-      hash.replace("network=38", "network=0"),
+      hash.replace("network=38", "network=1"),
       hash.replace("network=38&", ""),
       hash + "&network=38",
       hash + "&registry=" + context.registry,

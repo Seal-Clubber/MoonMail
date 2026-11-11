@@ -32,6 +32,7 @@ const folders: { id: Folder; label: string; icon: IconName }[] = [
   { id: "collected", label: "Collected gifts", icon: "check" },
 ];
 export function MailboxWorkspace({
+  network,
   searchTarget,
   showSaveBar = true,
   box,
@@ -56,6 +57,7 @@ export function MailboxWorkspace({
   onPublic,
   onPrivacy,
 }: {
+  network: number;
   searchTarget: HTMLDivElement | null;
   showSaveBar?: boolean;
   postboxPicker: ReactNode;
@@ -707,6 +709,7 @@ export function MailboxWorkspace({
               )}
               {content(selected)?.privatePayment && (
                 <PrivatePaymentCard
+                  network={network}
                   payment={content(selected)!.privatePayment!}
                 />
               )}

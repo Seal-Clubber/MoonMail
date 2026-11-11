@@ -153,7 +153,7 @@ test("a delayed initial read cannot load letters after the selected network chan
   await requested;
   await page.getByRole("button", { name: "Settings", exact: false }).click();
   await page.getByText("Advanced connection settings", { exact: true }).click();
-  await page.getByLabel("Ootle test network").selectOption("16");
+  await page.getByLabel("Ootle network").selectOption("16");
   const completed = page.waitForResponse((response) =>
     response.url().includes(envelope),
   );
@@ -1190,12 +1190,12 @@ test("a late initial settings download preserves the visitor's selected office",
   });
   await page.goto("./#/network");
   await page.getByText("Advanced connection settings", { exact: true }).click();
-  await page.getByLabel("Ootle test network").selectOption("16");
+  await page.getByLabel("Ootle network").selectOption("16");
   await page.getByLabel("Indexer endpoint").fill("http://localhost:12345/");
   const done = page.waitForResponse((r) => r.url().endsWith("deployment.json"));
   release();
   await done;
-  await expect(page.getByLabel("Ootle test network")).toHaveValue("16");
+  await expect(page.getByLabel("Ootle network")).toHaveValue("16");
   await expect(page.getByLabel("Indexer endpoint")).toHaveValue(
     "http://localhost:12345/",
   );
@@ -1241,7 +1241,7 @@ test("a stalled initial settings download offers an explicit retry and ignores i
   await done;
   await page.getByRole("button", { name: "Settings", exact: false }).click();
   await page.getByText("Advanced connection settings", { exact: true }).click();
-  await expect(page.getByLabel("Ootle test network")).toHaveValue("38");
+  await expect(page.getByLabel("Ootle network")).toHaveValue("38");
   expect(attempts).toBe(2);
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
 });
@@ -1276,11 +1276,11 @@ test("a stalled restore preserves the current office and releases its controls",
   await expect(
     page.getByLabel("Registry component", { exact: true }),
   ).toHaveValue(deployment.registry);
-  await page.getByLabel("Ootle test network").selectOption("16");
+  await page.getByLabel("Ootle network").selectOption("16");
   const done = page.waitForResponse((r) => r.url().endsWith("deployment.json"));
   release();
   await done;
-  await expect(page.getByLabel("Ootle test network")).toHaveValue("16");
+  await expect(page.getByLabel("Ootle network")).toHaveValue("16");
   expect(await page.evaluate(() => localStorage.length)).toBe(0);
 });
 

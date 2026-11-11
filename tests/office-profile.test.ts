@@ -1,7 +1,9 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { officeProfile, loadOfficeProfile } from "../src/core/office-profile";
 import { emptyDeployment, writesReady } from "../src/core/config";
-import deployed from "../public/deployment.json";
+import deployed from "../public/deployment-v4.json";
+import mainnet from "../public/deployment.json";
+import { claimsReady } from "../src/core/config";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -13,6 +15,14 @@ test("both the deployed Sapient profile and an explicitly unconfigured office re
   expect(
     writesReady(officeProfile(emptyDeployment), "postbox", "sapient"),
   ).toBe(false);
+});
+
+test("the published Mainnet template alone does not enable writes or gift claims", () => {
+  const profile = officeProfile(mainnet);
+  expect(profile.network).toBe(0);
+  expect(profile.registry).toBe("");
+  expect(writesReady(profile, "postbox", "sapient")).toBe(false);
+  expect(claimsReady(profile)).toBe(false);
 });
 
 test("damaged types cannot crash the UI or display fabricated evidence", () => {

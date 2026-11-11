@@ -16,10 +16,10 @@ pnpm dev
 ```
 
 The development server binds to `127.0.0.1`. The current
-[`public/deployment.json`](../public/deployment.json) selects the real Esmeralda
-V4 office. Running locally does not create a private test network: approving a
-transaction against that profile uses real testnet funds. Browser fixtures and
-the explicitly labelled sample preview are separate from live mail.
+[`public/deployment.json`](../public/deployment.json) defaults to Mainnet.
+Select Esmeralda to use the live [V4 testnet office](../public/deployment-v4.json).
+Running the site locally still connects to the selected chain. Browser
+fixtures and the labelled sample preview are separate from live mail.
 
 ```sh
 pnpm test

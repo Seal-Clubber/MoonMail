@@ -128,4 +128,27 @@ describe("private link gd-link-1", () => {
       }),
     ).toThrow("HTTPS");
   });
+  it("authenticates the literal zero Mainnet byte without accepting missing network values", async () => {
+    const mainnet = { ...context, network: 0 };
+    const { capability } = await sealLetter(
+      { subject: "s", body: "b" },
+      mainnet,
+      "id",
+    );
+    const link = new URL(
+      createGiftLink("https://owner.github.io/repo/", {
+        id: "id",
+        capability,
+        context: mainnet,
+      }),
+    );
+    expect(parseGiftLink(link.hash)?.context).toEqual(mainnet);
+    expect(() =>
+      parseGiftLink(link.hash.replace("network=0", "network=")),
+    ).toThrow();
+    expect(() =>
+      parseGiftLink(link.hash.replace("network=0", "network=00")),
+    ).toThrow();
+    expect(() => parseGiftLink(link.hash + "&network=38")).toThrow();
+  });
 });

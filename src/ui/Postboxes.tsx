@@ -824,6 +824,7 @@ export function Postboxes({
                 </div>
               )}
               <MailboxWorkspace
+                network={deployment.network}
                 showSaveBar={privateAccessActive}
                 searchTarget={searchTarget}
                 postboxPicker={postboxPicker}

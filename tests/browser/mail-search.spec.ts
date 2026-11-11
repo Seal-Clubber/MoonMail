@@ -293,7 +293,7 @@ test("a late pagination response cannot import letters after switching networks"
   await fixture.requested;
   await page.getByRole("button", { name: "Settings", exact: false }).click();
   await page.getByText("Advanced connection settings", { exact: true }).click();
-  await page.getByLabel("Ootle test network").selectOption("16");
+  await page.getByLabel("Ootle network").selectOption("16");
   const completed = page.waitForResponse((response) =>
     response.url().includes(children[100]),
   );

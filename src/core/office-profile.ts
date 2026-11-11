@@ -1,6 +1,7 @@
 import type { Deployment } from "./types";
 import { readWithTimeout } from "./read-timeout";
 import { unifiedOffice } from "./config";
+import { ESMERALDA, MAINNET, supportedNetwork } from "./network-id";
 
 // Shape validation prevents a damaged static asset from crashing the UI. This
 // does not establish contract identity or replace the reviewed evidence gates.
@@ -10,7 +11,7 @@ export function officeProfile(value: unknown): Deployment {
   const d = value as Record<string, unknown>;
   const evidence = d.evidence as Record<string, unknown> | undefined;
   if (
-    ![16, 36, 38].includes(d.network as number) ||
+    !supportedNetwork(d.network) ||
     ["registry", "template", "envelopeTemplate", "indexerUrl", "resource"].some(
       (key) => typeof d[key] !== "string",
     ) ||
@@ -89,4 +90,15 @@ export function loadOfficeProfile(url: string): Promise<Deployment> {
       return officeProfile(await response.json());
     }),
   );
+}
+
+export async function loadSiteOffice(
+  base: string,
+  network?: typeof MAINNET | typeof ESMERALDA,
+) {
+  const file = network === ESMERALDA ? "deployment-v4.json" : "deployment.json";
+  const profile = await loadOfficeProfile(`${base}${file}`);
+  if (network !== undefined && profile.network !== network)
+    throw new Error("Post office settings are for another Ootle network");
+  return profile;
 }

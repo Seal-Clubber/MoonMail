@@ -1,3 +1,4 @@
+import { supportedNetwork } from "./network-id";
 import { liveSubstate } from "./substate";
 import { parseOotleAddress } from "@tari-project/ootle-wasm";
 import { hex } from "./crypto";
@@ -126,7 +127,7 @@ export async function paymentLetterId(
   paymentHex(context.template);
   paymentHex(request.nonce);
   if (
-    ![16, 36, 38].includes(context.network) ||
+    !supportedNetwork(context.network) ||
     !/^component_[a-f0-9]{64}$/.test(context.registry)
   )
     throw new Error("Invalid payment office");

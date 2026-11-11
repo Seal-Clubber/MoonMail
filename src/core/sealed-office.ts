@@ -1,3 +1,4 @@
+import { supportedNetwork } from "./network-id";
 import { liveSubstate } from "./substate";
 // Separate protocol/codec: V4 has eleven positional fields; V3 has nine.
 // No current deployment selects this client. Evidence is an activation interlock,
@@ -134,7 +135,7 @@ export function sealedOfficeProfile(value: unknown): SealedOfficeProfile {
     evidence = record(p.evidence);
   if (
     p.protocol !== "moonmail-sealed-1" ||
-    ![16, 36, 38].includes(p.network as number) ||
+    !supportedNetwork(p.network) ||
     typeof p.registry !== "string" ||
     !/^component_[a-f0-9]{64}$/.test(p.registry) ||
     typeof p.template !== "string" ||

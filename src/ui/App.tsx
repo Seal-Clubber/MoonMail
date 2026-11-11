@@ -18,6 +18,7 @@ import {
   type SampleMailFilter,
 } from "./sample-office";
 import type {
+  Context,
   Deployment,
   Envelope,
   Letter,
@@ -89,7 +90,8 @@ import {
 import { parsePostboxLink, type PostboxRoute } from "../core/postbox-links";
 import { MailReadNotice } from "./MailReadNotice";
 import { networkPreset, checkPublicIndexer } from "../core/networks";
-import { loadOfficeProfile } from "../core/office-profile";
+import { loadSiteOffice } from "../core/office-profile";
+import { ESMERALDA, MAINNET, networkLabel, tariUnit } from "../core/network-id";
 import { useActionFocus } from "./useActionFocus";
 import { SealedMailboxSession } from "../core/sealed-mailbox";
 import {
@@ -105,6 +107,29 @@ import { hex } from "../core/crypto";
 
 const short = (v: string) =>
   v.length > 20 ? `${v.slice(0, 10)}…${v.slice(-6)}` : v;
+function selectedSiteNetwork() {
+  return new URLSearchParams(location.search).get("network") === "esmeralda"
+    ? ESMERALDA
+    : undefined;
+}
+async function initialSiteOffice(link?: Context) {
+  const selected = selectedSiteNetwork();
+  const base = import.meta.env.BASE_URL;
+  const profile = await loadSiteOffice(base, selected);
+  if (
+    selected === undefined &&
+    profile.network === MAINNET &&
+    link?.network === ESMERALDA
+  ) {
+    // A fresh link can select the bundled testnet office only when its full
+    // context matches. Never use a link to configure a different indexer.
+    const esmeralda = await loadSiteOffice(base, ESMERALDA).catch(
+      () => undefined,
+    );
+    if (esmeralda && sameContext(esmeralda, link)) return esmeralda;
+  }
+  return profile;
+}
 export function App() {
   const [mailboxSearchTarget, setMailboxSearchTarget] =
     useState<HTMLDivElement | null>(null);
@@ -113,9 +138,15 @@ export function App() {
   const hallRange = useRef<HTMLParagraphElement>(null);
   const deploymentRevision = useRef(0);
   const initialOfficePending = useRef(true);
+  const initialLinkContext = useRef<Context>(undefined);
   const [view, setView] = useState("welcome"),
-    [d, setD] = useState<Deployment>(() => networkPreset(38)),
+    [d, setD] = useState<Deployment>(() =>
+      networkPreset(selectedSiteNetwork() ?? MAINNET),
+    ),
     [chain, setChain] = useState<PostOfficeClient>();
+  const activeNetwork = networkLabel(d.network);
+  const currency = tariUnit(d.network);
+  const mainnetPending = d.network === MAINNET && !!d.template && !d.registry;
   const mailboxView = view === "postboxes" || view === "compose";
   const [composerMinimized, setComposerMinimized] = useState(false);
   const [composerExpanded, setComposerExpanded] = useState(false);
@@ -392,7 +423,13 @@ export function App() {
     };
   }, []);
   useEffect(() => {
-    if (wallet || !sapientAvailable || restoreBlocked.current) return;
+    if (
+      initialOfficePending.current ||
+      wallet ||
+      !sapientAvailable ||
+      restoreBlocked.current
+    )
+      return;
     try {
       if (
         sessionStorage.getItem("ghostdrop:sapient-resume:v1") !==
@@ -423,7 +460,7 @@ export function App() {
     return () => {
       cancelled = true;
     };
-  }, [d.network, sapientAvailable, wallet]);
+  }, [d, sapientAvailable, wallet]);
   useEffect(() => {
     if (!(wallet instanceof SapientSession)) return;
     const changed = () => {
@@ -439,17 +476,6 @@ export function App() {
   useEffect(() => {
     let cancelled = false;
     const revision = deploymentRevision.current;
-    loadOfficeProfile(`${import.meta.env.BASE_URL}deployment.json`)
-      .then((data) => {
-        if (!cancelled && revision === deploymentRevision.current) {
-          initialOfficePending.current = false;
-          setD(data);
-        }
-      })
-      .catch(() => {
-        if (!cancelled && revision === deploymentRevision.current)
-          setOfficeLoadError(true);
-      });
     const readHash = () => {
       closeLetter();
       setError("");
@@ -478,16 +504,17 @@ export function App() {
             `${location.pathname}${location.search}#/letter/${encodeURIComponent(parsed.id)}`,
           );
           setRoute(parsed);
+          return parsed.context;
         } else {
           const invitation = parsePostboxLink(hash);
           if (invitation) {
             setPostboxInvitation(invitation);
-            return;
+            return invitation.context;
           }
           const publicLink = parsePublicLetterLink(hash);
           if (publicLink) {
             setPublicLetterRoute(publicLink);
-            return;
+            return publicLink.context;
           }
           const initialView = hash.slice(2) || "welcome";
           if (
@@ -516,8 +543,19 @@ export function App() {
     };
     if (!routeOnce.current) {
       routeOnce.current = true;
-      readHash();
+      initialLinkContext.current = readHash();
     }
+    initialSiteOffice(initialLinkContext.current)
+      .then((data) => {
+        if (!cancelled && revision === deploymentRevision.current) {
+          initialOfficePending.current = false;
+          setD(data);
+        }
+      })
+      .catch(() => {
+        if (!cancelled && revision === deploymentRevision.current)
+          setOfficeLoadError(true);
+      });
     const readChangedHash = (event: HashChangeEvent) => {
       // popstate can already have consumed this navigation and scrubbed its
       // capability. Ignore that stale hashchange instead of parsing the short
@@ -925,8 +963,19 @@ export function App() {
     setPreview(false);
     setMailQuery("");
     setMailFilter("all");
-    if (change.network !== undefined && change.network !== d.network)
-      disconnect();
+    if (change.network !== undefined && change.network !== d.network) {
+      if (wallet instanceof SapientSession) wallet.invalidate();
+      clearWallet(false);
+      setConnect(false);
+      setRecipient("");
+      setGift("0");
+      setReserve("0");
+      setRequestPayment(false);
+      setRequestedAmount("0");
+      setFee("100000");
+      setFeeProblem(undefined);
+      setPublicConfirmed(false);
+    }
     setIndexerStatus("");
     setError("");
     setStatus("");
@@ -973,22 +1022,50 @@ export function App() {
         : { ...emptyDeployment.evidence },
     });
   }
-  async function restoreOffice(retryInitial = false) {
+  async function restoreOffice(
+    retryInitial = false,
+    network?: typeof MAINNET | typeof ESMERALDA,
+  ) {
     const revision = ++deploymentRevision.current;
     setOfficeLoadError(false);
     try {
-      const profile = await loadOfficeProfile(
-        `${import.meta.env.BASE_URL}deployment.json`,
-      );
+      const profile = retryInitial
+        ? await initialSiteOffice(initialLinkContext.current)
+        : await loadSiteOffice(import.meta.env.BASE_URL, network);
       if (revision !== deploymentRevision.current) return;
       if (retryInitial && initialOfficePending.current) {
         // Completing the first load must preserve incoming links kept in memory.
         initialOfficePending.current = false;
         setD(profile);
-      } else changeDeployment(profile, true);
-      setStatus("Sapient post office settings restored.");
+      } else {
+        changeDeployment(profile, true);
+        if (network !== undefined && !active) {
+          if (route && sameContext(route.context, profile)) setRoute(route);
+          if (
+            publicLetterRoute &&
+            sameContext(publicLetterRoute.context, profile)
+          )
+            setPublicLetterRoute(publicLetterRoute);
+        }
+        const url = new URL(location.href);
+        if (profile.network === ESMERALDA && network === ESMERALDA)
+          url.searchParams.set("network", "esmeralda");
+        else url.searchParams.delete("network");
+        history.replaceState(null, "", url);
+      }
+      setStatus(
+        network === undefined
+          ? "Sapient post office settings restored."
+          : `Selected ${networkLabel(profile.network)}. Choose the same network in Sapient before connecting.`,
+      );
     } catch {
-      if (revision === deploymentRevision.current) setOfficeLoadError(true);
+      if (revision !== deploymentRevision.current) return;
+      if (retryInitial || initialOfficePending.current)
+        setOfficeLoadError(true);
+      else
+        setError(
+          `Could not load ${networkLabel(network ?? MAINNET)} settings. Your current office is still selected. Try again.`,
+        );
     }
   }
   function navigate(v: string, publicationSubmitted = false) {
@@ -1019,7 +1096,7 @@ export function App() {
     setError("");
     setPublicConfirmed(false);
     setReview(false);
-    history.pushState(null, "", `${location.pathname}#/${v}`);
+    history.pushState(null, "", `${location.pathname}${location.search}#/${v}`);
     window.scrollTo(0, 0);
   }
   function closeComposer() {
@@ -1360,7 +1437,7 @@ export function App() {
     )
       throw new Error("Payment session changed");
     setPaymentNotice(
-      `Verified ${tari(result.amount)} test TARI ${result.alreadyImported ? "already available in your private Sapient balance" : "and imported it into Sapient"}. No transaction or spending approval was needed.${result.transactionHistoryAvailable ? "" : " The indexer no longer retains the transaction receipt; the current unspent output, ownership, amount and memo were verified instead."}`,
+      `Verified ${tari(result.amount)} ${currency} ${result.alreadyImported ? "already available in your private Sapient balance" : "and imported it into Sapient"}. No transaction or spending approval was needed.${result.transactionHistoryAvailable ? "" : " The indexer no longer retains the transaction receipt; the current unspent output, ownership, amount and memo were verified instead."}`,
     );
   }
   async function discoverSealed(box: Postbox, refresh = false) {
@@ -1901,6 +1978,7 @@ export function App() {
     <PostboxInvitation
       invitation={postboxInvitation}
       deployment={d}
+      settingsPending={initialOfficePending.current}
       boxes={boxes}
       ready={readState === "ready"}
       failed={readState === "failed"}
@@ -2034,7 +2112,9 @@ export function App() {
             )}
             <button
               className="wallet-button"
-              disabled={busy}
+              disabled={
+                busy || (initialOfficePending.current && !officeLoadError)
+              }
               onClick={() => (wallet ? disconnect() : setConnect(true))}
             >
               <span className={wallet ? "dot live" : "dot"} />
@@ -2044,6 +2124,23 @@ export function App() {
         </div>
       </header>
       <main id="main-content" tabIndex={-1}>
+        {mainnetPending && view !== "network" && (
+          <div className="deployment-note" role="status">
+            <div>
+              <strong>Mainnet office pending</strong>
+              <p>
+                Browse live mail or try your Sapient wallet on Esmeralda using
+                test TARI.
+              </p>
+            </div>
+            <button
+              disabled={busy}
+              onClick={() => void task(() => restoreOffice(false, ESMERALDA))}
+            >
+              Switch to Esmeralda
+            </button>
+          </div>
+        )}
         {!["welcome", "privacy", "compose", "hall"].includes(view) &&
           (!mailboxView || !owned.length) && (
             <div className="privacy-shortcut">
@@ -2105,9 +2202,12 @@ export function App() {
               </strong>
               <p>
                 {publicLetterError ||
-                  (readState === "failed"
-                    ? "The post office could not be reached. Refresh to try this letter again."
-                    : "Reading the selected post office. Opening a public letter needs no wallet and never collects its gift.")}
+                  (!initialOfficePending.current &&
+                  !sameContext(publicLetterRoute.context, d)
+                    ? "This public link belongs to a different post office or network. Check the selected network or ask the sender for a current link."
+                    : readState === "failed"
+                      ? "The post office could not be reached. Refresh to try this letter again."
+                      : "Reading the selected post office. Opening a public letter needs no wallet and never collects its gift.")}
               </p>
             </div>
             <div className="actions">
@@ -2151,7 +2251,10 @@ export function App() {
               </strong>
               <p>
                 {linkError ||
-                  "The secret stays in this tab. Keep the sender’s complete link to reopen this letter later."}
+                  (!initialOfficePending.current &&
+                  !sameContext(route.context, d)
+                    ? "This private link belongs to another post office. Choose the matching network or ask the sender for a current link."
+                    : "The secret stays in this tab. Keep the sender’s complete link to reopen this letter later.")}
               </p>
             </div>
             <div className="actions">
@@ -2178,6 +2281,7 @@ export function App() {
         )}
         {view === "welcome" && (
           <Landing
+            network={activeNetwork}
             onOpen={() => navigate("postboxes")}
             onPublic={() => navigate("hall")}
             onPrivacy={() => navigate("privacy")}
@@ -2474,7 +2578,7 @@ export function App() {
                 <h3>Leave a little kindness</h3>
                 <p>
                   Write a public letter, share a secret link, or send to a
-                  friend’s postbox. Add a test TARI gift if you like.
+                  friend’s postbox. Add a gift in {currency} if you like.
                 </p>
               </div>
               <div>
@@ -3022,7 +3126,10 @@ export function App() {
                       : "Ready for review"}
                   </h2>
                   {draftLetter.privatePayment && (
-                    <PrivatePaymentCard payment={draftLetter.privatePayment} />
+                    <PrivatePaymentCard
+                      payment={draftLetter.privatePayment}
+                      network={d.network}
+                    />
                   )}
                   <dl className="receipt">
                     <div>
@@ -3355,8 +3462,35 @@ export function App() {
               wallet. No MoonMail server.
             </p>
             <div className="info">
-              You’re using the Sapient post office on Esmeralda. These are test
-              coins. Choose Esmeralda in Sapient before connecting.
+              <strong>{activeNetwork}</strong>
+              <p>
+                {d.network === MAINNET
+                  ? "Mainnet uses real TARI."
+                  : "This network uses test TARI."}{" "}
+                Choose the same network in Sapient before connecting.
+              </p>
+              {mainnetPending && (
+                <p>
+                  The MoonMail template is published. Mainnet mail and gifts
+                  will be available after the office is created and verified.
+                </p>
+              )}
+            </div>
+            <div className="actions" role="group" aria-label="MoonMail network">
+              <button
+                aria-pressed={d.network === MAINNET}
+                disabled={busy}
+                onClick={() => void task(() => restoreOffice(false, MAINNET))}
+              >
+                Mainnet · real TARI
+              </button>
+              <button
+                aria-pressed={d.network === ESMERALDA}
+                disabled={busy}
+                onClick={() => void task(() => restoreOffice(false, ESMERALDA))}
+              >
+                Esmeralda · test TARI
+              </button>
             </div>
             <button disabled={busy} onClick={() => void task(restoreOffice)}>
               Restore default settings
@@ -3368,7 +3502,7 @@ export function App() {
                 permissions. Only use contract addresses you trust.
               </p>
               <label>
-                Ootle test network
+                Ootle network
                 <select
                   disabled={busy}
                   value={d.network}
@@ -3376,6 +3510,7 @@ export function App() {
                     changeDeployment(networkPreset(Number(e.target.value)))
                   }
                 >
+                  <option value={0}>Mainnet · real TARI</option>
                   <option value={38}>Esmeralda · public testnet</option>
                   <option value={36}>Igor · custom testnet endpoint</option>
                   <option value={16}>Localnet · your local indexer</option>
@@ -3393,7 +3528,7 @@ export function App() {
                 />
               </label>
               <label>
-                Test asset resource
+                Asset resource
                 <input
                   disabled={busy}
                   value={d.resource}
@@ -3429,9 +3564,8 @@ export function App() {
               {!d.registry && (
                 <p className="info">
                   Public network settings are ready to check. MoonMail still
-                  needs its own deployed registry and two template addresses
-                  before live mail can load. Addresses from a local test chain
-                  do not work on the public testnet.
+                  needs a deployed registry on this network before live mail can
+                  load.
                 </p>
               )}
               <label>
@@ -3591,8 +3725,12 @@ export function App() {
       <footer>
         <span className="footer-brand">✦ MOONMAIL</span>
         <p>Your words, under cover of night.</p>
-        <button onClick={() => navigate("network")}>Settings ↗</button>
-        <span className="footer-note">ESMERALDA TESTNET · SAPIENT</span>
+        <button disabled={busy} onClick={() => navigate("network")}>
+          Settings ↗
+        </button>
+        <span className="footer-note">
+          {activeNetwork.toUpperCase()} · SAPIENT
+        </span>
       </footer>
       {connect && (
         <div className="modal-backdrop">
@@ -3628,11 +3766,10 @@ export function App() {
             {wallet && current ? (
               <div className="wallet-summary">
                 <span className="wallet-connected-badge">
-                  <UiIcon name="check" /> Connected ·{" "}
-                  {d.network === 38 ? "Esmeralda" : "Igor"} testnet
+                  <UiIcon name="check" /> Connected · {activeNetwork}
                 </span>
                 <p>
-                  Use this address to receive test TARI. Reading private mail
+                  Use this address to receive {currency}. Reading private mail
                   and spending funds still need their own approvals in Sapient.
                 </p>
                 <CopyField
@@ -3672,14 +3809,10 @@ export function App() {
             ) : (
               <WalletConnection
                 available={sapientAvailable}
-                busy={busy}
-                network={
-                  d.network === 38
-                    ? "Esmeralda"
-                    : d.network === 36
-                      ? "Igor"
-                      : "the required"
+                busy={
+                  busy || (initialOfficePending.current && !officeLoadError)
                 }
+                network={activeNetwork}
                 onCheck={() => {
                   const available = !!sapientProvider();
                   setSapientAvailable(available);
@@ -3849,6 +3982,7 @@ export function App() {
                 {plain?.privatePayment &&
                   active.deliveryProtocol === "mm-sealed-2" && (
                     <PrivatePaymentCard
+                      network={d.network}
                       payment={plain.privatePayment}
                       busy={busy}
                       onPay={
@@ -3915,7 +4049,7 @@ export function App() {
                     <p>
                       {active.deliveryProtocol === "mm-sealed-2"
                         ? "Subject, body, recipient and reply addressing are encrypted inside this payload. Your transaction signer, timing, office and padded size bucket remain public. Access-slot keys and local decrypted addressing are not published here. Any private payment request or recovery record is encrypted too; a payment uses separate approvals, with signers, fees, commitments and timing still observable."
-                        : "Encryption hides the subject and body of sealed mail. The existing gift vault uses revealed test TARI: amounts, sender/controller keys, timing and routing remain observable. Ghost View does not provide payment anonymity."}
+                        : `Encryption hides the subject and body of sealed mail. The existing gift vault uses revealed ${currency}. Amounts, sender/controller keys, timing and routing remain observable. Ghost View does not provide payment anonymity.`}
                     </p>
                   </div>
                 )}
@@ -4175,18 +4309,16 @@ export function App() {
                             </h3>
                             <dl>
                               <dt>You receive</dt>
-                              <dd>{tari(active.gift)} test TARI</dd>
+                              <dd>
+                                {tari(active.gift)} {currency}
+                              </dd>
                               <dt>Collection fee limit</dt>
                               <dd>
                                 {tari(active.reserve)} TARI, from the sender’s
                                 reserve
                               </dd>
                               <dt>Network</dt>
-                              <dd>
-                                {d.network === 38
-                                  ? "Esmeralda testnet"
-                                  : `Test network ${d.network}`}
-                              </dd>
+                              <dd>{activeNetwork}</dd>
                               <dt>Receiving address</dt>
                               <dd>
                                 <code>{claimReview.address}</code>

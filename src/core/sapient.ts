@@ -77,7 +77,13 @@ function transactionId(result: unknown) {
   return id;
 }
 const networkName = (network: number) =>
-  network === 38 ? "esmeralda" : network === 36 ? "igor" : undefined;
+  network === 0
+    ? "mainnet"
+    : network === 38
+      ? "esmeralda"
+      : network === 36
+        ? "igor"
+        : undefined;
 export class SapientSession {
   readonly kind = "sapient" as const;
   readonly version = "Sapient injected provider";
@@ -129,9 +135,7 @@ export class SapientSession {
     request: boolean,
   ) {
     if (!networkName(network))
-      throw new Error(
-        "Sapient supports Esmeralda and Igor; choose a supported network",
-      );
+      throw new Error("Choose a supported network in Sapient");
     if (
       !provider ||
       provider.isTariWallet !== true ||
@@ -141,9 +145,11 @@ export class SapientSession {
         "Sapient was not detected. Open MoonMail in the browser where Sapient is installed, then try again.",
       );
     const session = new SapientSession(provider, [], network);
+    let requestedAccounts = false;
     try {
       if ((await session.call("tari_getNetwork")) !== networkName(network))
         throw new Error("Switch Sapient to the selected Ootle network");
+      requestedAccounts = request;
       const addresses = await session.call(
         request ? "tari_requestAccounts" : "tari_getAccounts",
         undefined,
@@ -191,7 +197,7 @@ export class SapientSession {
       await session.assertCurrent();
       return session;
     } catch (error) {
-      if (request) session.disconnect();
+      if (requestedAccounts) session.disconnect();
       else session.invalidate();
       throw error;
     }
@@ -264,7 +270,7 @@ export class SapientSession {
     feeCap: string,
   ) {
     if (request.resource !== privateTari)
-      throw new Error("Only native test TARI is supported");
+      throw new Error("Only native TARI is supported");
     paymentAmount(request.amount);
     paymentAmount(feeCap);
     paymentAddress(request.destination, this.network);

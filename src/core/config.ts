@@ -1,4 +1,5 @@
 import type { Deployment } from "./types";
+import { MAINNET, supportedNetwork } from "./network-id";
 export const emptyDeployment: Deployment = {
   network: 16,
   registry: "",
@@ -24,7 +25,10 @@ export function unifiedOffice(d: Deployment) {
 }
 function deploymentReady(d: Deployment) {
   return (
-    [16, 36, 38].includes(d.network) &&
+    supportedNetwork(d.network) &&
+    (d.network !== MAINNET ||
+      (d.contractProtocol === "unified-2" &&
+        d.resource === `resource_${"01".repeat(32)}`)) &&
     /^component_[a-f0-9]{64}$/.test(d.registry) &&
     /^[a-f0-9]{64}$/.test(d.template) &&
     /^[a-f0-9]{64}$/.test(d.envelopeTemplate) &&

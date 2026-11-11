@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import deployed from "../../public/deployment.json" with { type: "json" };
+import deployed from "../../public/deployment-v4.json" with { type: "json" };
 import archived from "../../public/deployment-v2.json" with { type: "json" };
 import { createPostboxLink } from "../../src/core/postbox-links";
 
@@ -9,7 +9,7 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test("sealed mail is the single default even with a stale office preference", async ({
+test("Mainnet is the default and Esmeralda is explicitly selectable", async ({
   page,
 }) => {
   const profiles: string[] = [];
@@ -21,6 +21,9 @@ test("sealed mail is the single default even with a stale office preference", as
     localStorage.setItem("moonmail:office:v1", "existing"),
   );
   await page.goto("./#/postboxes");
+  await expect(
+    page.getByText("Mainnet office pending", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByRole("region", { name: "Mailbox office", exact: true }),
   ).toHaveCount(0);
@@ -34,8 +37,22 @@ test("sealed mail is the single default even with a stale office preference", as
   await page.reload();
   await expect.poll(() => profiles.length).toBe(2);
   expect(profiles.every((p) => p === "/MoonMail/deployment.json")).toBe(true);
-  expect(deployed.contractProtocol).toBe("unified-2");
-  expect(deployed.evidence.nativePrivatePayments).toBe(true);
+  await page
+    .getByRole("button", { name: "Switch to Esmeralda", exact: true })
+    .click();
+  await expect(page.locator(".footer-note")).toHaveText(
+    "ESMERALDA TESTNET · SAPIENT",
+  );
+  await expect(page).toHaveURL(/\?network=esmeralda#\/postboxes$/);
+  await page.reload();
+  await expect(page.locator(".footer-note")).toHaveText(
+    "ESMERALDA TESTNET · SAPIENT",
+  );
+  await expect
+    .poll(
+      () => profiles.filter((p) => p.endsWith("/deployment-v4.json")).length,
+    )
+    .toBe(2);
   expect(
     await page.evaluate(() => localStorage.getItem("ghostdrop:pending:v1")),
   ).toBeNull();
@@ -52,9 +69,15 @@ test("sealed mail is the single default even with a stale office preference", as
   await expect(page.locator(".privacy-page")).toContainText(
     "does not provide anonymity",
   );
+  await page.getByRole("button", { name: "Settings ↗", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Mainnet · real TARI", exact: true })
+    .click();
+  await expect(page.locator(".footer-note")).toHaveText("MAINNET · SAPIENT");
+  await expect(page).toHaveURL(/\/MoonMail\/#\/network$/);
 });
 
-test("a current invitation opens directly without an office switch", async ({
+test("a current Esmeralda invitation selects its bundled office on a fresh visit", async ({
   page,
 }) => {
   const hash = new URL(

@@ -1,3 +1,4 @@
+import { supportedNetwork } from "./network-id";
 // Protocol prototype: deliberately not connected to the deployed V3 mailbox.
 // Discovery is bounded trial decryption using recovered mailbox keys; the outer
 // envelope carries no recipient key, postbox ID, controller or capsule locator.
@@ -34,7 +35,7 @@ function associated(
   ephemeral: string,
 ) {
   if (
-    ![16, 36, 38].includes(context.network) ||
+    !supportedNetwork(context.network) ||
     !/^component_[a-f0-9]{64}$/.test(context.registry) ||
     !/^[a-f0-9]{64}$/.test(context.template) ||
     !/^[a-f0-9]{64}$/.test(id)
