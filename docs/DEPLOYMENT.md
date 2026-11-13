@@ -17,10 +17,10 @@ The same published release also passed a separately approved four-transaction Sa
 
 ## Public network presets
 
-| Network              | Site profile                                       | Public indexer                      | State                                                                     |
-| -------------------- | -------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------- |
-| Mainnet (0), default | [deployment.json](../public/deployment.json)       | `https://indexer-a.ootle.tari.com/` | Template published. Office and real-fund operations pending verification. |
-| Esmeralda (38)       | [deployment-v4.json](../public/deployment-v4.json) | `https://ootle-indexer-a.tari.com/` | Live V4 office for test TARI.                                             |
+| Network              | Site profile                                       | Public indexer                      | State                                                                               |
+| -------------------- | -------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------- |
+| Mainnet (0), default | [deployment.json](../public/deployment.json)       | `https://indexer-a.ootle.tari.com/` | Office confirmed and configured for reads. Real-fund operations await verification. |
+| Esmeralda (38)       | [deployment-v4.json](../public/deployment-v4.json) | `https://ootle-indexer-a.tari.com/` | Live V4 office for test TARI.                                                       |
 
 Choose a network in **Settings**. Sapient must use the same
 network. A switch clears the active wallet session and transaction review.
@@ -28,15 +28,12 @@ network. A switch clears the active wallet session and transaction review.
 a wallet. Both profiles use the native TARI resource identity. Localnet and
 Igor remain available for custom connection settings.
 
-To activate Mainnet, find or create the office from the
-[published template](https://explorer.tari.mw/template/d4ed44d36e79e85ea7a8705170d0227a34b9fb3afba556b00112ff785b6da8c8).
-Its on-chain ABI declares `new(network: U8, template: TemplateAddress)`.
-Use network byte `0` and that same published template address. An operator
-must review and authorize any Mainnet transaction fee. Record the confirmed
-transaction, the resulting component address and the recovery resource.
-Verify the deployed code, component ownership and upgrade rules, and
-Mainnet-specific wallet and gift behavior before enabling the corresponding
-evidence flags. A successful Esmeralda test applies only to that deployment.
+The Mainnet office was created from the
+[published template](https://explorer.tari.mw/template/d4ed44d36e79e85ea7a8705170d0227a34b9fb3afba556b00112ff785b6da8c8)
+in transaction `39706303356bc9fece63657af00701bacc2ee2e01a10a2c000ee0c6d7149e14d`.
+Its component is ownerless and upgrade-locked. The indexer reads confirmed
+the V4 state and component-scoped recovery resource. Mainnet-specific wallet
+and gift checks are required before enabling their evidence flags.
 
 ## Historical local deployment tooling
 

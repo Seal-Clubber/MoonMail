@@ -1,6 +1,6 @@
 {
   "network": 0,
-  "registry": "",
+  "registry": "component_49d9c95a147daaa8c3d93fa61ffad38b027be6de67dcbd217de72904e1a0f1d4",
   "template": "d4ed44d36e79e85ea7a8705170d0227a34b9fb3afba556b00112ff785b6da8c8",
   "envelopeTemplate": "d4ed44d36e79e85ea7a8705170d0227a34b9fb3afba556b00112ff785b6da8c8",
   "resource": "resource_0101010101010101010101010101010101010101010101010101010101010101",
@@ -17,5 +17,18 @@
     "mailboxState": false,
     "nativePrivatePostage": false,
     "nativePrivatePayments": false
+  },
+  "contractProtocol": "unified-2",
+  "postboxClaimProtocol": "sapient-proof-1",
+  "capsule": {
+    "component": "component_49d9c95a147daaa8c3d93fa61ffad38b027be6de67dcbd217de72904e1a0f1d4",
+    "template": "d4ed44d36e79e85ea7a8705170d0227a34b9fb3afba556b00112ff785b6da8c8",
+    "resource": "resource_494bf658958616a367585aadbba21bdb34b6a6c2ff358e19822da54552549cee"
+  },
+  "sealedDelivery": {
+    "engine": false,
+    "recovery": false,
+    "stockSapient": false,
+    "sentAndReplies": false
   }
 }

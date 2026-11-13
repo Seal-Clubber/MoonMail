@@ -4,6 +4,9 @@ import archived from "../../public/deployment-v2.json" with { type: "json" };
 import { createPostboxLink } from "../../src/core/postbox-links";
 
 test.beforeEach(async ({ page }) => {
+  await page.route("https://indexer-a.ootle.tari.com/**", (route) =>
+    route.abort(),
+  );
   await page.route("https://ootle-indexer-a.tari.com/**", (route) =>
     route.abort(),
   );
@@ -23,7 +26,8 @@ test("Mainnet is the default and Esmeralda is explicitly selectable", async ({
   await page.goto("./#/postboxes");
   await expect(
     page.getByText("Mainnet office pending", { exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
+  await expect(page.locator(".footer-note")).toHaveText("MAINNET · SAPIENT");
   await expect(
     page.getByRole("region", { name: "Mailbox office", exact: true }),
   ).toHaveCount(0);
@@ -37,13 +41,14 @@ test("Mainnet is the default and Esmeralda is explicitly selectable", async ({
   await page.reload();
   await expect.poll(() => profiles.length).toBe(2);
   expect(profiles.every((p) => p === "/MoonMail/deployment.json")).toBe(true);
+  await page.getByRole("button", { name: "Settings ↗", exact: true }).click();
   await page
-    .getByRole("button", { name: "Switch to Esmeralda", exact: true })
+    .getByRole("button", { name: "Esmeralda · test TARI", exact: true })
     .click();
   await expect(page.locator(".footer-note")).toHaveText(
     "ESMERALDA TESTNET · SAPIENT",
   );
-  await expect(page).toHaveURL(/\?network=esmeralda#\/postboxes$/);
+  await expect(page).toHaveURL(/\?network=esmeralda#\/network$/);
   await page.reload();
   await expect(page.locator(".footer-note")).toHaveText(
     "ESMERALDA TESTNET · SAPIENT",
