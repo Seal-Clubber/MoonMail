@@ -1,4 +1,4 @@
-use crate::ownership;
+use crate::{SUPPORTED_NETWORKS, ownership};
 use tari_template_lib::prelude::*;
 pub fn validate_letter(
     mode: u8,
@@ -78,7 +78,10 @@ pub mod letter {
             funding: Bucket,
             registry: ComponentAddress,
         ) -> Self {
-            assert!([16, 36, 38].contains(&network), "Test networks only");
+            assert!(
+                SUPPORTED_NETWORKS.contains(&network),
+                "Unsupported Ootle network"
+            );
             let authority = if authority_hex.is_empty() {
                 None
             } else {
@@ -102,7 +105,7 @@ pub mod letter {
             assert_eq!(
                 funding.resource_address(),
                 TARI_TOKEN,
-                "Only test native TARI is supported"
+                "Only native TARI is supported"
             );
             assert_eq!(
                 funding.amount(),

@@ -3,6 +3,8 @@ import { officeProfile, loadOfficeProfile } from "../src/core/office-profile";
 import {
   claimsReady,
   emptyDeployment,
+  mailboxStateReady,
+  postboxClaimsReady,
   postboxSetupReady,
   writesReady,
 } from "../src/core/config";
@@ -21,16 +23,20 @@ test("both the deployed Sapient profile and an explicitly unconfigured office re
   ).toBe(false);
 });
 
-test("Mainnet enables gift collection and postbox setup independently of sending", () => {
+test("the bundled Mainnet profile enables the same wallet flows as Esmeralda", () => {
   const profile = officeProfile(mainnet);
   expect(profile.network).toBe(0);
   expect(profile.registry).toMatch(/^component_[a-f0-9]{64}$/);
   expect(profile.contractProtocol).toBe("unified-2");
   expect(profile.capsule?.component).toBe(profile.registry);
   expect(postboxSetupReady(profile, "sapient")).toBe(true);
-  expect(writesReady(profile, "public", "sapient")).toBe(false);
-  expect(writesReady(profile, "link", "sapient")).toBe(false);
-  expect(writesReady(profile, "postbox", "sapient")).toBe(false);
+  expect(profile.evidence).toEqual(deployed.evidence);
+  expect(profile.sealedDelivery).toEqual(deployed.sealedDelivery);
+  expect(writesReady(profile, "public", "sapient")).toBe(true);
+  expect(writesReady(profile, "link", "sapient")).toBe(true);
+  expect(writesReady(profile, "postbox", "sapient")).toBe(true);
+  expect(postboxClaimsReady(profile, "sapient")).toBe(true);
+  expect(mailboxStateReady(profile)).toBe(true);
   expect(claimsReady(profile)).toBe(true);
   expect(claimsReady(profile, true)).toBe(true);
 });
@@ -43,7 +49,7 @@ test("unverified recovery or a missing capsule blocks postbox setup", () => {
   expect(postboxSetupReady(profile, "sapient")).toBe(false);
   expect(postboxSetupReady(profile, "daemon")).toBe(false);
   expect(writesReady(profile, "postbox", "sapient")).toBe(false);
-  expect(writesReady(profile, "public", "sapient")).toBe(false);
+  expect(writesReady(profile, "public", "sapient")).toBe(true);
   expect(
     postboxSetupReady(
       { ...officeProfile(mainnet), capsule: undefined },

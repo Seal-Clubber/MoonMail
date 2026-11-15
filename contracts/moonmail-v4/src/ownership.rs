@@ -9,6 +9,7 @@ pub fn address_owner(address: &str, network: u8) -> Option<RistrettoPublicKeyByt
         return None;
     }
     let expected_hrp = match network {
+        0 => "otl_",
         16 => "otl_loc_",
         36 => "otl_igr_",
         38 => "otl_esm_",

@@ -3783,7 +3783,14 @@ export function App() {
                   multiline
                 />
                 {wallet instanceof SapientSession && (
-                  <WalletFunds wallet={wallet} disabled={busy} />
+                  <WalletFunds
+                    wallet={wallet}
+                    disabled={busy}
+                    privatePostage={
+                      wallet.privateFeeCapable &&
+                      d.evidence.nativePrivatePostage === true
+                    }
+                  />
                 )}
                 <details>
                   <summary>Receiving account details</summary>

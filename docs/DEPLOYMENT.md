@@ -17,10 +17,10 @@ The same published release also passed a separately approved four-transaction Sa
 
 ## Public network presets
 
-| Network              | Site profile                                       | Public indexer                      | State                                                        |
-| -------------------- | -------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------ |
-| Mainnet (0), default | [deployment.json](../public/deployment.json)       | `https://indexer-a.ootle.tari.com/` | Public showcase, guest collection and Sapient postbox setup. |
-| Esmeralda (38)       | [deployment-v4.json](../public/deployment-v4.json) | `https://ootle-indexer-a.tari.com/` | Live V4 office for test TARI.                                |
+| Network              | Site profile                                       | Public indexer                      | State                         |
+| -------------------- | -------------------------------------------------- | ----------------------------------- | ----------------------------- |
+| Mainnet (0), default | [deployment.json](../public/deployment.json)       | `https://indexer-a.ootle.tari.com/` | V4 office for real TARI.      |
+| Esmeralda (38)       | [deployment-v4.json](../public/deployment-v4.json) | `https://ootle-indexer-a.tari.com/` | Live V4 office for test TARI. |
 
 Choose a network in **Settings**. Sapient must use the same
 network. A switch clears the active wallet session and transaction review.
@@ -55,6 +55,19 @@ and `5e5336bb0ea737ab8b2c57b9f1bcc5c66f4c2cf18f13c9e1261295154f3830c9`.
 Both registered keys point to verified permanent carriers. Setup evidence
 enables postbox setup separately from sending, mailbox settings and
 postbox gift collection.
+
+The Mainnet profile enables the same features as Esmeralda. A stock Sapient
+Compose session published a sealed letter using private postage in
+`0e0898106486af80210383a3d0da602e06dff240246524b1a8fd77a573aafd3d` for
+0.024823 TARI. The preview saved encrypted mailbox settings in
+`a4f0060a847903a5677cc3ad333202f39cc5a2826817343b88b2fc8f933ace71` for
+0.022257 TARI. Both transactions fully committed. Local tests of the exact
+published template verified Mainnet postbox gift proofs and rejected
+unauthorized changes to saved mailbox settings. Mainnet browser and unit
+fixtures cover Inbox, Sent, reply recovery, and private payment approvals
+and import. The release check did not send a separate live native private
+payment. The selected wallet must report support for the corresponding
+private-fee, private-spend or private-scan capability.
 
 ## Historical local deployment tooling
 

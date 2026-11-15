@@ -134,78 +134,90 @@ test("self mail remains in both folders and historical key versions survive rota
     current.secret.fill(0);
   }
 });
-test("both parties recover reply identities from their Sent and open replies discovered before their seed letter", async () => {
-  const a = key("alice"),
-    b = key("bob"),
-    replyA = await conversationReplyKey(a.secret, context, nonce),
-    replyB = await conversationReplyKey(b.secret, context, nonce);
-  try {
-    const initial = message(a, b);
-    initial.reply = { conversation: nonce, publicKey: replyA.publicKey };
-    const initialPayload = await sealPrivateMail(
-      initial,
-      context,
-      "ff".repeat(32),
-    );
-    const response = message(b, a);
-    response.recipient = {
-      ...response.recipient,
-      conversation: nonce,
-      publicKey: replyA.publicKey,
-    };
-    response.reply = { conversation: nonce, publicKey: replyB.publicKey };
-    response.letter.thread = {
-      version: "gd-thread-1",
-      root: "ff".repeat(32),
-      parent: "ff".repeat(32),
-    };
-    const responsePayload = await sealPrivateMail(
-      response,
-      { ...context, senderPublicKey: b.controller },
-      id,
-    );
-    const page = [
-      entry(responsePayload, id, b.controller),
-      entry(initialPayload, "ff".repeat(32)),
-    ];
-    const restoredA = await discoverPrivateMailPage(
-      page,
-      [{ ...a, secret: new Uint8Array(a.secret) }],
-      context,
-    );
-    expect(restoredA.matches).toHaveLength(2);
-    expect(restoredA.matches.find((m) => m.id === id)).toMatchObject({
-      inbox: true,
-      sent: false,
-      message: response,
-    });
-    expect(restoredA.identities).toEqual([
-      {
-        postbox: a.postbox,
-        keyVersion: a.keyVersion,
-        publicKey: replyA.publicKey,
+test.each([38, 0])(
+  "network %d restores reply identities from Sent and opens earlier discovered replies",
+  async (network) => {
+    const mailContext = { ...context, network };
+    const a = key("alice"),
+      b = key("bob"),
+      replyA = await conversationReplyKey(a.secret, mailContext, nonce),
+      replyB = await conversationReplyKey(b.secret, mailContext, nonce);
+    try {
+      const initial = message(a, b);
+      initial.reply = { conversation: nonce, publicKey: replyA.publicKey };
+      const initialPayload = await sealPrivateMail(
+        initial,
+        mailContext,
+        "ff".repeat(32),
+      );
+      const response = message(b, a);
+      response.recipient = {
+        ...response.recipient,
         conversation: nonce,
-      },
-    ]);
-    const restoredB = await discoverPrivateMailPage(page, [b], context);
-    expect(restoredB.matches).toHaveLength(2);
-    expect(restoredB.matches.find((m) => m.id === id)).toMatchObject({
-      inbox: false,
-      sent: true,
-    });
-    // Restore page two first, then revisit an earlier page with only descriptors.
-    const seeds = await discoverPrivateMailPage([page[1]], [a], context);
-    expect(
-      (await discoverPrivateMailPage([page[0]], [a], context, seeds.identities))
-        .matches[0].inbox,
-    ).toBe(true);
-    for (const identity of restoredA.identities)
-      expect(JSON.stringify(responsePayload)).not.toContain(identity.publicKey);
-    expect(a.secret.some((n) => n !== 0)).toBe(true); // caller keys are borrowed, never erased
-  } finally {
-    for (const k of [a, b, replyA, replyB]) k.secret.fill(0);
-  }
-});
+        publicKey: replyA.publicKey,
+      };
+      response.reply = { conversation: nonce, publicKey: replyB.publicKey };
+      response.letter.thread = {
+        version: "gd-thread-1",
+        root: "ff".repeat(32),
+        parent: "ff".repeat(32),
+      };
+      const responsePayload = await sealPrivateMail(
+        response,
+        { ...mailContext, senderPublicKey: b.controller },
+        id,
+      );
+      const page = [
+        entry(responsePayload, id, b.controller),
+        entry(initialPayload, "ff".repeat(32)),
+      ];
+      const restoredA = await discoverPrivateMailPage(
+        page,
+        [{ ...a, secret: new Uint8Array(a.secret) }],
+        mailContext,
+      );
+      expect(restoredA.matches).toHaveLength(2);
+      expect(restoredA.matches.find((m) => m.id === id)).toMatchObject({
+        inbox: true,
+        sent: false,
+        message: response,
+      });
+      expect(restoredA.identities).toEqual([
+        {
+          postbox: a.postbox,
+          keyVersion: a.keyVersion,
+          publicKey: replyA.publicKey,
+          conversation: nonce,
+        },
+      ]);
+      const restoredB = await discoverPrivateMailPage(page, [b], mailContext);
+      expect(restoredB.matches).toHaveLength(2);
+      expect(restoredB.matches.find((m) => m.id === id)).toMatchObject({
+        inbox: false,
+        sent: true,
+      });
+      // Restore page two first, then revisit an earlier page with only descriptors.
+      const seeds = await discoverPrivateMailPage([page[1]], [a], mailContext);
+      expect(
+        (
+          await discoverPrivateMailPage(
+            [page[0]],
+            [a],
+            mailContext,
+            seeds.identities,
+          )
+        ).matches[0].inbox,
+      ).toBe(true);
+      for (const identity of restoredA.identities)
+        expect(JSON.stringify(responsePayload)).not.toContain(
+          identity.publicKey,
+        );
+      expect(a.secret.some((n) => n !== 0)).toBe(true); // caller keys are borrowed, never erased
+    } finally {
+      for (const k of [a, b, replyA, replyB]) k.secret.fill(0);
+    }
+  },
+);
 test("reply recovery crosses the 128-key boundary and learns later Sent seeds without truncation", async () => {
   const a = key("alice"),
     b = key("bob");

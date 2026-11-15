@@ -1,6 +1,12 @@
 # MoonMail V4 sealed delivery
 
-This separate Esmeralda template extends the single V3 design with an opaque sealed-letter directory. The deployed V3 source and addresses remain unchanged. The website uses this sealed office as its single default. Old testnet offices are not selected or migrated; earlier versions remain in backup branches. [Real testnet verification](../../docs/sealed-mail-evidence.json) covers stock Sapient, independent recovery, rotation, private postage, settings, Sent and replies. GitHub Pages publication remains user-controlled.
+V4 extends the single V3 design with an opaque sealed-letter directory. The
+website uses the V4 office on Mainnet by default and offers a separate V4
+office on Esmeralda. The source accepts network byte 0 and canonical Mainnet
+Ootle addresses. The [deployed identities](../../docs/DEPLOYMENT.md#public-network-presets)
+are network-specific. [Real testnet verification](../../docs/sealed-mail-evidence.json)
+covers stock Sapient, independent recovery, rotation, private postage, settings,
+Sent and replies.
 
 `publish_sealed(id, payload)` accepts a 64-digit lowercase hex ID and an opaque envelope. The current writer uses `mm-sealed-2`: one padded encrypted body and two indistinguishable wrapped-key slots for recipient and recoverable Sent access. The original four-field `mm-sealed-1` prototype remains readable by its original test helper. Neither format accepts public recipient IDs, recipient keys, recipient controller keys, capsule locators, reply IDs or conversation IDs. Storage is immutable; duplicate IDs and calls against the wrong component kind fail. Discovery pages have a maximum of 50 entries; both directories share the 4,096-letter capacity.
 

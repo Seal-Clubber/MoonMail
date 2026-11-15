@@ -2,6 +2,8 @@ pub mod letter;
 pub mod optional;
 pub mod ownership;
 use tari_template_lib::prelude::*;
+
+const SUPPORTED_NETWORKS: [u8; 4] = [0, 16, 36, 38];
 #[template]
 pub mod moonmail_v4 {
     use super::*;
@@ -128,7 +130,10 @@ pub mod moonmail_v4 {
             version
         }
         pub fn new(network: u8, template: TemplateAddress) -> Component<Self> {
-            assert!([16, 36, 38].contains(&network), "Test networks only");
+            assert!(
+                SUPPORTED_NETWORKS.contains(&network),
+                "Unsupported Ootle network"
+            );
             let allocation = CallerContext::allocate_component_address(None);
             let resource = ResourceBuilder::stealth()
                 .with_owner_rule(OwnerRule::None)

@@ -11,12 +11,12 @@
     "guestAccountCreation": true,
     "daemonScopes": false,
     "httpsWallet": false,
-    "sapientWallet": false,
+    "sapientWallet": true,
     "mailboxRecovery": true,
-    "postboxClaims": false,
-    "mailboxState": false,
-    "nativePrivatePostage": false,
-    "nativePrivatePayments": false
+    "postboxClaims": true,
+    "mailboxState": true,
+    "nativePrivatePostage": true,
+    "nativePrivatePayments": true
   },
   "contractProtocol": "unified-2",
   "postboxClaimProtocol": "sapient-proof-1",
@@ -26,9 +26,9 @@
     "resource": "resource_494bf658958616a367585aadbba21bdb34b6a6c2ff358e19822da54552549cee"
   },
   "sealedDelivery": {
-    "engine": false,
+    "engine": true,
     "recovery": true,
-    "stockSapient": false,
-    "sentAndReplies": false
+    "stockSapient": true,
+    "sentAndReplies": true
   }
 }

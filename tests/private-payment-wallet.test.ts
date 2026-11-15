@@ -10,10 +10,10 @@ import {
   type PaymentRequest,
   type PaymentReceipt,
 } from "../src/core/private-payment";
-async function fixture() {
+async function fixture(network = 38) {
   const owner = generateKeypair(),
     view = generateKeypair(),
-    address = generateOotleAddress(owner.public_key, view.public_key, 38);
+    address = generateOotleAddress(owner.public_key, view.public_key, network);
   owner.free();
   view.free();
   let granted = true,
@@ -26,7 +26,8 @@ async function fixture() {
     alreadyImported = false;
   const request = vi.fn(
     async ({ method, params }: { method: string; params?: any }) => {
-      if (method === "tari_getNetwork") return "esmeralda";
+      if (method === "tari_getNetwork")
+        return network === 0 ? "mainnet" : "esmeralda";
       if (["tari_requestAccounts", "tari_getAccounts"].includes(method))
         return [selected];
       if (method === "tari_getWalletAddress") return address;
@@ -70,7 +71,7 @@ async function fixture() {
     info: { name: "Sapient", rdns: "mw.tari.sapient", embedded: false },
     request,
   };
-  const wallet = await SapientSession.connect(38, provider),
+  const wallet = await SapientSession.connect(network, provider),
     invoice: PaymentRequest = {
       version: "mm-payment-1",
       kind: "request",
@@ -114,27 +115,30 @@ async function fixture() {
     },
   };
 }
-test("native spend requests enforce private funding, zero value promise and the recovery memo without asking for view permission", async () => {
-  const f = await fixture();
-  f.setGrant(false);
-  await f.wallet.createPrivatePayment(f.invoice, "3".repeat(64), "30000");
-  const create = f.request.mock.calls.find(
-    ([p]) => p.method === "tari_createTransactionRequest",
-  )![0];
-  expect(create.params).toMatchObject({
-    kind: "sendPrivately",
-    feeType: "private",
-    enforceFeeType: true,
-    minimumValuePromise: "0",
-    amount: "10000",
-    recipientWalletAddress: f.invoice.destination,
-    memo: paymentMemo("3".repeat(64)),
-    maxFee: "30000",
-  });
-  expect(
-    f.request.mock.calls.some(([p]) => p.method === "tari_requestViewAccess"),
-  ).toBe(false);
-});
+test.each([38, 0])(
+  "network %d native spends enforce private funding, zero value promise and the recovery memo without view permission",
+  async (network) => {
+    const f = await fixture(network);
+    f.setGrant(false);
+    await f.wallet.createPrivatePayment(f.invoice, "3".repeat(64), "30000");
+    const create = f.request.mock.calls.find(
+      ([p]) => p.method === "tari_createTransactionRequest",
+    )![0];
+    expect(create.params).toMatchObject({
+      kind: "sendPrivately",
+      feeType: "private",
+      enforceFeeType: true,
+      minimumValuePromise: "0",
+      amount: "10000",
+      recipientWalletAddress: f.invoice.destination,
+      memo: paymentMemo("3".repeat(64)),
+      maxFee: "30000",
+    });
+    expect(
+      f.request.mock.calls.some(([p]) => p.method === "tari_requestViewAccess"),
+    ).toBe(false);
+  },
+);
 test("changed native capabilities or wallet account fail before a spend is created", async () => {
   for (const kind of ["spend", "fees", "account"]) {
     const f = await fixture();
@@ -150,32 +154,35 @@ test("changed native capabilities or wallet account fail before a spend is creat
     ).toBe(false);
   }
 });
-test("import requires the existing private grant, exact wallet, amount and memo and never requests spending", async () => {
-  const f = await fixture();
-  await expect(f.wallet.importPrivatePayment(f.receipt)).resolves.toEqual({
-    amount: "10000",
-    alreadyImported: false,
-  });
-  f.setGrant(false);
-  await expect(f.wallet.importPrivatePayment(f.receipt)).rejects.toThrow(
-    "view",
-  );
-  f.setGrant(true);
-  f.setMemo("another payment");
-  await expect(f.wallet.importPrivatePayment(f.receipt)).rejects.toThrow(
-    "memo",
-  );
-  f.setMemo(paymentMemo(f.receipt.intentLetter));
-  f.setAmount("9999");
-  await expect(f.wallet.importPrivatePayment(f.receipt)).rejects.toThrow(
-    "amount",
-  );
-  expect(
-    f.request.mock.calls.some(([p]) =>
-      /createTransaction|submitTransaction|requestView/.test(p.method),
-    ),
-  ).toBe(false);
-});
+test.each([38, 0])(
+  "network %d imports require the existing grant, exact wallet, amount and memo without spending",
+  async (network) => {
+    const f = await fixture(network);
+    await expect(f.wallet.importPrivatePayment(f.receipt)).resolves.toEqual({
+      amount: "10000",
+      alreadyImported: false,
+    });
+    f.setGrant(false);
+    await expect(f.wallet.importPrivatePayment(f.receipt)).rejects.toThrow(
+      "view",
+    );
+    f.setGrant(true);
+    f.setMemo("another payment");
+    await expect(f.wallet.importPrivatePayment(f.receipt)).rejects.toThrow(
+      "memo",
+    );
+    f.setMemo(paymentMemo(f.receipt.intentLetter));
+    f.setAmount("9999");
+    await expect(f.wallet.importPrivatePayment(f.receipt)).rejects.toThrow(
+      "amount",
+    );
+    expect(
+      f.request.mock.calls.some(([p]) =>
+        /createTransaction|submitTransaction|requestView/.test(p.method),
+      ),
+    ).toBe(false);
+  },
+);
 test("an automatically discovered payment is accepted only after matching its exact existing private output", async () => {
   const f = await fixture();
   f.setAlreadyImported();

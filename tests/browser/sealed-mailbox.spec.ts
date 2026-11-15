@@ -21,7 +21,12 @@ import { readable } from "./support/contrast";
 import ledger from "../fixtures/capsule-carrier.json" with { type: "json" };
 
 // Synthetic browser/provider fixture. No real wallet, signature or broadcast.
-async function fixture(page: Page, enabled = true, payments = false) {
+async function fixture(
+  page: Page,
+  enabled = true,
+  payments = false,
+  network = 38,
+) {
   const owner = generateKeypair(),
     view = generateKeypair(),
     own = generateKeypair(),
@@ -30,11 +35,11 @@ async function fixture(page: Page, enabled = true, payments = false) {
   const foreignAddress = generateOotleAddress(
       otherOwner.public_key,
       view.public_key,
-      38,
+      network,
     ),
     foreignController = payments ? hex(otherOwner.public_key) : "77".repeat(32);
   const controller = hex(owner.public_key),
-    address = generateOotleAddress(owner.public_key, view.public_key, 38),
+    address = generateOotleAddress(owner.public_key, view.public_key, network),
     ownSecret = new Uint8Array(own.secret_key),
     otherSecret = new Uint8Array(other.secret_key),
     ownPub = hex(own.public_key),
@@ -45,7 +50,7 @@ async function fixture(page: Page, enabled = true, payments = false) {
     utxo = Object.keys(ledger).find((k) => k.startsWith("utxo_"))!;
   const d: Deployment = {
     ...emptyDeployment,
-    network: 38,
+    network,
     registry: `component_${"aa".repeat(32)}`,
     template: "bb".repeat(32),
     envelopeTemplate: "bb".repeat(32),
@@ -155,7 +160,7 @@ async function fixture(page: Page, enabled = true, payments = false) {
         );
       refs[id] = child;
       states[child] = [
-        38,
+        network,
         {},
         {},
         `template_${d.template}`,
@@ -163,7 +168,7 @@ async function fixture(page: Page, enabled = true, payments = false) {
         {},
         [
           id,
-          38,
+          network,
           d.registry,
           JSON.stringify(payload),
           message.sender.controller,
@@ -177,7 +182,7 @@ async function fixture(page: Page, enabled = true, payments = false) {
     reply.secret.fill(0);
   }
   const root = [
-    38,
+    network,
     {},
     {
       home: [
@@ -246,7 +251,7 @@ async function fixture(page: Page, enabled = true, payments = false) {
     });
   });
   await page.addInitScript(
-    ({ account, address, resource, commitment, memo }) => {
+    ({ account, address, resource, commitment, memo, network }) => {
       const w = window as any;
       w.sealedMethods = [];
       w.tari = {
@@ -258,7 +263,8 @@ async function fixture(page: Page, enabled = true, payments = false) {
         },
         request: async ({ method }: { method: string }) => {
           w.sealedMethods.push(method);
-          if (method === "tari_getNetwork") return "esmeralda";
+          if (method === "tari_getNetwork")
+            return network === 0 ? "mainnet" : "esmeralda";
           if (method === "tari_requestAccounts") {
             sessionStorage.setItem("fixture:sealed-connected", "1");
             return [account];
@@ -305,6 +311,7 @@ async function fixture(page: Page, enabled = true, payments = false) {
     {
       account,
       address,
+      network,
       resource,
       commitment: descriptor.capsule.commitment,
       memo: encoded.memo.Message,
@@ -397,10 +404,10 @@ test("connecting from the composer requests private view once and keeps spending
   await readOnly(page, f.writes);
 });
 
-test("sealed discovery fills Inbox and Sent and keeps mailbox actions and replies in the familiar workspace", async ({
+test("Mainnet sealed discovery fills Inbox and Sent in the mailbox", async ({
   page,
 }) => {
-  const f = await fixture(page);
+  const f = await fixture(page, true, false, 0);
   await connect(page);
   await page
     .getByRole("button", { name: "Open letter: A sealed hello", exact: true })
@@ -449,10 +456,10 @@ test("sealed discovery fills Inbox and Sent and keeps mailbox actions and replie
   });
   await readOnly(page, f.writes);
 });
-test("sending above an open conversation keeps approval controls locked and returns to Activity once", async ({
+test("Mainnet sending above an open conversation locks approval controls and returns to Activity once", async ({
   page,
 }) => {
-  const f = await fixture(page);
+  const f = await fixture(page, true, false, 0);
   await connect(page);
   await page
     .getByRole("button", { name: "Open letter: A sealed hello", exact: true })
