@@ -17,10 +17,10 @@ The same published release also passed a separately approved four-transaction Sa
 
 ## Public network presets
 
-| Network              | Site profile                                       | Public indexer                      | State                                                                               |
-| -------------------- | -------------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------- |
-| Mainnet (0), default | [deployment.json](../public/deployment.json)       | `https://indexer-a.ootle.tari.com/` | Office confirmed and configured for reads. Real-fund operations await verification. |
-| Esmeralda (38)       | [deployment-v4.json](../public/deployment-v4.json) | `https://ootle-indexer-a.tari.com/` | Live V4 office for test TARI.                                                       |
+| Network              | Site profile                                       | Public indexer                      | State                                                                  |
+| -------------------- | -------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
+| Mainnet (0), default | [deployment.json](../public/deployment.json)       | `https://indexer-a.ootle.tari.com/` | Public showcase and guest collection. Wallet publishing remains gated. |
+| Esmeralda (38)       | [deployment-v4.json](../public/deployment-v4.json) | `https://ootle-indexer-a.tari.com/` | Live V4 office for test TARI.                                          |
 
 Choose a network in **Settings**. Sapient must use the same
 network. A switch clears the active wallet session and transaction review.
@@ -32,8 +32,19 @@ The Mainnet office was created from the
 [published template](https://explorer.tari.mw/template/d4ed44d36e79e85ea7a8705170d0227a34b9fb3afba556b00112ff785b6da8c8)
 in transaction `39706303356bc9fece63657af00701bacc2ee2e01a10a2c000ee0c6d7149e14d`.
 Its component is ownerless and upgrade-locked. The indexer reads confirmed
-the V4 state and component-scoped recovery resource. Mainnet-specific wallet
-and gift checks are required before enabling their evidence flags.
+the V4 state and component-scoped recovery resource.
+
+The public showcase published eight letters in
+`239fa974e93997b2966f717830e05fd9421bc6267e6c9a30f8c8ca0158ff0022`.
+Three more public letters each hold 1 TARI and a 0.10 TARI collection reserve,
+funded in `57fb134f7c1fc751fd536a67477222b34c6de3b9ea59943141eb774979968bc0`.
+Mainnet dry runs using one of those gifts returned the full 1 TARI to an
+existing account and, in a separate simulation, a newly created account.
+The reserve covered the simulated fees of 0.011671 TARI and 0.013085 TARI.
+The exact published WASM passed isolated tests for both public claim paths
+and the private-link gift's secret check. No live collection was performed
+during verification. The live showcase gifts are public and collectible
+once per letter. Unused reserves remain locked.
 
 ## Historical local deployment tooling
 

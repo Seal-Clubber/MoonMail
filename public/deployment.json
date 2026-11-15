@@ -6,9 +6,9 @@
   "resource": "resource_0101010101010101010101010101010101010101010101010101010101010101",
   "indexerUrl": "https://indexer-a.ootle.tari.com/",
   "evidence": {
-    "engineClaims": false,
-    "guestPayout": false,
-    "guestAccountCreation": false,
+    "engineClaims": true,
+    "guestPayout": true,
+    "guestAccountCreation": true,
     "daemonScopes": false,
     "httpsWallet": false,
     "sapientWallet": false,

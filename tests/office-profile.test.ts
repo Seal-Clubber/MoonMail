@@ -17,14 +17,17 @@ test("both the deployed Sapient profile and an explicitly unconfigured office re
   ).toBe(false);
 });
 
-test("the Mainnet office profile is available for reads with spending disabled", () => {
+test("Mainnet enables gift collection and keeps wallet publishing gated", () => {
   const profile = officeProfile(mainnet);
   expect(profile.network).toBe(0);
   expect(profile.registry).toMatch(/^component_[a-f0-9]{64}$/);
   expect(profile.contractProtocol).toBe("unified-2");
   expect(profile.capsule?.component).toBe(profile.registry);
+  expect(writesReady(profile, "public", "sapient")).toBe(false);
+  expect(writesReady(profile, "link", "sapient")).toBe(false);
   expect(writesReady(profile, "postbox", "sapient")).toBe(false);
-  expect(claimsReady(profile)).toBe(false);
+  expect(claimsReady(profile)).toBe(true);
+  expect(claimsReady(profile, true)).toBe(true);
 });
 
 test("damaged types cannot crash the UI or display fabricated evidence", () => {

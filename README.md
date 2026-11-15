@@ -30,11 +30,11 @@ Use the website and your normal [Sapient wallet](https://sapient.tari.mw/).
 There is no central MoonMail backend or extra bridge program. The static website
 runs on GitHub Pages over HTTPS and reads Ootle through public indexers.
 
-**Mainnet is the default network.** The Mainnet office is configured for reads.
-Sending and gift collection await Mainnet verification. Choose **Esmeralda** in the network settings to read
-live mail, create a postbox and try gifts with test TARI. MoonMail addresses
-letters to Ootle postboxes. It is experimental software with bounded storage
-and discovery.
+**Mainnet is the default network.** Open Public mail to read the showcase
+and collect available TARI gifts. Choose **Esmeralda** in Settings to try
+sending, postboxes and gifts with test TARI. Mainnet wallet publishing
+remains gated while its full wallet flows are verified. MoonMail is
+experimental software with bounded storage and discovery.
 
 For technical review, start with [architecture and trust boundaries](#architecture-and-trust-boundaries),
 the [Sapient API map](#sapient-api-map), [implementation and test map](#implementation-and-test-map)
