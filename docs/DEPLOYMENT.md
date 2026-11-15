@@ -17,10 +17,10 @@ The same published release also passed a separately approved four-transaction Sa
 
 ## Public network presets
 
-| Network              | Site profile                                       | Public indexer                      | State                                                                  |
-| -------------------- | -------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------- |
-| Mainnet (0), default | [deployment.json](../public/deployment.json)       | `https://indexer-a.ootle.tari.com/` | Public showcase and guest collection. Wallet publishing remains gated. |
-| Esmeralda (38)       | [deployment-v4.json](../public/deployment-v4.json) | `https://ootle-indexer-a.tari.com/` | Live V4 office for test TARI.                                          |
+| Network              | Site profile                                       | Public indexer                      | State                                                        |
+| -------------------- | -------------------------------------------------- | ----------------------------------- | ------------------------------------------------------------ |
+| Mainnet (0), default | [deployment.json](../public/deployment.json)       | `https://indexer-a.ootle.tari.com/` | Public showcase, guest collection and Sapient postbox setup. |
+| Esmeralda (38)       | [deployment-v4.json](../public/deployment-v4.json) | `https://ootle-indexer-a.tari.com/` | Live V4 office for test TARI.                                |
 
 Choose a network in **Settings**. Sapient must use the same
 network. A switch clears the active wallet session and transaction review.
@@ -45,6 +45,16 @@ The exact published WASM passed isolated tests for both public claim paths
 and the private-link gift's secret check. No live collection was performed
 during verification. The live showcase gifts are public and collectible
 once per letter. Unused reserves remain locked.
+
+Confirmed Mainnet Sapient postbox setup uses two approvals. The first
+creates the encrypted recovery carrier. Before requesting the registration
+approval, the client checks the carrier and recovers the key with Sapient's
+separate private-view permission. Two successful registration receipts
+are `11b7d7e3662d32fd5061d23a24aa8f006fd55e6abdb89cb5f1ec22b17e2eb7f1`
+and `5e5336bb0ea737ab8b2c57b9f1bcc5c66f4c2cf18f13c9e1261295154f3830c9`.
+Both registered keys point to verified permanent carriers. Setup evidence
+enables postbox setup separately from sending, mailbox settings and
+postbox gift collection.
 
 ## Historical local deployment tooling
 

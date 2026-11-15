@@ -3344,6 +3344,9 @@ export function App() {
             task={task}
             onStatus={setStatus}
             onConnect={() => setConnect(true)}
+            onUseEsmeralda={() =>
+              void task(() => restoreOffice(false, ESMERALDA))
+            }
             onSubmitted={() => {
               if (view !== "postboxes") navigate("postboxes", true);
             }}

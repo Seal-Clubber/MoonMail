@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import mainnet from "../../public/deployment.json" with { type: "json" };
 import deployed from "../../public/deployment-v4.json" with { type: "json" };
 import archived from "../../public/deployment-v2.json" with { type: "json" };
 import { createPostboxLink } from "../../src/core/postbox-links";
@@ -26,6 +27,9 @@ test("Mainnet is the default and Esmeralda is explicitly selectable", async ({
   await page.goto("./#/postboxes");
   await expect(
     page.getByText("Mainnet office pending", { exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("Mainnet postbox setup is unavailable.", { exact: true }),
   ).toHaveCount(0);
   await expect(page.locator(".footer-note")).toHaveText("MAINNET · SAPIENT");
   await expect(
@@ -80,6 +84,30 @@ test("Mainnet is the default and Esmeralda is explicitly selectable", async ({
     .click();
   await expect(page.locator(".footer-note")).toHaveText("MAINNET · SAPIENT");
   await expect(page).toHaveURL(/\/MoonMail\/#\/network$/);
+});
+
+test("a Mainnet office without verified recovery offers Esmeralda instead of a dead-end form", async ({
+  page,
+}) => {
+  await page.route("**/deployment.json", (route) =>
+    route.fulfill({
+      json: {
+        ...mainnet,
+        sealedDelivery: { ...mainnet.sealedDelivery, recovery: false },
+      },
+    }),
+  );
+  await page.goto("./#/postboxes");
+  await expect(
+    page.getByText("Mainnet postbox setup is unavailable.", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Create my postbox", exact: true }),
+  ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Switch MoonMail to Esmeralda", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\?network=esmeralda#\/postboxes$/);
 });
 
 test("a current Esmeralda invitation selects its bundled office on a fresh visit", async ({

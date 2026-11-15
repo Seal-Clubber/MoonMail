@@ -44,6 +44,31 @@ export function claimsReady(d: Deployment, createAccount = false) {
     (!createAccount || d.evidence.guestAccountCreation === true)
   );
 }
+function hasCapsule(d: Deployment) {
+  return (
+    !!d.capsule &&
+    /^[a-f0-9]{64}$/.test(d.capsule.template) &&
+    /^component_[a-f0-9]{64}$/.test(d.capsule.component) &&
+    /^resource_[a-f0-9]{64}$/.test(d.capsule.resource)
+  );
+}
+
+export function postboxSetupReady(
+  d: Deployment,
+  provider: "daemon" | "sapient",
+) {
+  if (provider !== "sapient" || d.contractProtocol !== "unified-2")
+    return writesReady(d, "postbox", provider);
+  return (
+    deploymentReady(d) &&
+    d.evidence.mailboxRecovery === true &&
+    d.sealedDelivery?.recovery === true &&
+    hasCapsule(d) &&
+    d.capsule?.component === d.registry &&
+    d.capsule?.template === d.template
+  );
+}
+
 export function writesReady(
   d: Deployment,
   mode: "public" | "link" | "postbox" = "link",
@@ -61,11 +86,7 @@ export function writesReady(
             d.sealedDelivery.recovery === true &&
             d.sealedDelivery.stockSapient === true &&
             d.sealedDelivery.sentAndReplies === true)) &&
-        (provider !== "sapient" ||
-          (!!d.capsule &&
-            /^[a-f0-9]{64}$/.test(d.capsule.template) &&
-            /^component_[a-f0-9]{64}$/.test(d.capsule.component) &&
-            /^resource_[a-f0-9]{64}$/.test(d.capsule.resource)))))
+        (provider !== "sapient" || hasCapsule(d))))
   );
 }
 export function postboxClaimsReady(

@@ -12,7 +12,7 @@
     "daemonScopes": false,
     "httpsWallet": false,
     "sapientWallet": false,
-    "mailboxRecovery": false,
+    "mailboxRecovery": true,
     "postboxClaims": false,
     "mailboxState": false,
     "nativePrivatePostage": false,
@@ -27,7 +27,7 @@
   },
   "sealedDelivery": {
     "engine": false,
-    "recovery": false,
+    "recovery": true,
     "stockSapient": false,
     "sentAndReplies": false
   }

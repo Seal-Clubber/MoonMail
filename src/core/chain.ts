@@ -21,6 +21,7 @@ import type { ConnectedWallet, WalletAccount } from "./wallet";
 import { SapientSession } from "./sapient";
 import {
   claimsReady,
+  postboxSetupReady,
   writesReady,
   postboxClaimsReady,
   mailboxStateReady,
@@ -702,7 +703,7 @@ export class PostOfficeClient {
   ) {
     const nameError = postboxNameError(box.nickname);
     if (nameError) throw new Error(nameError);
-    if (!writesReady(this.deployment, "postbox", wallet.kind ?? "daemon"))
+    if (!postboxSetupReady(this.deployment, wallet.kind ?? "daemon"))
       throw new Error("Postbox writes await deployment and recovery evidence");
     if (box.controller !== account.account.owner_public_key)
       throw new Error("Choose the controlling account");
@@ -795,7 +796,7 @@ export class PostOfficeClient {
     storage: Storage,
   ) {
     if (
-      !writesReady(this.deployment, "postbox", "sapient") ||
+      !postboxSetupReady(this.deployment, "sapient") ||
       !this.deployment.capsule
     )
       throw new Error(

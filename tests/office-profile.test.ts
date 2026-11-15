@@ -1,9 +1,13 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { officeProfile, loadOfficeProfile } from "../src/core/office-profile";
-import { emptyDeployment, writesReady } from "../src/core/config";
+import {
+  claimsReady,
+  emptyDeployment,
+  postboxSetupReady,
+  writesReady,
+} from "../src/core/config";
 import deployed from "../public/deployment-v4.json";
 import mainnet from "../public/deployment.json";
-import { claimsReady } from "../src/core/config";
 
 afterEach(() => {
   vi.useRealTimers();
@@ -17,17 +21,35 @@ test("both the deployed Sapient profile and an explicitly unconfigured office re
   ).toBe(false);
 });
 
-test("Mainnet enables gift collection and keeps wallet publishing gated", () => {
+test("Mainnet enables gift collection and postbox setup independently of sending", () => {
   const profile = officeProfile(mainnet);
   expect(profile.network).toBe(0);
   expect(profile.registry).toMatch(/^component_[a-f0-9]{64}$/);
   expect(profile.contractProtocol).toBe("unified-2");
   expect(profile.capsule?.component).toBe(profile.registry);
+  expect(postboxSetupReady(profile, "sapient")).toBe(true);
   expect(writesReady(profile, "public", "sapient")).toBe(false);
   expect(writesReady(profile, "link", "sapient")).toBe(false);
   expect(writesReady(profile, "postbox", "sapient")).toBe(false);
   expect(claimsReady(profile)).toBe(true);
   expect(claimsReady(profile, true)).toBe(true);
+});
+
+test("unverified recovery or a missing capsule blocks postbox setup", () => {
+  const profile = officeProfile({
+    ...mainnet,
+    sealedDelivery: { ...mainnet.sealedDelivery, recovery: false },
+  });
+  expect(postboxSetupReady(profile, "sapient")).toBe(false);
+  expect(postboxSetupReady(profile, "daemon")).toBe(false);
+  expect(writesReady(profile, "postbox", "sapient")).toBe(false);
+  expect(writesReady(profile, "public", "sapient")).toBe(false);
+  expect(
+    postboxSetupReady(
+      { ...officeProfile(mainnet), capsule: undefined },
+      "sapient",
+    ),
+  ).toBe(false);
 });
 
 test("damaged types cannot crash the UI or display fabricated evidence", () => {

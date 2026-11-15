@@ -5,7 +5,8 @@ import type { Deployment, Envelope, Postbox } from "../core/types";
 import type { ConnectedWallet } from "../core/wallet";
 import type { PostOfficeClient } from "../core/chain";
 import { mailboxKey } from "../core/mailbox";
-import { writesReady } from "../core/config";
+import { postboxSetupReady } from "../core/config";
+import { MAINNET } from "../core/network-id";
 import { readPending, savePending, type Pending } from "../core/pending";
 import { SapientSession } from "../core/sapient";
 import { PrivateInboxAccess } from "./PrivateInboxAccess";
@@ -35,6 +36,7 @@ export function Postboxes({
   task,
   onStatus,
   onConnect,
+  onUseEsmeralda,
   onSubmitted,
   onPublic,
   onPrivacy,
@@ -73,6 +75,7 @@ export function Postboxes({
   task: (fn: () => Promise<void>) => Promise<void>;
   onStatus: (text: string) => void;
   onConnect: () => void;
+  onUseEsmeralda: () => void;
   onSubmitted: () => void;
   onPublic: () => void;
   onPrivacy: () => void;
@@ -194,12 +197,8 @@ export function Postboxes({
   const inbox = letters.filter(
     (e) => e.mode === "postbox" && e.recipientPostbox === box?.id,
   );
-  const enabled =
-    !!wallet &&
-    !!chain &&
-    writesReady(deployment, "postbox", "sapient") &&
-    !busy &&
-    !writeBlocked;
+  const setupReady = postboxSetupReady(deployment, "sapient");
+  const enabled = !!wallet && !!chain && setupReady && !busy && !writeBlocked;
   useEffect(() => {
     if (
       !chain ||
@@ -430,21 +429,23 @@ export function Postboxes({
   );
   const postboxActions = (
     <div className="postbox-actions">
-      <button
-        onClick={() => {
-          choose("");
-          setEditing(true);
-        }}
-        disabled={busy}
-      >
-        <UiIcon name="compose" />
-        {owned.length ? "Create another postbox" : "Create my postbox"}
-      </button>
+      {setupReady && (
+        <button
+          onClick={() => {
+            choose("");
+            setEditing(true);
+          }}
+          disabled={busy || !chain || writeBlocked}
+        >
+          <UiIcon name="compose" />
+          {owned.length ? "Create another postbox" : "Create my postbox"}
+        </button>
+      )}
       <button onClick={() => void task(onRefresh)} disabled={busy}>
         <UiIcon name="refresh" />
         Refresh postboxes & inbox
       </button>
-      {box && (
+      {box && setupReady && (
         <button onClick={() => setEditing(true)} disabled={busy}>
           <UiIcon name="settings" />
           Edit selected postbox
@@ -462,6 +463,25 @@ export function Postboxes({
           Your <em>haunted inbox.</em>
         </h1>
       </header>
+      {!setupReady && (
+        <div className="info" role="status">
+          {deployment.network === MAINNET ? (
+            <>
+              <strong>Mainnet postbox setup is unavailable.</strong>
+              <p>
+                MoonMail is still verifying Mainnet recovery in Sapient. To
+                create a postbox now, switch MoonMail and Sapient to Esmeralda
+                testnet.
+              </p>
+              <button type="button" disabled={busy} onClick={onUseEsmeralda}>
+                Switch MoonMail to Esmeralda
+              </button>
+            </>
+          ) : (
+            <p>Postbox setup needs a verified Sapient recovery deployment.</p>
+          )}
+        </div>
+      )}
       {(!box || editing) && (
         <button
           className="primary inbox-compose"
@@ -504,8 +524,9 @@ export function Postboxes({
           </div>
           <h2>A home for your little secrets.</h2>
           <p>
-            Connect Sapient to open your mail or create your first postbox. Your
-            letters are encrypted for you.
+            {setupReady
+              ? "Connect Sapient to open your mail or create your first postbox. Your letters are encrypted for you."
+              : "Connect Sapient to access an existing postbox."}
           </p>
           <button className="primary" onClick={onConnect}>
             Connect Sapient for my inbox
@@ -522,7 +543,7 @@ export function Postboxes({
               {postboxActions}
             </div>
           )}
-          {!owned.length && !editing && (
+          {setupReady && !owned.length && !editing && (
             <div className="info">
               <h2>Your first postbox awaits.</h2>
               <p>
@@ -567,7 +588,7 @@ export function Postboxes({
               ))}
             </div>
           )}
-          {editing && (
+          {editing && (setupReady || prepared) && (
             <form
               className="postbox-setup"
               onSubmit={(e) => {
@@ -748,8 +769,23 @@ export function Postboxes({
                   </dl>
                 </div>
               )}
+              {(!box || rotating) &&
+                wallet instanceof SapientSession &&
+                !viewApproved && (
+                  <p id="backup-access-help" className="fine-print">
+                    Approve private view access in Sapient to unlock the backup
+                    step.
+                  </p>
+                )}
               <button
                 className="primary"
+                aria-describedby={
+                  (!box || rotating) &&
+                  wallet instanceof SapientSession &&
+                  !viewApproved
+                    ? "backup-access-help"
+                    : undefined
+                }
                 disabled={
                   !enabled ||
                   !!nameError ||
@@ -934,14 +970,6 @@ export function Postboxes({
             </details>
           )}
         </>
-      )}
-      {!writesReady(deployment, "postbox", "sapient") && (
-        <p className="info">
-          Postbox writes await verified Sapient key recovery. Connecting a
-          wallet for signing does not give MoonMail a recoverable mail
-          decryption key. Existing postbox keys are preserved; no extra bridge
-          is required.
-        </p>
       )}
     </section>
   );
